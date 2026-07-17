@@ -1,0 +1,1012 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+@font-face {
+  font-family: 'Zpix';
+  src: url('/zpix.ttf') format('truetype');
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  image-rendering: pixelated;
+  /* Disable rounded corners, soft shadows globally */
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body {
+  background-color: #0b0c10;
+  font-family: 'Press Start 2P', 'Zpix', monospace, sans-serif;
+  color: #fff;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gameContainer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1a1c2c;
+  overflow: hidden;
+}
+
+#gameBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 1;
+  transform-origin: top left;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+#gameCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 2;
+  transform-origin: top left;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* UI Overlay Layer */
+#uiOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 3;
+  pointer-events: auto;
+  transform-origin: top left;
+}
+
+/* Enable pointer events for active UI elements */
+.ui-interactive {
+  pointer-events: auto;
+}
+
+/* Retro UI Panels using 9-slice */
+.pixel-panel {
+  pointer-events: auto;
+  border-style: solid;
+  border-image: url('/ui_panel_9slice.png') 16 stretch;
+  border-width: 16px;
+  background-color: #1a1c2c;
+  color: #fff;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Retro UI Buttons using 9-slice */
+.pixel-btn {
+  pointer-events: auto;
+  border-style: solid;
+  border-image: url('/ui_button_9slice.png') 8 stretch;
+  border-width: 8px;
+  background-color: #283241;
+  color: #fff;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 18px;
+  padding: 4px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-shadow: 2px 2px 0px #000;
+}
+
+.pixel-btn:active, .pixel-btn.active {
+  border-image: url('/ui_button_pressed_9slice.png') 8 stretch;
+  background-color: #141923;
+  padding-top: 6px;
+  padding-bottom: 2px;
+}
+
+.pixel-btn.disabled {
+  filter: grayscale(1);
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Retro Slots for badges or items (no circular frame, square slot border from png) */
+.pixel-slot {
+  pointer-events: auto;
+  width: 56px;
+  height: 56px;
+  background-image: url('/ui_slot.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.pixel-slot:hover {
+  filter: brightness(1.2);
+}
+
+/* Screen Title and Headers */
+.retro-title {
+  font-size: 24px;
+  text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;
+  color: #e5c158;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.retro-text {
+  font-size: 16px;
+  line-height: 1.5;
+  text-shadow: 1px 1px 0px #000;
+}
+
+.retro-text-yellow {
+  color: #e5c158;
+}
+
+.retro-text-green {
+  color: #5ac54f;
+}
+
+.retro-text-red {
+  color: #df3e23;
+}
+
+.retro-text-blue {
+  color: #4ba3e3;
+}
+
+/* --- Screen 1: Team Editor --- */
+#teamEditor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2556px;
+  height: 1179px;
+  background-image: url('/editor.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+/* Squad Tab buttons ("1 2 3 4 5") positioned over pre-drawn graphics */
+.squad-tab-btn {
+  position: absolute;
+  top: 170px;
+  width: 75px;
+  height: 60px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.squad-tab-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.squad-tab-btn.active {
+  background-color: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Absolute positioned squad grid cells */
+.squad-cell {
+  position: absolute;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+.squad-cell:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.squad-cell.active {
+  outline: 6px solid #e5c158;
+  outline-offset: -6px;
+}
+
+.monster-switch-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 64px;
+  height: 64px;
+  border-width: 6px;
+  font-size: 28px;
+  z-index: 15;
+  padding: 0;
+}
+
+/* Mode buttons & Battle buttons */
+.bottom-action-btn {
+  position: absolute;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+}
+.bottom-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+.bottom-action-btn.disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Details card on the right */
+.details-card {
+  position: absolute;
+  left: 1780px;
+  top: 310px;
+  width: 576px;
+  height: 603px;
+  background-image: url('/details.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 10;
+}
+
+.details-avatar-frame {
+  position: absolute;
+  left: 18px;
+  top: 30px;
+  width: 282px;
+  height: 246px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.details-avatar-frame img {
+  width: 204px;
+  height: 205px;
+}
+
+.details-stars-container {
+  position: absolute;
+  left: 18px;
+  top: 278px;
+  width: 282px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #e5c158;
+}
+
+.details-name-banner {
+  position: absolute;
+  left: 18px;
+  top: 302px;
+  width: 282px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 20px;
+  color: #1a1c2c; /* Retro dark purple/black color for readability on card background */
+  text-shadow: none;
+  background-color: transparent; /* No background color */
+  border: none;
+  box-sizing: border-box;
+  z-index: 12;
+}
+
+/* Precise raw stat values positioned over text fields in 详情.png */
+.details-val {
+  position: absolute;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 20px;
+  font-weight: bold;
+  color: #1a1c2c;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-shadow: none;
+  background-color: transparent; /* Transparent stats values, background white boxes are empty */
+  z-index: 12;
+}
+.details-val-hp { left: 372px; top: 24px; width: 184px; height: 42px; }
+.details-val-atk { left: 372px; top: 78px; width: 80px; height: 42px; }
+.details-val-ats { left: 476px; top: 78px; width: 80px; height: 42px; }
+.details-val-range { left: 372px; top: 128px; width: 80px; height: 42px; }
+.details-val-shield { left: 476px; top: 128px; width: 80px; height: 42px; }
+.details-val-cd { left: 372px; top: 180px; width: 184px; height: 42px; }
+.details-val-speed { left: 372px; top: 230px; width: 184px; height: 42px; }
+
+/* Skill box section in details card */
+.details-skill-section {
+  position: absolute;
+  left: 25px;
+  top: 350px;
+  width: 526px;
+  height: 121px;
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 2px solid #5a5a5a;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.details-skill-icon-frame {
+  width: 70px;
+  height: 75px;
+  margin-right: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.details-skill-desc-box {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 24px;
+  color: #fff;
+  line-height: 1.4;
+  text-shadow: 2px 2px 0px #000;
+  overflow-y: auto;
+}
+
+/* Badges equipping section in details card */
+.details-badges-section {
+  position: absolute;
+  left: 25px;
+  top: 478px;
+  width: 526px;
+  height: 114px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  background-color: #b4b3a1; /* Mask background color to cover the pre-drawn badges in the background image! */
+  z-index: 11;
+}
+
+.details-badge-slot-frame {
+  width: 70px;
+  height: 75px;
+  border: 2px dashed #1a1c2c; /* Dash outline slot frame */
+  box-sizing: border-box;
+  background-color: transparent; /* No background color */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+.details-badge-slot-frame.equipped {
+  border: none; /* Hide slot borders when badge is equipped to show badge only */
+}
+.details-badge-slot-frame:hover {
+  filter: brightness(1.2);
+}
+
+.badge-slot-name {
+  display: none; /* Layout is fully sprite graphic based now */
+}
+
+/* Modals/Popups (Monster Selection list & Badge Selection list) */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.modal-content {
+  width: 1300px;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-grid-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 4px solid #000;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-monster-card {
+  background-color: #283241;
+  border: 2px solid #5a5a5a;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  text-align: center;
+}
+
+.modal-monster-card:hover {
+  border-color: #e5c158;
+}
+
+.modal-monster-card img {
+  width: 164px;
+  height: 164px;
+  margin-bottom: 6px;
+}
+
+.modal-monster-name {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.modal-monster-cost {
+  font-size: 20px;
+  color: #e5c158;
+}
+
+/* Badge Modal specific styles */
+.badge-modal-content {
+  width: 1300px;
+  height: 80%;
+}
+
+.badge-grid-scroll {
+  overflow-y: auto;
+  flex-grow: 1;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 4px solid #000;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.modal-badge-card {
+  background-color: #283241;
+  border: 2px solid #5a5a5a;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.modal-badge-card:hover {
+  border-color: #e5c158;
+}
+
+.modal-badge-name {
+  font-size: 20px;
+  color: #e5c158;
+  margin-bottom: 4px;
+}
+
+.modal-badge-desc {
+  display: none;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 24px;
+  color: #ccc;
+  line-height: 1.4;
+  text-shadow: 2px 2px 0px #000;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -10px);
+  background-color: rgba(16, 20, 30, 0.98);
+  border: 2px solid #5a5a5a;
+  padding: 12px;
+  width: 380px;
+  z-index: 1000;
+  pointer-events: none;
+  text-align: center;
+  box-shadow: 4px 4px 0px #000;
+  white-space: normal;
+  box-sizing: border-box;
+}
+
+.modal-badge-card:hover .modal-badge-desc {
+  display: none;
+}
+
+.modal-badge-card.show-desc .modal-badge-desc {
+  display: block;
+}
+
+
+/* Custom Scrollbar Styles for Retro Look */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid #5a5a5a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #283241;
+  border: 2px solid #000;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #141923;
+}
+
+
+/* --- Screen 2: Battle View --- */
+#battleView {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 5;
+  box-sizing: border-box;
+}
+
+/* New Scoreboard HUD matching expected screenshot (Scaled down by 1.5x from 120px) */
+.battle-scoreboard-top {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.scoreboard-team-row {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.scoreboard-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid #1a1c2c;
+  background-color: rgba(26, 28, 44, 0.9);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+.scoreboard-circle.dead {
+  filter: grayscale(1) brightness(0.4);
+  border-color: #5a5a5a;
+}
+.scoreboard-circle.question {
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 24px;
+  color: #888;
+  font-weight: bold;
+}
+
+.scoreboard-center-hud {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  pointer-events: auto;
+}
+
+.player-avatar-frame {
+  width: 100px;
+  height: 100px;
+  border: 5px solid #1a1c2c;
+  background-color: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+.player-avatar-frame.p1-frame {
+  border-color: #4ba3e3;
+}
+.player-avatar-frame.p2-frame {
+  border-color: #df3e23;
+}
+
+.scoreboard-center-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 360px;
+  text-align: center;
+}
+
+.scoreboard-timer {
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 48px;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 3px 3px 0px #000;
+  line-height: 1.1;
+}
+
+.scoreboard-phase-text {
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 42px;
+  color: #fff;
+  text-shadow: 5px 5px 0px #000;
+  margin-top: 8px;
+}
+
+/* Battle Bottom UI Container */
+.battle-hud-bottom {
+  position: absolute;
+  bottom: 0px;
+  left: 669px; /* Centered layout: (2556 - 1218) / 2 = 669px */
+  width: 1218px;
+  height: 264px; /* Native background image height! */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0;
+  z-index: 10;
+  background-image: url('/bench.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  box-sizing: border-box;
+}
+
+/* Header bar inside the bench container for stats */
+.bench-header-bar {
+  width: 100%;
+  height: 76px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 80px;
+  padding: 0;
+  margin-top: 20px; /* Align vertical placement inside purple bar */
+}
+
+.bench-header-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 20px;
+  color: #fff;
+  text-shadow: 2px 2px 0px #000;
+}
+
+.bench-header-stat img {
+  width: 24px;
+  height: 24px;
+}
+
+/* 8 bench slots matching coordinates on bench.png exactly */
+.bench-container {
+  position: absolute;
+  left: 30px;
+  top: 113px;
+  width: 1156px;
+  height: 123px;
+  display: flex;
+  justify-content: space-between;
+  background-color: transparent;
+  padding: 0;
+  border: none;
+}
+
+.bench-slot {
+  width: 128px;
+  height: 123px;
+  border: none;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  position: relative;
+}
+
+.bench-slot img {
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+}
+
+.bench-slot-cost {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 18px;
+  color: #e5c158;
+  text-shadow: 2px 2px 0px #000;
+}
+
+/* Complete button using complete.png background directly */
+.action-ready-btn {
+  position: absolute;
+  left: 1920px; /* Aligned exactly to the right of the bench container */
+  bottom: 20px;
+  width: 196px;
+  height: 150px;
+  background-image: url('/complete.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.action-ready-btn:active {
+  filter: brightness(0.8);
+  padding-top: 4px;
+}
+
+/* Grid layout cell markers overlay on Canvas (Matches screenConfig exactly) */
+.battle-grid-overlay {
+  position: absolute;
+  left: 588px;
+  top: 236px;
+  width: 1380px;
+  height: 707px;
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.battle-grid-cell {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Highlight regions */
+.battle-grid-cell.left-zone {
+  background-color: rgba(75, 163, 227, 0.02);
+}
+
+.battle-grid-cell.right-zone {
+  background-color: rgba(223, 62, 35, 0.02);
+}
+
+.battle-grid-cell.mid-zone {
+  background-color: rgba(255, 255, 255, 0.02);
+  border-left: 2px dashed rgba(255, 255, 255, 0.2);
+  border-right: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Active drop target highlight */
+.battle-grid-cell.drag-hover {
+  background-color: rgba(229, 193, 88, 0.25);
+  border: 1px solid #e5c158;
+}
+
+/* Locked cell - red border when dragging over */
+.battle-grid-cell.drag-hover-locked {
+  background-color: rgba(220, 50, 50, 0.25);
+  border: 2px solid #dc3232;
+}
+
+/* Landing target cell highlight (for Drill dig and Iron Monkey throw) */
+.battle-grid-cell.drag-target-landing {
+  background-color: rgba(75, 163, 227, 0.35) !important;
+  border: 2px dashed #4ba3e3 !important;
+}
+
+/* Drag overlay helper */
+.drag-avatar-helper {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+}
+
+/* DOM-based Health Bars floating on top of grid cells */
+.health-bars-overlay {
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 23%;
+  right: 23%;
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.hp-bar-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+.hp-bar-wrapper {
+  position: absolute;
+  width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hp-bar-fill {
+  width: 100%;
+  height: 4px;
+  background-color: #5ac54f;
+  transition: width 0.1s ease;
+}
+
+.shield-bar-fill {
+  width: 0%;
+  height: 2px;
+  background-color: #4ba3e3;
+  transition: width 0.1s ease;
+  margin-top: 1px;
+}
+
+
+/* --- Screen 3: Round Summary / Match End --- */
+.summary-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+/* Uses 详情.png as visual background frame for summary! */
+.summary-content {
+  width: 576px;
+  height: 603px;
+  background-image: url('/details.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.summary-header {
+  font-size: 20px;
+  color: #e5c158;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 0px #000;
+}
+
+.summary-score {
+  font-size: 24px;
+  color: #fff;
+  text-shadow: 2px 2px 0px #000;
+}
+
+.summary-stats-box {
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  border: 2px solid #5a5a5a;
+  padding: 16px;
+  flex-grow: 1;
+  margin: 12px 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  font-size: 18px;
+  color: #aaa;
+}
+
+/* Pixel art style combat chart */
+.combat-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chart-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-name {
+  font-size: 18px;
+  width: 120px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.chart-bar-container {
+  flex-grow: 1;
+  height: 12px;
+  background-color: #000;
+  border: 1px solid #5a5a5a;
+  padding: 1px;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  background-color: #df3e23;
+}
+
+.chart-bar-fill.healing {
+  background-color: #5ac54f;
+}
+
+.chart-val {
+  font-size: 18px;
+  width: 50px;
+  text-align: right;
+}

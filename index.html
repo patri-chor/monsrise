@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>怪兽崛起v1.1</title>
+</head>
+<body>
+  <div id="gameContainer">
+    <!-- Background layer (z-index: 1) -->
+    <div id="gameBg"></div>
+    
+    <!-- Canvas rendering (z-index: 2) -->
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+    
+    <!-- HTML DOM UI Overlay (z-index: 3) -->
+    <div id="uiOverlay">
+      <!-- UI modules will be dynamically injected here by UIManager -->
+    </div>
+  </div>
+  
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
