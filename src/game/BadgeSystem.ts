@@ -1,5 +1,7 @@
 import { PlacedMonster } from './GameEngine';
 import { vfx } from './VfxManager';
+import { gridToScreen } from './ScreenConfig';
+import { HIT } from './VfxPresets';
 
 /**
  * 徽章效果的上下文参数，用于在各个钩子之间传递战斗状态信息。
@@ -220,6 +222,26 @@ export abstract class BaseBadge {
     void _monster;
     void _dt;
     void _ctx;
+  }
+}
+
+// ==================== IntervalTimer 工具类 ====================
+
+/** 间隔定时器：管理多个实体的独立间隔计时 */
+export class IntervalTimer {
+  private _timers = new Map<string, number>();
+
+  /** 累加 dt，到达间隔返回 true 并重置，否则返回 false */
+  tick(id: string, dt: number, interval: number): boolean {
+    let t = this._timers.get(id) || 0;
+    t += dt;
+    if (t >= interval) {
+      t -= interval;
+      this._timers.set(id, t);
+      return true;
+    }
+    this._timers.set(id, t);
+    return false;
   }
 }
 
@@ -471,17 +493,12 @@ class RegenAuraBadge extends BaseBadge {
   readonly name = '回复光环';
   readonly desc = '每3s回复5%血量，自身受治疗后扩散30%治疗给范围2内队友';
 
-  private _timers = new Map<string, number>();
+  private _timer = new IntervalTimer();
 
   onTick(m: PlacedMonster, dt: number, ctx?: BadgeContext): void {
-    let t = this._timers.get(m.id) || 0;
-    t += dt;
-    if (t >= 3) {
-      t -= 3;
-      const healVal = Math.round(m.maxHp * 0.05);
-      ctx?.battle?.applyHeal(m, healVal);
+    if (this._timer.tick(m.id, dt, 3)) {
+      ctx?.battle?.applyHealWithChefBonus(m, m, Math.round(m.maxHp * 0.05), ctx.battle);
     }
-    this._timers.set(m.id, t);
   }
 
   onAfterHeal(m: PlacedMonster, ctx: BadgeContext): void {
@@ -498,7 +515,7 @@ class RegenAuraBadge extends BaseBadge {
       return dx + dy <= auraRange;
     });
     for (const ally of allies) {
-      battle.applyHeal(ally, spread);
+      battle.applyHealWithChefBonus(m, ally, spread, battle);
     }
   }
 }
@@ -510,7 +527,7 @@ class LifestealBadge extends BaseBadge {
   readonly desc = '普通攻击回复血量上限的2%';
 
   onAfterDealDamage(m: PlacedMonster, ctx: BadgeContext): void {
-    ctx.battle?.applyHeal(m, Math.round(m.maxHp * 0.02));
+    ctx.battle?.applyHealWithChefBonus(m, m, Math.round(m.maxHp * 0.02), ctx.battle);
   }
 }
 
@@ -552,13 +569,6 @@ class EnergyChargeBadge extends BaseBadge {
   }
 }
 
-function localGridToScreen(gridX: number, gridY: number): { x: number; y: number } {
-  return {
-    x: 588 + (gridX + 0.5) * 125.4,
-    y: 236 + (gridY + 0.5) * 141.4
-  };
-}
-
 // --- Badge 11: 预防 ---
 class PreventionBadge extends BaseBadge {
   readonly id = 11;
@@ -576,17 +586,13 @@ class PhalanxDefenseBadge extends BaseBadge {
   readonly name = '结阵守';
   readonly desc = '相邻有友方时，每2.5秒给自己和相邻的队友一格盾';
 
-  private _timers = new Map<string, number>();
+  private _timer = new IntervalTimer();
 
   onTick(m: PlacedMonster, dt: number, ctx?: BadgeContext): void {
     const battle = ctx?.battle;
     if (!battle) return;
 
-    let t = this._timers.get(m.id) || 0;
-    t += dt;
-    if (t >= 2.5) {
-      t -= 2.5;
-
+    if (this._timer.tick(m.id, dt, 2.5)) {
       const neighbors = battle.getAdjacentMonsters(m.gridX, m.gridY);
       const hasAlly = neighbors.some((n: PlacedMonster) => n.team === m.team && !n.isDead);
       if (hasAlly) {
@@ -598,7 +604,6 @@ class PhalanxDefenseBadge extends BaseBadge {
         }
       }
     }
-    this._timers.set(m.id, t);
   }
 }
 
@@ -635,13 +640,14 @@ class SageBadge extends BaseBadge {
 }
 
 // --- Badge 17: 大厨 ---
+// 大厨效果改为提供端加成（在各治疗产生点放大），此处不作为接收端重复加成
 class ChefBadge extends BaseBadge {
   readonly id = 17;
   readonly name = '大厨';
   readonly desc = '自身获得的所有治疗效果提升50%';
 
   modifyHeal(_m: PlacedMonster, amount: number, _ctx?: BadgeContext): number {
-    return Math.round(amount * 1.5);
+    return amount; // 提供端已在调用处放大，此处不做二次加成
   }
 }
 
@@ -670,7 +676,7 @@ class ResurrectBadge extends BaseBadge {
           // Re-occupy in place (ignore overlaps)
           battle._gridOccupation[m.gridX][m.gridY] = m;
 
-          const scrPos = localGridToScreen(m.gridX, m.gridY);
+          const scrPos = gridToScreen(m.gridX, m.gridY);
           battle.screenPositions.set(m.id, { ...scrPos });
           battle._targetPositions.set(m.id, { ...scrPos });
         }
@@ -709,20 +715,25 @@ class SniperBadge extends BaseBadge {
 class CounterBadge extends BaseBadge {
   readonly id = 21;
   readonly name = '反击';
-  readonly desc = '受到伤害后，下一次普通攻击必定暴击';
+  readonly desc = '受到伤害后，下一次攻击必定暴击';
 
   private _ready = new Set<string>();
 
   onAfterTakeDamage(m: PlacedMonster, _ctx: BadgeContext): void {
-    this._ready.add(m.id);
+    if (!m.isDead) this._ready.add(m.id);
   }
 
-  modifyDamage(m: PlacedMonster, dmg: number, _ctx: BadgeContext): number {
+  modifyDamage(m: PlacedMonster, dmg: number, ctx: BadgeContext): number {
     if (this._ready.has(m.id)) {
       this._ready.delete(m.id);
+      ctx.isCrit = true;
       return Math.round(dmg * 1.5);
     }
     return dmg;
+  }
+
+  onAfterDeath(m: PlacedMonster, _ctx: BadgeContext): void {
+    this._ready.delete(m.id);
   }
 }
 
@@ -782,7 +793,7 @@ class TenacityBadge extends BaseBadge {
       const targetPulse = 3 - Math.ceil(s.timer);
       if (targetPulse > s.pulse && targetPulse <= 3) {
         s.pulse = targetPulse;
-        ctx?.battle?.applyHeal(m, Math.round(m.maxHp * 0.18));
+        ctx?.battle?.applyHealWithChefBonus(m, m, Math.round(m.maxHp * 0.18), ctx.battle);
       }
       if (s.timer <= 0) {
         s.phase = 'cd';
@@ -826,16 +837,50 @@ class BombBadge extends BaseBadge {
     if (!battle) return;
     const totalDmg = this._totalDmg.get(m.id) || 0;
     const explosion = Math.round(totalDmg * 0.4);
-    const enemies = battle._monsters.filter(
-      (e: PlacedMonster) => !e.isDead && e.team !== m.team
-    ).filter((e: PlacedMonster) => {
-      const dx = Math.abs(e.gridX - m.gridX);
-      const dy = Math.abs(e.gridY - m.gridY);
-      return dx <= 1 && dy <= 1;
-    });
-    for (const enemy of enemies) {
-      battle.applyDamage(enemy, explosion, null);
-    }
+
+    const scrPos = gridToScreen(m.gridX, m.gridY);
+
+    // 炸弹效果整体延迟0.3s触发
+    battle.scheduler.schedule(() => {
+      if (!battle.active) return;
+
+      // Phase 1: 冲击波环（向外扩散后消退）
+      vfx.addParticle(scrPos.x, scrPos.y, 'wind_circle', 1.1, '#ffd28c', 80);
+
+      // Phase 2: 中央核心闪光（径向渐变白→黄→橙）
+      vfx.addParticle(scrPos.x, scrPos.y, 'blast_core', 0.36, '#ffffff', 70);
+
+      // Phase 3: 火花粒子（40个，带重力弹道，从亮黄变为橙色）
+      for (let i = 0; i < 40; i++) {
+        vfx.addParticle(scrPos.x, scrPos.y, 'blast_spark', 0.6 + Math.random() * 0.5, '#ffcc00', 1.5 + Math.random() * 2);
+      }
+
+      // Phase 4: 火焰粒子（32个，径向扩散，颜色渐变）
+      battle.scheduler.schedule(() => {
+        for (let i = 0; i < 32; i++) {
+          vfx.addParticle(scrPos.x, scrPos.y, 'blast_flame', 0.6 + Math.random() * 0.44, '#ff6600', 6 + Math.random() * 5);
+        }
+      }, 0.04);
+
+      // Phase 5: 烟雾粒子（30个，延迟0.5s后生成，膨胀上浮）
+      battle.scheduler.schedule(() => {
+        for (let i = 0; i < 30; i++) {
+          vfx.addParticle(scrPos.x, scrPos.y, 'blast_smoke', 0.9 + Math.random() * 0.4, '#444444', 10 + Math.random() * 10);
+        }
+      }, 0.5);
+
+      // 爆炸伤害
+      const enemies = battle._monsters.filter(
+        (e: PlacedMonster) => !e.isDead && e.team !== m.team
+      ).filter((e: PlacedMonster) => {
+        const dx = Math.abs(e.gridX - m.gridX);
+        const dy = Math.abs(e.gridY - m.gridY);
+        return dx <= 1 && dy <= 1;
+      });
+      for (const enemy of enemies) {
+        battle.applyDamage(enemy, explosion, null);
+      }
+    }, 0.3);
   }
 }
 
@@ -867,10 +912,12 @@ class SacrificeBadge extends BaseBadge {
   readonly name = '献祭';
   readonly desc = '免疫所有控制，每2s让周围1格内敌人燃烧流失20血';
 
-  private _timers = new Map<string, number>();
+  private _timer = new IntervalTimer();
 
   onApplyStatusEffect(_m: PlacedMonster, effect: any): boolean {
-    if (effect.type === 'stun' || effect.type === 'chill') {
+    // 免疫所有负面状态：stun, chill, burn, poison, bleed
+    const blockedTypes = ['stun', 'chill', 'burn', 'poison', 'bleed'];
+    if (blockedTypes.includes(effect.type)) {
       return false;
     }
     return true;
@@ -880,11 +927,10 @@ class SacrificeBadge extends BaseBadge {
     const battle = ctx?.battle;
     if (!battle) return;
 
-    let t = this._timers.get(m.id) || 0;
-    t += dt;
-    if (t >= 2.0) {
-      t -= 2.0;
-      battle.applyDamage(m, 16, null, false, false, true);
+    if (this._timer.tick(m.id, dt, 2.0)) {
+      battle.applyDamage(m, 16, null, { bypassesShield: true });
+      // 自伤触发祈祷链疗
+      battle.tryTriggerPriestHeal(m);
 
       const targets = battle.getMonstersInGridRange(m.gridX, m.gridY, 1);
       for (const target of targets) {
@@ -893,7 +939,6 @@ class SacrificeBadge extends BaseBadge {
         }
       }
     }
-    this._timers.set(m.id, t);
   }
 }
 
@@ -929,13 +974,26 @@ class ReactiveArmorBadge extends BaseBadge {
     const dmg = shieldReduced * 4;
     const pos = battle.screenPositions.get(m.id);
     if (pos) {
-      vfx.addParticle(pos.x, pos.y, 'explosion', 0.4, '#ffffff', 12);
+      // 中心白闪（50ms 瞬闪）
+      vfx.addParticle(pos.x, pos.y, 'blast_core', 0.1, '#ffffff', 90);
+      // 硬质碎片爆发 ×3 层覆盖一格范围（~128px）
+      for (let burst = 0; burst < 3; burst++) {
+        battle.scheduler.schedule(() => {
+          const sp = battle.screenPositions.get(m.id);
+          if (!sp) return;
+          for (let i = 0; i < 3; i++) {
+            vfx.spawnParticle(sp.x, sp.y, HIT.reactiveArmor);
+          }
+        }, burst * 0.04);
+      }
     }
 
     const enemies = battle.getMonstersInGridRange(m.gridX, m.gridY, 1)
       .filter((e: PlacedMonster) => e.team !== m.team && !e.isDead && !(e as any).resurrecting);
     for (const e of enemies) {
       battle.applyDamage(e, dmg, m);
+      // 反甲伤害触发祈祷链疗
+      battle.tryTriggerPriestHeal(m);
     }
   }
 }
@@ -953,7 +1011,7 @@ class VoodooBadge extends BaseBadge {
   readonly name = '巫毒';
   readonly desc = '战斗开始前10秒免疫死亡，每5s将血量强制置为20%';
 
-  private _timers = new Map<string, number>();
+  private _timer = new IntervalTimer();
 
   onBeforeDeath(m: PlacedMonster, ctx: BadgeContext): boolean {
     const battle = ctx.battle;
@@ -967,13 +1025,9 @@ class VoodooBadge extends BaseBadge {
   }
 
   onTick(m: PlacedMonster, dt: number, _ctx?: BadgeContext): void {
-    let t = this._timers.get(m.id) || 0;
-    t += dt;
-    if (t >= 5.0) {
-      t -= 5.0;
+    if (this._timer.tick(m.id, dt, 5.0)) {
       m.hp = Math.floor(m.maxHp * 0.2);
     }
-    this._timers.set(m.id, t);
   }
 }
 
@@ -990,10 +1044,6 @@ class GiftBadge extends BaseBadge {
     if (closestAlly) {
       const giftAtk = Math.round(m.atk * 0.3);
       closestAlly.atk += giftAtk;
-      const aPos = battle.screenPositions.get(closestAlly.id);
-      if (aPos) {
-        vfx.addFloatingText(aPos.x, aPos.y, `+${giftAtk} ATK`, '#e5c158');
-      }
     }
   }
 }

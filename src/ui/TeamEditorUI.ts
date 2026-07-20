@@ -1,5 +1,5 @@
 import { gameEngine } from '../game/GameEngine';
-import { DB_MONSTERS, DB_BADGES, BADGE_SPRITES } from '../game/Database';
+import { DB_MONSTERS, DB_BADGES, BADGE_SPRITES, getSkillDescription } from '../game/Database';
 import { uiManager } from './UIManager';
 
 const TAB_LEFT_COORDS = [62, 156, 250, 344, 438];
@@ -76,6 +76,103 @@ export class TeamEditorUI {
           border: none;
           background: transparent;
         " />
+      </div>
+    `;
+  }
+
+  /**
+   * Directly update the details card DOM only (no full re-render).
+   * Avoids flickering in the monster select modal since the scroll
+   * position and DOM for the modal grid are not touched.
+   */
+  private updateDetailsCard(monster: any): void {
+    this._previewMonster = monster;
+    const activeTeam = gameEngine.activeTeam;
+    const activeSlot = activeTeam[this._selectedSlotIndex];
+    const detailCard = this._container.querySelector('.details-card') as HTMLElement | null;
+    if (!detailCard) return;
+
+    detailCard.style.zIndex = '101';
+    detailCard.innerHTML = `
+      <!-- Avatar Frame -->
+      <div class="details-avatar-frame">
+        ${monster ? `
+          <img src="all.png" style="
+            object-fit: none;
+            object-position: -${monster.sx}px -${monster.sy}px;
+            width: ${monster.sw}px;
+            height: ${monster.sh}px;
+          " />
+        ` : ''}
+      </div>
+
+      <!-- Stars and Race/Role -->
+      <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
+        <span style="font-size: 14px; color: #e5c158;">★★★</span>
+        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold;">[ ${monster.race} | ${monster.role} ]</span>
+      </div>
+
+      <!-- Name banner -->
+      <div class="details-name-banner">${monster.name}</div>
+
+      <!-- Stats overlays (values only) -->
+      <div class="details-val details-val-hp">${monster.hp}/${monster.hp}</div>
+      <div class="details-val details-val-atk">${monster.atk}</div>
+      <div class="details-val details-val-ats">${monster.ats}</div>
+      <div class="details-val details-val-range">${monster.range}</div>
+      <div class="details-val details-val-shield">0</div>
+      <div class="details-val details-val-cd">${monster.skillCd}</div>
+      <div class="details-val details-val-speed">${monster.speed}</div>
+
+      <!-- Skill Box -->
+      <div class="details-skill-section">
+        <div class="details-skill-icon-frame">
+          ${this.getSkillIconHtml(monster.skill)}
+        </div>
+        <div class="details-skill-desc-box">
+          <div style="color:#e5c158; font-size:10px; margin-bottom:4px;">${monster.skill} (CD: ${monster.skillCd}s)</div>
+          <div>${getSkillDescription(monster)}</div>
+        </div>
+      </div>
+
+      <!-- Equipped Badges Slots -->
+      <div class="details-badges-section">
+        ${Array(monster.cost === 4 ? 3 : 2).fill(0).map((_, badgeIdx) => {
+          const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
+          const badge = DB_BADGES.find(b => b.id === badgeId);
+          
+          let badgeImgHtml = `<span style="font-size:24px; color:#5a5a5a;">+</span>`;
+          if (badge) {
+            const sprite = BADGE_SPRITES[badge.id];
+            if (sprite) {
+              const scale = 64 / sprite.sw;
+              const imgW = 2556 * scale;
+              const imgH = 1417 * scale;
+              const left = -sprite.sx * scale;
+              const top = -sprite.sy * scale;
+              badgeImgHtml = `
+                <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
+                  <img src="badge.png" style="
+                    position: absolute;
+                    left: ${left}px;
+                    top: ${top}px;
+                    width: ${imgW}px;
+                    height: ${imgH}px;
+                    border: none;
+                    background: transparent;
+                  " />
+                </div>
+              `;
+            }
+          }
+
+          const equippedClass = badge ? 'equipped' : '';
+          return `
+            <div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">
+              ${badgeImgHtml}
+            </div>
+          `;
+        }).join('')}
       </div>
     `;
   }
@@ -160,7 +257,7 @@ export class TeamEditorUI {
             </div>
             <div class="details-skill-desc-box">
               <div style="color:#e5c158; font-size:10px; margin-bottom:4px;">${selectedMonster.skill} (CD: ${selectedMonster.skillCd}s)</div>
-              <div>${this.getSkillChineseDescription(selectedMonster.id)}</div>
+              <div>${getSkillDescription(selectedMonster)}</div>
             </div>
           </div>
 
@@ -329,42 +426,69 @@ export class TeamEditorUI {
               <div class="modal-badge-name" style="color: #ff3333;">卸下徽章</div>
               <div class="modal-badge-desc">空置该徽章槽位</div>
             </div>
-            ${DB_BADGES.map(b => {
-              const isUsed = activeSlot && activeSlot.badgeIds.some((id, idx) => idx !== this._activeBadgeSelectIndex && id === b.id);
-              const cardStyle = isUsed ? 'opacity: 0.4; pointer-events: none; filter: grayscale(1);' : '';
-              const sprite = BADGE_SPRITES[b.id];
-              let badgeHtml = '';
-              if (sprite) {
-                const scale = 120 / sprite.sw;
-                const imgW = 2556 * scale;
-                const imgH = 1417 * scale;
-                const left = -sprite.sx * scale;
-                const top = -sprite.sy * scale;
-                const height = sprite.sh * scale;
-                badgeHtml = `
-                  <div style="width: 120px; height: ${height}px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent; flex-shrink: 0; margin-bottom: 8px;">
-                    <img src="badge.png" style="
-                      position: absolute;
-                      left: ${left}px;
-                      top: ${top}px;
-                      width: ${imgW}px;
-                      height: ${imgH}px;
-                      border: none;
-                      background: transparent;
-                    " />
+            ${(() => {
+              const BADGE_GROUPS: number[][] = [
+                [23, 8, 17, 6, 7, 11, 28, 30],   // 韧性、厚皮、大厨、回环、吸血、预防、加固、反应装甲
+                [3, 22, 21, 20, 5, 1,10],            // 破盾、鲁莽、反击、狙击、助跑、穿透
+                [25, 27, 4, 2,9],                   // 中毒、献祭、元素涌动、凋零
+                [32, 24, 33, 18,],              // 巫毒、复活、礼物、延伸、蓄能
+                [16,13, 12, 29, 35],                 // 结阵攻、结阵守、哨位、接力
+              ];
+              const groupedIds = new Set<number>();
+              BADGE_GROUPS.flat().forEach(id => groupedIds.add(id));
+
+              const renderBadgeCard = (b: any): string => {
+                const isUsed = activeSlot && activeSlot.badgeIds.some((id: number, idx: number) => idx !== this._activeBadgeSelectIndex && id === b.id);
+                const cardStyle = isUsed ? 'opacity: 0.4; pointer-events: none; filter: grayscale(1);' : '';
+                const sprite = BADGE_SPRITES[b.id];
+                let badgeHtml = '';
+                if (sprite) {
+                  const scale = 120 / sprite.sw;
+                  const imgW = 2556 * scale;
+                  const imgH = 1417 * scale;
+                  const left = -sprite.sx * scale;
+                  const top = -sprite.sy * scale;
+                  const height = sprite.sh * scale;
+                  badgeHtml = `
+                    <div style="width: 120px; height: ${height}px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent; flex-shrink: 0; margin-bottom: 8px;">
+                      <img src="badge.png" style="
+                        position: absolute;
+                        left: ${left}px;
+                        top: ${top}px;
+                        width: ${imgW}px;
+                        height: ${imgH}px;
+                        border: none;
+                        background: transparent;
+                      " />
+                    </div>
+                  `;
+                }
+                return `
+                  <div class="modal-badge-card" data-badge-id="${b.id}" style="${cardStyle}">
+                    ${badgeHtml}
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
+                      <div class="modal-badge-name">${b.name}</div>
+                      <div class="modal-badge-desc">${b.desc}</div>
+                    </div>
                   </div>
                 `;
+              };
+
+              let html = '';
+              for (const group of BADGE_GROUPS) {
+                for (const id of group) {
+                  const b = DB_BADGES.find(b => b.id === id);
+                  if (b) html += renderBadgeCard(b);
+                }
+                html += `<div style="grid-column: span 5; height: 2px; background: #5a5a5a; margin: 4px 0;"></div>`;
               }
-              return `
-                <div class="modal-badge-card" data-badge-id="${b.id}" style="${cardStyle}">
-                  ${badgeHtml}
-                  <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center;">
-                    <div class="modal-badge-name">${b.name}</div>
-                    <div class="modal-badge-desc">${b.desc}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+              for (const b of DB_BADGES) {
+                if (!groupedIds.has(b.id)) {
+                  html += renderBadgeCard(b);
+                }
+              }
+              return html;
+            })()}
           </div>
           <button id="closeBadgeModalBtn" class="pixel-btn" style="width: 240px; height: 60px; font-size: 24px; align-self: center;">取消</button>
           
@@ -382,8 +506,10 @@ export class TeamEditorUI {
     monsterCards.forEach(card => {
       card.addEventListener('click', () => {
         const id = parseInt(card.getAttribute('data-monster-id') || '0', 10);
-        this._previewMonster = DB_MONSTERS.find(m => m.id === id) || null;
-        this.render();
+        const monster = DB_MONSTERS.find(m => m.id === id) || null;
+        if (monster) {
+          this.updateDetailsCard(monster);
+        }
       });
       card.addEventListener('dblclick', () => {
         const id = parseInt(card.getAttribute('data-monster-id') || '0', 10);
@@ -451,37 +577,6 @@ export class TeamEditorUI {
       });
     });
 
-  }
-
-  private getSkillChineseDescription(dbId: number): string {
-    const skillMap: Record<number, string> = {
-      101: "撕裂：旋转对周围一圈敌人造成 120 伤害，并附带流血效果（流血：每秒受到 40 伤害，持续 3s）。",
-      102: "奥术闪电：对范围内最多 4 个敌人造成 570 伤害，并有 50% 概率附加 2 秒眩晕。",
-      103: "生命链接：将范围内所有友方的生命值按百分比平均分摊。",
-      104: "燃烧弹：发射燃7枚燃烧弹，施加燃烧并击退目标。",
-      105: "治愈：战斗开始时连接周围友军，自身攻击造成伤害时回血40。",
-      106: "冲锋：战斗开始时快速冲锋，撞飞对手造成800伤害，给自己增加 6 层护盾。",
-      107: "咒法大炮：战斗开始时发射蓄力子弹，对直线上的敌人造成1235伤害。",
-      108: "跳跃重击：跳跃至最近受伤 of 友方身边，对落点周围敌人造成 540 伤害。",
-      109: "精准射击：下一次攻击造成900倍伤害，对生命值高于80%的敌人额外造成300伤害。",
-      110: "帝国铁盾：每 6 秒给自己和相邻友方 5 层护盾，开局也生效一次。护盾可减免 60% 伤害，每受一次伤害减 1 层。",
-      111: "旋风斩：旋转大剑对周围一圈敌人造成 2 倍攻击力的范围伤害。",
-      112: "守护之剑：造成235伤害，使周围友方回复 5% 生命值（生效两次），自己额外回复 8%。",
-      113: "高能炸弹：普通攻击能同时攻击到相邻的怪兽。",
-      114: "突突突：开局攻速提升 200%，攻击力提升 12，持续 2.5s。",
-      115: "不屈意志：每 10 秒回血 500；生命值低于 1000 时，所有普通攻击必定暴击。",
-      116: "地道战：开局向前挖掘 6 格，沿途敌人眩晕，并给自己增加 6 层护盾。",
-      117: "人间大炮：将身后怪兽向前投出，两个怪兽同时获得 8 层护盾，落点周围造成盾值 45 倍的范围伤害。",
-      118: "突进斩击：突进到周围一个目标身后造成 192 伤害，共突进 3 次。",
-      119: "飞雷神：战斗开始时瞬移到最远敌人身边。每释放两次技能获得 2 秒隐身。",
-      120: "强化：使范围2内的友方攻击力增加 30，持续 3s。",
-      121: "修行：攻击力增加 40，生命上限增加 300，但生命上限扣减 20% 当前血量。",
-      122: "狂野：攻速增加 10%，可无限叠加。",
-      123: "猛击：用棒球棍猛击，对敌人造成 207 伤害，每释放两次技能召唤一个小猴参战。",
-      124: "大雪球：使范围2内的怪兽寒冷（攻速-35%），并造成1  90伤害。",
-      125: "适应：吸收范围1内的所有效果，每吸收一个提升最大血量 30，增加攻击力 50，持续 2 秒。"
-    };
-    return skillMap[dbId] || "普通攻击：无特殊技能。";
   }
 
   // Override standard render to handle afterRender callbacks for modals

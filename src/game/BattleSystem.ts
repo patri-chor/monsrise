@@ -1,6 +1,9 @@
 import { gameEngine, PlacedMonster } from './GameEngine';
-import { vfx } from './VfxManager';
-import { getSkill } from './skills/SkillSystem';
+import { vfx, tntImage } from './VfxManager';
+import type { Projectile, BoltType } from './VfxManager';
+import { HIT, SKILL, BULLET_OFFSET, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
+import { screenConfig, gridToScreen } from './ScreenConfig';
+import { getSkill } from './SkillSystem';
 import { GameTickScheduler } from './GameTickScheduler';
 import {
   badgeOnPlace, badgeOnStartOfBattle, badgeModifyDamage, badgeModifyIncomingDamage,
@@ -9,6 +12,20 @@ import {
   badgeOnSkillCast, badgeOnBeforeDeath, badgeOnAfterDeath, badgeOnTick,
   badgeOnApplyStatusEffect, getMonsterBadges, BadgeContext
 } from './BadgeSystem';
+
+// 段式攻击配置（用户可手动调整以下参数）
+// count    = 每轮攻击次数
+// delay    = 段内攻击间隔(秒)
+// panelDiv = 面板攻速除数（面板显示 ats / panelDiv，默认 = count）
+// 攻时     = count * delay（每轮攻击总时长，供参考，攻速变化时不变）
+// 间隔     = count / ats（两轮之间的冷却，攻速变化时随之改变）
+const BURST_CONFIG: Record<number, { count: number; delay: number; panelDiv: number }> = {
+  108: { count: 2,  delay: 0.5, panelDiv: 2  },  // 救星骑士   ats=1.00  攻时=1s  间隔=2.00s
+  114: { count: 4,  delay: 0.25, panelDiv: 4  },  // 突突突矿工 ats=2.14  攻时=1s  间隔=1.87s
+  116: { count: 10, delay: 0.37, panelDiv: 10 },  // 钻头       ats=2.38  攻时=3.7s  间隔=4.20s
+  120: { count: 5,  delay: 0.3, panelDiv: 5  },  // 金面猴王   ats=2.50  攻时=1.5s  间隔=2.00s
+  122: { count: 5,  delay: 0.2, panelDiv: 5  },  // 丛林猴     ats=2.70  攻时=1s  间隔=1.85s
+};
 
 export interface KnockbackState {
   startX: number;
@@ -35,23 +52,8 @@ export function isP1Monster(m: PlacedMonster): boolean {
   return m.team === 1;
 }
 
-export const screenConfig = {
-  width: 2556,
-  height: 1179,
-  leftOffset: 588,
-  topOffset: 236,
-  gridW: 1380,
-  gridH: 707,
-  cellW: 125.4,
-  cellH: 141.4
-};
-
-export function gridToScreen(gridX: number, gridY: number): { x: number; y: number } {
-  return {
-    x: screenConfig.leftOffset + (gridX + 0.5) * screenConfig.cellW,
-    y: screenConfig.topOffset + (gridY + 0.5) * screenConfig.cellH
-  };
-}
+// Re-exported from ScreenConfig for backward compatibility
+export { screenConfig, gridToScreen } from './ScreenConfig';
 
 export class BattleSystem {
   private static _instance: BattleSystem | null = null;
@@ -97,7 +99,7 @@ export class BattleSystem {
 
   // Replay & End-game delay
   private _battleEndingTimer: number = -1;
-  private _pendingWinner: 1 | 2 | null = null;
+
   public scheduler: GameTickScheduler = new GameTickScheduler();
   public _summonCounter: number = 0;
 
@@ -122,7 +124,7 @@ export class BattleSystem {
     this._lastDamagedFriendlyIdP1 = null;
     this._lastDamagedFriendlyIdP2 = null;
     this._battleEndingTimer = -1;
-    this._pendingWinner = null;
+
     this.scheduler.clear();
     this._summonCounter = 0;
     gameEngine.setReplaySeed(gameEngine.currentRound * 1000 + 456);
@@ -130,8 +132,9 @@ export class BattleSystem {
     // Decoupled projectile tracking visual target provider
     vfx.getTargetPosition = (id) => this.screenPositions.get(id);
 
-    // AABB 子弹体积碰撞检测
-    vfx.bulletCollisionCheck = (x, y, bulletSize = 8) => {
+    // AABB 子弹体积碰撞检测（仅碰撞敌方单位）
+    vfx.bulletCollisionCheck = (x, y, bulletSize = 8, ownerId) => {
+      const ownerTeam = ownerId ? this._monsters.find(m => m.id === ownerId)?.team : null;
       const hb = bulletSize / 2;
       const bx1 = x - hb;
       const bx2 = x + hb;
@@ -139,12 +142,14 @@ export class BattleSystem {
       const by2 = y + hb;
 
       for (const m of this._monsters) {
-        if (m.isDead || (m as any).resurrecting) continue;
+        if (m.isDead || (m as any).resurrecting || (m as any).deepStealth) continue;
+        // 跳过己方单位（含发射者自身）
+        if (ownerTeam !== null && m.team === ownerTeam) continue;
         const pos = this.screenPositions.get(m.id);
         if (!pos) continue;
-        // 考虑 0.8 倍实际渲染缩放
-        const hw = (m.data.sw * 0.8) / 2;
-        const hh = (m.data.sh * 0.8) / 2;
+        // 缩小碰撞盒使判定接近视觉中心
+        const hw = (m.data.sw * 0.4) / 2;
+        const hh = (m.data.sh * 0.4) / 2;
         
         const mx1 = pos.x - hw;
         const mx2 = pos.x + hw;
@@ -184,13 +189,26 @@ export class BattleSystem {
       this.screenPositions.set(m.id, { ...screenPos });
       this._targetPositions.set(m.id, { ...screenPos });
       
-      this._attackTimers.set(m.id, 0);
+      // 先攻击再冷却：初始计时器设为攻击间隔，首帧即触发攻击
+      const initBurstCount = BURST_CONFIG[m.dbId]?.count || 0;
+      const atkInterval = initBurstCount > 0 ? initBurstCount / m.ats : 1 / m.ats;
+      this._attackTimers.set(m.id, atkInterval);
       
       m.skillCdProgress = 0;
       (m as any).skillReady = false;
       (m as any).skillAnimationTimeLeft = 0;
-      (m as any).digging = false;
+      (m as any).deepStealth = false;
+      (m as any).burrowing = false;
       (m as any).currentTargetId = undefined;
+
+      // 段式攻击配置
+      const burstCfg = BURST_CONFIG[m.dbId];
+      (m as any).burstCount = burstCfg ? burstCfg.count : 0;
+      (m as any).burstDelay = burstCfg ? burstCfg.delay : 0;
+      (m as any).burstAttacksLeft = 0;
+      (m as any).burstTimer = 0;
+      (m as any).burstTargetId = '';
+
       m.state = 'idle';
     }
 
@@ -250,7 +268,19 @@ export class BattleSystem {
       this._battleEndingTimer -= dt;
       if (this._battleEndingTimer <= 0) {
         this._battleEndingTimer = -1;
-        this.endBattle(this._pendingWinner);
+        // 延迟结束后重新检查存活，避免飞行弹幕/DoT 导致同归于尽误判
+        const p1Alive = this._monsters.some(m => !m.isDead && isP1Monster(m));
+        const p2Alive = this._monsters.some(m => !m.isDead && !isP1Monster(m));
+        if (p1Alive && p2Alive) return; // 双方都活着，取消结束
+        let finalWinner: 1 | 2 | null = null;
+        if (!p1Alive && !p2Alive) {
+          finalWinner = null;
+        } else if (!p1Alive) {
+          finalWinner = 2;
+        } else {
+          finalWinner = 1;
+        }
+        this.endBattle(finalWinner);
         return;
       }
     } else {
@@ -295,6 +325,12 @@ export class BattleSystem {
         }
       }
 
+      // Decrement skill rotation timer（肃清哥旋转）
+      if ((m as any)._rotationRemaining > 0) {
+        (m as any)._rotationRemaining -= dt;
+        m.state = 'skill';
+      }
+
       // Smooth position interpolation must run BEFORE stun check so leaps/knockbacks update visually
       this.interpolatePosition(m, dt);
 
@@ -303,14 +339,14 @@ export class BattleSystem {
         m.statusEffects.some(e => e.type === 'stun') || 
         (m as any).chargingCannon ||
         ((m as any).skillAnimationTimeLeft && (m as any).skillAnimationTimeLeft > 0) ||
-        (m as any).digging ||
+        (m as any).burrowing ||
         this._leaps.has(m.id)
       ) {
         if ((m as any).chargingCannon) {
           m.state = 'skill';
         } else if (m.statusEffects.some(e => e.type === 'stun')) {
           m.state = 'idle';
-        } else if ((m as any).digging) {
+        } else if ((m as any).burrowing) {
           m.state = 'skill';
         }
         continue;
@@ -329,52 +365,95 @@ export class BattleSystem {
       const cdSpeed = this._cdMultipliers.get(m.id) || 1.0;
       m.skillCdProgress += dt * cdSpeed;
 
-      // 1. FIRST PRIORITY: Try normal attack
-      const interval = 1 / m.ats;
-      let attackedThisFrame = false;
-      if (atkTimer >= interval) {
-        const attacked = this.performNormalAttack(m);
-        if (attacked) {
+      let actedThisFrame = false;
+      const burstCount = (m as any).burstCount || 0;
+      const interval = burstCount > 0 ? burstCount / m.ats : 1 / m.ats;
+
+      if ((m as any).burstAttacksLeft > 0) {
+        // 段内连发（不中断，继续射完）
+        (m as any).burstTimer += dt;
+        while ((m as any).burstTimer >= (m as any).burstDelay && (m as any).burstAttacksLeft > 0) {
+          (m as any).burstTimer -= (m as any).burstDelay;
+          const lockedTarget = this._monsters.find(
+            e => e.id === (m as any).burstTargetId && !e.isDead && !(e as any).resurrecting
+          );
+          if (lockedTarget) {
+            const prevTarget = (m as any).currentTargetId;
+            (m as any).currentTargetId = (m as any).burstTargetId;
+            this.performNormalAttack(m);
+            (m as any).currentTargetId = prevTarget;
+            actedThisFrame = true;
+            m.state = 'attack';
+          }
+          (m as any).burstAttacksLeft--;
+        }
+        if ((m as any).burstAttacksLeft === 0) {
+          (m as any).burstTargetId = '';
           this._attackTimers.set(m.id, 0);
-          attackedThisFrame = true;
-          m.state = 'attack';
+        }
+      } else if (atkTimer >= interval) {
+        // 冷却到期：先尝试技能，再普攻
+        if (m.data.skillCd > 0 && m.skillCdProgress >= m.data.skillCd) {
+          const casted = this.castSkill(m);
+          if (casted) {
+            m.skillCdProgress = 0;
+            this._attackTimers.set(m.id, 0);
+            actedThisFrame = true;
+
+            let animDur = 1 / m.ats;
+            if (m.data.skill === 'shield' || m.data.skill === 'shot' || m.data.skill === 'shadow') {
+              animDur = 0.2;
+              if (m.data.skill === 'shadow') (m as any)._tiltTotal = animDur;
+            } else if (m.data.skill === 'life_link') {
+              animDur = 0.25;
+            } else if (m.data.skill === 'heal_sword') {
+              animDur = 1.0;
+            } else if (m.data.skill === 'unyielding') {
+              animDur = 0.3;
+            } else if (m.data.skill === 'attack' || m.data.skill === 'cultivation' || m.data.skill === 'anger' || m.data.skill === 'conversion') {
+              animDur = 0;
+            }
+            if (animDur > 0) {
+              (m as any).skillAnimationTimeLeft = animDur;
+              m.state = 'skill';
+            }
+
+            const pos = this.screenPositions.get(m.id);
+            if (pos) {
+              vfx.spawnParticle(pos.x - 24, pos.y - 24, SKILL.cooldownReady.star);
+            }
+          }
+        }
+
+        // 技能没触发，尝试普攻
+        if (!actedThisFrame) {
+          if (burstCount > 0) {
+            const target = this.findClosestEnemy(m, true);
+            if (target) {
+              (m as any).burstTargetId = target.id;
+              (m as any).burstAttacksLeft = burstCount;
+              (m as any).burstTimer = 0;
+              const prevTarget = (m as any).currentTargetId;
+              (m as any).currentTargetId = target.id;
+              this.performNormalAttack(m);
+              (m as any).currentTargetId = prevTarget;
+              (m as any).burstAttacksLeft--;
+              actedThisFrame = true;
+              m.state = 'attack';
+            }
+          } else {
+            const attacked = this.performNormalAttack(m);
+            if (attacked) {
+              this._attackTimers.set(m.id, 0);
+              actedThisFrame = true;
+              m.state = 'attack';
+            }
+          }
         }
       }
 
-      // 2. SECOND PRIORITY: Try skill casting in interval/idle
-      if (!attackedThisFrame && m.data.skillCd > 0 && m.skillCdProgress >= m.data.skillCd) {
-        const casted = this.castSkill(m);
-        if (casted) {
-          m.skillCdProgress = 0;
-          
-          // Compute skill casting animation duration to lock actions
-          let animDur = 1 / m.ats;
-          if (m.data.skill === 'shield' || m.data.skill === 'shot' || m.data.skill === 'shadow') {
-            animDur = 0.2;
-          } else if (m.data.skill === 'life_link') {
-            animDur = 0.25;
-          } else if (m.data.skill === 'heal_sword') {
-            animDur = 1.0;
-          } else if (m.data.skill === 'unyielding') {
-            animDur = 0.3;
-          } else if (m.data.skill === 'attack' || m.data.skill === 'cultivation' || m.data.skill === 'anger' || m.data.skill === 'conversion') {
-            animDur = 0;
-          }
-          
-          if (animDur > 0) {
-            (m as any).skillAnimationTimeLeft = animDur;
-            m.state = 'skill';
-          }
-
-          const pos = this.screenPositions.get(m.id);
-          if (pos) {
-            vfx.addParticle(pos.x - 24, pos.y - 24, 'star', 0.4, '#ffffff', 20);
-          }
-        }
-      }
-
-      // 3. THIRD PRIORITY: AI movement (only if we did not attack)
-      if (!attackedThisFrame) {
+      // 本帧没有动作：移动 AI
+      if (!actedThisFrame) {
         this.performMovementAI(m, dt);
       }
     }
@@ -454,6 +533,10 @@ export class BattleSystem {
           }
         }
       }
+      // 冰冻效果：技能冷却速度降低 30%
+      if (m.statusEffects.some(e => e.type === 'freeze')) {
+        totalMult *= 0.7;
+      }
       this._cdMultipliers.set(m.id, totalMult);
     }
   }
@@ -477,25 +560,77 @@ export class BattleSystem {
             if (effect.type === 'poison') {
               tickDmg = 15; // Poison: 15 dmg/s
             } else if (effect.type === 'bleed') {
-              tickDmg = 40; // Bleed: 40 dmg/s
+              tickDmg = Math.round(m.maxHp * 0.02); // 2% max HP per second
             } else if (effect.type === 'burn') {
               tickDmg = 20; // Burn: 20 dmg/s
             }
 
             const ticks = Math.floor(effect.tickTimer);
-            this.applyDamage(m, tickDmg * ticks, null, false, false, true);
+            this.applyDamage(m, tickDmg * ticks, null, { bypassesShield: true });
 
             // If burn, also deal damage to all adjacent targets
             if (effect.type === 'burn') {
               const neighbors = this.getAdjacentMonsters(m.gridX, m.gridY);
               for (const n of neighbors) {
                 if (!n.isDead && !(n as any).resurrecting) {
-                  this.applyDamage(n, tickDmg * ticks, null, false, false, true);
+                  this.applyDamage(n, tickDmg * ticks, null, { bypassesShield: true });
                 }
               }
             }
 
             effect.tickTimer -= ticks;
+          }
+        }
+
+        // 燃烧 VFX：定时器每 0.35s 生成火焰粒子（减慢频率）
+        if (effect.type === 'burn') {
+          if ((effect as any)._vfxTimer === undefined) {
+            (effect as any)._vfxTimer = 0;
+          }
+          (effect as any)._vfxTimer += dt;
+          if ((effect as any)._vfxTimer >= 0.35) {
+            (effect as any)._vfxTimer -= 0.35;
+            const pos = this.screenPositions.get(m.id);
+            if (pos) {
+              for (let fi = 0; fi < 10; fi++) {
+                vfx.spawnParticle(pos.x, pos.y, STATUS_EFFECT.burnFire);
+              }
+              for (let ei = 0; ei < 4; ei++) {
+                vfx.spawnParticle(pos.x, pos.y, STATUS_EFFECT.burnEmber);
+              }
+            }
+          }
+        }
+
+        // 寒冷状态 VFX：每 0.4s 生成寒雾（低频率避免雾气叠加遮住人物）
+        if (effect.type === 'chill') {
+          if ((effect as any)._vfxTimer === undefined) {
+            (effect as any)._vfxTimer = 0;
+          }
+          (effect as any)._vfxTimer += dt;
+          if ((effect as any)._vfxTimer >= 0.4) {
+            (effect as any)._vfxTimer -= 0.4;
+            const pos = this.screenPositions.get(m.id);
+            if (pos) {
+              vfx.spawnParticle(pos.x, pos.y, STATUS_EFFECT.chillHaze);
+            }
+          }
+        }
+
+        // 冰冻状态 VFX：每 0.4s 生成冰晶
+        if (effect.type === 'freeze') {
+          if ((effect as any)._vfxTimer === undefined) {
+            (effect as any)._vfxTimer = 0;
+          }
+          (effect as any)._vfxTimer += dt;
+          if ((effect as any)._vfxTimer >= 0.4) {
+            (effect as any)._vfxTimer -= 0.4;
+            const pos = this.screenPositions.get(m.id);
+            if (pos) {
+              for (let ci = 0; ci < 4; ci++) {
+                vfx.spawnParticle(pos.x, pos.y, STATUS_EFFECT.chillCrystal);
+              }
+            }
           }
         }
 
@@ -556,18 +691,27 @@ export class BattleSystem {
           m.gridY = dest.y;
           this._gridOccupation[m.gridX][m.gridY] = m;
 
-          const landPos = gridToScreen(dest.x, dest.y);
-          vfx.addParticle(landPos.x, landPos.y, 'wind_circle', 0.5, '#ffffff', 60);
+          const landPos = this.screenPositions.get(m.id) || gridToScreen(dest.x, dest.y);
+          // Layer 1: 白色着陆闪光（角色脚下，下移半格）
+          vfx.spawnParticle(landPos.x, landPos.y + 70, SKILL.leap.landFlash);
+          // Layer 2: 白色冲击环
+          vfx.spawnParticle(landPos.x, landPos.y + 70, SKILL.leap.land);
         }
         
         // Apply landing range 1 damage to enemies (captured before push)
         for (const e of splashTargets) {
           this.applyDamage(e, lp.damageOnLanding, m);
+          // 救星骑士：70% 造成 2s 眩晕
+          if (m.dbId === 108 && gameEngine.random() < 0.7) {
+            this.applyStatusEffect(e, { type: 'stun', duration: 2.0 });
+          }
         }
         
-        // Play simple landing dust explosion particle
-        const landPos = gridToScreen(m.gridX, m.gridY);
-        vfx.addParticle(landPos.x, landPos.y, 'explosion', 0.3, '#cccccc', 16);
+        // Layer 3: 尘土扩散（6粒向外飞散，在角色脚下）
+        const footPos = this.screenPositions.get(m.id) || gridToScreen(m.gridX, m.gridY);
+        for (let i = 0; i < 6; i++) {
+          vfx.spawnParticle(footPos.x, footPos.y + 70, SKILL.leap.landDust);
+        }
       }
       return;
     }
@@ -616,7 +760,7 @@ export class BattleSystem {
       const dy = tPos.y - sPos.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       let speed = m.speed * screenConfig.cellW; // Smooth speed (halved)
-      if ((m as any).digging) {
+      if ((m as any).burrowing) {
         speed *= 2;
       }
       if (m.statusEffects.some(e => e.type === 'stun' && e.duration > 1.0)) {
@@ -626,17 +770,42 @@ export class BattleSystem {
         sPos.x = tPos.x;
         sPos.y = tPos.y;
         
-        if ((m as any).digging) {
-          (m as any).digging = false;
-          const dest = this._reservedCells.get(m.id);
-          if (dest) {
-            this._reservedCells.delete(m.id);
-            this._gridOccupation[m.gridX][m.gridY] = null;
-            m.gridX = dest.x;
-            m.gridY = dest.y;
-            this._gridOccupation[m.gridX][m.gridY] = m;
+        if ((m as any).burrowing) {
+          (m as any).burrowing = false;
+          (m as any).deepStealth = false;
+          const destX = (m as any).burrowDestX;
+          const destY = (m as any).burrowDestY;
+
+          if (destX !== undefined && destY !== undefined) {
+            // 出土：给自己6盾
+            this.addShield(m, 6);
+
+            // 检测落点是否有敌人
+            const occupant = this._gridOccupation[destX][destY];
+            if (occupant && isP1Monster(occupant) !== isP1Monster(m)) {
+              // 挤开敌人
+              const pushDir = isP1Monster(m) ? 1 : -1;
+              this.applyKnockback(occupant, pushDir, 0, 1);
+              // 2s眩晕
+              this.applyStatusEffect(occupant, { type: 'stun', duration: 2.0 });
+              const ePos = this.screenPositions.get(occupant.id);
+              if (ePos) {
+                vfx.spawnParticle(ePos.x, ePos.y, HIT.chargeHit);
+              }
+            }
+
+            // 出土占位
+            m.gridX = destX;
+            m.gridY = destY;
+            this._gridOccupation[destX][destY] = m;
+
+            // 出土特效
+            const emergePos = gridToScreen(destX, destY);
+            vfx.addParticle(emergePos.x, emergePos.y, 'explosion', 0.4, '#8B4513', 18);
           }
-          m.statusEffects = m.statusEffects.filter(e => e.type !== 'invincible');
+
+          // 清空索敌，恢复正常攻击
+          (m as any).currentTargetId = undefined;
           m.state = 'idle';
         }
       } else {
@@ -646,26 +815,20 @@ export class BattleSystem {
     }
   }
 
+  /** 初始化穿透弹公共属性 */
+  private setupPiercingProjectile(pr: Projectile, ownerId: string, onHit?: (hitId: string) => void): void {
+    pr.ownerId = ownerId;
+    pr.isPiercing = true;
+    pr.hitTargetIds = new Set<string>();
+    if (onHit) pr.onHit = onHit;
+  }
+
   private performNormalAttack(m: PlacedMonster): boolean {
     const target = this.findClosestEnemy(m, true);
     if (!target) return false;
 
-    const dx = Math.abs(m.gridX - target.gridX);
-    const dy = Math.abs(m.gridY - target.gridY);
-    
     // Check range
-    let inRange = false;
-    if (m.data.type === 'melee') {
-      // Melee: range 1 and can attack diagonally
-      inRange = dx <= 1 && dy <= 1;
-    } else {
-      // Ranged: standard distance check + badge range bonus
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const effectiveRange = m.range + badgeGetRangeBonus(m);
-      inRange = dist <= effectiveRange;
-    }
-
-    if (!inRange) return false;
+    if (!this.isInAttackRange(m, target)) return false;
 
     // Perform attack
     const pos = this.screenPositions.get(m.id)!;
@@ -673,6 +836,10 @@ export class BattleSystem {
 
     // Badge 1 穿透：远程弹丸设为穿透模式
     const isPiercing = m.data.type === 'ranged' && getMonsterBadges(m).some(b => b.id === 1);
+
+    // 怪兽子弹类型映射
+    const unitBoltMap: Record<number, string> = { 102: 'lightning', 103: 'fire', 105: 'heal', 107: 'void' };
+    const boltType = unitBoltMap[m.dbId] as BoltType | undefined;
 
     if (m.data.type === 'ranged') {
       if (m.dbId === 104) {
@@ -688,24 +855,25 @@ export class BattleSystem {
           const isCenter = idx === 2;
 
           if (isPiercing) {
-            // 穿透：延长弹道 + 不追踪目标
             const extX = pos.x + Math.cos(a) * (dist + 2500);
             const extY = pos.y + Math.sin(a) * (dist + 2500);
-            vfx.addProjectile(pos.x, pos.y, extX, extY, 400, '#e5c158', () => {}, undefined);
-            const pr = vfx.projectiles[vfx.projectiles.length - 1];
-            pr.ownerId = m.id;
-            pr.isPiercing = true;
-            pr.hitTargetIds = new Set<string>();
+            const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
+            vfx.applyBulletSprite(pr, m.dbId);
+            if (isCenter) {
+              this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
+                const ht = this._monsters.find(e => e.id === hitId);
+                if (ht) this.dealDamageImpact(m, ht);
+              });
+            }
+          } else {
+            const pr = vfx.addProjectile(pos.x, pos.y, tx, ty, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
+            vfx.applyBulletSprite(pr, m.dbId);
             if (isCenter) {
               pr.onHit = (hitId: string) => {
                 const ht = this._monsters.find(e => e.id === hitId);
                 if (ht) this.dealDamageImpact(m, ht);
               };
             }
-          } else {
-            vfx.addProjectile(pos.x, pos.y, tx, ty, 400, '#e5c158', isCenter
-              ? () => this.dealDamageImpact(m, target) : () => {}, isCenter ? target.id : undefined);
-            vfx.projectiles[vfx.projectiles.length - 1].ownerId = m.id;
           }
         });
       } else {
@@ -716,26 +884,72 @@ export class BattleSystem {
           const dirLen = Math.sqrt(dx * dx + dy * dy);
           const extX = tPos.x + (dx / dirLen) * 2500;
           const extY = tPos.y + (dy / dirLen) * 2500;
-          vfx.addProjectile(pos.x, pos.y, extX, extY, 400, '#e5c158', () => {}, undefined);
-          const pr = vfx.projectiles[vfx.projectiles.length - 1];
-          pr.ownerId = m.id;
-          pr.isPiercing = true;
-          pr.hitTargetIds = new Set<string>();
-          pr.onHit = (hitId: string) => {
+          const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
+          this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
             const ht = this._monsters.find(e => e.id === hitId);
             if (ht) this.dealDamageImpact(m, ht);
-          };
+          });
+          vfx.applyBulletSprite(pr, m.dbId);
         } else {
-          vfx.addProjectile(pos.x, pos.y, tPos.x, tPos.y, 400, '#e5c158', () => {
-            this.dealDamageImpact(m, target);
-          }, target.id);
-          vfx.projectiles[vfx.projectiles.length - 1].ownerId = m.id;
+          const isExplosive = m.data.skill === 'explosive';
+          const isSnowball = m.data.skill === 'snowball';
+
+          if (isSnowball) {
+            vfx.spawnParticle(pos.x, pos.y, SKILL.snowballAttack.launch);
+          }
+
+          let pr: Projectile;
+          if (isExplosive) {
+            const cfg = SKILL.explosiveAttack.projectile;
+            pr = vfx.addProjectile(pos.x, pos.y, tPos.x, tPos.y, cfg.speed, cfg.color, () => {
+              this.dealDamageImpact(m, target);
+            }, target.id, undefined, cfg.arcHeight, m.id);
+            if (cfg.size) pr.size = cfg.size;
+            // 使用 tnt.png 贴图
+            const tntW = tntImage.naturalWidth || tntImage.width || 32;
+            const tntH = tntImage.naturalHeight || tntImage.height || 32;
+            pr.imageRect = { img: tntImage, sx: 0, sy: 0, sw: tntW, sh: tntH, dw: cfg.size || 16, dh: (cfg.size || 16) * tntH / tntW };
+          } else if (isSnowball) {
+            const cfg = SKILL.snowballAttack.projectile;
+            pr = vfx.addProjectile(pos.x, pos.y, tPos.x, tPos.y, cfg.speed, cfg.color, () => {
+              const tScr = gridToScreen(target.gridX, target.gridY);
+              vfx.spawnParticle(tScr.x, tScr.y, HIT.snowballAttack);
+              this.dealDamageImpact(m, target);
+            }, target.id, undefined, cfg.arcHeight, m.id);
+          } else if (boltType) {
+            pr = vfx.addProjectileByType(pos.x, pos.y, tPos.x, tPos.y, boltType, () => {
+              this.dealDamageImpact(m, target);
+            }, target.id, undefined, m.id);
+          } else if ((m as any).empoweredShot) {
+            // 银狙骑士强化射击：金色子弹 + 流线型拖尾（不追踪，固定弹道）
+            pr = vfx.addProjectileByType(pos.x, pos.y, tPos.x, tPos.y, 'empowered', () => {
+              this.dealDamageImpact(m, target);
+            }, undefined, undefined, m.id);
+            vfx.applyBulletSprite(pr, m.dbId);
+          } else {
+            // 发射位置偏移
+            const offset = BULLET_OFFSET[m.dbId] || { dx: 0, dy: 0 };
+            const sx = pos.x + offset.dx;
+            const sy = pos.y + offset.dy;
+            // 角度微小偏移（±5°）
+            const baseAngle = Math.atan2(tPos.y - sy, tPos.x - sx);
+            const spreadAngle = baseAngle + (gameEngine.random() - 0.5) * (Math.PI / 36);
+            const dist = Math.sqrt((tPos.x - sx) ** 2 + (tPos.y - sy) ** 2);
+            const tx = sx + Math.cos(spreadAngle) * dist;
+            const ty = sy + Math.sin(spreadAngle) * dist;
+            pr = vfx.addProjectile(sx, sy, tx, ty, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
+            pr.onHit = (hitId: string) => {
+              const ht = this._monsters.find(e => e.id === hitId);
+              if (ht) this.dealDamageImpact(m, ht);
+            };
+            vfx.applyBulletSprite(pr, m.dbId);
+          }
         }
       }
     } else {
       // Melee slash particle
       const angle = Math.atan2(tPos.y - pos.y, tPos.x - pos.x);
-      vfx.addParticle((pos.x + tPos.x)/2, (pos.y + tPos.y)/2, 'slash', 0.2, '#ffffff', 8, { angle, length: 24 });
+      vfx.spawnParticle((pos.x + tPos.x)/2, (pos.y + tPos.y)/2, HIT.meleeSlash, { angle, length: 24 });
       this.dealDamageImpact(m, target);
     }
 
@@ -757,12 +971,33 @@ export class BattleSystem {
     }
 
     // Apply damage
-    this.applyDamage(target, dmg, attacker, false, (attacker as any).empoweredShotLast || false);
+    this.applyDamage(target, dmg, attacker, { forceCrit: (attacker as any).empoweredShotLast || false });
     if ((attacker as any).empoweredShotLast) {
       (attacker as any).empoweredShotLast = false;
     }
 
     if (attacker.data.skill === 'explosive') {
+      // 矿爆命中效果（kuangbao风格，2x放大）
+      const tPos = this.screenPositions.get(target.id);
+      if (tPos) {
+        // Phase 1: 核心闪光（径向渐变，白→黄→橙，爆发后消退）
+        vfx.addParticle(tPos.x, tPos.y, 'blast_core', 0.36, '#ffffff', 100);
+
+        // Phase 2: 火焰粒子（28个，从中心径向扩散，颜色从白黄→橙→暗红）
+        for (let i = 0; i < 28; i++) {
+          vfx.addParticle(tPos.x, tPos.y, 'blast_flame', 0.7 + Math.random() * 0.4, '#ff6600', 10 + Math.random() * 12);
+        }
+
+        // Phase 3: 烟雾粒子（22个，延迟0.6s后生成，膨胀上浮加深）
+        this.scheduler.schedule(() => {
+          const sp = this.screenPositions.get(target.id);
+          if (!sp) return;
+          for (let i = 0; i < 22; i++) {
+            vfx.addParticle(sp.x, sp.y, 'blast_smoke', 0.4 + Math.random() * 0.4, '#444444', 18 + Math.random() * 18);
+          }
+        }, 0.4);
+      }
+      // 溅射目标
       const splashTargets = this.getMonstersInGridRange(target.gridX, target.gridY, 1)
         .filter(e => isP1Monster(e) !== isP1Monster(attacker) && e.id !== target.id)
         .filter(e => Math.abs(e.gridX - target.gridX) + Math.abs(e.gridY - target.gridY) === 1);
@@ -770,48 +1005,59 @@ export class BattleSystem {
         this.applyDamage(st, dmg, attacker);
         const stPos = this.screenPositions.get(st.id);
         if (stPos) {
-          vfx.addParticle(stPos.x, stPos.y, 'explosion', 0.2, '#ff6600', 8);
+          vfx.spawnParticle(stPos.x, stPos.y, HIT.explosiveSplash);
         }
       }
     }
 
     // ID 124 Strikeout King chill effect on basic attacks
     if (attacker.data.id === 124) {
-      const hasChill = target.statusEffects.some(s => s.type === 'chill');
-      this.applyStatusEffect(target, { type: 'chill', duration: 2.0 });
-      if (!hasChill && target.statusEffects.some(s => s.type === 'chill')) {
-        this.scheduler.schedule(() => {
-          if (this.active && !target.isDead) {
-            target.ats /= 0.65;
-          }
-        }, 2.0);
-      }
+      this.applyChill(target, 2.0);
     }
 
     // Apply Priest (祈祷哥) heal links
     const linkedIds = this._priestLinks.get(attacker.id);
     if (linkedIds) {
       const healAmount = Math.round(attacker.maxHp * 0.02);
-      this.applyHeal(attacker, healAmount);
+      this.applyHealWithChefBonus(attacker, attacker, healAmount, this);
+      // VFX on caster（祈祷哥自身）
+      const cP = this.screenPositions.get(attacker.id);
+      if (cP) {
+        for (let i = 0; i < 5; i++) vfx.spawnParticle(cP.x, cP.y, SKILL.recovery.healPuff);
+        vfx.spawnParticle(cP.x, cP.y, SKILL.recovery.healCross);
+        vfx.spawnParticle(cP.x, cP.y, SKILL.recovery.healCross);
+      }
       for (const id of linkedIds) {
         const ally = this._monsters.find(x => x.id === id);
         if (ally && !ally.isDead) {
-          this.applyHeal(ally, healAmount);
+          this.applyHealWithChefBonus(attacker, ally, healAmount, this);
+          // VFX on ally（圆形光点 + 圆角十字，向上飘散渐出）
+          const aPos = this.screenPositions.get(ally.id);
+          if (aPos) {
+            for (let i = 0; i < 5; i++) vfx.spawnParticle(aPos.x, aPos.y, SKILL.recovery.healPuff);
+            vfx.spawnParticle(aPos.x, aPos.y, SKILL.recovery.healCross);
+            vfx.spawnParticle(aPos.x, aPos.y, SKILL.recovery.healCross);
+          }
         }
       }
     }
   }
 
-  public applyDamage(target: PlacedMonster, amount: number, attacker: PlacedMonster | null, isShieldBreaker: boolean = false, forceCrit: boolean = false, bypassesShield: boolean = false): void {
+  public applyDamage(target: PlacedMonster, amount: number, attacker: PlacedMonster | null, options?: { isShieldBreaker?: boolean; forceCrit?: boolean; bypassesShield?: boolean }): void {
     if (!this.active || target.isDead) return;
 
     let finalDmg = amount;
+    let isShieldBreaker = options?.isShieldBreaker ?? false;
+    let ctxForceCrit = false;
+    const forceCrit = options?.forceCrit ?? false;
+    const bypassesShield = options?.bypassesShield ?? false;
 
     // --- Badge System: Attacker Modifier ---
     if (attacker) {
       const dmgCtx: BadgeContext = { attacker, target, damage: finalDmg, battle: this, engine: gameEngine };
       finalDmg = badgeModifyDamage(attacker, finalDmg, dmgCtx);
       isShieldBreaker = isShieldBreaker || !!dmgCtx.isShieldBreaker;
+      ctxForceCrit = ctxForceCrit || !!dmgCtx.isCrit;
     }
 
     // 1. 徽章减伤（badge 12 结阵守, badge 14 独狼守 等）
@@ -838,7 +1084,7 @@ export class BattleSystem {
     target.hp = Math.max(0, target.hp - finalDmg);
     target.flashTime = 0.15;
     
-    const isCrit = forceCrit;
+    const isCrit = forceCrit || ctxForceCrit || (attacker && (attacker as any).stealthCrit) || gameEngine.random() < 0.1;
     
     // Track recently damaged friendly monster for Savior Knight leap targeting
     if (isP1Monster(target)) {
@@ -874,7 +1120,7 @@ export class BattleSystem {
     }
   }
 
-  public applyHeal(target: PlacedMonster, amount: number): void {
+  public applyHeal(healer: PlacedMonster, target: PlacedMonster, amount: number): void {
     if (!this.active || target.isDead) return;
 
     // 徽章治疗修正（badge 17 大厨 +50% 等）
@@ -887,10 +1133,17 @@ export class BattleSystem {
       vfx.addFloatingText(tPos.x, tPos.y, `${healVal}`, '#5ac54f');
     }
 
-    gameEngine.recordStat(target, 0, 0, healVal, healVal);
+    // 治疗量记在治疗者，接受治疗记在被治疗者
+    gameEngine.recordStat(healer, 0, 0, healVal, 0);
+    gameEngine.recordStat(target, 0, 0, 0, healVal);
 
     // 徽章治疗后触发（badge 6 回复光环扩散 等）
     badgeOnAfterHeal(target, { healAmount: healVal, healSource: target, battle: this, engine: gameEngine });
+  }
+
+  public applyHealWithChefBonus(healer: PlacedMonster, target: PlacedMonster, baseAmount: number, battle: any): void {
+    const chefBonus = getMonsterBadges(healer).some(b => b.id === 17);
+    battle.applyHeal(healer, target, chefBonus ? Math.round(baseAmount * 1.5) : baseAmount);
   }
 
   public addShield(target: PlacedMonster, layers: number): void {
@@ -900,10 +1153,6 @@ export class BattleSystem {
     let addedLayers = badgeModifyShield(target, layers, { shieldLayers: layers, battle: this, engine: gameEngine });
 
     target.shield += addedLayers;
-    const tPos = this.screenPositions.get(target.id);
-    if (tPos) {
-      vfx.addFloatingText(tPos.x, tPos.y, `+${addedLayers} 盾`, '#4ba3e3');
-    }
   }
 
   private killMonster(m: PlacedMonster): void {
@@ -919,7 +1168,7 @@ export class BattleSystem {
     
     const pos = this.screenPositions.get(m.id);
     if (pos) {
-      vfx.addParticle(pos.x, pos.y, 'explosion', 0.4, '#ffffff', 8);
+      vfx.spawnParticle(pos.x, pos.y, HIT.death);
     }
 
     // Remove from active list unless it is currently resurrecting (so it can wait and be resurrected)
@@ -952,10 +1201,9 @@ export class BattleSystem {
       const dy = Math.abs(cy - target.gridY);
       if (isMelee) {
         return dx <= 1 && dy <= 1;
-      } else {
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        return dist <= effectiveRange;
       }
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      return dist <= effectiveRange;
     };
 
     // BFS setup
@@ -1021,20 +1269,7 @@ export class BattleSystem {
       return;
     }
 
-    const dx = Math.abs(m.gridX - target.gridX);
-    const dy = Math.abs(m.gridY - target.gridY);
-    
-    // Check if in range
-    let inRange = false;
-    if (m.data.type === 'melee') {
-      inRange = dx <= 1 && dy <= 1;
-    } else {
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const effectiveRange = m.range + badgeGetRangeBonus(m);
-      inRange = dist <= effectiveRange;
-    }
-
-    if (inRange) {
+    if (this.isInAttackRange(m, target)) {
       m.state = 'idle';
       return; // Don't move if target is already in range
     }
@@ -1077,7 +1312,7 @@ export class BattleSystem {
     // Default simple damage projectile if skill not fully implemented
     vfx.addProjectile(pos.x, pos.y, this.screenPositions.get(target.id)!.x, this.screenPositions.get(target.id)!.y, 500, '#ff00ff', () => {
       this.applyDamage(target, m.atk * 3, m);
-    });
+    }, undefined, undefined, undefined, m.id);
     return true;
   }
 
@@ -1085,27 +1320,35 @@ export class BattleSystem {
     return this._knockbacks.has(monsterId);
   }
 
+  public getEffectiveRange(m: PlacedMonster): number {
+    return m.range + badgeGetRangeBonus(m);
+  }
+
+  public isInAttackRange(m: PlacedMonster, target: PlacedMonster): boolean {
+    const dx = Math.abs(m.gridX - target.gridX);
+    const dy = Math.abs(m.gridY - target.gridY);
+    if (m.data.type === 'melee') {
+      return dx <= 1 && dy <= 1;
+    }
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    return dist <= this.getEffectiveRange(m);
+  }
+
   // Find closest living enemy
   public findClosestEnemy(m: PlacedMonster, isAttacking: boolean = false): PlacedMonster | null {
-    if (isAttacking && (m as any).currentTargetId) {
+    if ((m as any).currentTargetId) {
       const current = this._monsters.find(x => x.id === (m as any).currentTargetId);
       if (current && !current.isDead && !(current as any).resurrecting
           && !this._leaps.has(current.id)
-          && !current.statusEffects.some(e => e.type === 'stealth')) {
-        // 验证目标仍在攻击范围内
-        const dx = Math.abs(m.gridX - current.gridX);
-        const dy = Math.abs(m.gridY - current.gridY);
-        let inRange = false;
-        if (m.data.type === 'melee') {
-          inRange = dx <= 1 && dy <= 1;
+          && !(current as any).deepStealth) {
+        if (isAttacking) {
+          return current; // 技能和普攻释放时不重新索敌更换目标
         } else {
-          const effectiveRange = m.range + badgeGetRangeBonus(m);
-          inRange = Math.sqrt(dx * dx + dy * dy) <= effectiveRange;
+          // 移动寻路索敌，若在射程内也优先保留不更换
+          if (this.isInAttackRange(m, current)) {
+            return current;
+          }
         }
-        if (inRange) {
-          return current;
-        }
-        (m as any).currentTargetId = undefined;
       }
     }
 
@@ -1119,8 +1362,7 @@ export class BattleSystem {
     const effectiveRange = m.range + badgeGetRangeBonus(m);
 
     for (const enemy of this._monsters) {
-      if (enemy.isDead || (enemy as any).resurrecting || this._leaps.has(enemy.id)) continue;
-      if (enemy.statusEffects.some(e => e.type === 'stealth')) continue;
+      if (enemy.isDead || (enemy as any).resurrecting || this._leaps.has(enemy.id) || (enemy as any).deepStealth) continue;
       // Opposite side
       if (isP1 !== isP1Monster(enemy)) {
         const dx = enemy.gridX - m.gridX;
@@ -1171,31 +1413,33 @@ export class BattleSystem {
   }
 
   public findClosestFreeCell(gx: number, gy: number): { gridX: number; gridY: number } | null {
-    // BFS search adjacent grids
-    const queue: { x: number; y: number }[] = [{ x: gx, y: gy }];
+    return this.bfsFindNearestCell(gx, gy, (cx, cy) =>
+      this._gridOccupation[cx][cy] === null && !this.isCellReserved(cx, cy)
+    );
+  }
+
+  private bfsFindNearestCell(startX: number, startY: number, predicate: (x: number, y: number) => boolean): { gridX: number; gridY: number } | null {
+    const queue: { x: number; y: number }[] = [{ x: startX, y: startY }];
     const visited = new Set<string>();
-    visited.add(`${gx},${gy}`);
+    visited.add(`${startX},${startY}`);
+
+    const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
 
     while (queue.length > 0) {
       const curr = queue.shift()!;
       if (curr.x >= 0 && curr.x <= 10 && curr.y >= 0 && curr.y <= 4) {
-        if (this._gridOccupation[curr.x][curr.y] === null && !this.isCellReserved(curr.x, curr.y)) {
+        if (predicate(curr.x, curr.y)) {
           return { gridX: curr.x, gridY: curr.y };
         }
       }
 
-      const neighbors = [
-        { x: curr.x + 1, y: curr.y },
-        { x: curr.x - 1, y: curr.y },
-        { x: curr.x, y: curr.y + 1 },
-        { x: curr.x, y: curr.y - 1 }
-      ];
-
-      for (const n of neighbors) {
-        const key = `${n.x},${n.y}`;
-        if (!visited.has(key) && n.x >= 0 && n.x <= 10 && n.y >= 0 && n.y <= 4) {
+      for (const d of dirs) {
+        const nx = curr.x + d.x;
+        const ny = curr.y + d.y;
+        const key = `${nx},${ny}`;
+        if (!visited.has(key) && nx >= 0 && nx <= 10 && ny >= 0 && ny <= 4) {
           visited.add(key);
-          queue.push(n);
+          queue.push({ x: nx, y: ny });
         }
       }
     }
@@ -1223,7 +1467,7 @@ export class BattleSystem {
   }
 
   public applyStatusEffect(target: PlacedMonster, effect: {
-    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'burn' | 'stealth' | 'invincible';
+    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible';
     duration: number;
     value?: number;
     source?: any;
@@ -1236,10 +1480,26 @@ export class BattleSystem {
     if (effect.type === 'chill') {
       const hasChill = target.statusEffects.some(e => e.type === 'chill');
       if (!hasChill) {
-        target.ats *= 0.65;
+        target.ats *= 0.7;
       }
     }
     target.statusEffects.push(effect);
+  }
+
+  public applyChill(target: PlacedMonster, duration: number): void {
+    const hasChill = target.statusEffects.some(s => s.type === 'chill');
+    this.applyStatusEffect(target, { type: 'chill', duration });
+    if (!hasChill && target.statusEffects.some(s => s.type === 'chill')) {
+      this.scheduler.schedule(() => {
+        if (this.active && !target.isDead) {
+          target.ats /= 0.7;
+        }
+      }, duration);
+    }
+  }
+
+  public applyFreeze(target: PlacedMonster, duration: number): void {
+    this.applyStatusEffect(target, { type: 'freeze', duration });
   }
 
   private checkBattleEnd(): void {
@@ -1248,23 +1508,10 @@ export class BattleSystem {
     const p1Alive = this._monsters.some(m => (!m.isDead || (m as any).resurrecting) && isP1Monster(m));
     const p2Alive = this._monsters.some(m => (!m.isDead || (m as any).resurrecting) && !isP1Monster(m));
 
-    let winner: 1 | 2 | null = null;
-    let ended = false;
-
-    if (!p1Alive && !p2Alive) {
-      winner = null;
-      ended = true;
-    } else if (!p1Alive) {
-      winner = 2;
-      ended = true;
-    } else if (!p2Alive) {
-      winner = 1;
-      ended = true;
-    }
+    const ended = !p1Alive || !p2Alive;
 
     if (ended) {
       this._battleEndingTimer = 1.0; // 1s end-delay phase
-      this._pendingWinner = winner;
     }
   }
 
@@ -1285,7 +1532,7 @@ export class BattleSystem {
       m.isDead = false;
       m.statusEffects = [];
       (m as any).skillAnimationTimeLeft = 0;
-      (m as any).digging = false;
+      (m as any).burrowing = false;
       (m as any).resurrecting = false;
       (m as any).noSprite = false;
       (m as any).phalanxAtkAdded = 0;
@@ -1334,6 +1581,20 @@ export class BattleSystem {
   // New knockback and charge APIs for Skill Class System
   public registerPriestLinks(priestId: string, allyIds: string[]): void {
     this._priestLinks.set(priestId, allyIds);
+  }
+
+  /** 触发祈祷链疗（用于非普攻伤害如献祭自伤、反甲反射等场景） */
+  public tryTriggerPriestHeal(monster: PlacedMonster): void {
+    const linkedIds = this._priestLinks.get(monster.id);
+    if (!linkedIds) return;
+    const healAmount = Math.round(monster.maxHp * 0.02);
+    this.applyHealWithChefBonus(monster, monster, healAmount, this);
+    for (const id of linkedIds) {
+      const ally = this._monsters.find(x => x.id === id);
+      if (ally && !ally.isDead) {
+        this.applyHealWithChefBonus(monster, ally, healAmount, this);
+      }
+    }
   }
 
   public reserveCell(casterId: string, x: number, y: number): void {
@@ -1494,8 +1755,7 @@ export class BattleSystem {
       // Display hit floating text & impact particles at target position
       const tPos = this.screenPositions.get(target.id);
       if (tPos) {
-        vfx.addFloatingText(tPos.x, tPos.y, "冲撞!", '#df3e23');
-        vfx.addParticle(tPos.x, tPos.y, 'explosion', 0.3, '#df3e23', 12);
+        vfx.spawnParticle(tPos.x, tPos.y, HIT.chargeHit);
       }
     }
   }
@@ -1555,35 +1815,7 @@ export class BattleSystem {
   }
 
   public findNearestEmptyCell(startX: number, startY: number): { gridX: number; gridY: number } | null {
-    const queue: { x: number; y: number }[] = [{ x: startX, y: startY }];
-    const visited = new Set<string>();
-    visited.add(`${startX},${startY}`);
-    
-    while (queue.length > 0) {
-      const curr = queue.shift()!;
-      if (curr.x >= 0 && curr.x <= 10 && curr.y >= 0 && curr.y <= 4) {
-        if (!this.isCellOccupied(curr.x, curr.y)) {
-          return { gridX: curr.x, gridY: curr.y };
-        }
-      }
-      
-      const dirs = [
-        { x: 1, y: 0 }, { x: -1, y: 0 },
-        { x: 0, y: 1 }, { x: 0, y: -1 }
-      ];
-      for (const d of dirs) {
-        const nx = curr.x + d.x;
-        const ny = curr.y + d.y;
-        if (nx >= 0 && nx <= 10 && ny >= 0 && ny <= 4) {
-          const key = `${nx},${ny}`;
-          if (!visited.has(key)) {
-            visited.add(key);
-            queue.push({ x: nx, y: ny });
-          }
-        }
-      }
-    }
-    return null;
+    return this.bfsFindNearestCell(startX, startY, (cx, cy) => !this.isCellOccupied(cx, cy));
   }
 }
 export const battleSystem = BattleSystem.instance;

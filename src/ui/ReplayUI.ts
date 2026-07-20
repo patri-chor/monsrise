@@ -102,39 +102,51 @@ export class ReplayUI {
       `;
     };
 
-    // Avatars
-    const dummy = DB_MONSTERS[0];
-    const cowboy = DB_MONSTERS[3];
-    const dummyHtml = `
+    // P1 avatar HTML
+    const p1Col = gameEngine.p1AvatarIndex % 6;
+    const p1Row = Math.floor(gameEngine.p1AvatarIndex / 6);
+    const p1Sx = p1Col * 170;
+    const p1Sy = p1Row * 170;
+    const p1AvatarHtml = `
       <div class="player-avatar-frame p1-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${dummy.sx}px -${dummy.sy}px;
-          width: ${dummy.sw}px;
-          height: ${dummy.sh}px;
+        <div style="
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%) scale(${80 / dummy.sw});
+          width: 170px;
+          height: 170px;
+          background-image: url('avatars.png');
+          background-position: -${p1Sx}px -${p1Sy}px;
+          background-repeat: no-repeat;
+          transform: translate(-50%, -50%) scale(${90 / 170});
           transform-origin: center;
-          display: block;
-        " />
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        "></div>
       </div>
     `;
-    const cowboyHtml = `
+
+    // P2 avatar HTML
+    const p2Col = gameEngine.p2AvatarIndex % 6;
+    const p2Row = Math.floor(gameEngine.p2AvatarIndex / 6);
+    const p2Sx = p2Col * 170;
+    const p2Sy = p2Row * 170;
+    const p2AvatarHtml = `
       <div class="player-avatar-frame p2-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${cowboy.sx}px -${cowboy.sy}px;
-          width: ${cowboy.sw}px;
-          height: ${cowboy.sh}px;
+        <div style="
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%) scale(${80 / cowboy.sw});
+          width: 170px;
+          height: 170px;
+          background-image: url('avatars.png');
+          background-position: -${p2Sx}px -${p2Sy}px;
+          background-repeat: no-repeat;
+          transform: translate(-50%, -50%) scale(${90 / 170});
           transform-origin: center;
-          display: block;
-        " />
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        "></div>
       </div>
     `;
 
@@ -154,12 +166,12 @@ export class ReplayUI {
           </div>
 
           <div class="scoreboard-center-hud">
-            ${dummyHtml}
+            ${p1AvatarHtml}
             <div class="scoreboard-center-box">
               <div class="scoreboard-timer">${timerVal}</div>
               <div class="scoreboard-phase-text" style="color: #ffeb3b;">${phaseText} (Round ${roundNum})</div>
             </div>
-            ${cowboyHtml}
+            ${p2AvatarHtml}
           </div>
 
           <div class="scoreboard-team-row">

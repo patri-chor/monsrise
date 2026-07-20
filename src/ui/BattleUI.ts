@@ -1,5 +1,5 @@
 import { gameEngine, PlacedMonster } from '../game/GameEngine';
-import { DB_MONSTERS, BADGE_SPRITES, DB_BADGES } from '../game/Database';
+import { DB_MONSTERS, BADGE_SPRITES, DB_BADGES, getSkillDescription } from '../game/Database';
 import { battleSystem } from '../game/BattleSystem';
 import { uiManager } from './UIManager';
 
@@ -70,45 +70,51 @@ export class BattleUI {
     // Monster IDs already placed by the current active team
     const usedMonsterIds = new Set((isP1 ? p1Board : p2Board).map(m => m.dbId));
 
-    // Left dummy avatar
-    const dummy = DB_MONSTERS[0];
-    const dummyHtml = `
+    // P1 avatar HTML
+    const p1Col = gameEngine.p1AvatarIndex % 6;
+    const p1Row = Math.floor(gameEngine.p1AvatarIndex / 6);
+    const p1Sx = p1Col * 170;
+    const p1Sy = p1Row * 170;
+    const p1AvatarHtml = `
       <div class="player-avatar-frame p1-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${dummy.sx}px -${dummy.sy}px;
-          width: ${dummy.sw}px;
-          height: ${dummy.sh}px;
+        <div style="
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%) scale(${80 / dummy.sw});
+          width: 170px;
+          height: 170px;
+          background-image: url('avatars.png');
+          background-position: -${p1Sx}px -${p1Sy}px;
+          background-repeat: no-repeat;
+          transform: translate(-50%, -50%) scale(${90 / 170});
           transform-origin: center;
-          display: block;
-          border: none;
-          background: transparent;
-        " />
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        "></div>
       </div>
     `;
 
-    // Right cowgirl avatar
-    const cowboy = DB_MONSTERS[3];
-    const cowboyHtml = `
+    // P2 avatar HTML
+    const p2Col = gameEngine.p2AvatarIndex % 6;
+    const p2Row = Math.floor(gameEngine.p2AvatarIndex / 6);
+    const p2Sx = p2Col * 170;
+    const p2Sy = p2Row * 170;
+    const p2AvatarHtml = `
       <div class="player-avatar-frame p2-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${cowboy.sx}px -${cowboy.sy}px;
-          width: ${cowboy.sw}px;
-          height: ${cowboy.sh}px;
+        <div style="
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%) scale(${80 / cowboy.sw});
+          width: 170px;
+          height: 170px;
+          background-image: url('avatars.png');
+          background-position: -${p2Sx}px -${p2Sy}px;
+          background-repeat: no-repeat;
+          transform: translate(-50%, -50%) scale(${90 / 170});
           transform-origin: center;
-          display: block;
-          border: none;
-          background: transparent;
-        " />
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        "></div>
       </div>
     `;
 
@@ -145,12 +151,12 @@ export class BattleUI {
 
           <!-- Center timer & avatar display -->
           <div class="scoreboard-center-hud">
-            ${dummyHtml}
+            ${p1AvatarHtml}
             <div class="scoreboard-center-box">
               <div class="scoreboard-timer">${displayTime}</div>
               <div class="scoreboard-phase-text">${phaseText}</div>
             </div>
-            ${cowboyHtml}
+            ${p2AvatarHtml}
           </div>
 
           <!-- Right side P2 avatars -->
@@ -934,32 +940,9 @@ export class BattleUI {
         const monster = gameEngine.getMonsterAt(gridX, gridY);
         
         if (monster) {
-          // Select monster
+          // Select monster and show details (same as battle phase)
           this._selectedMonsterId = monster.id;
           this.updateDetailsCardContent();
-          
-          // Withdraw logic during prep phase
-          if ((isP1 || isP2) && cell.getAttribute('data-droppable') === 'true') {
-            const removed = gameEngine.removeMonster(monster.id);
-            if (removed) {
-              if (this._selectedMonsterId === monster.id) {
-                this._selectedMonsterId = null;
-              }
-              this.render();
-            } else {
-              // Flash alert on retro-title
-              const tEl = document.querySelector('.scoreboard-phase-text');
-              if (tEl) {
-                const oldText = tEl.textContent;
-                tEl.textContent = "已锁定！";
-                tEl.setAttribute('style', 'color: #ff3333;');
-                setTimeout(() => {
-                  tEl.textContent = oldText;
-                  tEl.removeAttribute('style');
-                }, 1500);
-              }
-            }
-          }
         } else {
           // Clicked empty space: clear selection
           this._selectedMonsterId = null;
@@ -1044,37 +1027,6 @@ export class BattleUI {
         " />
       </div>
     `;
-  }
-
-  private getSkillChineseDescription(dbId: number): string {
-    const skillMap: Record<number, string> = {
-      101: "撕裂：旋转对周围一圈敌人造成 120 伤害，并附带流血效果（流血：每秒受到 40 伤害，持续 3s）。",
-      102: "闪电：对范围内最多 4 个敌人造成 570 伤害，并有 50% 概率附加 2 秒眩晕。",
-      103: "生命链接：将范围内所有友方的生命值按百分比平均分摊。",
-      104: "散弹：普通攻击就是散射五颗子弹；技能会发射燃烧弹击退目标 1 格并施加燃烧。",
-      105: "回血连线：战斗开始时连线周围友军，自身攻击伤害时连线友军回血自身血量 2%。",
-      106: "冲锋：战斗开始时向前突进，撞击对手并将其击退两格，造成眩晕。",
-      107: "蓄力重炮：战斗开始时蓄力 2 秒，发射重炮对直线上敌人造成 13 倍攻击力的毁灭伤害。",
-      108: "守护跳跃：跳跃至最近受伤 of 友方身边，对落点周围敌人造成 540 伤害。",
-      109: "银色狙击：下一次普通攻击必定造成 4 倍伤害。",
-      110: "帝国防护：每 6 秒（及开局）给自己和相邻友方 5 层护盾。护盾可减免 60% 伤害，每受一次伤害减 1 层。",
-      111: "旋风斩：旋转大剑对周围一圈敌人造成 2 倍攻击力的范围伤害。",
-      112: "守护之剑：使周围友方回复 5% 生命值（生效两次），自己额外回复 8%。",
-      113: "爆破普通攻击：普通攻击带有溅射效果，能同时攻击到相邻的怪兽。",
-      114: "疯狂扫射：开局攻速提升 200%，攻击力提升 12，持续 2.5s。",
-      115: "不屈意志：每 10 秒回血 500；生命值低于 1000 时，所有普通攻击必定暴击。",
-      116: "强力钻地：开局向前挖掘 6 格，沿途敌人眩晕，并给自己增加 6 层护盾。",
-      117: "铁甲投掷：将身后怪兽向前投出，两个怪兽同时获得 8 层护盾，落点周围造成盾值 45 倍的范围伤害。",
-      118: "影子斩击：突进到周围一个目标身后造成 192 伤害，共突进 3 次。",
-      119: "忍者瞬移：战斗开始时瞬移到最远敌人身边。每释放两次技能获得 2 秒隐身。",
-      120: "金面猴王：使周围 2 格内友方攻击力增加 30，持续 3s。",
-      121: "僧侣修行：战斗属性提升，攻击力增加 40，生命上限增加 300，但生命上限扣减 20% 当前血量。",
-      122: "野性之怒：每次释放技能攻速增加 10%，可无限叠加。",
-      123: "棒球重击：对敌人造成 207 伤害，且每释放两次技能召唤一个小猴参战。",
-      124: "极寒雪球：使周围 2 格内怪兽受到寒冷减速（攻速-35%），并造成 2 倍攻击力伤害。",
-      125: "战壕转换：吸收周围 1 格所有效果，每吸收一个提升最大血量 30，增加攻击力 50，持续 2 秒。"
-    };
-    return skillMap[dbId] || "普通攻击：无特殊技能。";
   }
 
   public updateDetailsCardContent(): void {
@@ -1207,7 +1159,7 @@ export class BattleUI {
         </div>
         <div class="details-skill-desc-box">
           <div style="color:#e5c158; font-size:30px; margin-bottom:4px;">${dbMonster.skill} (CD: ${dbMonster.skillCd}s)</div>
-          <div>${this.getSkillChineseDescription(dbMonster.id)}</div>
+          <div>${getSkillDescription(dbMonster)}</div>
         </div>
       </div>
 

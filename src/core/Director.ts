@@ -74,13 +74,22 @@ export class Director {
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-
-
-    // Render tree recursively
+    // 第 0 层：怪物贴图
+    Sprite.drawMode = 'imageOnly';
     this.drawNode(this.rootNode);
 
-    // Render VFX on top
+    // 第 1 层：粒子 + 子弹（在怪物之上）
     vfx.draw(this.ctx);
+
+    // 第 2 层：血条 + HUD（在粒子之上）
+    Sprite.drawMode = 'hudOnly';
+    this.drawNode(this.rootNode);
+
+    // 第 3 层：飘字（最顶层）
+    vfx.drawFloatingTexts(this.ctx);
+
+    // 重置模式
+    Sprite.drawMode = 'all';
   }
 
   private drawNode(node: Node): void {

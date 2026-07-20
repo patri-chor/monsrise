@@ -37,7 +37,7 @@ export interface PlacedMonster {
   // Statuses
   isDead: boolean;
   statusEffects: {
-    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'burn' | 'stealth' | 'invincible';
+    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible';
     duration: number;
     value?: number;
     source?: any;
@@ -72,6 +72,9 @@ export class GameEngine {
   
   // Modes: 'experimental' (play self left then right) or 'match' (unimplemented)
   public mode: 'experimental' | 'match' = 'experimental';
+
+  public p1AvatarIndex: number = 0;
+  public p2AvatarIndex: number = 1;
 
   // 10 Teams
   public teams: TeamSlot[][] = [];
@@ -153,6 +156,7 @@ export class GameEngine {
 
   private constructor() {
     this.loadTeams();
+    this.initRandomAvatars();
   }
 
   // Load squad layouts and index from localStorage
@@ -442,6 +446,17 @@ export class GameEngine {
     this.currentRoundPlacements = [];
     this.clearStats();
     this.state = 'TEAM_EDIT';
+    this.initRandomAvatars();
+  }
+
+  public initRandomAvatars(): void {
+    const idx1 = Math.floor(Math.random() * 36);
+    let idx2 = Math.floor(Math.random() * 36);
+    while (idx2 === idx1) {
+      idx2 = Math.floor(Math.random() * 36);
+    }
+    this.p1AvatarIndex = idx1;
+    this.p2AvatarIndex = idx2;
   }
 }
 export const gameEngine = GameEngine.instance;

@@ -143,6 +143,30 @@ class BoardSyncComponent extends Component {
             mNode.scaleX = (m.team === 1) ? 0.8 : -0.8;
           }
         }
+
+        // Skill rotation（肃清哥刀光旋转）
+        if ((m as any)._rotationDuration && (m as any)._rotationRemaining > 0) {
+          const progress = 1 - (m as any)._rotationRemaining / (m as any)._rotationDuration;
+          mNode.rotation = progress * 360;
+        } else if (isBattle && m.state === 'skill' && m.data.skill === 'shadow' && (m as any)._tiltTotal) {
+          // 忍小猴技能蓄力倾斜：后倾30° → 前倾60°
+          const total = (m as any)._tiltTotal as number;
+          const remaining = (m as any).skillAnimationTimeLeft || 0;
+          const elapsed = total - remaining;
+          const half = total / 2;
+          let angle: number;
+          if (elapsed < half) {
+            angle = (elapsed / half) * (-30);
+          } else if (remaining > 0) {
+            angle = -30 + ((elapsed - half) / half) * 90;
+          } else {
+            angle = 0;
+            (m as any)._tiltTotal = 0;
+          }
+          mNode.rotation = angle;
+        } else {
+          mNode.rotation = 0;
+        }
       } else {
         // Use grid cell center positions during prep
         const gridPos = gridToScreen(m.gridX, m.gridY);
@@ -150,12 +174,15 @@ class BoardSyncComponent extends Component {
         mNode.scaleX = (m.team === 2) ? -0.8 : 0.8;
       }
 
-      // Sync flashTime and isDigging to sprite component
+      // Sync flashTime and deepStealth to sprite component
       const sprite = mNode.getComponent(Sprite);
       if (sprite) {
         sprite.flashTime = m.flashTime || 0;
-        sprite.isDigging = (m as any).digging || false;
+        sprite.team = m.team;
+        sprite.deepStealth = (m as any).deepStealth || false;
         sprite.isGhost = (m as any).resurrecting || false;
+        // 忍小猴 stealth 半透明（自定义标志，不走 statusEffects 系统）
+        sprite.stealthAlpha = (m as any)._shadowStealth ? 0.4 : undefined;
         if (isBattle) {
           sprite.hp = m.hp;
           sprite.maxHp = m.maxHp;

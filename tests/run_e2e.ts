@@ -1,14 +1,4 @@
-// 1. Mock LocalStorage before importing game modules
-const store: Record<string, string> = {};
-globalThis.localStorage = {
-  getItem: (key: string) => store[key] || null,
-  setItem: (key: string, value: string) => { store[key] = value; },
-  removeItem: (key: string) => { delete store[key]; },
-  clear: () => { for (const k in store) delete store[k]; },
-  length: 0,
-  key: (_index: number) => null,
-} as any;
-(global as any).localStorage = globalThis.localStorage;
+import './mock_setup';
 
 import { gameEngine } from '../src/game/GameEngine';
 import { battleSystem } from '../src/game/BattleSystem';
@@ -665,7 +655,7 @@ test('T1_F5_17', 'Chef (17)', () => {
   const m = gameEngine.placeMonster({ monsterId: 101, badgeIds: [17] }, 4, 2, true);
   battleSystem.startBattle();
   m!.hp = 100;
-  battleSystem.applyHeal(m!, 100);
+  battleSystem.applyHeal(m!, m!, 100);
   assertEqual(m!.hp, 250, "Chef boosts heal by 50% (100 -> 150)");
 });
 
@@ -868,7 +858,7 @@ test('T2_BND_05', 'Excess Shield Break', () => {
   const m = gameEngine.placeMonster({ monsterId: 101, badgeIds: [] }, 4, 2, true);
   m!.shield = 2;
   battleSystem.startBattle();
-  battleSystem.applyDamage(m!, 100, null, true);
+  battleSystem.applyDamage(m!, 100, null, { isShieldBreaker: true });
   assertEqual(m!.shield, 0, "Shield underflows safely");
 });
 
@@ -937,7 +927,7 @@ test('T3_CMB_02', 'Open Fire + Chef + Recovery Aura', () => {
   const m = gameEngine.placeMonster({ monsterId: 114, badgeIds: [6, 17] }, 4, 2, true);
   battleSystem.startBattle();
   m!.hp = 100;
-  battleSystem.applyHeal(m!, 100);
+  battleSystem.applyHeal(m!, m!, 100);
   assertEqual(m!.hp, 250, "Chef increases heal value by 50%");
 });
 
