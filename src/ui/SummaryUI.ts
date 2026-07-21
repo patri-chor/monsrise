@@ -2,6 +2,14 @@ import { gameEngine } from '../game/GameEngine';
 import { DB_MONSTERS } from '../game/Database';
 import { uiManager } from './UIManager';
 
+// Determine which team is "mine" for display ordering
+function getTeamOrder(): { myTeam: 1 | 2; oppTeam: 1 | 2 } {
+  if (gameEngine.mode === 'online') {
+    return gameEngine.isOnlineHost ? { myTeam: 1, oppTeam: 2 } : { myTeam: 2, oppTeam: 1 };
+  }
+  return { myTeam: 1, oppTeam: 2 };
+}
+
 // Pixel positions measured from end.png (2556×1179 game coordinate space)
 const BOX_X0   = 316;  // left edge of round box 1
 const BOX_Y0   = 72;   // top of round boxes
@@ -58,7 +66,7 @@ export class SummaryUI {
       else if (r === 2) title = '失败';
     }
 
-    // Round selector overlays — transparent, white border, no red/green fill
+    // Round selector overlays — B2 texture with #555650 tint
     const roundBoxes = Array(gameEngine.maxRounds).fill(0).map((_, i) => {
       const hasData    = i < total;
       const isSelected = i === this._selectedRound;
@@ -66,30 +74,44 @@ export class SummaryUI {
         ? (isSelected ? '3px solid #ffffff' : '1px solid rgba(255,255,255,0.45)')
         : 'none';
       const shadow = isSelected ? 'box-shadow:0 0 8px 2px rgba(255,255,255,0.6);' : '';
+      const tint = hasData ? '' : 'filter:grayscale(0.8) brightness(0.3);';
 
       return `<div data-round-idx="${i}" style="
         position:absolute;
         left:${BOX_X0 + i * BOX_STEP}px; top:${BOX_Y0}px;
         width:${BOX_W}px; height:${BOX_H}px;
-        background:transparent;
+        background:url('B2.png') center/contain no-repeat;
+        background-color:#555650;
+        background-blend-mode:multiply;
         border:${border};
         ${shadow}
+        ${tint}
         cursor:${hasData ? 'pointer' : 'default'};
         pointer-events:${hasData ? 'auto' : 'none'};
         box-sizing:border-box;
         z-index:10;
-      "></div>`;
+        image-rendering:pixelated;
+        transition:transform 0.1s, filter 0.1s;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        font-family:'Press Start 2P','Zpix',monospace;
+        font-size:36px;
+        color:#fff;
+        text-shadow:2px 2px 0 #000;
+      ">${i + 1}</div>`;
     }).join('');
 
-    // Stats for selected round — P1 first, then P2
+    // Stats for selected round — my team first, then opponent
     const allStats  = total > 0 ? gameEngine.perRoundStats[this._selectedRound] : [];
-    const p1Stats   = allStats.filter(s => s.team === 1);
-    const p2Stats   = allStats.filter(s => s.team === 2);
+    const { myTeam, oppTeam } = getTeamOrder();
+    const myStats   = allStats.filter(s => s.team === myTeam);
+    const oppStats  = allStats.filter(s => s.team === oppTeam);
     const elapsed   = total > 0 ? (gameEngine.perRoundElapsed[this._selectedRound] || 0) : 0;
     const totalDmg  = allStats.reduce((s, x) => s + x.damageDealt, 0);
     const dps       = elapsed > 0 ? (totalDmg / elapsed).toFixed(1) : '0.0';
 
-    const renderRow = (stat: typeof allStats[0]) => {
+    const renderRow = (stat: typeof allStats[0], isMine: boolean) => {
       const dbM    = DB_MONSTERS.find(m => m.id === stat.monsterId);
       const maxDim = Math.max(dbM?.sw ?? 64, dbM?.sh ?? 64);
       const scale  = (SPRITE_BOX * 0.85) / maxDim;
@@ -109,7 +131,7 @@ export class SummaryUI {
           " />
         </div>` : `<div style="width:${SPRITE_BOX}px;height:${SPRITE_BOX}px;"></div>`;
 
-      const side = stat.team === 1 ? '6px solid #6de07a' : '6px solid #f06060';
+      const side = isMine ? '6px solid #6de07a' : '6px solid #f06060';
 
       return `
         <div style="
@@ -132,7 +154,7 @@ export class SummaryUI {
         </div>`;
     };
 
-    const teamDivider = (p1Stats.length > 0 && p2Stats.length > 0)
+    const teamDivider = (myStats.length > 0 && oppStats.length > 0)
       ? `<div style="height:4px;background:rgba(255,255,255,0.12);margin:0;"></div>`
       : '';
 
@@ -140,9 +162,9 @@ export class SummaryUI {
       ? `<div style="padding:80px 0;text-align:center;
            font-family:'Press Start 2P','Zpix',monospace;font-size:${FS_HEADER}px;color:#666;">无战斗数据</div>`
       : [
-          ...p1Stats.map(renderRow),
+          ...myStats.map(s => renderRow(s, true)),
           teamDivider,
-          ...p2Stats.map(renderRow)
+          ...oppStats.map(s => renderRow(s, false))
         ].join('');
 
     return `

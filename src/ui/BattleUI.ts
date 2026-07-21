@@ -1,23 +1,33 @@
 import { gameEngine, PlacedMonster } from '../game/GameEngine';
 import { DB_MONSTERS, BADGE_SPRITES, DB_BADGES, getSkillDescription } from '../game/Database';
+import { renderSkillIconHtml } from '../game/IconMapping';
+import { renderAvatarHtml } from './shared/AvatarRenderer';
 import { battleSystem } from '../game/BattleSystem';
 import { uiManager } from './UIManager';
+import { networkManager } from '../net/NetworkManager';
 
 export class BattleUI {
   private _container: HTMLDivElement;
   private _selectedMonsterId: string | null = null;
   private _isDragging: boolean = false;
   
-
-
   // Countdown timer interval
   private _timerInterval: any = null;
+  private _networkBound: boolean = false;
+  private _unsubscribers: Array<() => void> = [];
+
+  private get _isOnline(): boolean { return gameEngine.mode === 'online'; }
+
+  private getActiveTeam(): import('../game/GameEngine').TeamSlot[] {
+    if (this._isOnline) return gameEngine.teams[0];
+    return gameEngine.state === 'PREPARATION_LEFT' ? gameEngine.teams[0] : gameEngine.teams[1];
+  }
 
   constructor(container: HTMLDivElement) {
     this._container = container;
   }
 
-  private renderScoreboardCircle(monsterId: number, isDead: boolean): string {
+  private renderScoreboardCircle(monsterId: number, isDead: boolean, flip: boolean = false): string {
     if (monsterId <= 0) {
       return `<div class="scoreboard-circle question">?</div>`;
     }
@@ -27,9 +37,11 @@ export class BattleUI {
     }
 
     const deadClass = isDead ? 'dead' : '';
+    const scale = (84 / dbMonster.sw); // 略超容器
+    const scaleX = flip ? -scale : scale;
 
     return `
-      <div class="scoreboard-circle ${deadClass}" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
+      <div class="scoreboard-circle ${deadClass}" style="display: flex; justify-content: center; align-items: center; position: relative;">
         <img src="all.png" style="
           object-fit: none;
           object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
@@ -38,7 +50,7 @@ export class BattleUI {
           position: absolute;
           left: 50%;
           top: 50%;
-          transform: translate(-50%, -50%) scale(${64 / dbMonster.sw});
+          transform: translate(-50%, -50%) scale(${scaleX}, ${scale});
           transform-origin: center;
           display: block;
           border: none;
@@ -61,8 +73,13 @@ export class BattleUI {
     );
 
     // Setup P1 and P2 drafted squads
-    const p1Draft = gameEngine.teams[0] || [];
-    const p2Draft = gameEngine.teams[1] || [];
+    const isOnline = this._isOnline;
+    const myTeam = gameEngine.teams[0] || [];
+    const oppTeam = isOnline ? gameEngine.opponentTeam : (gameEngine.teams[1] || []);
+    // 仅在线模式 + 非主机时交换队伍，非在线始终 teams[0]=P1, teams[1]=P2
+    const swapTeams = isOnline && !gameEngine.isOnlineHost;
+    const p1Draft = swapTeams ? oppTeam : myTeam;
+    const p2Draft = swapTeams ? myTeam : oppTeam;
     
     const boardMonsters = gameEngine.boardMonsters;
     const p1Board = boardMonsters.filter(m => m.gridX < 5);
@@ -71,52 +88,10 @@ export class BattleUI {
     const usedMonsterIds = new Set((isP1 ? p1Board : p2Board).map(m => m.dbId));
 
     // P1 avatar HTML
-    const p1Col = gameEngine.p1AvatarIndex % 6;
-    const p1Row = Math.floor(gameEngine.p1AvatarIndex / 6);
-    const p1Sx = p1Col * 170;
-    const p1Sy = p1Row * 170;
-    const p1AvatarHtml = `
-      <div class="player-avatar-frame p1-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <div style="
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 170px;
-          height: 170px;
-          background-image: url('avatars.png');
-          background-position: -${p1Sx}px -${p1Sy}px;
-          background-repeat: no-repeat;
-          transform: translate(-50%, -50%) scale(${90 / 170});
-          transform-origin: center;
-          image-rendering: pixelated;
-          image-rendering: crisp-edges;
-        "></div>
-      </div>
-    `;
+    const p1AvatarHtml = renderAvatarHtml(gameEngine.p1AvatarIndex, 'p1-frame');
 
     // P2 avatar HTML
-    const p2Col = gameEngine.p2AvatarIndex % 6;
-    const p2Row = Math.floor(gameEngine.p2AvatarIndex / 6);
-    const p2Sx = p2Col * 170;
-    const p2Sy = p2Row * 170;
-    const p2AvatarHtml = `
-      <div class="player-avatar-frame p2-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <div style="
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 170px;
-          height: 170px;
-          background-image: url('avatars.png');
-          background-position: -${p2Sx}px -${p2Sy}px;
-          background-repeat: no-repeat;
-          transform: translate(-50%, -50%) scale(${90 / 170});
-          transform-origin: center;
-          image-rendering: pixelated;
-          image-rendering: crisp-edges;
-        "></div>
-      </div>
-    `;
+    const p2AvatarHtml = renderAvatarHtml(gameEngine.p2AvatarIndex, 'p2-frame');
 
     // Phase text and timer display
     let phaseText = '准备阶段';
@@ -138,14 +113,18 @@ export class BattleUI {
         
         <!-- Top HUD Scoreboard -->
         <div class="battle-scoreboard-top">
-          <!-- Left side P1 avatars -->
+          <!-- Left side P1 avatars (从右往左排列，靠近头像的在前) -->
           <div class="scoreboard-team-row">
             ${Array(8).fill(0).map((_, idx) => {
-              const slot = p1Draft[idx];
+              const slotIdx = 7 - idx;
+              const slot = p1Draft[slotIdx];
               if (!slot || slot.monsterId <= 0) return this.renderScoreboardCircle(0, false);
-              const boardInst = p1Board.find(bm => bm.dbId === slot.monsterId);
-              const isDead = isBattle ? (!boardInst || boardInst.isDead) : false;
-              return this.renderScoreboardCircle(slot.monsterId, isDead);
+              // 在线客场：P1=敌方，左边4个（slotIdx 4-7，即 idx<4）始终遮挡
+              const p1Enemy = isOnline && !gameEngine.isOnlineHost;
+              if (p1Enemy && idx < 4) {
+                return `<div class="scoreboard-circle question">?</div>`;
+              }
+              return this.renderScoreboardCircle(slot.monsterId, false);
             }).join('')}
           </div>
 
@@ -165,14 +144,13 @@ export class BattleUI {
               const slot = p2Draft[idx];
               if (!slot || slot.monsterId <= 0) return this.renderScoreboardCircle(0, false);
               
-              // Fog of War: hide P2 team until battle phase
-              if (isP1 || isP2) {
+              // 敌方队伍后4个始终遮挡（非在线 / 在线主场：P2=敌方；在线客场：P2=自己全部可见）
+              const p2Enemy = isOnline ? gameEngine.isOnlineHost : true;
+              if (p2Enemy && idx >= 4) {
                 return `<div class="scoreboard-circle question">?</div>`;
               }
               
-              const boardInst = p2Board.find(bm => bm.dbId === slot.monsterId);
-              const isDead = isBattle ? (!boardInst || boardInst.isDead) : false;
-              return this.renderScoreboardCircle(slot.monsterId, isDead);
+              return this.renderScoreboardCircle(slot.monsterId, false, true);
             }).join('')}
           </div>
         </div>
@@ -182,26 +160,17 @@ export class BattleUI {
           ${Array(5).fill(0).map((_, y) => {
             return Array(11).fill(0).map((_, x) => {
 
-              
-              // Zone check
-              let zoneClass = 'mid-zone';
-              if (x < 5) zoneClass = 'left-zone';
-              if (x >= 6) zoneClass = 'right-zone';
-
-
-
               // Grid cell is droppable depending on turn
               const isDroppable = (isP1 && x < 5) || (isP2 && x >= 6);
+              const noDropClass = ((isP1 || isP2) && !isDroppable) ? 'no-drop' : '';
+              const hasMonster = boardMonsters.some(m => m.gridX === x && m.gridY === y && !m.isDead);
+              const occupiedClass = hasMonster ? 'occupied' : '';
 
               return `
-                <div class="battle-grid-cell ${zoneClass}" 
+                <div class="battle-grid-cell ${noDropClass} ${occupiedClass}" 
                      data-grid-x="${x}" 
                      data-grid-y="${y}" 
                      data-droppable="${isDroppable}">
-                  
-                  <!-- Canvas handles drawing monster sprites -->
-
-
                 </div>
               `;
             }).join('');
@@ -232,13 +201,13 @@ export class BattleUI {
             <span>${usedBudget} / ${currentBudgetLimit}</span>
           </div>
 
-          ${isBattle ? '' : `
+          ${`
 
-            <!-- 8 bench slots aligned exactly with bench.png coordinates -->
+            <!-- 8 bench slots（战斗阶段显示P1队伍） -->
             <div class="bench-container" style="z-index: 2;">
-              ${(isP1 ? p1Draft : p2Draft).map((slot, index) => {
+              ${(isBattle ? p1Draft : (isP1 ? p1Draft : p2Draft)).map((slot, index) => {
                 const dbMonster = DB_MONSTERS.find(m => m.id === slot.monsterId);
-                const isUsed = dbMonster ? usedMonsterIds.has(slot.monsterId) : false;
+                const isUsed = isBattle ? false : (dbMonster ? usedMonsterIds.has(slot.monsterId) : false);
                 return `
                   <div class="bench-slot" data-slot-index="${index}" data-used="${isUsed}" draggable="false" ${isUsed ? 'style="filter:grayscale(0.85);cursor:not-allowed;opacity:0.6;"' : ''}>
                     ${dbMonster ? `
@@ -256,7 +225,7 @@ export class BattleUI {
                           object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
                           width: ${dbMonster.sw}px;
                           height: ${dbMonster.sh}px;
-                          transform: translate(-50%, -50%) ${isP2 ? 'scale(-0.55, 0.55)' : 'scale(0.55)'};
+                          transform: translate(-50%, -50%) ${(isP2 && !isBattle) ? 'scale(-0.55, 0.55)' : 'scale(0.55)'};
                           transform-origin: center;
                           position: absolute;
                           left: 50%;
@@ -305,12 +274,18 @@ export class BattleUI {
           pointer-events: none;
           white-space: nowrap;
         "></div>
+        
+        <!-- Online waiting overlay (仅用于隐藏确认按钮，无文字无遮罩) -->
+        <div id="onlineWaitOverlay" style="
+          display: none; z-index: 1000; pointer-events: none;
+        "></div>
       </div>
     `;
 
     this.bindEvents();
     this.startPrepTimer();
     this.updateDetailsCardContent();
+    if (this._isOnline) this.bindNetworkForBattle();
   }
 
   // --- Prep timer logic ---
@@ -347,14 +322,228 @@ export class BattleUI {
 
   private onPrepComplete(): void {
     clearInterval(this._timerInterval);
+    console.log('[Battle] onPrepComplete called, state=', gameEngine.state, 'mode=', gameEngine.mode);
+
+    if (this._isOnline) {
+      // 联机模式：发送布阵数据，等待对手
+      const placements = gameEngine.boardMonsters
+        .filter(m => (gameEngine.isOnlineHost ? m.gridX < 5 : m.gridX >= 6))
+        .map(m => ({ monsterId: m.dbId, gridX: m.gridX, gridY: m.gridY }));
+      networkManager.syncPlacement(placements);
+      networkManager.sendReady();
+      this.showWaitingOverlay();
+      return;
+    }
 
     if (gameEngine.state === 'PREPARATION_LEFT') {
       gameEngine.state = 'PREPARATION_RIGHT';
+      if (gameEngine.mode === 'ai') {
+        this.runAIPlacements();
+        return;
+      }
       uiManager.syncStateWithUI();
     } else if (gameEngine.state === 'PREPARATION_RIGHT') {
-      // Show "开始" announcement before battle starts
       this.showBattleStartAnnouncement();
     }
+  }
+
+  private showWaitingOverlay(): void {
+    // 仅隐藏确认按钮，无遮罩无文字
+    const btn = document.getElementById('completePrepBtn');
+    if (btn) btn.style.display = 'none';
+  }
+
+  private bindNetworkForBattle(): void {
+    if (this._networkBound) return;
+    this._networkBound = true;
+
+    this._unsubscribers.push(
+      networkManager.on('battleStart', (data) => {
+        // 应用对手布阵
+        gameEngine.opponentPlacements = [];
+        if (data.opponentPlacements) {
+          for (const p of data.opponentPlacements) {
+            const oppTeam = gameEngine.opponentTeam;
+            const slot = oppTeam.find(s => s.monsterId === p.monsterId);
+            if (slot) {
+              const isP1Placement = !gameEngine.isOnlineHost;
+              gameEngine.placeMonster(slot, p.gridX, p.gridY, isP1Placement);
+              gameEngine.opponentPlacements.push(p);
+            }
+          }
+        }
+        gameEngine.onlineBattleSeed = data.seed;
+        gameEngine.setReplaySeed(data.seed);
+
+        // 先切换状态为 BATTLE，避免"开始"动画期间迷雾隐藏怪兽
+        gameEngine.state = 'BATTLE';
+
+        // 隐藏等待界面
+        const waitEl = document.getElementById('onlineWaitOverlay');
+        if (waitEl) waitEl.style.display = 'none';
+
+        this.showBattleStartAnnouncement();
+      }),
+
+      networkManager.on('roundResult', (data) => {
+        const winner = data.winner;
+        gameEngine.roundResults.push(winner);
+
+        const elapsed = Math.max(0, 40 - battleSystem.timeLeft);
+        gameEngine.lastRoundElapsed = elapsed;
+        gameEngine.saveRoundStats(elapsed);
+
+        const scoreTextEl = document.querySelector('.scoreboard-phase-text');
+        if (scoreTextEl) scoreTextEl.textContent = `${gameEngine.p1Score} - ${gameEngine.p2Score}`;
+
+        this.showRoundResultAnnouncement(winner);
+      }),
+
+      networkManager.on('opponentDC', () => {
+        networkManager.disconnect();
+        gameEngine.opponentDisconnected = true;
+        const el = document.getElementById('battleAnnouncement');
+        if (el) {
+          el.textContent = '对手断开连接';
+          el.style.display = 'flex';
+          el.style.opacity = '1';
+          setTimeout(() => {
+            gameEngine.state = 'GAME_OVER';
+            uiManager.syncStateWithUI();
+          }, 2000);
+        } else {
+          gameEngine.state = 'GAME_OVER';
+          uiManager.syncStateWithUI();
+        }
+      }),
+
+      networkManager.on('placeSync', (data) => {
+        if (data.placements) {
+          gameEngine.opponentPlacements = data.placements;
+        }
+      }),
+    );
+  }
+
+  /** Build AI-compatible game state from current GameEngine board */
+  private buildAIState(): AIGameState {
+    const board: (any | null)[][] = [];
+    for (let y = 0; y < 5; y++) {
+      board[y] = new Array(11).fill(null);
+    }
+
+    let instanceIdCounter = 1;
+    const makeInstance = (m: PlacedMonster) => {
+      const owner = m.team === 1 ? 'p1' : 'p2';
+      return {
+        instanceId: instanceIdCounter++,
+        monsterId: m.dbId,
+        badgeIds: m.badges?.map(b => b.id) || [],
+        position: { x: m.gridX, y: m.gridY },
+        owner
+      };
+    };
+
+    for (const m of gameEngine.boardMonsters) {
+      if (m.gridX >= 0 && m.gridX < 11 && m.gridY >= 0 && m.gridY < 5) {
+        board[m.gridY][m.gridX] = makeInstance(m);
+      }
+    }
+
+    const p1Deployed = gameEngine.boardMonsters
+      .filter(m => m.gridX < 5)
+      .map(m => makeInstance(m));
+    const p2Deployed = gameEngine.boardMonsters
+      .filter(m => m.gridX >= 6)
+      .map(m => makeInstance(m));
+
+    return {
+      board,
+      players: {
+        p1: { side: 'p1', deployed: p1Deployed, remainingBudget: gameEngine.p1RemainingBudget },
+        p2: { side: 'p2', deployed: p2Deployed, remainingBudget: gameEngine.p2RemainingBudget }
+      },
+      round: gameEngine.currentRound,
+      phase: 'placing',
+      currentPlayer: 'p2',
+      nextInstanceId: gameEngine.boardMonsters.length + 1
+    };
+  }
+
+  /** AI auto-placement: repeatedly call AI to place P2 monsters, then start battle */
+  private runAIPlacements(): void {
+    console.log('[AI] Starting AI placements...');
+
+    let ai = (gameEngine as any)._aiInstance as BattleAI;
+    if (!ai) {
+      console.warn('[AI] No stored AI instance found, creating new one.');
+      ai = new BattleAI();
+      ai.setDifficulty('normal');
+      const aiHand: AICard[] = gameEngine.teams[1]
+        .filter(s => s.monsterId > 0)
+        .map(s => ({ monsterId: s.monsterId, badgeIds: s.badgeIds }));
+      ai.buildTeam(aiHand);
+    }
+
+    let aiState = this.buildAIState();
+
+    // Available cards from P2 (AI) team
+    const cards: AICard[] = gameEngine.teams[1]
+      .filter(s => s.monsterId > 0)
+      .map(s => ({ monsterId: s.monsterId, badgeIds: s.badgeIds }));
+
+    console.log('[AI] AI team cards:', JSON.stringify(cards));
+    console.log('[AI] AI state:', JSON.stringify({
+      currentPlayer: aiState.currentPlayer,
+      p2Budget: aiState.players.p2.remainingBudget,
+      p1Deployed: aiState.players.p1.deployed.length,
+      boardOccupied: aiState.board.flat().filter(Boolean).length
+    }));
+
+    // AI placement loop — use decide() which leverages the formation engine
+    const maxPlacements = 12;
+    for (let i = 0; i < maxPlacements; i++) {
+      // Rebuild AI state each iteration to reflect current board
+      aiState = this.buildAIState();
+
+      console.log(`[AI] Iteration ${i}, budget=${aiState.players.p2.remainingBudget}, cards left=${cards.length}`);
+
+      const decision = ai.decide(aiState, 'p2');
+      console.log(`[AI] Decision:`, JSON.stringify(decision?.action));
+
+      if (!decision || !decision.action) {
+        console.log('[AI] No action returned, breaking loop');
+        break;
+      }
+
+      const { monsterId, x, y, badgeIds: _badgeIds } = decision.action;
+
+      // Find team slot matching this monster
+      const slot = gameEngine.teams[1].find(s => s.monsterId === monsterId);
+      console.log(`[AI] Placing monsterId=${monsterId} at (${x},${y}), slot found=${!!slot}`);
+
+      if (!slot) break;
+
+      // Place via GameEngine
+      const placed = gameEngine.placeMonster(slot, x, y, false);
+      console.log(`[AI] placeMonster result: ${placed ? 'OK' : 'FAILED'}`);
+
+      if (!placed) {
+        // If placement fails, remove this card and try remaining
+        const idx = cards.findIndex(c => c.monsterId === monsterId);
+        if (idx >= 0) cards.splice(idx, 1);
+        continue;
+      }
+
+      // Remove used card from available pool
+      const cardIdx = cards.findIndex(c => c.monsterId === monsterId);
+      if (cardIdx >= 0) cards.splice(cardIdx, 1);
+    }
+
+    console.log(`[AI] Placements done. P2 monsters on board: ${gameEngine.boardMonsters.filter(m => m.gridX >= 6).length}`);
+
+    // After all placements, show battle start announcement
+    this.showBattleStartAnnouncement();
   }
 
   private showBattleStartAnnouncement(): void {
@@ -396,19 +585,37 @@ export class BattleUI {
       return;
     }
 
+    if (this._isOnline) {
+      // 联机模式：只发送结果 + 显示本地结果，等服务器回 roundResult 再推进
+      networkManager.sendBattleEnd(winner);
+      el.style.display = 'flex';
+      el.style.opacity = '0';
+      if (winner === 1) {
+        el.textContent = "我方得分";
+      } else if (winner === 2) {
+        el.textContent = "对手得分";
+      } else {
+        el.textContent = "平局";
+      }
+      el.offsetHeight;
+      el.style.opacity = '1';
+      return;
+    }
+
     // Record this round's result and elapsed time
     gameEngine.roundResults.push(winner);
     const elapsed = Math.max(0, 40 - battleSystem.timeLeft);
     gameEngine.lastRoundElapsed = elapsed;
     gameEngine.saveRoundStats(elapsed);
 
-    // Update scoreboard text dynamically on screen immediately
+    // Update scoreboard
     const scoreTextEl = document.querySelector('.scoreboard-phase-text');
-    if (scoreTextEl) {
-      scoreTextEl.textContent = `${gameEngine.p1Score} - ${gameEngine.p2Score}`;
-    }
+    if (scoreTextEl) scoreTextEl.textContent = `${gameEngine.p1Score} - ${gameEngine.p2Score}`;
 
-    // Initial state: flex display but fully transparent
+    this._showResultOverlay(el, winner);
+  }
+
+  private _showResultOverlay(el: HTMLElement, winner: 1 | 2 | null): void {
     el.style.display = 'flex';
     el.style.opacity = '0';
 
@@ -420,27 +627,25 @@ export class BattleUI {
       el.textContent = "平局";
     }
 
-    // Force reflow and trigger fade in
     el.offsetHeight;
     el.style.opacity = '1';
 
     const isGameOver = gameEngine.isGameOver();
 
-    // 1. After showing the score text, fade it out
     setTimeout(() => {
       el.style.opacity = '0';
-
-      // 2. Wait for fade-out to finish (500ms), then swap text and fade in the next state
       setTimeout(() => {
         if (isGameOver) {
           el.textContent = "游戏结束";
           el.style.opacity = '1';
-
-          // 3. After showing game over, fade out and transit state
           setTimeout(() => {
             el.style.opacity = '0';
             setTimeout(() => {
               el.style.display = 'none';
+              if (gameEngine.mode === 'online') {
+                networkManager.leaveMatch();
+                gameEngine.mode = 'experimental';
+              }
               gameEngine.state = 'GAME_OVER';
               uiManager.syncStateWithUI();
             }, 500);
@@ -448,14 +653,12 @@ export class BattleUI {
         } else {
           el.textContent = `第 ${gameEngine.currentRound + 1} 回合`;
           el.style.opacity = '1';
-
-          // 3. After showing next round, fade out and advance round
           setTimeout(() => {
             el.style.opacity = '0';
             setTimeout(() => {
               el.style.display = 'none';
               gameEngine.currentRound += 1;
-              gameEngine.state = 'PREPARATION_LEFT';
+              gameEngine.state = 'PREPARATION_LEFT' as any;
               gameEngine.resetBoardForNextRound();
               uiManager.syncStateWithUI();
             }, 500);
@@ -463,6 +666,85 @@ export class BattleUI {
         }
       }, 500);
     }, 1800);
+  }
+
+  private showRoundResultAnnouncement(winner: 1 | 2 | null): void {
+    const el = document.getElementById('battleAnnouncement');
+    if (!el) {
+      // 直接推进
+      this._advanceRoundOrEnd();
+      return;
+    }
+
+    // 显示对手确认的结果
+    const isGameOver = gameEngine.isGameOver();
+
+    el.style.display = 'flex';
+    el.style.opacity = '0';
+
+    if (winner === 1) {
+      el.textContent = gameEngine.isOnlineHost ? "我方得分" : "对手得分";
+    } else if (winner === 2) {
+      el.textContent = gameEngine.isOnlineHost ? "对手得分" : "我方得分";
+    } else {
+      el.textContent = "平局";
+    }
+
+    el.offsetHeight;
+    el.style.opacity = '1';
+
+    setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => {
+        if (isGameOver) {
+          el.textContent = "游戏结束";
+          el.style.opacity = '1';
+          setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => {
+              el.style.display = 'none';
+              if (gameEngine.mode === 'online') {
+                networkManager.leaveMatch();
+                gameEngine.mode = 'experimental';
+              }
+              gameEngine.state = 'GAME_OVER';
+              uiManager.syncStateWithUI();
+            }, 500);
+          }, 1500);
+        } else {
+          el.textContent = `第 ${gameEngine.currentRound + 1} 回合`;
+          el.style.opacity = '1';
+          setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => {
+              el.style.display = 'none';
+              gameEngine.currentRound += 1;
+              gameEngine.state = gameEngine.isOnlineHost ? 'PREPARATION_LEFT' : 'PREPARATION_RIGHT';
+              gameEngine.resetBoardForNextRound();
+              networkManager.phase = 'placing';
+              uiManager.syncStateWithUI();
+            }, 500);
+          }, 1500);
+        }
+      }, 500);
+    }, 1800);
+  }
+
+  private _advanceRoundOrEnd(): void {
+    const isGameOver = gameEngine.isGameOver();
+    if (isGameOver) {
+      if (gameEngine.mode === 'online') {
+        networkManager.leaveMatch();
+        gameEngine.mode = 'experimental';
+      }
+      gameEngine.state = 'GAME_OVER';
+    } else {
+      gameEngine.currentRound += 1;
+      gameEngine.state = gameEngine.isOnlineHost ? 'PREPARATION_LEFT' : 'PREPARATION_RIGHT';
+      gameEngine.resetBoardForNextRound();
+      networkManager.phase = 'placing';
+    }
+    uiManager.syncStateWithUI();
   }
 
   private bindEvents(): void {
@@ -495,7 +777,7 @@ export class BattleUI {
             startY = e.touches[0].pageY;
           }
 
-          const activeTeamSlot = (isP1 ? gameEngine.teams[0] : gameEngine.teams[1])[idx];
+          const activeTeamSlot = this.getActiveTeam()[idx];
           if (!activeTeamSlot || activeTeamSlot.monsterId <= 0) return;
           const dbMonster = DB_MONSTERS.find(m => m.id === activeTeamSlot.monsterId);
           if (!dbMonster) return;
@@ -525,6 +807,7 @@ export class BattleUI {
             if (!dragStarted && dist > 5) {
               dragStarted = true;
               this._isDragging = true;
+              document.getElementById('battleGrid')?.classList.add('dragging');
 
               // Create floating pixel helper
               dragEl = document.createElement('div');
@@ -568,6 +851,7 @@ export class BattleUI {
                 c.classList.remove('drag-hover');
                 c.classList.remove('drag-hover-locked');
                 c.classList.remove('drag-target-landing');
+                c.classList.remove('drag-atk-range');
               });
 
               const cell = target?.closest('.battle-grid-cell');
@@ -590,37 +874,46 @@ export class BattleUI {
                     const landCell = document.querySelector(`.battle-grid-cell[data-grid-x="${landX}"][data-grid-y="${landY}"]`);
                     if (landCell) landCell.classList.add('drag-target-landing');
                   } else if (dbMonster.id === 117) {
-                    // Iron Monkey (throw) target position (closest enemy or 4 cells forward)
-                    const team = isP1 ? 1 : 2;
-                    const enemies = gameEngine.boardMonsters.filter(m => m.team !== team && !m.isDead);
-                    let closestEnemy = null;
-                    let minDist = Infinity;
-                    for (const e of enemies) {
-                      const dx = e.gridX - gx;
-                      const dy = e.gridY - gy;
-                      const dist = dx * dx + dy * dy;
-                      if (dist < minDist) {
-                        minDist = dist;
-                        closestEnemy = e;
-                      }
-                    }
-                    let destX = gx;
-                    let destY = gy;
-                    if (closestEnemy) {
-                      destX = closestEnemy.gridX;
-                      destY = closestEnemy.gridY;
-                    } else {
-                      const throwDir = isP1 ? 1 : -1;
-                      destX = Math.max(0, Math.min(10, gx + 4 * throwDir));
-                    }
+                    // Iron Monkey (throw) target position (4 cells forward from hover)
+                    const throwDir = isP1 ? 1 : -1;
+                    const destX = Math.max(0, Math.min(10, gx + 4 * throwDir));
+                    const destY = gy;
                     const landCell = document.querySelector(`.battle-grid-cell[data-grid-x="${destX}"][data-grid-y="${destY}"]`);
                     if (landCell) landCell.classList.add('drag-target-landing');
+                  }
+                  
+                  // Show attack range
+                  if (dbMonster) {
+                    if (dbMonster.type === 'melee') {
+                      for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                          if (dx === 0 && dy === 0) continue;
+                          const ax = gx + dx, ay = gy + dy;
+                          if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
+                          const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
+                          if (aCell) aCell.classList.add('drag-atk-range');
+                        }
+                      }
+                    } else {
+                      const rng = dbMonster.range || 5;
+                      for (let dx = -rng; dx <= rng; dx++) {
+                        for (let dy = -rng; dy <= rng; dy++) {
+                          if (dx === 0 && dy === 0) continue;
+                          if (Math.abs(dx) + Math.abs(dy) > rng) continue;
+                          const ax = gx + dx, ay = gy + dy;
+                          if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
+                          const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
+                          if (aCell) aCell.classList.add('drag-atk-range');
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
           };
 
+          // Bench drag - onEnd
           const onEnd = (endEv: MouseEvent | TouchEvent) => {
             window.removeEventListener('mousemove', onMove);
             window.removeEventListener('touchmove', onMove);
@@ -660,7 +953,7 @@ export class BattleUI {
               const gridX = parseInt(cell.getAttribute('data-grid-x') || '0', 10);
               const gridY = parseInt(cell.getAttribute('data-grid-y') || '0', 10);
 
-              const activeTeam = isP1 ? gameEngine.teams[0] : gameEngine.teams[1];
+              const activeTeam = this.getActiveTeam();
               const teamSlot = activeTeam[idx];
               if (teamSlot) {
                 const placed = gameEngine.placeMonster(teamSlot, gridX, gridY, isP1);
@@ -672,6 +965,7 @@ export class BattleUI {
 
             setTimeout(() => {
               this._isDragging = false;
+              document.getElementById('battleGrid')?.classList.remove('dragging');
             }, 50);
           };
 
@@ -743,6 +1037,7 @@ export class BattleUI {
             if (!dragStarted && dist > 5) {
               dragStarted = true;
               this._isDragging = true;
+              document.getElementById('battleGrid')?.classList.add('dragging');
 
               // Create floating pixel helper
               dragEl = document.createElement('div');
@@ -785,6 +1080,7 @@ export class BattleUI {
                 c.classList.remove('drag-hover');
                 c.classList.remove('drag-hover-locked');
                 c.classList.remove('drag-target-landing');
+                c.classList.remove('drag-atk-range');
               });
 
               const targetCell = target?.closest('.battle-grid-cell');
@@ -802,43 +1098,52 @@ export class BattleUI {
                   // Landing indicator logic for Drill and Iron Monkey
                   if (dbMonster.id === 116) {
                     // Drill (dig) unearthing position (6 cells forward)
-                    const dir = sourceMonster.team === 1 ? 1 : -1;
+                    const dir = isP1 ? 1 : -1;
                     const landX = Math.max(0, Math.min(10, tx + 6 * dir));
                     const landY = ty;
                     const landCell = document.querySelector(`.battle-grid-cell[data-grid-x="${landX}"][data-grid-y="${landY}"]`);
                     if (landCell) landCell.classList.add('drag-target-landing');
                   } else if (dbMonster.id === 117) {
-                    // Iron Monkey (throw) target position (closest enemy or 4 cells forward)
-                    const team = sourceMonster.team;
-                    const enemies = gameEngine.boardMonsters.filter(m => m.team !== team && !m.isDead);
-                    let closestEnemy = null;
-                    let minDist = Infinity;
-                    for (const e of enemies) {
-                      const dx = e.gridX - tx;
-                      const dy = e.gridY - ty;
-                      const dist = dx * dx + dy * dy;
-                      if (dist < minDist) {
-                        minDist = dist;
-                        closestEnemy = e;
-                      }
-                    }
-                    let destX = tx;
-                    let destY = ty;
-                    if (closestEnemy) {
-                      destX = closestEnemy.gridX;
-                      destY = closestEnemy.gridY;
-                    } else {
-                      const throwDir = team === 1 ? 1 : -1;
-                      destX = Math.max(0, Math.min(10, tx + 4 * throwDir));
-                    }
+                    // Iron Monkey (throw) target position (4 cells forward from hover)
+                    const throwDir = isP1 ? 1 : -1;
+                    const destX = Math.max(0, Math.min(10, tx + 4 * throwDir));
+                    const destY = ty;
                     const landCell = document.querySelector(`.battle-grid-cell[data-grid-x="${destX}"][data-grid-y="${destY}"]`);
                     if (landCell) landCell.classList.add('drag-target-landing');
+                  }
+                  
+                  // Show attack range
+                  if (dbMonster) {
+                    if (dbMonster.type === 'melee') {
+                      for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                          if (dx === 0 && dy === 0) continue;
+                          const ax = tx + dx, ay = ty + dy;
+                          if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
+                          const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
+                          if (aCell) aCell.classList.add('drag-atk-range');
+                        }
+                      }
+                    } else {
+                      const rng = dbMonster.range || 5;
+                      for (let dx = -rng; dx <= rng; dx++) {
+                        for (let dy = -rng; dy <= rng; dy++) {
+                          if (dx === 0 && dy === 0) continue;
+                          if (Math.abs(dx) + Math.abs(dy) > rng) continue;
+                          const ax = tx + dx, ay = ty + dy;
+                          if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
+                          const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
+                          if (aCell) aCell.classList.add('drag-atk-range');
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
           };
 
+          // Grid drag - onEnd
           const onEnd = (endEv: MouseEvent | TouchEvent) => {
             window.removeEventListener('mousemove', onMove);
             window.removeEventListener('touchmove', onMove);
@@ -915,6 +1220,7 @@ export class BattleUI {
 
             setTimeout(() => {
               this._isDragging = false;
+              document.getElementById('battleGrid')?.classList.remove('dragging');
             }, 50);
           };
 
@@ -968,11 +1274,13 @@ export class BattleUI {
     container.innerHTML = '';
   }
 
-  // Cleanup timers on destruction
+  // Cleanup timers and network listeners on destruction
   public onDestroy(): void {
     if (this._timerInterval) {
       clearInterval(this._timerInterval);
     }
+    for (const unsub of this._unsubscribers) unsub();
+    this._unsubscribers = [];
   }
 
   public updateDetailsCard(): void {
@@ -980,53 +1288,7 @@ export class BattleUI {
   }
 
   private getSkillIconHtml(skillName: string): string {
-    let badgeId = 11; // default to Shield
-    if (skillName === 'reap') badgeId = 19;
-    else if (skillName === 'lightning') badgeId = 4;
-    else if (skillName === 'life_link') badgeId = 6;
-    else if (skillName === 'incendiary') badgeId = 24;
-    else if (skillName === 'recovery') badgeId = 17;
-    else if (skillName === 'rush') badgeId = 5;
-    else if (skillName === 'big_cannon') badgeId = 20;
-    else if (skillName === 'leap') badgeId = 22;
-    else if (skillName === 'shot') badgeId = 20;
-    else if (skillName === 'shield') badgeId = 11;
-    else if (skillName === 'wind_attack') badgeId = 31;
-    else if (skillName === 'heal_sword') badgeId = 7;
-    else if (skillName === 'explosive') badgeId = 24;
-    else if (skillName === 'open_fire') badgeId = 29;
-    else if (skillName === 'unyielding') badgeId = 32;
-    else if (skillName === 'dig') badgeId = 21;
-    else if (skillName === 'throw') badgeId = 13;
-    else if (skillName === 'slash') badgeId = 27;
-    else if (skillName === 'shadow') badgeId = 26;
-    else if (skillName === 'attack') badgeId = 15;
-    else if (skillName === 'cultivation') badgeId = 16;
-    else if (skillName === 'anger') badgeId = 22;
-    else if (skillName === 'bash') badgeId = 13;
-    else if (skillName === 'snowball') badgeId = 25;
-    else if (skillName === 'conversion') badgeId = 34;
-
-    const sprite = BADGE_SPRITES[badgeId];
-    if (!sprite) return '';
-    const scale = 64 / sprite.sw;
-    const imgW = 2556 * scale;
-    const imgH = 1417 * scale;
-    const left = -sprite.sx * scale;
-    const top = -sprite.sy * scale;
-    return `
-      <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-        <img src="badge.png" style="
-          position: absolute;
-          left: ${left}px;
-          top: ${top}px;
-          width: ${imgW}px;
-          height: ${imgH}px;
-          border: none;
-          background: transparent;
-        " />
-      </div>
-    `;
+    return renderSkillIconHtml(skillName);
   }
 
   public updateDetailsCardContent(): void {
@@ -1088,7 +1350,8 @@ export class BattleUI {
 
     const dbMonster = selectedMonster.data;
     
-    const badgesHtml = Array(dbMonster.cost === 4 ? 3 : 2).fill(0).map((_, badgeIdx) => {
+    const maxSlots = Math.max(selectedMonster.badges.length, dbMonster.cost === 4 ? 3 : 2);
+    const badgesHtml = Array(maxSlots).fill(0).map((_, badgeIdx) => {
       const badge = selectedMonster.badges[badgeIdx];
       let badgeImgHtml = `<span style="font-size:24px; color:#5a5a5a;">+</span>`;
       if (badge) {
@@ -1137,7 +1400,7 @@ export class BattleUI {
       <!-- Stars and Race/Role -->
       <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
         <span style="font-size: 14px; color: #e5c158;">★★★</span>
-        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold;">[ ${dbMonster.race} | ${dbMonster.role} ]</span>
+        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold; font-size: 20px;">[ ${dbMonster.race} | ${dbMonster.role} ]</span>
       </div>
 
       <!-- Name banner -->

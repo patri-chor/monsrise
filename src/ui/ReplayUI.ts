@@ -1,5 +1,6 @@
 import { gameEngine, PlacedMonster } from '../game/GameEngine';
 import { DB_MONSTERS, BADGE_SPRITES } from '../game/Database';
+import { renderAvatarHtml } from './shared/AvatarRenderer';
 import { battleSystem, gridToScreen } from '../game/BattleSystem';
 import { uiManager } from './UIManager';
 import { vfx } from '../game/VfxManager';
@@ -103,52 +104,10 @@ export class ReplayUI {
     };
 
     // P1 avatar HTML
-    const p1Col = gameEngine.p1AvatarIndex % 6;
-    const p1Row = Math.floor(gameEngine.p1AvatarIndex / 6);
-    const p1Sx = p1Col * 170;
-    const p1Sy = p1Row * 170;
-    const p1AvatarHtml = `
-      <div class="player-avatar-frame p1-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <div style="
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 170px;
-          height: 170px;
-          background-image: url('avatars.png');
-          background-position: -${p1Sx}px -${p1Sy}px;
-          background-repeat: no-repeat;
-          transform: translate(-50%, -50%) scale(${90 / 170});
-          transform-origin: center;
-          image-rendering: pixelated;
-          image-rendering: crisp-edges;
-        "></div>
-      </div>
-    `;
+    const p1AvatarHtml = renderAvatarHtml(gameEngine.p1AvatarIndex, 'p1-frame');
 
     // P2 avatar HTML
-    const p2Col = gameEngine.p2AvatarIndex % 6;
-    const p2Row = Math.floor(gameEngine.p2AvatarIndex / 6);
-    const p2Sx = p2Col * 170;
-    const p2Sy = p2Row * 170;
-    const p2AvatarHtml = `
-      <div class="player-avatar-frame p2-frame" style="display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;">
-        <div style="
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 170px;
-          height: 170px;
-          background-image: url('avatars.png');
-          background-position: -${p2Sx}px -${p2Sy}px;
-          background-repeat: no-repeat;
-          transform: translate(-50%, -50%) scale(${90 / 170});
-          transform-origin: center;
-          image-rendering: pixelated;
-          image-rendering: crisp-edges;
-        "></div>
-      </div>
-    `;
+    const p2AvatarHtml = renderAvatarHtml(gameEngine.p2AvatarIndex, 'p2-frame');
 
     this._container.innerHTML = `
       <div id="battleView" class="ui-interactive">
@@ -606,7 +565,7 @@ export class ReplayUI {
 
       <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
         <span style="font-size: 14px; color: #e5c158;">★★★</span>
-        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold;">[ ${dbMonster.race} | ${dbMonster.role} ]</span>
+        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold; font-size: 20px;">[ ${dbMonster.race} | ${dbMonster.role} ]</span>
       </div>
 
       <div class="details-name-banner">${dbMonster.name}</div>

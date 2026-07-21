@@ -1,4 +1,5 @@
 import { Component } from './Component';
+import { gameEngine } from '../game/GameEngine';
 
 export class Sprite extends Component {
   /** 静态绘制模式：all=全画，imageOnly=仅贴图，hudOnly=仅血条/HUD */
@@ -140,7 +141,9 @@ export class Sprite extends Component {
         
         // HP Bar Fill
         const pct = Math.max(0, Math.min(1, this.hp / this.maxHp));
-        ctx.fillStyle = this.team === 1 ? '#5ac54f' : '#ff3333';
+        const flip = gameEngine.mode === 'online' && !gameEngine.isOnlineHost;
+        const ownGreen = flip ? this.team === 2 : this.team === 1;
+        ctx.fillStyle = ownGreen ? '#5ac54f' : '#ff3333';
         ctx.fillRect(hx + 1, hy + 1, (barW - 2) * pct, barH - 2);
 
         // Skill CD
@@ -159,13 +162,13 @@ export class Sprite extends Component {
           ctx.fillStyle = '#0d2d52';
           ctx.strokeStyle = '#4ba3e3';
           ctx.lineWidth = 1;
-          ctx.fillRect(hx + barW + 2, hy, 16, 12);
-          ctx.strokeRect(hx + barW + 2, hy, 16, 12);
+          ctx.fillRect(hx + barW + 2, hy, 32, 24);
+          ctx.strokeRect(hx + barW + 2, hy, 32, 24);
           ctx.fillStyle = '#7dd4ff';
-          ctx.font = `10px 'Press Start 2P', 'Zpix', monospace`;
+          ctx.font = `20px 'Press Start 2P', 'Zpix', monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(this.shield.toString(), hx + barW + 2 + 8, hy + 6);
+          ctx.fillText(this.shield.toString(), hx + barW + 2 + 16, hy + 12);
         }
 
         // Status Effects

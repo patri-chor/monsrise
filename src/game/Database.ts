@@ -28,12 +28,12 @@ export interface BadgeData {
 
 export const DB_MONSTERS: MonsterData[] = [
   { id: 101, name: "肃清哥", cost: 4, type: 'melee', hp: 3000, atk: 120, ats: 1.25, range: 1, speed: 2.5, skill: 'reap', skillCd: 2, race: "哥布林", role: "战士", sx: 0, sy: 10, sw: 204, sh: 205, skillCoeff: 1.0, skillDesc: "撕裂：旋转对周围一圈敌人造成 {dmg} 伤害，并附带流血效果。" },
-  { id: 102, name: "大祭司哥", cost: 4, type: 'ranged', hp: 2450, atk: 190, ats: 0.59, range: 7, speed: 2.5, skill: 'lightning', skillCd: 7, race: "哥布林", role: "法师", sx: 204, sy: 10, sw: 204, sh: 205, skillCoeff: 3.0, skillDesc: "闪电：对范围内最多 4 个敌人造成 {dmg} 伤害，并有 50% 概率附加 2 秒眩晕。" },
-  { id: 103, name: "学徒哥", cost: 2, type: 'ranged', hp: 1500, atk: 80, ats: 1.05, range: 5, speed: 2.5, skill: 'life_link', skillCd: 3, race: "哥布林", role: "法师", sx: 408, sy: 10, sw: 204, sh: 205, skillDesc: "生命链接：将范围内所有友方生命按百分比平均分摊。" },
+  { id: 102, name: "大祭司哥", cost: 4, type: 'ranged', hp: 2450, atk: 190, ats: 0.59, range: 7, speed: 2.5, skill: 'lightning', skillCd: 7, race: "哥布林", role: "法师", sx: 204, sy: 10, sw: 204, sh: 205, skillCoeff: 2.5, skillDesc: "闪电：对范围内最多 4 个敌人造成 {dmg} 伤害，并有 50% 概率附加 2 秒眩晕。" },
+  { id: 103, name: "学徒哥", cost: 2, type: 'ranged', hp: 1500, atk: 80, ats: 1.05, range: 5, speed: 2.5, skill: 'life_link', skillCd: 4, race: "哥布林", role: "法师", sx: 408, sy: 10, sw: 204, sh: 205, skillDesc: "生命链接：将范围内所有友方生命按百分比平均分摊。" },
   { id: 104, name: "散弹哥", cost: 2, type: 'ranged', hp: 1400, atk: 30, ats: 1.18, range: 5, speed: 2.5, skill: 'incendiary', skillCd: 3, race: "哥布林", role: "射手", sx: 612, sy: 10, sw: 204, sh: 190, skillCoeff: 3.0, skillDesc: "散弹：普攻散射五颗子弹；技能发射燃烧弹造成 {dmg} 伤害，击退 1 格并施加燃烧。" },
   { id: 105, name: "祈祷哥", cost: 2, type: 'ranged', hp: 2000, atk: 50, ats: 1, range: 5, speed: 2.5, skill: 'recovery', skillCd: 0, race: "哥布林", role: "法师", sx: 0, sy: 215, sw: 204, sh: 205, skillDesc: "回血连线：战斗开始时连线周围友军，自身攻击伤害时连线友军回血 2% 最大生命值。" },
   { id: 106, name: "冲锋哥", cost: 2, type: 'melee', hp: 2000, atk: 100, ats: 0.91, range: 1, speed: 2.5, skill: 'rush', skillCd: 0, race: "哥布林", role: "特殊", sx: 204, sy: 215, sw: 204, sh: 205, skillCoeff: 1.0, skillDesc: "冲锋：战斗开始时向前突进，撞击对手造成 {dmg} 伤害，并击退 2-3 格。" },
-  { id: 107, name: "咒法骑士", cost: 2, type: 'ranged', hp: 1500, atk: 130, ats: 0.5, range: 5, speed: 2.5, skill: 'big_cannon', skillCd: 0, race: "人类", role: "法师", sx: 408, sy: 215, sw: 204, sh: 205, skillCoeff: 13.0, skillDesc: "蓄力重炮：开局蓄力 2s，发射重炮对直线上敌人造成 {dmg} 伤害。" },
+  { id: 107, name: "咒法骑士", cost: 2, type: 'ranged', hp: 1500, atk: 130, ats: 0.5, range: 5, speed: 2.5, skill: 'big_cannon', skillCd: 0, race: "人类", role: "法师", sx: 408, sy: 215, sw: 204, sh: 205, skillCoeff: 7.5, skillDesc: "蓄力重炮：开局蓄力 2s，发射重炮对直线上敌人造成 {dmg} 伤害。" },
   { id: 108, name: "救星骑士", cost: 4, type: 'melee', hp: 3600, atk: 120, ats: 1, range: 1, speed: 2.5, skill: 'leap', skillCd: 8, race: "人类", role: "战士", sx: 617, sy: 205, sw: 204, sh: 205, skillCoeff: 4.5, skillDesc: "守护跳跃：跳跃至友方身边，落点造成 {dmg} 伤害，双方各获 8 层护盾。" },
   { id: 109, name: "银狙骑士", cost: 2, type: 'ranged', hp: 1000, atk: 300, ats: 0.35, range: 7, speed: 2.5, skill: 'shot', skillCd: 8, race: "人类", role: "射手", sx: 0, sy: 420, sw: 204, sh: 205, skillCoeff: 4.0, skillDesc: "银色狙击：下一次普攻造成 4-5 倍伤害（{dmg}-{dmg2}），对高血量敌人伤害更高。" },
   { id: 110, name: "帝国之盾", cost: 2, type: 'melee', hp: 3000, atk: 72, ats: 0.83, range: 1, speed: 2.5, skill: 'shield', skillCd: 6, race: "人类", role: "坦克", sx: 204, sy: 425, sw: 204, sh: 205, skillDesc: "帝国铁盾：每 6s 给自己和相邻友方 5 层护盾。护盾减免 60% 伤害。" },
@@ -89,7 +89,8 @@ export const DB_BADGES: BadgeData[] = [
   { id: 32, name: "巫毒", desc: "战斗开始前10秒免疫死亡，每5s将血量强制置为20%" },
   { id: 33, name: "礼物", desc: "死亡后将自身当前攻击力的30%给予最近的友方" },
   { id: 34, name: "逆转术", desc: "未实现！" },
-  { id: 35, name: "接力", desc: "死亡时将自身的第一个徽章的效果给予最近的友方" }
+  { id: 35, name: "接力", desc: "死亡时将自身的第一个徽章的效果给予最近的友方" },
+  { id: 36, name: "回环", desc: "自身受治疗后扩散30%治疗给范围2内队友" }
 ];
 
 /** 根据怪物数据生成技能描述（动态代入伤害数值） */

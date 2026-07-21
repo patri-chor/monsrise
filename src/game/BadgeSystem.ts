@@ -1,4 +1,4 @@
-import { PlacedMonster } from './GameEngine';
+import { PlacedMonster, gameEngine } from './GameEngine';
 import { vfx } from './VfxManager';
 import { gridToScreen } from './ScreenConfig';
 import { HIT } from './VfxPresets';
@@ -265,125 +265,64 @@ export function getMonsterBadges(monster: PlacedMonster): BaseBadge[] {
 
 // ==================== 批量调用工具函数 ====================
 
-export function badgeOnPlace(monster: PlacedMonster, ctx?: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onPlace(monster, ctx);
-  }
+/** 遍历所有徽章执行操作，无返回值 */
+function dispatchBadges(monster: PlacedMonster, fn: (badge: BaseBadge) => void): void {
+  for (const badge of getMonsterBadges(monster)) fn(badge);
 }
 
-export function badgeOnStartOfBattle(monster: PlacedMonster, ctx?: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onStartOfBattle(monster, ctx);
-  }
-}
-
-export function badgeModifyDamage(monster: PlacedMonster, dmg: number, ctx: BadgeContext): number {
-  let result = dmg;
-  for (const badge of getMonsterBadges(monster)) {
-    result = badge.modifyDamage(monster, result, ctx);
-  }
+/** 遍历所有徽章，折叠累加（累加初值为 0） */
+function sumBadges(monster: PlacedMonster, fn: (badge: BaseBadge) => number): number {
+  let result = 0;
+  for (const badge of getMonsterBadges(monster)) result += fn(badge);
   return result;
 }
 
-export function badgeModifyIncomingDamage(monster: PlacedMonster, dmg: number, ctx: BadgeContext): number {
-  let result = dmg;
-  for (const badge of getMonsterBadges(monster)) {
-    result = badge.modifyIncomingDamage(monster, result, ctx);
-  }
+/** 遍历所有徽章，流水线累算（值依次传入每个徽章） */
+function pipeBadges(monster: PlacedMonster, initial: number, fn: (badge: BaseBadge, val: number) => number): number {
+  let result = initial;
+  for (const badge of getMonsterBadges(monster)) result = fn(badge, result);
   return result;
 }
 
-export function badgeOnAfterDealDamage(monster: PlacedMonster, ctx: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onAfterDealDamage(monster, ctx);
-  }
-}
+// --- void 遍历 ---
 
-export function badgeOnAfterTakeDamage(monster: PlacedMonster, ctx: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onAfterTakeDamage(monster, ctx);
-  }
-}
+export const badgeOnPlace        = (m: PlacedMonster, ctx?: BadgeContext) => dispatchBadges(m, b => b.onPlace(m, ctx));
+export const badgeOnStartOfBattle = (m: PlacedMonster, ctx?: BadgeContext) => dispatchBadges(m, b => b.onStartOfBattle(m, ctx));
+export const badgeOnAfterDealDamage = (m: PlacedMonster, ctx: BadgeContext) => dispatchBadges(m, b => b.onAfterDealDamage(m, ctx));
+export const badgeOnAfterTakeDamage = (m: PlacedMonster, ctx: BadgeContext) => dispatchBadges(m, b => b.onAfterTakeDamage(m, ctx));
+export const badgeOnAfterHeal    = (m: PlacedMonster, ctx: BadgeContext) => dispatchBadges(m, b => b.onAfterHeal(m, ctx));
+export const badgeOnSkillCast    = (m: PlacedMonster, ctx: BadgeContext) => dispatchBadges(m, b => b.onSkillCast(m, ctx));
+export const badgeOnAfterDeath   = (m: PlacedMonster, ctx?: BadgeContext) => dispatchBadges(m, b => b.onAfterDeath(m, ctx));
+export const badgeOnTick         = (m: PlacedMonster, dt: number, ctx?: BadgeContext) => dispatchBadges(m, b => b.onTick(m, dt, ctx));
 
-export function badgeModifyHeal(monster: PlacedMonster, amount: number, ctx?: BadgeContext): number {
-  let result = amount;
-  for (const badge of getMonsterBadges(monster)) {
-    result = badge.modifyHeal(monster, result, ctx);
-  }
-  return result;
-}
+// --- 流水线累算 ---
 
-export function badgeOnAfterHeal(monster: PlacedMonster, ctx: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onAfterHeal(monster, ctx);
-  }
-}
+export const badgeModifyDamage         = (m: PlacedMonster, dmg: number, ctx: BadgeContext) => pipeBadges(m, dmg, (b, v) => b.modifyDamage(m, v, ctx));
+export const badgeModifyIncomingDamage = (m: PlacedMonster, dmg: number, ctx: BadgeContext) => pipeBadges(m, dmg, (b, v) => b.modifyIncomingDamage(m, v, ctx));
+export const badgeModifyHeal           = (m: PlacedMonster, amount: number, ctx?: BadgeContext) => pipeBadges(m, amount, (b, v) => b.modifyHeal(m, v, ctx));
+export const badgeModifyShield         = (m: PlacedMonster, layers: number, ctx?: BadgeContext) => pipeBadges(m, layers, (b, v) => b.modifyShield(m, v, ctx));
 
-export function badgeModifyShield(monster: PlacedMonster, layers: number, ctx?: BadgeContext): number {
-  let result = layers;
-  for (const badge of getMonsterBadges(monster)) {
-    result = badge.modifyShield(monster, result, ctx);
-  }
-  return result;
-}
+// --- 累加 ---
 
-export function badgeGetRangeBonus(monster: PlacedMonster): number {
-  let bonus = 0;
-  for (const badge of getMonsterBadges(monster)) {
-    bonus += badge.getRangeBonus(monster);
-  }
-  return bonus;
-}
+export const badgeGetRangeBonus   = (m: PlacedMonster) => sumBadges(m, b => b.getRangeBonus(m));
+export const badgeGetCdSpeedBonus = (m: PlacedMonster) => sumBadges(m, b => b.getCdSpeedBonus(m));
 
-export function badgeGetCdSpeedBonus(monster: PlacedMonster): number {
-  let bonus = 0;
-  for (const badge of getMonsterBadges(monster)) {
-    bonus += badge.getCdSpeedBonus(monster);
-  }
-  return bonus;
-}
+// --- 累乘 ---
 
-export function badgeGetAtsMultiplier(monster: PlacedMonster): number {
-  let mult = 1.0;
-  for (const badge of getMonsterBadges(monster)) {
-    mult *= badge.getAtsMultiplier(monster);
-  }
-  return mult;
-}
+export const badgeGetAtsMultiplier = (m: PlacedMonster) => pipeBadges(m, 1.0, (b, v) => v * b.getAtsMultiplier(m));
 
-export function badgeOnSkillCast(monster: PlacedMonster, ctx: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onSkillCast(monster, ctx);
-  }
-}
-
-export function badgeOnAfterDeath(monster: PlacedMonster, ctx?: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onAfterDeath(monster, ctx);
-  }
-}
-
-export function badgeOnTick(monster: PlacedMonster, dt: number, ctx?: BadgeContext): void {
-  for (const badge of getMonsterBadges(monster)) {
-    badge.onTick(monster, dt, ctx);
-  }
-}
+// --- 短路返回 ---
 
 export function badgeOnBeforeDeath(monster: PlacedMonster, ctx?: BadgeContext): boolean {
-  let shouldDie = true;
   for (const badge of getMonsterBadges(monster)) {
-    if (!badge.onBeforeDeath(monster, ctx)) {
-      shouldDie = false;
-    }
+    if (!badge.onBeforeDeath(monster, ctx)) return false;
   }
-  return shouldDie;
+  return true;
 }
 
 export function badgeOnApplyStatusEffect(monster: PlacedMonster, effect: { type: string; duration: number }): boolean {
   for (const badge of getMonsterBadges(monster)) {
-    if (!badge.onApplyStatusEffect(monster, effect)) {
-      return false;
-    }
+    if (!badge.onApplyStatusEffect(monster, effect)) return false;
   }
   return true;
 }
@@ -645,10 +584,6 @@ class ChefBadge extends BaseBadge {
   readonly id = 17;
   readonly name = '大厨';
   readonly desc = '自身获得的所有治疗效果提升50%';
-
-  modifyHeal(_m: PlacedMonster, amount: number, _ctx?: BadgeContext): number {
-    return amount; // 提供端已在调用处放大，此处不做二次加成
-  }
 }
 
 // --- Badge 18: 复活 ---
@@ -870,12 +805,13 @@ class BombBadge extends BaseBadge {
       }, 0.5);
 
       // 爆炸伤害
+      const bombRange = 1 + badgeGetRangeBonus(m);
       const enemies = battle._monsters.filter(
         (e: PlacedMonster) => !e.isDead && e.team !== m.team
       ).filter((e: PlacedMonster) => {
         const dx = Math.abs(e.gridX - m.gridX);
         const dy = Math.abs(e.gridY - m.gridY);
-        return dx <= 1 && dy <= 1;
+        return dx <= bombRange && dy <= bombRange;
       });
       for (const enemy of enemies) {
         battle.applyDamage(enemy, explosion, null);
@@ -913,9 +849,9 @@ class SacrificeBadge extends BaseBadge {
   readonly desc = '免疫所有控制，每2s让周围1格内敌人燃烧流失20血';
 
   private _timer = new IntervalTimer();
+  private _fireTimer = 0;
 
   onApplyStatusEffect(_m: PlacedMonster, effect: any): boolean {
-    // 免疫所有负面状态：stun, chill, burn, poison, bleed
     const blockedTypes = ['stun', 'chill', 'burn', 'poison', 'bleed'];
     if (blockedTypes.includes(effect.type)) {
       return false;
@@ -927,12 +863,38 @@ class SacrificeBadge extends BaseBadge {
     const battle = ctx?.battle;
     if (!battle) return;
 
+    // 背后火焰粒子（扩大范围，参考现有 burn VFX）
+    this._fireTimer += dt;
+    if (this._fireTimer >= 0.25) {
+      this._fireTimer -= 0.25;
+      const pos = battle.screenPositions.get(m.id);
+      if (pos) {
+        // 外焰：蓝色渐变火焰，亮白→蓝
+        for (let i = 0; i < 10; i++) {
+          const sx = pos.x + (Math.random() - 0.5) * 60;
+          const sy = pos.y - 20 + Math.random() * 30 -(sx-pos.x) ;
+          vfx.addBackgroundParticle(sx, sy, 'burn_fire', 1.7, '#004fd7ff', 42);
+          const lp = vfx.backgroundParticles[vfx.backgroundParticles.length - 1];
+          if (lp) { lp.vx = (Math.random() - 0.5) * 50; lp.color = (Math.random() < 0.5) ? '#e0f0ff' : '#4488ff'; }
+        }
+        // 余烬：蓝色火星，亮白→浅蓝
+        for (let i = 0; i < 6; i++) {
+          const sx = pos.x + (Math.random() - 0.5) * 60;
+          const sy = pos.y - 20 + Math.random() * 50;
+          vfx.addBackgroundParticle(sx, sy, 'burn_ember', 0.5, '#347eecff', 6);
+          const lp = vfx.backgroundParticles[vfx.backgroundParticles.length - 1];
+          if (lp) { lp.vx = (Math.random() - 0.5) * 60; lp.color = (Math.random() < 0.5) ? '#ffffff' : '#6699ff'; }
+        }
+      }
+    }
+
     if (this._timer.tick(m.id, dt, 2.0)) {
       battle.applyDamage(m, 16, null, { bypassesShield: true });
-      // 自伤触发祈祷链疗
       battle.tryTriggerPriestHeal(m);
 
-      const targets = battle.getMonstersInGridRange(m.gridX, m.gridY, 1);
+      const burnRange = 1 + badgeGetRangeBonus(m);
+      const targets = battle.getMonstersInGridRange(m.gridX, m.gridY, burnRange)
+        .filter((t: PlacedMonster) => Math.abs(t.gridX - m.gridX) + Math.abs(t.gridY - m.gridY) <= burnRange);
       for (const target of targets) {
         if (!target.isDead && !(target as any).resurrecting) {
           battle.applyStatusEffect(target, { type: 'burn', duration: 4.0 });
@@ -949,7 +911,13 @@ class ReinforcementBadge extends BaseBadge {
   readonly desc = '自身获得的所有护盾效果提升50%';
 
   modifyShield(_m: PlacedMonster, layers: number, _ctx?: BadgeContext): number {
-    return Math.round(layers * 1.5);
+    const val = layers * 1.5;
+    const floor = Math.floor(val);
+    // 奇数盾（X.5）：50% 概率向下/向上取整
+    if (val - floor === 0.5) {
+      return gameEngine.random() < 0.5 ? floor : floor + 1;
+    }
+    return Math.round(val);
   }
 }
 
@@ -964,14 +932,13 @@ class CooperativeOffenseBadge extends BaseBadge {
 class ReactiveArmorBadge extends BaseBadge {
   readonly id = 30;
   readonly name = '反应装甲';
-  readonly desc = '自身护盾破裂或减少时，对周围1格造成4倍于消耗盾值的伤害';
+  readonly desc = '自身护盾破裂或减少时，对周围1格造成4倍于当前剩余盾值的伤害（受攻击徽章增幅）';
 
   onAfterTakeDamage(m: PlacedMonster, ctx: BadgeContext): void {
     const battle = ctx.battle;
-    const shieldReduced = ctx.shieldReduced || 0;
-    if (!battle || shieldReduced <= 0) return;
+    if (!battle || m.shield <= 0) return;
 
-    const dmg = shieldReduced * 4;
+    const dmg = m.shield * 4;
     const pos = battle.screenPositions.get(m.id);
     if (pos) {
       // 中心白闪（50ms 瞬闪）
@@ -988,7 +955,8 @@ class ReactiveArmorBadge extends BaseBadge {
       }
     }
 
-    const enemies = battle.getMonstersInGridRange(m.gridX, m.gridY, 1)
+    const enemyRange = 1 + badgeGetRangeBonus(m);
+    const enemies = battle.getMonstersInGridRange(m.gridX, m.gridY, enemyRange)
       .filter((e: PlacedMonster) => e.team !== m.team && !e.isDead && !(e as any).resurrecting);
     for (const e of enemies) {
       battle.applyDamage(e, dmg, m);
@@ -1079,12 +1047,43 @@ class RelayBadge extends BaseBadge {
     if (candidates.length > 0) {
       const recipient = candidates[0];
       recipient.badges.push(firstBadge);
-      
+
+      // 从原怪兽移除已转移的徽章，仅保留接力徽章
+      const donorIdx = m.badges.findIndex(b => b.id === firstBadge.id);
+      if (donorIdx >= 0) {
+        m.badges.splice(donorIdx, 1);
+      }
+
       const badgeInstance = getBadge(firstBadge.id);
       if (badgeInstance) {
         badgeInstance.onPlace(recipient, ctx);
         badgeInstance.onStartOfBattle(recipient, ctx);
       }
+    }
+  }
+}
+
+// --- Badge 36: 回环 ---
+class RegressionBadge extends BaseBadge {
+  readonly id = 36;
+  readonly name = '回环';
+  readonly desc = '自身受治疗后扩散30%治疗给范围2内队友';
+
+  onAfterHeal(m: PlacedMonster, ctx: BadgeContext): void {
+    const battle = ctx.battle;
+    if (!battle || !ctx.healAmount) return;
+    const spread = Math.round(ctx.healAmount * 0.3);
+    if (spread <= 0) return;
+    const auraRange = 2 + badgeGetRangeBonus(m);
+    const allies = (battle._monsters as PlacedMonster[]).filter(
+      (a: PlacedMonster) => a.team === m.team && !a.isDead && a.id !== m.id
+    ).filter((a: PlacedMonster) => {
+      const dx = Math.abs(a.gridX - m.gridX);
+      const dy = Math.abs(a.gridY - m.gridY);
+      return dx + dy <= auraRange;
+    });
+    for (const ally of allies) {
+      battle.applyHeal(m, ally, spread);
     }
   }
 }
@@ -1129,5 +1128,6 @@ export function registerAllBadges(): void {
   registerBadge(new VoodooBadge());
   registerBadge(new GiftBadge());
   registerBadge(new ReversalBadge());
+  registerBadge(new RegressionBadge());
   registerBadge(new RelayBadge());
 }

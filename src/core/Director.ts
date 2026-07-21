@@ -74,6 +74,9 @@ export class Director {
     // Clear canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // 第 -1 层：背景粒子（献祭火焰等，在怪物之下）
+    vfx.drawBackground(this.ctx);
+
     // 第 0 层：怪物贴图
     Sprite.drawMode = 'imageOnly';
     this.drawNode(this.rootNode);

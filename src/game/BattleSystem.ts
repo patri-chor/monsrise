@@ -1,6 +1,7 @@
 import { gameEngine, PlacedMonster } from './GameEngine';
 import { vfx, tntImage } from './VfxManager';
 import type { Projectile, BoltType } from './VfxManager';
+import { BOLT_PROFILES } from './VfxManager';
 import { HIT, SKILL, BULLET_OFFSET, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
 import { screenConfig, gridToScreen } from './ScreenConfig';
 import { getSkill } from './SkillSystem';
@@ -27,6 +28,39 @@ const BURST_CONFIG: Record<number, { count: number; delay: number; panelDiv: num
   122: { count: 5,  delay: 0.2, panelDiv: 5  },  // 丛林猴     ats=2.70  攻时=1s  间隔=1.85s
 };
 
+// ==================== 物理/抛物线可调参数 ====================
+
+/** 击退动画速度倍率：1.0=正常, 0.5=慢一半（duration翻倍） */
+const KNOCKBACK_SPEED_FACTOR = 0.5;
+
+/** 击退抛物线高度倍率 */
+const KNOCKBACK_HEIGHT_FACTOR = 1.0;
+
+/** 冲锋移动速度倍率 */
+const CHARGE_SPEED_FACTOR = 1.0;
+
+/** 跃击（救星）峰值高度（px） */
+export const LEAP_PEAK_HEIGHT = 500;
+
+/** 跃击（救星）飞行时长（秒） */
+export const LEAP_DURATION = 0.6;
+
+/** 投掷（铁甲）峰值高度（px） */
+export const THROW_PEAK_HEIGHT = 180;
+
+/** 投掷（铁甲）飞行时长（秒） */
+export const THROW_DURATION = 1.0;
+
+/** 碰撞反弹：被投掷怪兽 X 反弹峰值高度（px）≈ 1.5 格 */
+const COLLISION_REBOUND_X_HEIGHT = 188;
+
+/** 碰撞反弹：冲锋哥反弹峰值高度（px）≈ 1 格 */
+const COLLISION_REBOUND_CHARGE_HEIGHT = 125;
+
+/** 碰撞反弹：水平位移格数范围 [min, max] */
+const COLLISION_REBOUND_STRENGTH_MIN = 2;
+const COLLISION_REBOUND_STRENGTH_MAX = 3;
+
 export interface KnockbackState {
   startX: number;
   startY: number;
@@ -46,6 +80,10 @@ export interface LeapState {
   elapsedTime: number;
   peakHeight: number;
   damageOnLanding: number;
+  /** 落地时对目标敌人施加击退（敌人id） */
+  knockbackTargetId?: string;
+  /** 击退方向（1=右，-1=左） */
+  knockbackDir?: number;
 }
 
 export function isP1Monster(m: PlacedMonster): boolean {
@@ -397,7 +435,8 @@ export class BattleSystem {
           const casted = this.castSkill(m);
           if (casted) {
             m.skillCdProgress = 0;
-            this._attackTimers.set(m.id, 0);
+            // 技能后保留攻击冷却进度，动画结束后立即攻击
+            this._attackTimers.set(m.id, interval);
             actedThisFrame = true;
 
             let animDur = 1 / m.ats;
@@ -692,10 +731,21 @@ export class BattleSystem {
           this._gridOccupation[m.gridX][m.gridY] = m;
 
           const landPos = this.screenPositions.get(m.id) || gridToScreen(dest.x, dest.y);
-          // Layer 1: 白色着陆闪光（角色脚下，下移半格）
-          vfx.spawnParticle(landPos.x, landPos.y + 70, SKILL.leap.landFlash);
-          // Layer 2: 白色冲击环
-          vfx.spawnParticle(landPos.x, landPos.y + 70, SKILL.leap.land);
+          // 着陆：冲击环 + 碎石在背景层，尘土在前景层
+          const ly = landPos.y + 70;
+          vfx.spawnBackgroundParticle(landPos.x, ly, SKILL.leap.ring);
+          this.scheduler.schedule(() => {
+            if (this.active) vfx.spawnBackgroundParticle(landPos.x, ly, SKILL.leap.ring);
+          }, 0.18);
+          this.scheduler.schedule(() => {
+            if (this.active) vfx.spawnBackgroundParticle(landPos.x, ly, SKILL.leap.ring);
+          }, 0.36);
+          vfx.spawnBackgroundParticle(landPos.x, ly, SKILL.leap.debris);
+          for (let i = 0; i < 12; i++) {
+            const dx = (Math.random() - 0.5) * 180;
+            const dy = (Math.random() - 0.5) * 100;
+            vfx.spawnParticle(landPos.x + dx, ly + dy, SKILL.leap.dust);
+          }
         }
         
         // Apply landing range 1 damage to enemies (captured before push)
@@ -706,11 +756,13 @@ export class BattleSystem {
             this.applyStatusEffect(e, { type: 'stun', duration: 2.0 });
           }
         }
-        
-        // Layer 3: 尘土扩散（6粒向外飞散，在角色脚下）
-        const footPos = this.screenPositions.get(m.id) || gridToScreen(m.gridX, m.gridY);
-        for (let i = 0; i < 6; i++) {
-          vfx.spawnParticle(footPos.x, footPos.y + 70, SKILL.leap.landDust);
+
+        // 落地时对指定敌人施加击退
+        if (lp.knockbackTargetId && lp.knockbackDir !== undefined) {
+          const kbTarget = this._monsters.find(e => e.id === lp.knockbackTargetId);
+          if (kbTarget && !kbTarget.isDead) {
+            this.applyKnockback(kbTarget, lp.knockbackDir, 0, 1);
+          }
         }
       }
       return;
@@ -799,9 +851,16 @@ export class BattleSystem {
             m.gridY = destY;
             this._gridOccupation[destX][destY] = m;
 
-            // 出土特效
+            // 出土动画：冲击波环 + 碎石 + 尘土（复用 SKILL.leap 预设）
             const emergePos = gridToScreen(destX, destY);
-            vfx.addParticle(emergePos.x, emergePos.y, 'explosion', 0.4, '#8B4513', 18);
+            const ey = emergePos.y + 40;
+            vfx.spawnBackgroundParticle(emergePos.x, ey, SKILL.leap.ring);
+            vfx.spawnBackgroundParticle(emergePos.x, ey, SKILL.leap.debris);
+            for (let i = 0; i < 8; i++) {
+              const dx = (Math.random() - 0.5) * 140;
+              const dy = (Math.random() - 0.5) * 70;
+              vfx.spawnParticle(emergePos.x + dx, ey + dy, SKILL.leap.dust);
+            }
           }
 
           // 清空索敌，恢复正常攻击
@@ -850,8 +909,6 @@ export class BattleSystem {
         
         angles.forEach((offset, idx) => {
           const a = angle + offset;
-          const tx = pos.x + Math.cos(a) * dist;
-          const ty = pos.y + Math.sin(a) * dist;
           const isCenter = idx === 2;
 
           if (isPiercing) {
@@ -866,7 +923,9 @@ export class BattleSystem {
               });
             }
           } else {
-            const pr = vfx.addProjectile(pos.x, pos.y, tx, ty, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
+            const extX = pos.x + Math.cos(a) * 2500;
+            const extY = pos.y + Math.sin(a) * 2500;
+            const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
             vfx.applyBulletSprite(pr, m.dbId);
             if (isCenter) {
               pr.onHit = (hitId: string) => {
@@ -877,13 +936,17 @@ export class BattleSystem {
           }
         });
       } else {
-        // Standard ranged
+        // Standard ranged — 子弹不追踪，延伸直线飞行直到碰撞才销毁
+        // 计算方向向量
+        const dX = tPos.x - pos.x;
+        const dY = tPos.y - pos.y;
+        const dirLen = Math.sqrt(dX * dX + dY * dY);
+        const nX = dX / dirLen;
+        const nY = dY / dirLen;
+        const extX = pos.x + nX * 2500;
+        const extY = pos.y + nY * 2500;
+
         if (isPiercing) {
-          const dx = tPos.x - pos.x;
-          const dy = tPos.y - pos.y;
-          const dirLen = Math.sqrt(dx * dx + dy * dy);
-          const extX = tPos.x + (dx / dirLen) * 2500;
-          const extY = tPos.y + (dy / dirLen) * 2500;
           const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
           this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
             const ht = this._monsters.find(e => e.id === hitId);
@@ -901,9 +964,15 @@ export class BattleSystem {
           let pr: Projectile;
           if (isExplosive) {
             const cfg = SKILL.explosiveAttack.projectile;
-            pr = vfx.addProjectile(pos.x, pos.y, tPos.x, tPos.y, cfg.speed, cfg.color, () => {
-              this.dealDamageImpact(m, target);
-            }, target.id, undefined, cfg.arcHeight, m.id);
+            const destPos = gridToScreen(target.gridX, target.gridY);
+            const destGridX = target.gridX;
+            const destGridY = target.gridY;
+            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
+              const occupant = this._gridOccupation[destGridX]?.[destGridY];
+              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+                this.dealDamageImpact(m, occupant);
+              }
+            }, undefined, undefined, cfg.arcHeight, m.id);
             if (cfg.size) pr.size = cfg.size;
             // 使用 tnt.png 贴图
             const tntW = tntImage.naturalWidth || tntImage.width || 32;
@@ -911,20 +980,32 @@ export class BattleSystem {
             pr.imageRect = { img: tntImage, sx: 0, sy: 0, sw: tntW, sh: tntH, dw: cfg.size || 16, dh: (cfg.size || 16) * tntH / tntW };
           } else if (isSnowball) {
             const cfg = SKILL.snowballAttack.projectile;
-            pr = vfx.addProjectile(pos.x, pos.y, tPos.x, tPos.y, cfg.speed, cfg.color, () => {
-              const tScr = gridToScreen(target.gridX, target.gridY);
-              vfx.spawnParticle(tScr.x, tScr.y, HIT.snowballAttack);
-              this.dealDamageImpact(m, target);
-            }, target.id, undefined, cfg.arcHeight, m.id);
+            const destPos = gridToScreen(target.gridX, target.gridY);
+            const destGridX = target.gridX;
+            const destGridY = target.gridY;
+            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
+              const occupant = this._gridOccupation[destGridX]?.[destGridY];
+              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+                const tScr = gridToScreen(occupant.gridX, occupant.gridY);
+                vfx.spawnParticle(tScr.x, tScr.y, HIT.snowballAttack);
+                this.dealDamageImpact(m, occupant);
+              }
+            }, undefined, undefined, cfg.arcHeight, m.id);
           } else if (boltType) {
-            pr = vfx.addProjectileByType(pos.x, pos.y, tPos.x, tPos.y, boltType, () => {
-              this.dealDamageImpact(m, target);
-            }, target.id, undefined, m.id);
+            const cfg = BOLT_PROFILES[boltType];
+            pr = vfx.addProjectile(pos.x, pos.y, extX, extY, cfg.speed, cfg.color, () => {}, undefined, boltType, undefined, m.id);
+            pr.onHit = (hitId: string) => {
+              const ht = this._monsters.find(e => e.id === hitId);
+              if (ht) this.dealDamageImpact(m, ht);
+            };
           } else if ((m as any).empoweredShot) {
             // 银狙骑士强化射击：金色子弹 + 流线型拖尾（不追踪，固定弹道）
-            pr = vfx.addProjectileByType(pos.x, pos.y, tPos.x, tPos.y, 'empowered', () => {
-              this.dealDamageImpact(m, target);
-            }, undefined, undefined, m.id);
+            const cfg = BOLT_PROFILES['empowered'];
+            pr = vfx.addProjectile(pos.x, pos.y, extX, extY, cfg.speed, cfg.color, () => {}, undefined, 'empowered', undefined, m.id);
+            pr.onHit = (hitId: string) => {
+              const ht = this._monsters.find(e => e.id === hitId);
+              if (ht) this.dealDamageImpact(m, ht);
+            };
             vfx.applyBulletSprite(pr, m.dbId);
           } else {
             // 发射位置偏移
@@ -934,10 +1015,9 @@ export class BattleSystem {
             // 角度微小偏移（±5°）
             const baseAngle = Math.atan2(tPos.y - sy, tPos.x - sx);
             const spreadAngle = baseAngle + (gameEngine.random() - 0.5) * (Math.PI / 36);
-            const dist = Math.sqrt((tPos.x - sx) ** 2 + (tPos.y - sy) ** 2);
-            const tx = sx + Math.cos(spreadAngle) * dist;
-            const ty = sy + Math.sin(spreadAngle) * dist;
-            pr = vfx.addProjectile(sx, sy, tx, ty, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
+            const spreadExtX = sx + Math.cos(spreadAngle) * 2500;
+            const spreadExtY = sy + Math.sin(spreadAngle) * 2500;
+            pr = vfx.addProjectile(sx, sy, spreadExtX, spreadExtY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
             pr.onHit = (hitId: string) => {
               const ht = this._monsters.find(e => e.id === hitId);
               if (ht) this.dealDamageImpact(m, ht);
@@ -970,8 +1050,9 @@ export class BattleSystem {
       (attacker as any).empoweredShotLast = true;
     }
 
-    // Apply damage
-    this.applyDamage(target, dmg, attacker, { forceCrit: (attacker as any).empoweredShotLast || false });
+    // Apply damage — 银狙技能暴击 50%
+    const sniperCrit = (attacker as any).empoweredShotLast && gameEngine.random() < 0.5;
+    this.applyDamage(target, dmg, attacker, { forceCrit: sniperCrit });
     if ((attacker as any).empoweredShotLast) {
       (attacker as any).empoweredShotLast = false;
     }
@@ -1081,10 +1162,17 @@ export class BattleSystem {
       }
     }
 
+    // 判定暴击（在扣除 HP 之前，自然暴击需乘以伤害）
+    const naturalCrit = (attacker && (attacker as any).stealthCrit) || gameEngine.random() < 0.1;
+    const isCrit = forceCrit || ctxForceCrit || naturalCrit;
+
+    // 自然暴击 1.5x 伤害（强制暴击已有独立倍率，不叠加）
+    if (naturalCrit && !forceCrit && !ctxForceCrit) {
+      finalDmg = Math.round(finalDmg * 1.5);
+    }
+
     target.hp = Math.max(0, target.hp - finalDmg);
     target.flashTime = 0.15;
-    
-    const isCrit = forceCrit || ctxForceCrit || (attacker && (attacker as any).stealthCrit) || gameEngine.random() < 0.1;
     
     // Track recently damaged friendly monster for Savior Knight leap targeting
     if (isP1Monster(target)) {
@@ -1202,8 +1290,7 @@ export class BattleSystem {
       if (isMelee) {
         return dx <= 1 && dy <= 1;
       }
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      return dist <= effectiveRange;
+      return dx + dy <= effectiveRange;
     };
 
     // BFS setup
@@ -1330,8 +1417,7 @@ export class BattleSystem {
     if (m.data.type === 'melee') {
       return dx <= 1 && dy <= 1;
     }
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    return dist <= this.getEffectiveRange(m);
+    return dx + dy <= this.getEffectiveRange(m);
   }
 
   // Find closest living enemy
@@ -1353,11 +1439,12 @@ export class BattleSystem {
     }
 
     let closest: PlacedMonster | null = null;
-    let minDist = Infinity;
+    let minManhattan = Infinity;
+    let minDx = Infinity;
     const isP1 = isP1Monster(m);
     
     const isFarSniper = m.dbId === 113 || m.dbId === 109;
-    let maxDistInRange = -1;
+    let maxManhattan = -1;
     let furthestInRange: PlacedMonster | null = null;
     const effectiveRange = m.range + badgeGetRangeBonus(m);
 
@@ -1365,20 +1452,21 @@ export class BattleSystem {
       if (enemy.isDead || (enemy as any).resurrecting || this._leaps.has(enemy.id) || (enemy as any).deepStealth) continue;
       // Opposite side
       if (isP1 !== isP1Monster(enemy)) {
-        const dx = enemy.gridX - m.gridX;
-        const dy = enemy.gridY - m.gridY;
-        const distSq = dx * dx + dy * dy;
+        const dx = Math.abs(enemy.gridX - m.gridX);
+        const dy = Math.abs(enemy.gridY - m.gridY);
+        const manhattan = dx + dy;
         
         if (isFarSniper) {
-          const dist = Math.sqrt(distSq);
-          if (dist <= effectiveRange && dist > maxDistInRange) {
-            maxDistInRange = dist;
+          if (manhattan <= effectiveRange && manhattan > maxManhattan) {
+            maxManhattan = manhattan;
             furthestInRange = enemy;
           }
         }
 
-        if (distSq < minDist) {
-          minDist = distSq;
+        // 曼哈顿距离优先，相同时X轴优先（|dx| 更小优先）
+        if (manhattan < minManhattan || (manhattan === minManhattan && dx < minDx)) {
+          minManhattan = manhattan;
+          minDx = dx;
           closest = enemy;
         }
       }
@@ -1629,7 +1717,7 @@ export class BattleSystem {
       const sPos = this.screenPositions.get(casterId);
       if (!sPos) continue;
       
-      const speed = caster.speed * screenConfig.cellW * 4; // 4x speed charge
+      const speed = caster.speed * screenConfig.cellW * 4 * CHARGE_SPEED_FACTOR; // 4x speed charge
       
       if (charge.targetId) {
         const target = this._monsters.find(m => m.id === charge.targetId);
@@ -1649,23 +1737,37 @@ export class BattleSystem {
         for (const [lepId, _leap] of this._leaps) {
           const leaper = this._monsters.find(m => m.id === lepId);
           if (!leaper || leaper.isDead) continue;
-          if (leaper.gridY !== caster.gridY) continue;
           const lPos = this.screenPositions.get(lepId);
           if (!lPos) continue;
           if (Math.abs(lPos.x - sPos.x) < 125 && Math.abs(lPos.y - sPos.y) < 140) {
-            // Collision! Cancel leap, stop charge, knock both back
+            // 空中碰撞！双方使用抛物线弹飞
             this._leaps.delete(lepId);
             this._reservedCells.delete(lepId);
-            const leaperDest = gridToScreen(leaper.gridX, leaper.gridY);
-            this._targetPositions.set(lepId, leaperDest);
             this._chargingMonsters.delete(casterId);
             this._reservedCells.delete(casterId);
             this.finishChargeAtCurrentPos(caster, sPos);
-            const reverseDir = charge.dir;
-            this.applyKnockback(leaper, -reverseDir, 0, 1);
-            this.applyKnockback(caster, reverseDir, 0, 1);
+
+            // 根据碰撞连线角度计算反弹方向
+            const dx = lPos.x - sPos.x;
+            const dy = lPos.y - sPos.y;
+            const angle = Math.atan2(dy, dx || 0.001);
+            const reboundDirX = -Math.sign(Math.cos(angle));
+            const reboundDirY = -Math.sign(Math.sin(angle));
+
+            // X（被投掷怪兽）反弹：1.5格高，2-3格水平位移
+            const xStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(Math.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
+            this.applyKnockback(leaper, reboundDirX, reboundDirY, xStr, COLLISION_REBOUND_X_HEIGHT);
+
+            // 冲锋反弹：1格高，反方向
+            const cStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(Math.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
+            this.applyKnockback(caster, -reboundDirX, -reboundDirY, cStr, COLLISION_REBOUND_CHARGE_HEIGHT);
+
             // Clear caster stun/stealth
             caster.statusEffects = caster.statusEffects.filter(e => e.type !== 'stun' && e.type !== 'stealth');
+            // 碰撞粒子
+            const midX = (lPos.x + sPos.x) / 2;
+            const midY = (lPos.y + sPos.y) / 2;
+            vfx.spawnParticle(midX, midY, HIT.chargeHit);
             return; // exit the forEach over _chargingMonsters
           }
         }
@@ -1760,7 +1862,7 @@ export class BattleSystem {
     }
   }
 
-  public applyKnockback(target: PlacedMonster, dirX: number, dirY: number, strength: number): void {
+  public applyKnockback(target: PlacedMonster, dirX: number, dirY: number, strength: number, customPeakHeight?: number): void {
     if (target.isDead) return;
 
     // 1. Calculate ideal landing cell
@@ -1782,8 +1884,9 @@ export class BattleSystem {
     const targetPos = gridToScreen(nearestCell.gridX, nearestCell.gridY);
     this._targetPositions.set(target.id, targetPos);
     
-    // Set knockback state (reduced duration to make flight instant and avoid pause)
-    const duration = 0.16 + 0.08 * strength; 
+    // 可调参数：速度倍率、高度倍率、自定义峰值
+    const duration = (0.16 + 0.08 * strength) / KNOCKBACK_SPEED_FACTOR;
+    const peakHeight = customPeakHeight ?? (40 * strength * KNOCKBACK_HEIGHT_FACTOR);
     this._knockbacks.set(target.id, {
       startX: startPos.x,
       startY: startPos.y,
@@ -1791,14 +1894,14 @@ export class BattleSystem {
       targetY: targetPos.y,
       totalDuration: duration,
       elapsedTime: 0,
-      peakHeight: 40 * strength // intensity determines peak height
+      peakHeight: peakHeight
     });
     
     // Stun the monster during the knockback
     this.applyStatusEffect(target, { type: 'stun', duration: duration });
   }
 
-  public registerLeap(casterId: string, startX: number, startY: number, targetX: number, targetY: number, duration: number, damage: number): void {
+  public registerLeap(casterId: string, startX: number, startY: number, targetX: number, targetY: number, duration: number, damage: number, peakHeight: number = 120, knockbackTargetId?: string, knockbackDir?: number): void {
     const startPos = gridToScreen(startX, startY);
     const targetPos = gridToScreen(targetX, targetY);
     this._targetPositions.set(casterId, targetPos);
@@ -1809,8 +1912,10 @@ export class BattleSystem {
       targetY: targetPos.y,
       totalDuration: duration,
       elapsedTime: 0,
-      peakHeight: 120,
-      damageOnLanding: damage
+      peakHeight: peakHeight,
+      damageOnLanding: damage,
+      knockbackTargetId,
+      knockbackDir
     });
   }
 

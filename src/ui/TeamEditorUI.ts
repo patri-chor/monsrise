@@ -1,5 +1,6 @@
 import { gameEngine } from '../game/GameEngine';
 import { DB_MONSTERS, DB_BADGES, BADGE_SPRITES, getSkillDescription } from '../game/Database';
+import { renderSkillIconHtml } from '../game/IconMapping';
 import { uiManager } from './UIManager';
 
 const TAB_LEFT_COORDS = [62, 156, 250, 344, 438];
@@ -31,53 +32,7 @@ export class TeamEditorUI {
   }
 
   private getSkillIconHtml(skillName: string): string {
-    let badgeId = 11; // default to Shield
-    if (skillName === 'reap') badgeId = 19;
-    else if (skillName === 'lightning') badgeId = 4;
-    else if (skillName === 'life_link') badgeId = 6;
-    else if (skillName === 'incendiary') badgeId = 24;
-    else if (skillName === 'recovery') badgeId = 17;
-    else if (skillName === 'rush') badgeId = 5;
-    else if (skillName === 'big_cannon') badgeId = 20;
-    else if (skillName === 'leap') badgeId = 22;
-    else if (skillName === 'shot') badgeId = 20;
-    else if (skillName === 'shield') badgeId = 11;
-    else if (skillName === 'wind_attack') badgeId = 31;
-    else if (skillName === 'heal_sword') badgeId = 7;
-    else if (skillName === 'explosive') badgeId = 24;
-    else if (skillName === 'open_fire') badgeId = 29;
-    else if (skillName === 'unyielding') badgeId = 32;
-    else if (skillName === 'dig') badgeId = 21;
-    else if (skillName === 'throw') badgeId = 13;
-    else if (skillName === 'slash') badgeId = 27;
-    else if (skillName === 'shadow') badgeId = 26;
-    else if (skillName === 'attack') badgeId = 15;
-    else if (skillName === 'cultivation') badgeId = 16;
-    else if (skillName === 'anger') badgeId = 22;
-    else if (skillName === 'bash') badgeId = 13;
-    else if (skillName === 'snowball') badgeId = 25;
-    else if (skillName === 'conversion') badgeId = 34;
-
-    const sprite = BADGE_SPRITES[badgeId];
-    if (!sprite) return '';
-    const scale = 64 / sprite.sw;
-    const imgW = 2556 * scale;
-    const imgH = 1417 * scale;
-    const left = -sprite.sx * scale;
-    const top = -sprite.sy * scale;
-    return `
-      <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-        <img src="badge.png" style="
-          position: absolute;
-          left: ${left}px;
-          top: ${top}px;
-          width: ${imgW}px;
-          height: ${imgH}px;
-          border: none;
-          background: transparent;
-        " />
-      </div>
-    `;
+    return renderSkillIconHtml(skillName);
   }
 
   /**
@@ -108,8 +63,8 @@ export class TeamEditorUI {
 
       <!-- Stars and Race/Role -->
       <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
-        <span style="font-size: 14px; color: #e5c158;">★★★</span>
-        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold;">[ ${monster.race} | ${monster.role} ]</span>
+        <span style="font-size: 24px; color: #e5c158;">★★★</span>
+        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold; font-size: 20px;">[ ${monster.race} | ${monster.role} ]</span>
       </div>
 
       <!-- Name banner -->
@@ -190,7 +145,7 @@ export class TeamEditorUI {
         
         ${Array(5).fill(0).map((_, tIdx) => {
           const activeClass = gameEngine.selectedTeamIndex === tIdx ? 'active' : '';
-          return `<button class="squad-tab-btn ${activeClass}" data-team-index="${tIdx}" style="left: ${TAB_LEFT_COORDS[tIdx]}px;"></button>`;
+          return `<button class="squad-tab-btn ${activeClass}" data-team-index="${tIdx}" style="left: ${TAB_LEFT_COORDS[tIdx]}px;">${tIdx + 1}</button>`;
         }).join('')}
 
         <!-- Squad Grid Cells absolute-positioned -->
@@ -214,9 +169,9 @@ export class TeamEditorUI {
         }).join('')}
         
         <!-- Bottom Action Buttons overlaid on background -->
-        <button id="searchMatchBtn" class="bottom-action-btn" style="left: 160px; top: 935px; width: 255px; height: 90px;"></button>
-        <button id="createMatchBtn" class="bottom-action-btn" style="left: 505px; top: 935px; width: 255px; height: 90px;"></button>
-        <button id="joinMatchBtn" class="bottom-action-btn" style="left: 860px; top: 935px; width: 255px; height: 90px;"></button>
+        <button id="searchMatchBtn" class="bottom-action-btn" style="left: 160px; top: 935px; width: 255px; height: 90px;">实验模式</button>
+        <button id="createMatchBtn" class="bottom-action-btn" style="left: 505px; top: 935px; width: 255px; height: 90px;">AI对战</button>
+        <button id="joinMatchBtn" class="bottom-action-btn" style="left: 860px; top: 935px; width: 255px; height: 90px;">联机对战</button>
 
         <!-- Right Side details card -->
         <div class="details-card" style="${this._previewMonster ? 'z-index: 101;' : ''}">
@@ -235,7 +190,7 @@ export class TeamEditorUI {
           <!-- Stars and Race/Role -->
           <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
             <span style="font-size: 14px; color: #e5c158;">★★★</span>
-            <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold;">[ ${selectedMonster.race} | ${selectedMonster.role} ]</span>
+            <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold; font-size: 20px;">[ ${selectedMonster.race} | ${selectedMonster.role} ]</span>
           </div>
 
           <!-- Name banner -->
@@ -343,6 +298,7 @@ export class TeamEditorUI {
     switchBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const index = parseInt(btn.getAttribute('data-switch-index') || '0', 10);
+        this._selectedSlotIndex = index;
         this._activeMonsterSelectIndex = index;
         this.render();
       });
@@ -369,13 +325,52 @@ export class TeamEditorUI {
 
     const createMatch = document.getElementById('createMatchBtn');
     createMatch?.addEventListener('click', () => {
-      alert("对战模式（暂未开放）：两名玩家同时布阵，且开始战斗前无法看到对方操作。");
+      // AI Battle mode: generate AI team and start preparation
+      const ai = new BattleAI();
+      ai.setDifficulty('normal');
+      const aiHand: AICard[] = DB_MONSTERS.map(m => ({
+        monsterId: m.id,
+        badgeIds: []
+      }));
+      const aiTeamResult = ai.buildTeam(aiHand);
+
+      // Copy player's selected team to teams[0]
+      gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+        monsterId: s.monsterId,
+        badgeIds: [...s.badgeIds]
+      }));
+
+      const aiTeamSlots: { monsterId: number; badgeIds: number[] }[] = aiTeamResult.cards.map(
+        (m: { monsterId: number; badgeIds: number[] }) => ({
+          monsterId: m.monsterId,
+          badgeIds: m.badgeIds
+        })
+      );
+      while (aiTeamSlots.length < 8) {
+        aiTeamSlots.push({ monsterId: 0, badgeIds: [] });
+      }
+      
+      gameEngine.teams[1] = aiTeamSlots;
+      (gameEngine as any)._aiInstance = ai;
+      gameEngine.mode = 'ai';
+      gameEngine.state = 'PREPARATION_LEFT';
+      gameEngine.resetBoardForNextRound();
+      uiManager.syncStateWithUI();
     });
 
     const joinMatch = document.getElementById('joinMatchBtn');
     joinMatch?.addEventListener('click', () => {
-      alert("对战模式（暂未开放）：请使用【实验模式】进行同屏体验。");
+      // 保存当前队伍到 teams[0]
+      gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+        monsterId: s.monsterId,
+        badgeIds: [...s.badgeIds]
+      }));
+      gameEngine.mode = 'online';
+      gameEngine.state = 'MATCH_LOBBY';
+      uiManager.syncStateWithUI();
     });
+
+    // Online confirm button - no longer needed, flow handled in LobbyUI
   }
 
   // --- Modal Rendering ---
@@ -522,6 +517,7 @@ export class TeamEditorUI {
           }
           activeTeam[this._activeMonsterSelectIndex].monsterId = id;
           activeTeam[this._activeMonsterSelectIndex].badgeIds = [];
+          this._previewMonster = null;
           this._activeMonsterSelectIndex = null;
           gameEngine.saveTeams();
           this.render();
@@ -540,6 +536,7 @@ export class TeamEditorUI {
     }
     const closeBadge = document.getElementById('closeBadgeModalBtn');
     closeBadge?.addEventListener('click', () => {
+      this._previewMonster = null;
       this._activeBadgeSelectIndex = null;
       this.render();
     });
@@ -570,6 +567,7 @@ export class TeamEditorUI {
             }
             activeSlot.badgeIds[this._activeBadgeSelectIndex] = badgeId;
           }
+          this._previewMonster = null;
           this._activeBadgeSelectIndex = null;
           gameEngine.saveTeams();
           this.render();

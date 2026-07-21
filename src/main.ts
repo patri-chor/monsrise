@@ -8,6 +8,7 @@ import { battleSystem, gridToScreen } from './game/BattleSystem';
 import { uiManager } from './ui/UIManager';
 import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
+import { networkManager } from './net/NetworkManager';
 
 // Preloader for image assets
 const ASSETS_TO_LOAD = {
@@ -131,7 +132,10 @@ class BoardSyncComponent extends Component {
           mNode.position = { x: smoothPos.x, y: smoothPos.y };
         }
 
-        if (smoothPos && targetPos && Math.abs(targetPos.x - smoothPos.x) > 1) {
+        if ((m as any)._chargeDir !== undefined) {
+          // 冲锋朝向：强制锁定冲锋方向
+          mNode.scaleX = (m as any)._chargeDir === 1 ? 0.8 : -0.8;
+        } else if (smoothPos && targetPos && Math.abs(targetPos.x - smoothPos.x) > 1) {
           // Face the direction of active movement
           mNode.scaleX = (targetPos.x > smoothPos.x) ? 0.8 : -0.8;
         } else {
@@ -144,10 +148,27 @@ class BoardSyncComponent extends Component {
           }
         }
 
-        // Skill rotation（肃清哥刀光旋转）
-        if ((m as any)._rotationDuration && (m as any)._rotationRemaining > 0) {
-          const progress = 1 - (m as any)._rotationRemaining / (m as any)._rotationDuration;
-          mNode.rotation = progress * 360;
+        // Skill rotation（肃清哥、见习骑士：反方向蓄力 + 加速减速一圈）
+        if (state === 'BATTLE' && (m as any)._rotationDuration && (m as any)._rotationRemaining > 0) {
+          const total = (m as any)._rotationDuration as number;
+          const remaining = (m as any)._rotationRemaining as number;
+          const elapsed = total - remaining;
+          const windupRatio = 0.2; // 前20%时间反方向蓄力
+
+          let angle: number;
+          if (elapsed < total * windupRatio) {
+            // 反方向蓄力：0° → -30°
+            const t = elapsed / (total * windupRatio);
+            angle = t * (-30);
+          } else {
+            // 旋转一圈：-30° → 360°，easeInOutCubic
+            const spinElapsed = elapsed - total * windupRatio;
+            const spinDuration = total * (1 - windupRatio);
+            const t = Math.min(1, spinElapsed / spinDuration);
+            const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            angle = -30 + eased * 390; // -30° → 360°
+          }
+          mNode.rotation = angle;
         } else if (isBattle && m.state === 'skill' && m.data.skill === 'shadow' && (m as any)._tiltTotal) {
           // 忍小猴技能蓄力倾斜：后倾30° → 前倾60°
           const total = (m as any)._tiltTotal as number;
@@ -172,6 +193,7 @@ class BoardSyncComponent extends Component {
         const gridPos = gridToScreen(m.gridX, m.gridY);
         mNode.position = { x: gridPos.x, y: gridPos.y };
         mNode.scaleX = (m.team === 2) ? -0.8 : 0.8;
+        mNode.rotation = 0;
       }
 
       // Sync flashTime and deepStealth to sprite component
@@ -227,9 +249,14 @@ window.addEventListener('DOMContentLoaded', () => {
       const baseWidth = 2556;
       const baseHeight = 1179;
       
-      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight);
-      const offsetX = (window.innerWidth - baseWidth * scale) / 2;
-      const offsetY = (window.innerHeight - baseHeight * scale) / 2;
+      // 竖屏时 CSS 旋转了容器，宽高应互换来计算 scale
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const vw = isPortrait ? window.innerHeight : window.innerWidth;
+      const vh = isPortrait ? window.innerWidth : window.innerHeight;
+
+      const scale = Math.min(vw / baseWidth, vh / baseHeight);
+      const offsetX = (vw - baseWidth * scale) / 2;
+      const offsetY = (vh - baseHeight * scale) / 2;
       
       const gameBg = document.getElementById('gameBg');
       if (gameBg) {
@@ -271,6 +298,17 @@ window.addEventListener('DOMContentLoaded', () => {
     (window as any).uiManager = uiManager;
     (window as any).director = director;
     (window as any).vfx = vfx;
+    (window as any).net = networkManager;
+
+    // Auto-connect to WebSocket server
+    const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (isDev) {
+      networkManager.connect('ws://localhost:3001');
+    } else {
+      // 根据页面协议自动选择 ws:// 或 wss://
+      const wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      networkManager.connect(`${wsProtocol}${location.host}/ws`);
+    }
 
     // 2. Add BoardSyncComponent to root scene tree
     const boardNode = new Node('BattlefieldBoard');

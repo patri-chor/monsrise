@@ -1,7 +1,7 @@
 import { PlacedMonster, gameEngine } from './GameEngine';
 import { vfx } from './VfxManager';
-import { getMonsterBadges } from './BadgeSystem';
-import { isP1Monster } from './BattleSystem';
+import { getMonsterBadges, badgeGetRangeBonus } from './BadgeSystem';
+import { isP1Monster, LEAP_PEAK_HEIGHT, LEAP_DURATION, THROW_PEAK_HEIGHT, THROW_DURATION } from './BattleSystem';
 import { gridToScreen } from './ScreenConfig';
 import { HIT, SKILL, STATUS_EFFECT } from './VfxPresets';
 
@@ -39,9 +39,10 @@ export class ReapSkill extends BaseSkill {
     const target = battle.findClosestEnemy(caster, true);
     if (!target) return false;
 
-    // 人物旋转一周，0.8s
-    (caster as any)._rotationDuration = 0.8;
-    (caster as any)._rotationRemaining = 0.8;
+    // 反方向蓄力0.2s + 加减速旋转0.8s = 1.0s
+    (caster as any)._rotationDuration = 1.0;
+    (caster as any)._rotationRemaining = 1.0;
+    caster.state = 'skill';
 
     const enemies = battle.getAdjacentMonsters(caster.gridX, caster.gridY)
       .filter((e: PlacedMonster) => isP1Monster(e) !== isP1Monster(caster));
@@ -59,41 +60,59 @@ export class LightningSkill extends BaseSkill {
   readonly name = 'lightning';
 
   public onCast(caster: PlacedMonster, battle: any): boolean {
-    const target = battle.findClosestEnemy(caster, true);
-    if (!target) return false;
+    const firstTarget = battle.findClosestEnemy(caster, true);
+    if (!firstTarget) return false;
 
-    const enemies = battle._monsters
-      .filter((e: PlacedMonster) => isP1Monster(e) !== isP1Monster(caster) && !e.isDead)
-      .filter((e: PlacedMonster) => {
-        const dx = e.gridX - caster.gridX;
-        const dy = e.gridY - caster.gridY;
-        return Math.sqrt(dx * dx + dy * dy) <= 7;
-      })
-      .slice(0, 4);
+    // 1s 前摇后开始链式闪电
+    battle.scheduler.schedule(() => {
+      if (!battle.active || caster.isDead) return;
 
-    if (enemies.length === 0) return false;
+      const doStrike = (currentTarget: PlacedMonster, remaining: number) => {
+        if (!battle.active || caster.isDead || !currentTarget || currentTarget.isDead) return;
 
-    // 每个目标延迟 0.12s 依次落雷
-    enemies.forEach((e: PlacedMonster, idx: number) => {
-      battle.scheduler.schedule(() => {
-        const ePos = battle.screenPositions.get(e.id);
-        if (!ePos) return;
-        // 层1: 天雷（颜色已提亮至 #e0f8ff）
-        vfx.spawnParticle(ePos.x, ePos.y, SKILL.lightningStorm.hit);
-        // 层2: 落点火花
-        for (let i = 0; i < 3; i++) {
-          vfx.spawnParticle(
-            ePos.x + (Math.random() - 0.5) * 40,
-            ePos.y + (Math.random() - 0.5) * 20,
-            { type: 'star', duration: 0.3, color: '#c0e0ff', size: 30 }
-          );
+        const ePos = battle.screenPositions.get(currentTarget.id);
+        if (ePos) {
+          // 天雷
+          vfx.spawnParticle(ePos.x, ePos.y, SKILL.lightningStorm.hit);
+          // 落点火花
+          for (let i = 0; i < 3; i++) {
+            vfx.spawnParticle(
+              ePos.x + (Math.random() - 0.5) * 40,
+              ePos.y + (Math.random() - 0.5) * 20,
+              { type: 'star', duration: 0.3, color: '#c0e0ff', size: 30 }
+            );
+          }
+          battle.applyDamage(currentTarget, Math.round(caster.atk * 2.5), caster);
+          if (gameEngine.random() < 0.5) {
+            battle.applyStatusEffect(currentTarget, { type: 'stun', duration: 2.0 });
+          }
         }
-        battle.applyDamage(e, Math.round(caster.atk * 3.0), caster);
-        if (gameEngine.random() < 0.5) {
-          battle.applyStatusEffect(e, { type: 'stun', duration: 2.0 });
-        }
-      }, idx * 0.12);
-    });
+
+        if (remaining <= 0) return;
+
+        // 0.2s 后在附近选一个敌人（可重复选同一个）
+        battle.scheduler.schedule(() => {
+          const nearby = battle._monsters
+            .filter((e: PlacedMonster) =>
+              isP1Monster(e) !== isP1Monster(caster) && !e.isDead
+              && e.id !== currentTarget.id
+            );
+          // 优先选最近的，可能为空时回退到当前目标
+          let next: PlacedMonster;
+          if (nearby.length > 0) {
+            next = nearby[Math.floor(gameEngine.random() * nearby.length)];
+          } else {
+            next = currentTarget; // 无其他敌人时重复选当前
+          }
+          if (!next.isDead) {
+            doStrike(next, remaining - 1);
+          }
+        }, 0.2);
+      };
+
+      doStrike(firstTarget, 3);
+    }, 1.0);
+
     return true;
   }
 }
@@ -111,7 +130,7 @@ export class LifeLinkSkill extends BaseSkill {
         if (isP1Monster(a) !== isP1Monster(caster) || a.isDead) return false;
         const dx = a.gridX - caster.gridX;
         const dy = a.gridY - caster.gridY;
-        return Math.sqrt(dx * dx + dy * dy) <= 3;
+        return Math.sqrt(dx * dx + dy * dy) <= 3 + badgeGetRangeBonus(caster);
       });
 
     if (allies.length === 0) return false;
@@ -159,7 +178,6 @@ export class IncendiarySkill extends BaseSkill {
     const targetPos = battle.screenPositions.get(target.id);
     if (pos && targetPos) {
       const angle = Math.atan2(targetPos.y - pos.y, targetPos.x - pos.x);
-      const dist = Math.sqrt((targetPos.x - pos.x) ** 2 + (targetPos.y - pos.y) ** 2);
       
       const dir = isP1Monster(caster) ? 1 : -1;
       
@@ -174,25 +192,26 @@ export class IncendiarySkill extends BaseSkill {
         Math.PI / 4
       ];
       
+      const cfg = SKILL.multishot.projectile;
       angles.forEach((offset, idx) => {
         const a = angle + offset;
-        const tx = pos.x + Math.cos(a) * dist;
-        const ty = pos.y + Math.sin(a) * dist;
+        // 子弹延伸至远处，碰撞才销毁，不追踪目标
+        const tx = pos.x + Math.cos(a) * 2500;
+        const ty = pos.y + Math.sin(a) * 2500;
         
         const isCenter = idx === 3;
-        const cfg = SKILL.multishot.projectile;
-        vfx.addProjectile(pos.x, pos.y, tx, ty, cfg.speed, cfg.color, () => {
-          if (isCenter) {
-            // Apply 3x ATK damage
-            battle.applyDamage(target, caster.atk * 3, caster);
-            
-            // Apply 1-cell knockback
-            battle.applyKnockback(target, dir, 0, 1);
-            
-            // Apply burn status
-            battle.applyStatusEffect(target, { type: 'burn', duration: 4.0 });
-          }
-        }, isCenter ? target.id : undefined);
+        const pr = vfx.addProjectile(pos.x, pos.y, tx, ty, cfg.speed, cfg.color, () => {}, undefined, undefined, undefined, caster.id);
+        vfx.applyBulletSprite(pr, caster.dbId);
+        if (isCenter) {
+          pr.onHit = (hitId: string) => {
+            const ht = battle._monsters.find((e: any) => e.id === hitId);
+            if (ht) {
+              battle.applyDamage(ht, caster.atk * 3, caster);
+              battle.applyKnockback(ht, dir, 0, 1);
+              battle.applyStatusEffect(ht, { type: 'burn', duration: 4.0 });
+            }
+          };
+        }
       });
       return true;
     }
@@ -205,9 +224,40 @@ export class RecoverySkill extends BaseSkill {
   readonly name = 'recovery';
 
   public onStartOfBattle(caster: PlacedMonster, battle: any): void {
+    (caster as any).skillAnimationTimeLeft = 0.8;
+
     const adjacentAllies = battle.getAdjacentMonsters(caster.gridX, caster.gridY)
       .filter((ally: PlacedMonster) => isP1Monster(ally) === isP1Monster(caster) && ally.id !== caster.id);
     
+    // 自身选中光效
+    const cPos = battle.screenPositions.get(caster.id);
+    if (cPos) {
+      vfx.spawnParticle(cPos.x, cPos.y, { type: 'wind_circle', duration: 0.4, color: '#a0ffc0', size: 30 });
+      battle.scheduler.schedule(() => {
+        if (caster.isDead) return;
+        const pos = battle.screenPositions.get(caster.id);
+        if (pos) {
+          vfx.spawnParticle(pos.x, pos.y, { type: 'solid_glow', duration: 0.5, color: '#a0ffc0', size: 100 });
+        }
+      }, 0.25);
+    }
+
+    // 对每个连接友方生成选中光效：先柔光环标记，再受击确认
+    for (const ally of adjacentAllies) {
+      const aPos = battle.screenPositions.get(ally.id);
+      if (!aPos) continue;
+      // 0.0s: 柔光选中环（风圈，白绿色）
+      vfx.spawnParticle(aPos.x, aPos.y, { type: 'wind_circle', duration: 0.4, color: '#a0ffc0', size: 30 });
+      // 0.25s: 受击确认（纯色光效）
+      battle.scheduler.schedule(() => {
+        if (ally.isDead) return;
+        const pos = battle.screenPositions.get(ally.id);
+        if (pos) {
+          vfx.spawnParticle(pos.x, pos.y, { type: 'solid_glow', duration: 0.5, color: '#a0ffc0', size: 100 });
+        }
+      }, 0.25);
+    }
+
     const allyIds = adjacentAllies.map((ally: PlacedMonster) => ally.id);
     battle.registerPriestLinks(caster.id, allyIds);
   }
@@ -250,36 +300,61 @@ export class RushSkill extends BaseSkill {
       landX = dir === 1 ? maxBound : minBound;
     }
 
-    // 层1: 冲刺灰色尘土拖尾（每 0.06s 生成 3 粒）
-    const trailKey = battle.scheduler.scheduleInterval(() => {
-      const sPos = battle.screenPositions.get(caster.id);
-      if (sPos && (!hitEnemy || !target.isDead)) {
-        for (let i = 0; i < 3; i++) {
-          vfx.spawnParticle(
-            sPos.x + (Math.random() - 0.5) * 30,
-            sPos.y + (Math.random() - 0.5) * 20,
-            SKILL.rush.trail
-          );
-        }
+    // 0.3s 蓄力前摇：标记朝向 + 蓄力粒子
+    (caster as any)._chargeDir = dir;
+    (caster as any).skillAnimationTimeLeft = 0.3;
+    caster.state = 'skill';
+
+    const cPos = battle.screenPositions.get(caster.id);
+    if (cPos) {
+      // 脚下蓄力扬尘
+      for (let i = 0; i < 4; i++) {
+        vfx.spawnParticle(
+          cPos.x + (Math.random() - 0.5) * 40,
+          cPos.y + 60 + Math.random() * 30,
+          { type: 'dust', duration: 0.5, color: '#aa9977', size: 10 }
+        );
       }
-    }, 0.06);
-
-    // 1.5s 后自动停止拖尾
-    battle.scheduler.schedule(() => {
-      battle.scheduler.unschedule(trailKey);
-    }, 1.5);
-
-    // Free original grid cell, and reserve the target cell immediately
-    battle._gridOccupation[startX][startY] = null;
-    battle.reserveCell(caster.id, landX, startY);
-
-    // Apply speed dash visual state: stealth status + stun duration (so they don't hit while sliding)
-    battle.applyStatusEffect(caster, { type: 'stealth', duration: 1.5 });
-    battle.applyStatusEffect(caster, { type: 'stun', duration: 1.5 });
+    }
 
     const kbDist = hitEnemy ? (gameEngine.random() < 0.5 ? 2 : 3) : 0;
-    // Register deferred charge collision trigger（撞击 VFX 在 triggerChargeImpact 中处理）
-    battle.registerCharge(caster.id, hitEnemy ? hitEnemy.id : '', dir, kbDist);
+
+    // 0.3s 后正式发起冲锋
+    battle.scheduler.schedule(() => {
+      if (caster.isDead) return;
+      (caster as any)._chargeDir = undefined;
+      caster.state = 'idle';
+
+      // 层1: 冲刺灰色尘土拖尾（每 0.06s 生成 3 粒）
+      const trailKey = battle.scheduler.scheduleInterval(() => {
+        const sPos = battle.screenPositions.get(caster.id);
+        if (sPos && (!hitEnemy || !target.isDead)) {
+          for (let i = 0; i < 3; i++) {
+            vfx.spawnParticle(
+              sPos.x + (Math.random() - 0.5) * 30,
+              sPos.y + (Math.random() - 0.5) * 20,
+              SKILL.rush.trail
+            );
+          }
+        }
+      }, 0.06);
+
+      // 1.5s 后自动停止拖尾
+      battle.scheduler.schedule(() => {
+        battle.scheduler.unschedule(trailKey);
+      }, 1.5);
+
+      // Free original grid cell, and reserve the target cell immediately
+      battle._gridOccupation[startX][startY] = null;
+      battle.reserveCell(caster.id, landX, startY);
+
+      // Apply speed dash visual state
+      battle.applyStatusEffect(caster, { type: 'stealth', duration: 1.5 });
+      battle.applyStatusEffect(caster, { type: 'stun', duration: 1.5 });
+
+      // Register deferred charge collision trigger
+      battle.registerCharge(caster.id, hitEnemy ? hitEnemy.id : '', dir, kbDist);
+    }, 0.3);
   }
 }
 
@@ -354,10 +429,10 @@ export class BigCannonSkill extends BaseSkill {
           setupPiercingProjectile(pr, caster.id, (hitId: string) => {
             const ht = battle._monsters.find((e: any) => e.id === hitId);
             if (ht) {
-              battle.applyDamage(ht, caster.atk * 13, caster);
+              battle.applyDamage(ht, caster.atk * 7.5, caster);
               const hitPos = battle.screenPositions.get(ht.id);
               if (hitPos) {
-                vfx.spawnParticle(hitPos.x, hitPos.y, SKILL.bigCannon.hit);
+                vfx.spawnParticle(hitPos.x, hitPos.y, { type: 'solid_glow', duration: 0.35, color: '#8030d0', size: 140 });
                 vfx.spawnParticle(hitPos.x, hitPos.y, SKILL.bigCannon.shockRing);
               }
             }
@@ -366,14 +441,13 @@ export class BigCannonSkill extends BaseSkill {
           const tx = pos.x + Math.cos(baseAngle) * 2500;
           const ty = pos.y + Math.sin(baseAngle) * 2500;
           const pr = vfx.addProjectileByType(pos.x, pos.y, tx, ty, 'cannon', () => {}, undefined, undefined, caster.id);
-          // 非穿透弹命中时触发伤害+VFX
           pr.onHit = (hitId: string) => {
             const ht = battle._monsters.find((e: any) => e.id === hitId);
             if (ht) {
-              battle.applyDamage(ht, caster.atk * 13, caster);
+              battle.applyDamage(ht, caster.atk * 7.5, caster);
               const hitPos = battle.screenPositions.get(ht.id);
               if (hitPos) {
-                vfx.spawnParticle(hitPos.x, hitPos.y, SKILL.bigCannon.hit);
+                vfx.spawnParticle(hitPos.x, hitPos.y, { type: 'solid_glow', duration: 0.35, color: '#8030d0', size: 140 });
                 vfx.spawnParticle(hitPos.x, hitPos.y, SKILL.bigCannon.shockRing);
               }
             }
@@ -406,28 +480,29 @@ export class LeapSkill extends BaseSkill {
 
     const startX = caster.gridX;
     const startY = caster.gridY;
-    
-    let landGridX = targetAlly.gridX;
-    let landGridY = targetAlly.gridY;
 
-    // Squeeze the ally if target is not self
-    if (targetAlly !== caster) {
-      const freeCell = battle.findClosestFreeCell(targetAlly.gridX, targetAlly.gridY);
-      if (freeCell) {
-        // Push target ally logically
-        battle._gridOccupation[targetAlly.gridX][targetAlly.gridY] = null;
-        targetAlly.gridX = freeCell.gridX;
-        targetAlly.gridY = freeCell.gridY;
-        battle._gridOccupation[freeCell.gridX][freeCell.gridY] = targetAlly;
-        
-        // Push target ally visually
-        const slidePos = {
-          x: 588 + (freeCell.gridX + 0.5) * 125.4,
-          y: 236 + (freeCell.gridY + 0.5) * 141.4
-        };
-        battle._targetPositions.set(targetAlly.id, slidePos);
+    // 搜索队友身边最近的敌人作为跳跃目标
+    let landEnemy: PlacedMonster | null = null;
+    const allyX = targetAlly.gridX;
+    const allyY = targetAlly.gridY;
+    let bestDist = Infinity;
+    for (const e of battle._monsters) {
+      if (e.isDead) continue;
+      if (isP1Monster(e) === isP1Monster(caster)) continue;
+      const d = Math.abs(e.gridX - allyX) + Math.abs(e.gridY - allyY);
+      if (d < bestDist) {
+        bestDist = d;
+        landEnemy = e;
       }
     }
+
+    // 如果没有找到敌人，回退到队友位置
+    if (!landEnemy) {
+      landEnemy = targetAlly;
+    }
+
+    const landGridX = landEnemy.gridX;
+    const landGridY = landEnemy.gridY;
 
     // Add 8 shields to both self and the target ally
     battle.addShield(caster, 8);
@@ -435,15 +510,19 @@ export class LeapSkill extends BaseSkill {
       battle.addShield(targetAlly, 8);
     }
 
-    // Free original grid cell logically, and reserve the target cell immediately
-    battle._gridOccupation[startX][startY] = null;
+    // 预留目标格子（但不提前释放原位，落地时由 landing 逻辑处理）
     battle.reserveCell(caster.id, landGridX, landGridY);
 
     // Lock caster actions during leap
-    (caster as any).skillAnimationTimeLeft = 0.5;
+    (caster as any).skillAnimationTimeLeft = LEAP_DURATION;
 
-    // Register leap state in battle
-    battle.registerLeap(caster.id, startX, startY, landGridX, landGridY, 0.5, caster.atk * 4.5);
+    // 击退信息：延迟到落地时触发
+    const kbTargetId = (landEnemy !== targetAlly) ? landEnemy.id : undefined;
+    const pushDir = isP1Monster(caster) ? 1 : -1;
+
+    // Register leap state in battle（跳向队友身边敌人，落地时击退）
+    battle.registerLeap(caster.id, startX, startY, landGridX, landGridY, LEAP_DURATION, caster.atk * 4.5, LEAP_PEAK_HEIGHT, kbTargetId, pushDir);
+
     return true;
   }
 }
@@ -467,6 +546,7 @@ export class ShieldSkill extends BaseSkill {
   readonly name = 'shield';
 
   public onStartOfBattle(caster: PlacedMonster, battle: any): void {
+    (caster as any).skillAnimationTimeLeft = 0.5;
     this.castShield(caster, battle);
   }
 
@@ -496,9 +576,10 @@ export class WindAttackSkill extends BaseSkill {
   public onCast(caster: PlacedMonster, battle: any): boolean {
     const pos = battle.screenPositions.get(caster.id);
     if (pos) {
-      // 角色原地旋转0.5s（参考肃清哥）
-      (caster as any)._rotationDuration = 0.5;
-      (caster as any)._rotationRemaining = 0.5;
+      // 反方向蓄力0.12s + 加减速旋转0.48s = 0.6s
+      (caster as any)._rotationDuration = 0.6;
+      (caster as any)._rotationRemaining = 0.6;
+      caster.state = 'skill';
       
       const enemies = battle.getMonstersInGridRange(caster.gridX, caster.gridY, 1)
         .filter((e: PlacedMonster) => isP1Monster(e) !== isP1Monster(caster));
@@ -523,7 +604,8 @@ export class HealSwordSkill extends BaseSkill {
 
       // Phase 1: 伤害（白色斩击）
       const target = battle.findClosestEnemy(caster, true);
-      if (target && Math.abs(target.gridX - caster.gridX) <= 1 && Math.abs(target.gridY - caster.gridY) <= 1) {
+      const swordRange = 1 + badgeGetRangeBonus(caster);
+      if (target && Math.abs(target.gridX - caster.gridX) <= swordRange && Math.abs(target.gridY - caster.gridY) <= swordRange) {
         const tPos = battle.screenPositions.get(target.id);
         if (tPos) {
           vfx.spawnParticle(tPos.x, tPos.y, SKILL.healAura.slash);
@@ -546,7 +628,8 @@ export class HealSwordSkill extends BaseSkill {
   }
 
   private healAction(caster: PlacedMonster, battle: any): void {
-    const allies = battle.getMonstersInGridRange(caster.gridX, caster.gridY, 1)
+    const healRange = 1 + badgeGetRangeBonus(caster);
+    const allies = battle.getMonstersInGridRange(caster.gridX, caster.gridY, healRange)
       .filter((a: PlacedMonster) => isP1Monster(a) === isP1Monster(caster) && a.id !== caster.id);
     
     for (const a of allies) {
@@ -730,18 +813,32 @@ export class ThrowSkill extends BaseSkill {
     battle.addShield(caster, 8);
     battle.addShield(bestAlly, 8);
 
-    (caster as any).skillAnimationTimeLeft = 1.0;
+    // 0.5s 举盾前摇动画
+    (caster as any).skillAnimationTimeLeft = 0.3;
+    caster.state = 'skill';
 
-    // Landing position: fixed 5 tiles ahead of caster
     const forwardDir = (caster.team === 1) ? 1 : -1;
     let destX = Math.max(0, Math.min(10, caster.gridX + 4 * forwardDir));
     const destY = caster.gridY;
+    const throwTarget = bestAlly;
 
-    battle.reserveCell(bestAlly.id, destX, destY);
+    // 蓄力粒子
+    const cPos = battle.screenPositions.get(caster.id);
+    if (cPos) {
+      vfx.spawnParticle(cPos.x, cPos.y, { type: 'solid_glow', duration: 0.5, color: '#ffcc66', size: 80 });
+    }
 
-    (bestAlly as any).skillAnimationTimeLeft = 0.5;
+    // 0.5s 后投掷
+    battle.scheduler.schedule(() => {
+      if (caster.isDead || throwTarget.isDead) return;
+      (caster as any).skillAnimationTimeLeft = 0;
+      caster.state = 'idle';
 
-    battle.registerLeap(bestAlly.id, bestAlly.gridX, bestAlly.gridY, destX, destY, 0.5, bestAlly.shield * 45);
+      battle.reserveCell(throwTarget.id, destX, destY);
+      (throwTarget as any).skillAnimationTimeLeft = THROW_DURATION;
+
+      battle.registerLeap(throwTarget.id, throwTarget.gridX, throwTarget.gridY, destX, destY, THROW_DURATION, throwTarget.shield * 45, THROW_PEAK_HEIGHT);
+    }, 0.5);
   }
 }
 
@@ -808,6 +905,7 @@ export class SlashSkill extends BaseSkill {
         }
 
         battle.applyDamage(target, Math.round(caster.atk * 1.6), caster);
+        battle.addShield(caster, 2);
       }
 
       slashCount++;
@@ -1045,24 +1143,27 @@ export class SnowballSkill extends BaseSkill {
     const pos = battle.screenPositions.get(caster.id)!;
     vfx.spawnParticle(pos.x, pos.y, SKILL.snowball.launch);
 
-    const targetPos = battle.screenPositions.get(target.id)!;
-    // Add projectile with parabolic arc, target tracking, 3x size
-    const pr = vfx.addProjectile(pos.x, pos.y, targetPos.x, targetPos.y, 500, '#4ba3e3', () => {
-      // 雪雾爆发：少量雾气 + 大量六角冰晶碎片
+    // 使用目标格子坐标，不追踪
+    const destPos = gridToScreen(target.gridX, target.gridY);
+    const destGridX = target.gridX;
+    const destGridY = target.gridY;
+    // 投掷型雪球，抛物线落向目标格子
+    const pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, 500, '#4ba3e3', () => {
+      // 雪雾爆发 + 六角冰晶碎片
       for (let i = 0; i < 8; i++) {
-        vfx.spawnParticle(targetPos.x, targetPos.y, SKILL.snowball.hit);
+        vfx.spawnParticle(destPos.x, destPos.y, SKILL.snowball.hit);
       }
       for (let i = 0; i < 8; i++) {
-        vfx.spawnParticle(targetPos.x, targetPos.y, STATUS_EFFECT.chillCrystal);
+        vfx.spawnParticle(destPos.x, destPos.y, STATUS_EFFECT.chillCrystal);
       }
-      // 震荡波（1.5格半径）
-      vfx.spawnParticle(targetPos.x, targetPos.y, SKILL.snowball.circle);
+      // 震荡波
+      vfx.spawnParticle(destPos.x, destPos.y, SKILL.snowball.circle);
 
       const enemies = battle._monsters
         .filter((e: PlacedMonster) => e.team !== caster.team && !e.isDead)
         .filter((e: PlacedMonster) => {
-          const dist = Math.sqrt(Math.pow(e.gridX - target.gridX, 2) + Math.pow(e.gridY - target.gridY, 2));
-          return dist <= 2;
+          const dist = Math.sqrt(Math.pow(e.gridX - destGridX, 2) + Math.pow(e.gridY - destGridY, 2));
+          return dist <= 2 + badgeGetRangeBonus(caster);
         });
 
       for (const e of enemies) {
@@ -1070,7 +1171,7 @@ export class SnowballSkill extends BaseSkill {
         battle.applyChill(e, 5.0);
         battle.applyFreeze(e, 5.0);
       }
-    }, target.id, undefined, 80, caster.id);
+    }, undefined, undefined, 80, caster.id);
     pr.size = 120; // 3x size
     return true;
   }

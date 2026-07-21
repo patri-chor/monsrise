@@ -2,6 +2,7 @@ import { DB_MONSTERS, MonsterData, BadgeData, DB_BADGES } from './Database';
 import { badgeOnPlace, badgeGetAtsMultiplier } from './BadgeSystem';
 
 export type GameState =
+  | 'MATCH_LOBBY'
   | 'TEAM_EDIT'
   | 'PREPARATION_LEFT'
   | 'PREPARATION_RIGHT'
@@ -70,8 +71,15 @@ export class GameEngine {
   public p2Score: number = 0;
   public lastRoundElapsed: number = 0;
   
-  // Modes: 'experimental' (play self left then right) or 'match' (unimplemented)
-  public mode: 'experimental' | 'match' = 'experimental';
+  // Modes: 'experimental' (play self left then right), 'ai' (vs AI), 'online' (PvP)
+  public mode: 'experimental' | 'ai' | 'online' = 'experimental';
+
+  // Online PvP state
+  public opponentTeam: TeamSlot[] = [];
+  public opponentPlacements: { monsterId: number; gridX: number; gridY: number }[] = [];
+  public isOnlineHost: boolean = false;
+  public onlineBattleSeed: number = 0;
+  public opponentDisconnected: boolean = false;
 
   public p1AvatarIndex: number = 0;
   public p2AvatarIndex: number = 1;
@@ -292,6 +300,8 @@ export class GameEngine {
       .map(id => DB_BADGES.find(b => b.id === id))
       .filter((b): b is BadgeData => !!b);
 
+    console.log(`[placeMonster] monsterId=${dbMonster.id}, slot.badgeIds=[${slot.badgeIds}], resolved badges=[${badges.map(b => b.name).join(',')}]`);
+
     const placed: PlacedMonster = {
       id: `${isPlayer1 ? 'p1' : 'p2'}_r${this.currentRound}_x${gridX}_y${gridY}`,
       dbId: dbMonster.id,
@@ -447,6 +457,8 @@ export class GameEngine {
     this.clearStats();
     this.state = 'TEAM_EDIT';
     this.initRandomAvatars();
+    this.opponentDisconnected = false;
+    this.opponentPlacements = [];
   }
 
   public initRandomAvatars(): void {

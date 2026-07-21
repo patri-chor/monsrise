@@ -3,6 +3,7 @@ import { TeamEditorUI } from './TeamEditorUI';
 import { BattleUI } from './BattleUI';
 import { SummaryUI } from './SummaryUI';
 import { ReplayUI } from './ReplayUI';
+import { LobbyUI } from './LobbyUI';
 
 export class UIManager {
   private static _instance: UIManager | null = null;
@@ -20,6 +21,7 @@ export class UIManager {
   private _battleUI: BattleUI | null = null;
   private _summaryUI: SummaryUI | null = null;
   private _replayUI: ReplayUI | null = null;
+  private _lobbyUI: LobbyUI | null = null;
 
   private constructor() {}
 
@@ -49,6 +51,12 @@ export class UIManager {
     this._replayUI = null;
 
     const state = gameEngine.state;
+
+    if (state === 'MATCH_LOBBY') {
+      this._lobbyUI = new LobbyUI(this.container);
+      this._lobbyUI.render();
+      return;
+    }
     
     // Manage state-specific background image in DOM Layer 1
     const gameBg = document.getElementById('gameBg');

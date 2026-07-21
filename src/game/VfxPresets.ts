@@ -140,11 +140,14 @@ export const SKILL = {
     mark: { type: 'star', duration: 0.5, color: '#00ffff', size: 24 } as ParticlePreset,
     empoweredBullet: { speed: 800, color: '#ffff44', size: 20 } as ProjectilePreset,
   },
-  /** 跃击 */
+  /** 跃击（参考 land.html 土石震荡波风格） */
   leap: {
-    landFlash: { type: 'explosion',   duration: 0.15, color: '#ffffff', size: 30 } as ParticlePreset,
-    land:      { type: 'wind_circle', duration: 0.6,  color: '#ffffff', size: 120 } as ParticlePreset,
-    landDust:  { type: 'dust',        duration: 0.7,  color: '#cccccc', size: 24 } as ParticlePreset,
+    /** 椭圆冲击环（棕色，rx > ry，有厚度） */
+    ring:  { type: 'shock_ring', duration: 1, color: '#5D4037', size: 0 } as ParticlePreset,
+    /** 碎石飞散（抛物线 + 3D 阴影，12 粒/次） */
+    debris: { type: 'debris_stone', duration: 1.6, color: '#4E342E', size: 25 } as ParticlePreset,
+    /** 扬尘飘散（半透明椭圆扩散，时长匹配冲击环间隔） */
+    dust:  { type: 'dust', duration: 1.6, color: '#8D6E63', size: 20 } as ParticlePreset,
   },
   /** 技能回退（紫色弹） */
   skillRecall: {
@@ -161,7 +164,7 @@ export const SKILL = {
   },
   /** 矿爆普攻 */
   explosiveAttack: {
-    projectile: { speed: 600, color: '#ff6600', size: 48, arcHeight: 100 } as ProjectilePreset,
+    projectile: { speed: 600, color: '#ff6600', size: 48, arcHeight: 140 } as ProjectilePreset,
   },
   /** 塞雷 - 影子斩击 */
   slash: {

@@ -4,6 +4,15 @@
 
 import { Pool } from '../core/Pool';
 
+/** 解析 CSS 颜色字符串为 RGB（仅支持 #rrggbb 格式） */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  if (h.length === 3) {
+    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
+  }
+  return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
+}
+
 /** 土壤贴图（钻土拖尾用） */
 export const dustImage = new Image();
 dustImage.src = 'dust.png';
@@ -27,9 +36,9 @@ export type ParticleType = 'slash' | 'explosion' | 'lightning' | 'heal' | 'shiel
   | 'fire' | 'incendiary' | 'star' | 'wind_circle' | 'heal_circle'
   | 'bolt_trail' | 'burn_fire' | 'burn_ember' | 'chill_haze' | 'chill_crystal'
   | 'crescent' | 'jitter_line' | 'dust' | 'heal_float' | 'heal_cross'
-  | 'energy_spark' | 'soil'
+  | 'energy_spark' | 'solid_glow' | 'soil'
   | 'blast_core' | 'blast_flame' | 'blast_spark' | 'blast_smoke'
-  | 'smoke_puff' | 'hard_shard';
+  | 'smoke_puff' | 'hard_shard' | 'shock_ring' | 'debris_stone';
 
 // ---- 策略接口 ----
 export type ParticleSpawner = (
@@ -134,10 +143,11 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
     render(ctx, pt) {
       const ratio = pt.life / pt.maxLife;
       const sz = Math.max(1, pt.size * ratio);
+      const [r, g, b] = hexToRgb(pt.color);
       ctx.save();
-      ctx.fillStyle = `rgba(255,240,150,${ratio * 0.8})`;
+      ctx.fillStyle = `rgba(${r},${g},${b},${ratio * 0.9})`;
       ctx.shadowBlur = sz * 1.5;
-      ctx.shadowColor = '#ffcc00';
+      ctx.shadowColor = `rgb(${r},${g},${b})`;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2);
       ctx.fill();
@@ -168,16 +178,20 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
       const ratio = pt.life / pt.maxLife;
       const sz = Math.max(2, pt.size * ratio);
       const bell = Math.sin(ratio * Math.PI);
+      const [r, g, b] = hexToRgb(pt.color);
+      // 颜色分层：core(亮白)→mid(pt.color)→outer(暗色)
+      const midR = Math.round(r * 0.6), midG = Math.round(g * 0.6), midB = Math.round(b * 0.8);
+      const darkR = Math.round(r * 0.3), darkG = Math.round(g * 0.3), darkB = Math.round(b * 0.5);
       ctx.save();
       const glow = ctx.createRadialGradient(pt.x, pt.y, sz * 0.1, pt.x, pt.y, sz * 1.8);
-      glow.addColorStop(0, `rgba(255,160,40,${bell * 0.25})`);
-      glow.addColorStop(0.4, `rgba(255,100,20,${bell * 0.07})`);
-      glow.addColorStop(1, 'rgba(200,60,10,0)');
+      glow.addColorStop(0, `rgba(${Math.min(255, r + 100)},${Math.min(255, g + 100)},${Math.min(255, b + 120)},${bell * 0.3})`);
+      glow.addColorStop(0.4, `rgba(${midR},${midG},${midB},${bell * 0.1})`);
+      glow.addColorStop(1, `rgba(${darkR},${darkG},${darkB},0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, sz * 1.8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = `rgba(255,220,80,${bell * 0.3})`;
+      ctx.fillStyle = `rgba(${Math.min(255, r + 80)},${Math.min(255, g + 80)},${Math.min(255, b + 100)},${bell * 0.35})`;
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, sz * 0.5, 0, Math.PI * 2);
       ctx.fill();
@@ -306,13 +320,13 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
   dust: {
     spawn(x, y, color, size, duration, pool, list) {
       const pt = pool.get();
-      pt.x = x + (Math.random() - 0.5) * 30;
-      pt.y = y + (Math.random() - 0.5) * 20;
+      pt.x = x + (Math.random() - 0.5) * 20;
+      pt.y = y + (Math.random() - 0.5) * 10;
       pt.type = 'dust'; pt.color = color;
       pt.size = size * (0.6 + Math.random() * 0.5);
       pt.maxLife = duration; pt.life = duration;
-      pt.vx = (Math.random() - 0.5) * 15;
-      pt.vy = -10 - Math.random() * 15;
+      pt.vx = (Math.random() - 0.5) * 200;
+      pt.vy = (Math.random() - 0.5) * 70;
       list.push(pt);
     },
     render(ctx, pt) {
@@ -324,6 +338,70 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
       ctx.arc(pt.x, pt.y, pt.size * ratio, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+    },
+  },
+
+  // ---- debris_stone：碎石（抛物线飞散，带阴影3D感） ----
+  debris_stone: {
+    spawn(x, y, color, size, duration, pool, list) {
+      for (let i = 0; i < 12; i++) {
+        const pt = pool.get();
+        pt.x = x + (Math.random() - 0.5) * 30;
+        pt.y = y + (Math.random() - 0.5) * 15;
+        pt.type = 'debris_stone'; pt.color = color;
+        pt.size = size * (0.4 + Math.random() * 0.7);
+        pt.maxLife = duration * (0.6 + Math.random() * 0.5);
+        pt.life = pt.maxLife;
+        // 抛物线初速度：向外 + 向上（角度随机，上偏分量大）
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 200;
+        pt.vx = Math.cos(angle) * speed;
+        pt.vy = Math.sin(angle) * speed - 100 - Math.random() * 200;
+        // z 模拟 3D 高度（用于阴影偏移 + 透视缩放）
+        pt.extra = { z: 20 + Math.random() * 60 };
+        list.push(pt);
+      }
+    },
+    render(ctx, pt) {
+      const ratio = pt.life / pt.maxLife;
+      const z = pt.extra.z || 0;
+      const sz = Math.max(2, pt.size * ratio);
+      // 地面阴影（偏离中心，z 越高偏移越大）
+      if (z > 2) {
+        ctx.save();
+        ctx.globalAlpha = 0.12 * ratio;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.ellipse(pt.x + z * 0.25, pt.y + 8, sz * 0.5, sz * 0.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // 碎石本体（带 z 高度偏移）
+      ctx.save();
+      ctx.globalAlpha = ratio * 0.9;
+      ctx.fillStyle = pt.color;
+      const rx = sz * 0.6;
+      const ry = sz * 0.4;
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y - z * 0.35, rx, ry, Math.random() * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 亮边（高光模拟 3D）
+      ctx.globalAlpha = ratio * 0.3;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(pt.x - rx * 0.3, pt.y - z * 0.35 - ry * 0.3, rx * 0.4, ry * 0.3, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+    update(pt, dt) {
+      const GRAVITY = 350;
+      pt.vy += GRAVITY * dt;
+      // z 高度下落 + 反弹
+      pt.extra.z -= 120 * dt;
+      if (pt.extra.z < 0) {
+        pt.extra.z = Math.abs(pt.extra.z) * 0.4;
+        if (pt.extra.z < 1.5) pt.extra.z = 0;
+      }
     },
   },
 
@@ -949,6 +1027,60 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
       pt.vx *= 0.94;
       pt.vy *= 0.94;
       pt.vy += 30 * dt; // 微重力
+    },
+  },
+  // 椭圆冲击环（救星骑士落地，棕色有厚度）
+  shock_ring: {
+    spawn(x, y, _color, _size, duration, pool, list) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y;
+      pt.type = 'shock_ring';
+      pt.color = '#5D4037';
+      pt.size = 0;
+      pt.maxLife = duration;
+      pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      pt.extra = { rx: 0, ry: 0, alpha: 1 };
+      list.push(pt);
+    },
+    render(ctx, pt) {
+      const { rx, ry, alpha } = pt.extra;
+      if (alpha <= 0 || rx <= 0) return;
+      ctx.save();
+      ctx.strokeStyle = `rgba(93, 64, 55, ${alpha})`;
+      ctx.lineWidth = 15;
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    },
+    update(pt, dt) {
+      pt.extra.rx += 280 * dt;
+      pt.extra.ry += 150 * dt;
+      const maxR = 150;
+      pt.extra.alpha = Math.max(0, 1 - Math.max(pt.extra.rx, pt.extra.ry) / maxR);
+    },
+  },
+
+  // ---- solid_glow：纯色无羽化圆形光效（受击反馈）----
+  solid_glow: {
+    spawn(x, y, color, size, duration, pool, list) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'solid_glow'; pt.color = color;
+      pt.size = size; pt.maxLife = duration; pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      list.push(pt);
+    },
+    render(ctx, pt) {
+      const alpha = pt.life / pt.maxLife;
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.size / 2, 0, Math.PI * 2);
+      ctx.fillStyle = pt.color;
+      ctx.fill();
+      ctx.restore();
     },
   },
 };

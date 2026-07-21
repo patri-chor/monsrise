@@ -1,4 +1,4 @@
-﻿﻿import { Pool } from '../core/Pool';
+import { Pool } from '../core/Pool';
 import { screenConfig } from './BattleSystem';
 import { BULLET_SPRITES } from './VfxPresets';
 import { Particle, ParticleType, PARTICLE_TYPES } from './ParticleTypes';
@@ -94,9 +94,9 @@ export const BOLT_PROFILES: Record<string, BoltProfile> = {
   lightning: { size:14, speed:400, color:'#a0e0ff', colMul:2.0, trailLife:0.125, trailSize:[1,3],   trailColor:'#a0e0ff',     trailCount:1, trailSpawnChance:0.25 },
   fire:      { size:12, speed:400, color:'#ff6600', colMul:2.5, trailLife:0.25,  trailSize:[3,9],   trailColor:'fire_trail',  trailCount:3, trailSpawnChance:1 },
   heal:      { size:10, speed:400, color:'#5ac54f', colMul:2.0, trailLife:0.3,   trailSize:[1.5,3.5],trailColor:'heal_trail',  trailCount:2, trailSpawnChance:1 },
-  void:      { size:10, speed:400, color:'#c880ff', colMul:1.2, trailLife:0.175, trailSize:[1,2.5], trailColor:'#c880ff',     trailCount:1, trailSpawnChance:0.85 },
-  cannon:    { size:20, speed:350, color:'#c880ff', colMul:3.0, trailLife:0.25,  trailSize:[3,9],   trailColor:'cannon_trail',trailCount:4, trailSpawnChance:1 },
-  empowered: { size:20, speed:800, color:'#ffff44', colMul:2.5, trailLife:0.35,  trailSize:[4,8],   trailColor:'#ffdd44',     trailCount:2, trailSpawnChance:1 },
+  void:      { size:28, speed:400, color:'#c880ff', colMul:1.2, trailLife:0.175, trailSize:[1,2.5], trailColor:'#c880ff',     trailCount:1, trailSpawnChance:0.85 },
+  cannon:    { size:24, speed:700, color:'#9040e0', colMul:3.5, trailLife:0.2,   trailSize:[2,6],   trailColor:'#a040e0',trailCount:3, trailSpawnChance:1 },
+  empowered: { size:20, speed:1600, color:'#ffff44', colMul:2.5, trailLife:0.35,  trailSize:[4,8],   trailColor:'#ffdd44',     trailCount:2, trailSpawnChance:1 },
 };
 
 export type BoltType = keyof typeof BOLT_PROFILES;
@@ -114,6 +114,7 @@ export class VfxManager {
   public floatingTexts: FloatingText[] = [];
   public projectiles: Projectile[] = [];
   public particles: Particle[] = [];
+  public backgroundParticles: Particle[] = [];
   public auraCircles: AuraCircle[] = [];
   public getTargetPosition: ((id: string) => { x: number; y: number } | undefined) | null = null;
   /** 子弹碰撞检测：传入子弹坐标，返回命中的怪物ID或null */
@@ -167,11 +168,11 @@ export class VfxManager {
     
     if (isDamage) {
       t.x = x + (Math.random() - 0.5) * 70;
-      t.y = y - 20;
+      t.y = y - 20 + (Math.random() - 0.5) * 24;
       t.vy = isCrit ? -55 : -45;
     } else {
       t.x = x + (Math.random() - 0.5) * 16;
-      t.y = y - 20;
+      t.y = y - 20 + (Math.random() - 0.5) * 20;
       t.vy = -35;
     }
     
@@ -270,6 +271,19 @@ export class VfxManager {
   /** 从 ParticlePreset 生成粒子 */
   public spawnParticle(x: number, y: number, p: { type: Particle['type']; duration: number; color: string; size: number }, extra?: any): void {
     this.addParticle(x, y, p.type, p.duration, p.color, p.size, extra);
+  }
+
+  /** 添加背景粒子（渲染在怪物图层之下） */
+  public addBackgroundParticle(
+    x: number, y: number, type: Particle['type'], duration: number,
+    color: string, size: number = 8, extra?: any
+  ): void {
+    PARTICLE_TYPES[type].spawn(x, y, color, size, duration, this._particlePool, this.backgroundParticles, extra);
+  }
+
+  /** 从 ParticlePreset 生成背景粒子 */
+  public spawnBackgroundParticle(x: number, y: number, p: { type: Particle['type']; duration: number; color: string; size: number }, extra?: any): void {
+    this.addBackgroundParticle(x, y, p.type, p.duration, p.color, p.size, extra);
   }
 
   public update(dt: number): void {
@@ -444,6 +458,25 @@ export class VfxManager {
         this.particles.splice(i, 1);
         this._particlePool.put(pt);
       }
+    }
+
+    // 4. Update background particles
+    for (let i = this.backgroundParticles.length - 1; i >= 0; i--) {
+      const pt = this.backgroundParticles[i];
+      pt.life -= dt;
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
+      if (pt.life <= 0) {
+        this.backgroundParticles.splice(i, 1);
+        this._particlePool.put(pt);
+      }
+    }
+  }
+
+  public drawBackground(ctx: CanvasRenderingContext2D): void {
+    for (const pt of this.backgroundParticles) {
+      PARTICLE_TYPES[pt.type].render(ctx, pt);
     }
   }
 
@@ -800,35 +833,38 @@ export class VfxManager {
       }
 
       case 'cannon': {
-        // 巨大能量法球：白芯紫边 + 脉冲光晕
-        const cr = r * 3;
+        // 凝聚能量法球：深紫厚重
+        const cr = r * 3.0;
         const outerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
         outerGrad.addColorStop(0, 'rgba(255,255,255,1)');
-        outerGrad.addColorStop(0.15, 'rgba(255,230,255,0.9)');
-        outerGrad.addColorStop(0.4, 'rgba(210,150,255,0.6)');
-        outerGrad.addColorStop(0.7, 'rgba(150,80,220,0.25)');
-        outerGrad.addColorStop(1, 'rgba(100,40,180,0)');
+        outerGrad.addColorStop(0.08, 'rgba(220,180,255,0.95)');
+        outerGrad.addColorStop(0.2, 'rgba(180,90,240,0.85)');
+        outerGrad.addColorStop(0.4, 'rgba(130,30,210,0.6)');
+        outerGrad.addColorStop(0.65, 'rgba(80,10,150,0.3)');
+        outerGrad.addColorStop(0.85, 'rgba(50,5,90,0.1)');
+        outerGrad.addColorStop(1, 'rgba(30,0,60,0)');
         ctx.fillStyle = outerGrad;
         ctx.beginPath();
         ctx.arc(0, 0, cr, 0, Math.PI * 2);
         ctx.fill();
 
-        // 内层白芯
+        // 内层紫芯
         const innerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
         innerGrad.addColorStop(0, 'rgba(255,255,255,1)');
-        innerGrad.addColorStop(0.5, 'rgba(255,245,255,0.8)');
-        innerGrad.addColorStop(1, 'rgba(220,170,255,0)');
+        innerGrad.addColorStop(0.2, 'rgba(240,210,255,0.95)');
+        innerGrad.addColorStop(0.6, 'rgba(180,100,240,0.5)');
+        innerGrad.addColorStop(1, 'rgba(120,40,200,0)');
         ctx.fillStyle = innerGrad;
         ctx.beginPath();
         ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2);
         ctx.fill();
 
         // 脉冲光晕
-        const pulseR = r * 2.2 + Math.sin(p.pulse!) * r * 0.5;
-        const pulseGrad = ctx.createRadialGradient(0, 0, r * 1.5, 0, 0, pulseR);
-        pulseGrad.addColorStop(0, 'rgba(200,140,255,0)');
-        pulseGrad.addColorStop(0.5, `rgba(180,120,255,${0.2 + f * 0.15})`);
-        pulseGrad.addColorStop(1, 'rgba(140,60,220,0)');
+        const pulseR = r * 2.5 + Math.sin(p.pulse!) * r * 0.6;
+        const pulseGrad = ctx.createRadialGradient(0, 0, r * 1.6, 0, 0, pulseR);
+        pulseGrad.addColorStop(0, 'rgba(180,100,240,0)');
+        pulseGrad.addColorStop(0.5, `rgba(150,60,220,${0.25 + f * 0.2})`);
+        pulseGrad.addColorStop(1, 'rgba(100,20,180,0)');
         ctx.fillStyle = pulseGrad;
         ctx.beginPath();
         ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
