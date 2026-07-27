@@ -5,6 +5,10 @@
   src: url('/zpix.ttf') format('truetype');
 }
 
+html {
+  touch-action: manipulation;
+}
+
 /* Reset and base styles */
 * {
   box-sizing: border-box;
@@ -174,216 +178,544 @@ body {
 }
 
 /* --- Screen 1: Team Editor --- */
+
+/* --- Multi-layer Airship Background --- */
+.team-editor-bg-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.bg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.bg-layer.sky {
+  background-image: url('/background/sky.png');
+  background-size: 100% 100%;
+  z-index: 1;
+}
+
+@keyframes scrollBg {
+  from { background-position-x: -2556px; }
+  to { background-position-x: 0; }
+}
+
+.bg-layer.yun {
+  z-index: 2;
+  background-position: bottom left;
+}
+
+.bg-layer.layer-far {
+  animation: scrollBg 180s linear infinite;
+  opacity: 0.65;
+  background-size: auto 100%;
+}
+
+.bg-layer.layer-near {
+  animation: scrollBg 90s linear infinite;
+  opacity: 0.85;
+  background-size: auto 100%;
+}
+
+.cloud-sprite {
+  position: absolute;
+  background-image: url('/background/yun4.png') !important;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes floatCloud {
+  0% { transform: translateX(-600px); }
+  100% { transform: translateX(2556px); }
+}
+
+/* Cloud 1: 547x179, offset -687 -91 */
+.cloud-sprite.cloud-1 {
+  width: 547px;
+  height: 179px;
+  background-position: -687px -91px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 2: 438x174, offset -100 -97 */
+.cloud-sprite.cloud-2 {
+  width: 438px;
+  height: 174px;
+  background-position: -100px -97px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 3: 496x348, offset -29 -344 */
+.cloud-sprite.cloud-3 {
+  width: 496px;
+  height: 348px;
+  background-position: -29px -344px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 4: 548x98, offset -642 -414 */
+.cloud-sprite.cloud-4 {
+  width: 548px;
+  height: 98px;
+  background-position: -642px -414px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 5: 407x307, offset -1031 -638 */
+.cloud-sprite.cloud-5 {
+  width: 407px;
+  height: 307px;
+  background-position: -1031px -638px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 6: 453x205, offset -62 -750 */
+.cloud-sprite.cloud-6 {
+  width: 453px;
+  height: 205px;
+  background-position: -62px -750px !important;
+  background-size: 1814px 1024px !important;
+}
+/* Cloud 7: 288x182, offset -642 -752 */
+.cloud-sprite.cloud-7 {
+  width: 288px;
+  height: 182px;
+  background-position: -642px -752px !important;
+  background-size: 1814px 1024px !important;
+}
+
+.ship-enter-wrapper {
+  position: absolute;
+  bottom: -20px;
+  left: 100%;
+  width: 150%;
+  height: 38%;
+  z-index: 3;
+  animation: shipEnter 3.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes shipEnter {
+  0% { left: 100%; }
+  100% { left: -50%; }
+}
+
+.bg-layer.ship {
+  position: absolute;
+  left: 0;
+  top: auto;
+  bottom: -140px;
+  width: 100%;
+  height: 230%;
+  background-image: url('/background/ship.png') !important;
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  transform-origin: bottom center;
+  animation: swayShip 6s ease-in-out infinite;
+}
+
+@keyframes swayShip {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(0.15deg); }
+}
+
+/* --- 开屏按钮 --- */
+
+.opening-screen {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  gap: 30px;
+}
+
+.start-logo {
+  width: 1039px;
+  height: 825px;
+  background: url('/start.png') no-repeat center;
+  background-size: contain;
+  image-rendering: pixelated;
+  position: relative;
+}
+
+#startGameBtn {
+  position: absolute;
+  left: 320px;
+  top: 532px;
+  width: 388px;
+  height: 79px;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+#startGameBtn:hover {
+  outline: 4px dashed #e5c158;
+  outline-offset: 4px;
+}
+
+/* --- UI 滑入动画 --- */
+
+#teamEditor.anim-in .editor-left-panel,
+#teamEditor.anim-in .details-card,
+#teamEditor.anim-in .editor-actions-container {
+  opacity: 0;
+}
+
+#teamEditor.anim-in .details-card {
+  animation: slideInDetailsCard 1.0s cubic-bezier(0.25, 1, 0.5, 1) 0.8s both;
+}
+#teamEditor.anim-in .editor-left-panel {
+  animation: slideInLeftPanel 1.0s cubic-bezier(0.25, 1, 0.5, 1) 1.0s both;
+}
+#teamEditor.anim-in .editor-actions-container {
+  animation: slideInActionsContainer 1.0s cubic-bezier(0.25, 1, 0.5, 1) 1.2s both;
+}
+
+@keyframes slideInLeftPanel {
+  from { transform: translateY(-120%) scale(0.8); opacity: 0; }
+  to { transform: translateY(0) scale(0.8); opacity: 1; }
+}
+@keyframes slideInDetailsCard {
+  from { transform: translateX(120%) scale(0.8); opacity: 0; }
+  to { transform: translateX(0) scale(0.8); opacity: 1; }
+}
+@keyframes slideInActionsContainer {
+  from { transform: translateY(120%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 #teamEditor {
   position: absolute;
   left: 0;
   top: 0;
   width: 2556px;
   height: 1179px;
-  background-image: url('/editor.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center; /* 垂直居中 */
+  padding: 80px 100px 40px 100px;
+  z-index: 10;
+  box-sizing: border-box;
 }
 
-/* Squad Tab buttons ("1 2 3 4 5") using B2 texture */
-.squad-tab-btn {
+/* Left panel wrapping grid and buttons */
+/* Size: 739x563 -> 2x: 1478px x 1126px */
+/* Source: UI.png X=0, Y=29 */
+.editor-left-panel {
+  width: 1478px;
+  height: 1126px;
+  top:80px;
+  background-image: url('/UI.png') !important;
+  background-position: 0px -58px !important;
+  background-size: 3840px 2160px !important;
+  image-rendering: pixelated;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 240px 100px 40px 100px; /* 留出顶部滚筒/拉杆和底部按钮的空隙 */
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transform: scale(0.8);
+  transform-origin: left top;
+}
+
+/* Drum team index display overlay */
+.drum-team-display {
   position: absolute;
-  top: 200px;
-  width: 75px;
+  left: 546px;
+  top: 45px;
+  width: 262px;
+  height: 90px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Zpix', monospace;
+  font-size: 38px;
+  color: #e5c158;
+  text-shadow: 3px 3px 0px #000;
+  pointer-events: none;
+  z-index: 12;
+}
+
+/* Lever interactive click boundary */
+.squad-lever-btn {
+  position: absolute;
+  left: 960px;
+  top: 140px;
+  width: 206px;
   height: 60px;
-  background: url('B2.png') center/contain no-repeat;
+  background: transparent !important;
   border: none;
   cursor: pointer;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 20px;
-  color: #ccc;
-  transition: transform 0.1s, filter 0.1s;
-  image-rendering: pixelated;
+  z-index: 20;
 }
-.squad-tab-btn:hover {
-  filter: brightness(1.3);
-  transform: scale(1.08);
-}
-.squad-tab-btn:active {
-  transform: scale(0.95);
-}
-.squad-tab-btn.active {
-  filter: brightness(1.5) drop-shadow(0 0 4px rgba(255,255,255,0.6));
-  color: #fff;
-  transform: scale(1.05);
+.squad-lever-btn:active {
+  transform: translateY(2px);
 }
 
-/* Absolute positioned squad grid cells */
+/* 8 slots Grid - now positioned inside left panel */
+.squad-grid-container {
+  position: relative;
+  top: -50px;
+  display: grid;
+  grid-template-columns: repeat(4, 326px);
+  grid-template-rows: repeat(2, 312px);
+  gap: 8px; /* 间距极其紧密 */
+  justify-content: center;
+  align-content: center;
+  margin-top: 10px;
+  flex-grow: 1;
+}
+
+/* Squad Slot: X=47, Y=476, W=163, H=156 -> 2x: 326px x 312px */
 .squad-cell {
-  position: absolute;
-  background: transparent;
+  width: 326px;
+  height: 312px;
+  background-image: url('/UI.png') !important;
+  background-position: -314px -1264px !important;
+  background-size: 3840px 2160px !important;
   border: none;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 10;
+  position: relative;
+  image-rendering: pixelated;
 }
 .squad-cell:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  filter: brightness(1.1);
 }
-.squad-cell.active {
-  outline: 6px solid #e5c158;
-  outline-offset: -6px;
-}
-
-.monster-switch-btn {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 64px;
-  height: 64px;
-  border-width: 6px;
-  font-size: 28px;
-  z-index: 15;
-  padding: 0;
+.squad-cell img {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  background: transparent;
 }
 
-/* Mode buttons & Battle buttons using B1 texture */
+
+/* Mode buttons container - positioned outside and below left panel */
+.editor-actions-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: auto; /* 自动贴在队伍面板底部 */
+  margin-bottom: -15px; /* 精确贴近底部铜管 */
+  width: 100%;
+  z-index: 10;
+}
+
+.bottom-action-btn.active::before {
+  filter: brightness(1.2) sepia(0.3) saturate(2) !important;
+}
+
+/* Bottom buttons using UI.png slice: X=312, Y=476, W=171, H=68 -> 2x: 342px x 136px */
+.bottom-action-btn.transparent-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #e5c158 !important; /* Gold text */
+  text-shadow: 2px 2px 0px #000 !important;
+}
+.bottom-action-btn.transparent-btn::before {
+  display: none !important;
+}
+.bottom-action-btn.transparent-btn:active {
+  transform: translateY(2px);
+}
+
 .bottom-action-btn {
-  position: absolute;
-  background: url('B1.png') center/cover no-repeat;
+  position: relative;
+  isolation: isolate;
+  width: 342px;
+  height: 136px;
+  background: none !important;          /* 背景移给 ::before */
   border: none;
   cursor: pointer;
-  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 32px;
+  font-size: 45px;
   color: #fff;
-  text-shadow: 2px 2px 0 #000;
-  transition: transform 0.1s, filter 0.1s;
+  text-shadow: 2px 2px 0px #000;
+  transition: transform 0.1s;
   image-rendering: pixelated;
 }
+.bottom-action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/UI.png') !important;
+  background-position: -624px -952px !important;
+  background-size: 2484px 1264px !important;
+  image-rendering: pixelated;
+  mix-blend-mode: darken;               /* 去白边：只影响背景层 */
+  z-index: -1;
+}
 .bottom-action-btn:hover {
-  filter: brightness(1.3);
-  transform: scale(1.06);
+  filter: brightness(1.1);
 }
 .bottom-action-btn:active {
   transform: scale(0.95);
-  filter: brightness(0.8);
 }
 .bottom-action-btn.disabled {
   cursor: not-allowed;
   pointer-events: none;
-  filter: grayscale(0.6) brightness(0.5);
+  filter: grayscale(0.8) brightness(0.7);
 }
 
 /* Details card on the right */
-.details-card {  position: absolute;
-  left: 1780px;
-  top: 310px;
-  width: 576px;
-  height: 603px;
-  background-image: url('/details.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  z-index: 10;
+/* Size: 474x437 -> 2x: 948px x 874px */
+/* Source: UI.png X=754, Y=110 */
+.details-card {
+  width: 948px;
+  height: 874px;
+  background-image: url('/UI.png') !important;
+  background-position: -1508px -220px !important;
+  background-size: 3840px 2160px !important;
+  image-rendering: pixelated;
+  position: relative;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transform: scale(0.72);
+  transform-origin: right center;
 }
+
+/* Details card absolute elements */
 
 .details-avatar-frame {
   position: absolute;
-  left: 18px;
-  top: 30px;
-  width: 282px;
-  height: 246px;
+  left: 80px;
+  top: 80px;
+  width: 220px;
+  height: 220px;
+  background: transparent;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .details-avatar-frame img {
-  width: 204px;
-  height: 205px;
+  position: absolute;
+  left: 76px;
+  top: 93px;
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  background: transparent;
 }
 
 .details-stars-container {
   position: absolute;
-  left: 36px;
-  top: 240px;
-  width: 282px;
+  left: 164px;
+  top: 404px;
+  width: 220px;
   display: flex;
   justify-content: center;
-  gap: 4px;
-  font-size: 14px;
+  font-size: 24px;
   color: #e5c158;
+}
+
+.details-type-tag {
+  position: absolute;
+  left: 442px;
+  top: 475px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 24px;
+  color: #ffffff;
 }
 
 .details-name-banner {
   position: absolute;
-  left: 40px;
-  top: 294px;
-  width: 282px;
-  height: 36px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  left: 214px;
+  top: 463px;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 28px;
-  color: #1a1c2c; /* Retro dark purple/black color for readability on card background */
-  text-shadow: none;
-  background-color: transparent; /* No background color */
-  border: none;
-  box-sizing: border-box;
+  font-size: 32px;
+  color: #e5c158;
+  text-shadow: 2px 2px 0px #000;
+  font-weight: bold;
+}
+
+/* Precise raw stat values positioned over blank spaces in UI.png */
+.details-val {
+  position: absolute;
+  left: 580px;
+  width: 220px;
+  height: 44px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 26px;
+  font-weight: bold;
+  color: #fff; /* White stats for better readability */
+  text-shadow: 2px 2px 0px #000; /* Drop shadow border */
+  display: flex;
+  justify-content: flex-end; /* Align right */
+  align-items: center;
+  background-color: transparent;
   z-index: 12;
 }
 
-/* Precise raw stat values positioned over text fields in 详情.png */
-.details-val {
-  position: absolute;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 20px;
-  font-weight: bold;
-  color: #1a1c2c;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-shadow: none;
-  background-color: transparent; /* Transparent stats values, background white boxes are empty */
-  z-index: 12;
-}
-.details-val-hp { left: 372px; top: 24px; width: 184px; height: 42px; }
-.details-val-atk { left: 372px; top: 78px; width: 80px; height: 42px; }
-.details-val-ats { left: 476px; top: 78px; width: 80px; height: 42px; }
-.details-val-range { left: 372px; top: 128px; width: 80px; height: 42px; }
-.details-val-shield { left: 476px; top: 128px; width: 80px; height: 42px; }
-.details-val-cd { left: 372px; top: 180px; width: 184px; height: 42px; }
-.details-val-speed { left: 372px; top: 230px; width: 184px; height: 42px; }
+.details-val-hp { top: 156px; }
+.details-val-atk { top: 222px; }
+.details-val-ats { top: 280px; }
+.details-val-range { top: 340px; }
+.details-val-speed { top: 400px; }
+.details-val-shield { display: none !important; }
+.details-val-cd { display: none !important; }
 
 /* Skill box section in details card */
 .details-skill-section {
   position: absolute;
-  left: 25px;
-  top: 350px;
-  width: 526px;
-  height: 121px;
+  left: 118px;
+  top: 532px;
+  width: 620px;
+  height: 180px;
   display: flex;
-  background-color: rgba(0, 0, 0, 0.4);
-  border: 2px solid #5a5a5a;
-  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.45);
+  border: 4px solid #5d402c;
+  padding: 16px;
   box-sizing: border-box;
 }
 
 .details-skill-icon-frame {
-  width: 70px;
-  height: 75px;
-  margin-right: 12px;
+  width: 90px;
+  height: 90px;
+  margin-right: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   flex-shrink: 0;
   overflow: hidden;
+  border: 3px solid #5d402c;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+.details-skill-icon-frame img {
+  image-rendering: pixelated;
+  background: transparent;
 }
 
 .details-skill-desc-box {
@@ -392,7 +724,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 24px;
+  font-size: 20px;
   color: #fff;
   line-height: 1.4;
   text-shadow: 2px 2px 0px #000;
@@ -402,39 +734,36 @@ body {
 /* Badges equipping section in details card */
 .details-badges-section {
   position: absolute;
-  left: 25px;
-  top: 478px;
-  width: 526px;
-  height: 114px;
+  left: 100px;
+  top: 688px;
+  width: 660px;
+  height: 132px;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  background-color: #b4b3a1; /* Mask background color to cover the pre-drawn badges in the background image! */
-  z-index: 11;
+  gap: 40px;
 }
 
 .details-badge-slot-frame {
-  width: 70px;
-  height: 75px;
-  border: 2px dashed #1a1c2c; /* Dash outline slot frame */
-  box-sizing: border-box;
-  background-color: transparent; /* No background color */
+  width: 96px;
+  height: 96px;
+  background-image: none !important;
+  background-color: transparent !important;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  position: relative;
+  border: none;
+  image-rendering: pixelated;
 }
-.details-badge-slot-frame.equipped {
-  border: none; /* Hide slot borders when badge is equipped to show badge only */
-}
-.details-badge-slot-frame:hover {
-  filter: brightness(1.2);
+.details-badge-slot-frame img {
+  image-rendering: pixelated;
+  background: transparent;
 }
 
-.badge-slot-name {
-  display: none; /* Layout is fully sprite graphic based now */
+/* 队伍栏在编辑时保持常驻 */
+.editor-left-panel {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Modals/Popups (Monster Selection list & Badge Selection list) */
@@ -452,128 +781,182 @@ body {
   pointer-events: auto;
 }
 
-.modal-content {
-  width: 1300px;
-  height: 80%;
+/* --- 怪兽选择面板 (作为队伍左栏的同级替代件) --- */
+.monster-select-panel {
+  position: absolute;
+  left: 1330px;
+  top: 80px; /* 垂直对齐 */
+  width: 1399px; /* Block 1 的 1.8 倍宽度 */
+  height: 1109px; /* Block 1 的 1.8 倍高度 */
+  background-image: url('/UI2.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 1728px 1109px !important; /* 960 * 1.8 x 616 * 1.8 */
+  image-rendering: pixelated;
+  padding: 110px 32px 60px 32px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  z-index: 200; /* 高层级，防止被详情面板盖住 */
+  
+  /* 从右侧滑入，且应用 0.8 倍缩放 */
+  transform: translateX(120%) scale(0.8);
+  transform-origin: left top;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.modal-grid-scroll {
+/* 激活进场 */
+.monster-select-panel.open {
+  transform: translateX(0) scale(0.8) !important;
+}
+
+/* 滚动区域 */
+.monster-select-panel .modal-grid-scroll {
   overflow-y: auto;
   flex-grow: 1;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 4px solid #000;
-  padding: 12px;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 10px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 254px);
+  gap: 20px 16px;
   margin-bottom: 12px;
+  justify-content: center;
 }
 
+/* 卡片切图 (普通木框卡片，Block 2: X=819, Y=55) */
 .modal-monster-card {
-  background-color: #283241;
-  border: 2px solid #5a5a5a;
-  padding: 8px;
+  width: 254px;
+  height: 302px;
+  background-image: url('/UI2.png') !important;
+  background-position: -1474px -99px !important;
+  background-size: 1728px 1108px !important;
+  image-rendering: pixelated;
+  border: none !important;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  box-sizing: border-box;
   cursor: pointer;
-  text-align: center;
 }
 
-.modal-monster-card:hover {
-  border-color: #e5c158;
+/* 卡片高亮切图 (选中或 Hover，Block 3: X=819, Y=249) */
+.modal-monster-card:hover,
+.modal-monster-card.active {
+  background-position: -1474px -448px !important;
 }
 
 .modal-monster-card img {
   width: 164px;
   height: 164px;
-  margin-bottom: 6px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .modal-monster-name {
+  font-family: 'Press Start 2P', 'Zpix', monospace;
   font-size: 20px;
   color: #fff;
-  margin-bottom: 4px;
+  text-shadow: 2px 2px 0px #000;
+  margin-bottom: 6px;
 }
 
 .modal-monster-cost {
-  font-size: 20px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 18px;
   color: #e5c158;
+  text-shadow: 1px 1px 0px #000;
 }
 
-/* Badge Modal specific styles */
-.badge-modal-content {
-  width: 1300px;
-  height: 80%;
+.badge-select-panel {
+  position: absolute;
+  left: 1330px;
+  top: 80px; /* 垂直对齐 */
+  width: 1399px; /* Block 1 的 1.8 倍宽度 */
+  height: 1109px; /* Block 1 的 1.8 倍高度 */
+  background-image: url('/UI2.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 1728px 1109px !important; /* 960 * 1.8 x 616 * 1.8 */
+  image-rendering: pixelated;
+  padding: 110px 32px 60px 32px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  z-index: 200; /* 高层级，防止被详情面板盖住 */
+  
+  /* 从右侧滑入，且应用 0.8 倍缩放 */
+  transform: translateX(120%) scale(0.8);
+  transform-origin: left top;
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.badge-grid-scroll {
+.badge-select-panel.open {
+  transform: translateX(0) scale(0.8) !important;
+}
+
+.badge-select-panel .badge-grid-scroll {
   overflow-y: auto;
   flex-grow: 1;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 4px solid #000;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 20px 40px 10px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 12px;
 }
 
+/* 蜂窝排版：行包裹器 */
+.badge-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 从第二行开始纵向重叠 45px，达到蜂巢式咬合效果 */
+.badge-row + .badge-row {
+  margin-top: -45px;
+}
+
+/* 偶数行向右偏移半个卡片的圆心宽度 ( W/2 + gap/2 = 90 + 4 = 94px ) */
+.badge-row:nth-child(even) {
+  padding-left: 94px;
+  box-sizing: border-box;
+}
+
+/* 徽章卡片本身：缩小尺寸便于紧密贴合 */
 .modal-badge-card {
-  background-color: #283241;
-  border: 2px solid #5a5a5a;
-  padding: 6px;
+  width: 180px;
+  height: 180px;
+  background-color: transparent !important;
+  border: none !important;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   cursor: pointer;
-  position: relative;
+  box-sizing: border-box;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  justify-content: flex-start;
 }
 
 .modal-badge-card:hover {
-  border-color: #e5c158;
+  transform: scale(1.1); /* 鼠标悬浮微微放大，更具质感 */
 }
 
 .modal-badge-name {
-  font-size: 20px;
-  color: #e5c158;
-  margin-bottom: 4px;
-}
-
-.modal-badge-desc {
-  display: none;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 24px;
-  color: #ccc;
-  line-height: 1.4;
-  text-shadow: 2px 2px 0px #000;
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translate(-50%, -10px);
-  background-color: rgba(16, 20, 30, 0.98);
-  border: 2px solid #5a5a5a;
-  padding: 12px;
-  width: 380px;
-  z-index: 1000;
-  pointer-events: none;
-  text-align: center;
-  box-shadow: 4px 4px 0px #000;
-  white-space: normal;
-  box-sizing: border-box;
+  font-size: 16px;
+  color: #e5c158;
+  text-shadow: 1px 1px 0px #000;
+  margin-top: 4px;
+  word-break: break-all;
 }
-
-.modal-badge-card:hover .modal-badge-desc {
-  display: none;
-}
-
-.modal-badge-card.show-desc .modal-badge-desc {
-  display: block;
-}
-
 
 /* Custom Scrollbar Styles for Retro Look */
 ::-webkit-scrollbar {
@@ -1062,4 +1445,140 @@ body {
     transform-origin: top left;
     translate: 100vw 0;
   }
+}
+
+/* ==========================================================================
+   Lobby Dashboard & Staggered Ship Transitions (Dual-State UI System)
+   ========================================================================== */
+
+/* Fullscreen Blackout transition overlay */
+#transitionOverlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 0.4s ease-in-out;
+}
+#transitionOverlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Lobby control board style */
+.lobby-action-panel {
+  position: absolute;
+  left: 100px;
+  top: 80px;
+  width: 500px;
+  height: 778px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 50px 24px;
+  box-sizing: border-box;
+  
+  /* Gold corner copper board pixel style */
+  border-style: solid;
+  border-image: url('/ui_panel_9slice.png') 16 stretch;
+  border-width: 16px;
+  background-color: #283241;
+  image-rendering: pixelated;
+
+  transform: scale(0.8);
+  transform-origin: left center;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.lobby-title {
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 26px;
+  color: #e5c158;
+  text-shadow: 2px 2px 0px #000;
+  margin-bottom: 60px;
+  text-align: center;
+}
+
+.lobby-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  align-items: center;
+}
+
+.lobby-menu-btn {
+  width: 380px;
+  height: 80px;
+  font-size: 22px;
+}
+
+/* --- Ship dynamic layout and sway animation adjustments --- */
+.ship-enter-wrapper {
+  transform: translateX(35%); /* 大厅模式，展现左2/3大船头且稍微偏右偏多 */
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* EDIT Mode (not lobby): Ship shifts left to show mid-aft part (Right 2/3) */
+#gameContainer:not(.lobby-view) .team-editor-bg-container .ship-enter-wrapper {
+  transform: translateX(0%) !important;
+}
+
+/* BATTLE Mode: Ship sinks into bottom of screen */
+#gameContainer.transition-fight .team-editor-bg-container .ship-enter-wrapper {
+  transform: translateY(600px) !important;
+  transition: transform 0.8s cubic-bezier(0.5, 0, 0.75, 0) !important;
+}
+
+/* --- Panel dynamic movements inside lobby / edit modes --- */
+
+/* LOBBY VIEW Mode configurations */
+#gameContainer.lobby-view .editor-left-panel {
+  transform: translateX(1100px) scale(0.8) !important;
+  transform-origin: left top !important;
+}
+#gameContainer.lobby-view .squad-cell {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+#gameContainer.lobby-view .details-card {
+  transform: translateX(120%) scale(0.8) !important;
+  pointer-events: none;
+}
+
+#gameContainer.lobby-view .lobby-action-panel {
+  transform: translateX(0) scale(0.8) !important;
+}
+
+/* EDIT Mode configurations */
+#gameContainer:not(.lobby-view) .editor-left-panel {
+  transform: translateX(0) scale(0.8);
+  transform-origin: left top;
+}
+
+#gameContainer:not(.lobby-view) .lobby-action-panel {
+  transform: translateX(-150%) scale(0.8);
+  pointer-events: none;
+}
+
+/* Details card default state: offscreen, active slides in */
+.details-card {
+  transform: translateX(120%) scale(0.8);
+  transform-origin: right center;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+#gameContainer:not(.lobby-view) .details-card.active {
+  transform: translateX(0) scale(0.8) !important;
+}
+
+/* Hide backToLobbyBtn inside lobby view to prevent clutter */
+#gameContainer.lobby-view #backToLobbyBtn {
+  display: none !important;
 }

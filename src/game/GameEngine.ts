@@ -2,6 +2,7 @@ import { DB_MONSTERS, MonsterData, BadgeData, DB_BADGES } from './Database';
 import { badgeOnPlace, badgeGetAtsMultiplier } from './BadgeSystem';
 
 export type GameState =
+  | 'OPENING'
   | 'MATCH_LOBBY'
   | 'TEAM_EDIT'
   | 'PREPARATION_LEFT'
@@ -64,7 +65,10 @@ export class GameEngine {
   }
 
   // State
-  public state: GameState = 'TEAM_EDIT';
+  public state: GameState = 'OPENING';
+  public fromOpening: boolean = false;
+
+
   public currentRound: number = 1;
   public maxRounds: number = 5;
   public p1Score: number = 0;

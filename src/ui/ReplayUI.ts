@@ -574,15 +574,10 @@ export class ReplayUI {
       <div class="details-val details-val-atk">${selectedMonster.atk}</div>
       <div class="details-val details-val-ats">${selectedMonster.ats.toFixed(2)}</div>
       <div class="details-val details-val-range">${selectedMonster.range}</div>
-      <div class="details-val details-val-shield">${selectedMonster.shield}</div>
-      <div class="details-val details-val-cd">${dbMonster.skillCd}</div>
       <div class="details-val details-val-speed">${selectedMonster.speed}</div>
 
       <div class="details-skill-section">
-        <div class="details-skill-icon-frame">
-          ${this.getSkillIconHtml(dbMonster.skill)}
-        </div>
-        <div class="details-skill-desc-box">
+        <div class="details-skill-desc-box" style="left: 0; width: 100%; padding: 0 10px;">
           <div style="color:#e5c158; font-size:30px; margin-bottom:4px;">${dbMonster.skill} (CD: ${dbMonster.skillCd}s)</div>
           <div>${this.getSkillChineseDescription(dbMonster.id)}</div>
         </div>
@@ -594,35 +589,7 @@ export class ReplayUI {
     `;
   }
 
-  private getSkillIconHtml(skillName: string): string {
-    let badgeId = 11;
-    if (skillName === 'reap') badgeId = 19;
-    else if (skillName === 'lightning') badgeId = 4;
-    else if (skillName === 'life_link') badgeId = 6;
-    else if (skillName === 'incendiary') badgeId = 24;
-    else if (skillName === 'recovery') badgeId = 17;
-    else if (skillName === 'rush') badgeId = 5;
-    
-    const sprite = BADGE_SPRITES[badgeId];
-    if (!sprite) return '';
-    const scale = 64 / sprite.sw;
-    const imgW = 2556 * scale;
-    const imgH = 1417 * scale;
-    const left = -sprite.sx * scale;
-    const top = -sprite.sy * scale;
-    return `
-      <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-        <img src="badge.png" style="
-          position: absolute;
-          left: ${left}px;
-          top: ${top}px;
-          width: ${imgW}px;
-          height: ${imgH}px;
-          border: none;
-        " />
-      </div>
-    `;
-  }
+
 
   private getSkillChineseDescription(dbId: number): string {
     const skillMap: Record<number, string> = {

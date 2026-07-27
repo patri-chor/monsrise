@@ -15,7 +15,7 @@ function hexToRgb(hex: string): [number, number, number] {
 
 /** 土壤贴图（钻土拖尾用） */
 export const dustImage = new Image();
-dustImage.src = 'dust.png';
+dustImage.src = `dust.png?v=${Date.now()}`;
 
 // ---- 粒子数据结构 ----
 export interface Particle {
@@ -32,13 +32,19 @@ export interface Particle {
 }
 
 // ---- 粒子类型联合 ----
-export type ParticleType = 'slash' | 'explosion' | 'lightning' | 'heal' | 'shield'
+export type ParticleType = 'slash' | 'explosion' | 'lightning' | 'heal'
   | 'fire' | 'incendiary' | 'star' | 'wind_circle' | 'heal_circle'
   | 'bolt_trail' | 'burn_fire' | 'burn_ember' | 'chill_haze' | 'chill_crystal'
   | 'crescent' | 'jitter_line' | 'dust' | 'heal_float' | 'heal_cross'
-  | 'energy_spark' | 'solid_glow' | 'soil'
+  | 'solid_glow' | 'soil'
   | 'blast_core' | 'blast_flame' | 'blast_spark' | 'blast_smoke'
-  | 'smoke_puff' | 'hard_shard' | 'shock_ring' | 'debris_stone';
+  | 'smoke_puff' | 'hard_shard' | 'shock_ring' | 'debris_stone'
+  // ---- 咒法骑士（Big Cannon）----
+  | 'cannon_charge_orb' | 'cannon_charge_ring' | 'cannon_charge_mist' | 'cannon_hit_rays'
+  // ---- 冲锋哥（Rush）----
+  | 'rush_wind_ring' | 'rush_wind_trail' | 'rush_shatter_spark'
+  // ---- 肃清哥（Reap）----
+  | 'reap_blood_arc' | 'reap_blood_mist' | 'reap_blood_drop';
 
 // ---- 策略接口 ----
 export type ParticleSpawner = (
@@ -405,48 +411,7 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
     },
   },
 
-  // ---- energy_spark：能量火花（向中心汇聚） ----
-  energy_spark: {
-    spawn(x, y, color, size, duration, pool, list) {
-      const pt = pool.get();
-      // 从角色周围随机位置向中心汇聚
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 30 + Math.random() * 50;
-      pt.x = x + Math.cos(angle) * dist;
-      pt.y = y + Math.sin(angle) * dist;
-      pt.type = 'energy_spark'; pt.color = color;
-      pt.size = size * (0.6 + Math.random() * 0.6);
-      pt.maxLife = duration * (0.6 + Math.random() * 0.5);
-      pt.life = pt.maxLife;
-      // 向中心（x, y）运动
-      const speed = 30 + Math.random() * 50;
-      pt.vx = -Math.cos(angle) * speed / duration;
-      pt.vy = -Math.sin(angle) * speed / duration;
-      list.push(pt);
-    },
-    render(ctx, pt) {
-      const ratio = pt.life / pt.maxLife;
-      const sz = Math.max(1.5, pt.size * ratio);
-      ctx.save();
-      const glow = ctx.createRadialGradient(pt.x, pt.y, sz * 0.1, pt.x, pt.y, sz * 1.8);
-      glow.addColorStop(0, `rgba(255,255,200,${ratio * 0.5})`);
-      glow.addColorStop(0.4, `rgba(255,240,100,${ratio * 0.2})`);
-      glow.addColorStop(1, 'rgba(255,200,50,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, sz * 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      // 内核亮点
-      ctx.fillStyle = `rgba(255,255,220,${ratio * 0.7})`;
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, sz * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    },
-    update(_pt) {
-      // vx/vy 在 spawn 中已设置汇聚方向，不做衰减（保持向心运动）
-    },
-  },
+
 
   // ---- explosion：爆炸碎片（16粒，从中心爆开 + 圆形alpha衰减） ----
   explosion: {
@@ -660,23 +625,7 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
     },
   },
 
-  // ---- shield：六边形护盾 ----
-  shield: {
-    spawn: (x, y, color, size, duration, pool, list, extra) => defaultSpawn(x, y, 'shield', color, size, duration, pool, list, extra),
-    render(ctx, pt) {
-      const ratio = pt.life / pt.maxLife;
-      ctx.strokeStyle = pt.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      const radius = pt.size * ratio;
-      for (let j = 0; j < 6; j++) {
-        const angle = (j * Math.PI) / 3;
-        ctx.lineTo(pt.x + Math.cos(angle) * radius, pt.y + Math.sin(angle) * radius);
-      }
-      ctx.closePath();
-      ctx.stroke();
-    },
-  },
+
 
   // ---- slash：斩击线 ----
   slash: {
@@ -1033,12 +982,8 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
   shock_ring: {
     spawn(x, y, _color, _size, duration, pool, list) {
       const pt = pool.get();
-      pt.x = x; pt.y = y;
-      pt.type = 'shock_ring';
-      pt.color = '#5D4037';
-      pt.size = 0;
-      pt.maxLife = duration;
-      pt.life = duration;
+      pt.x = x; pt.y = y; pt.type = 'shock_ring'; pt.color = '#5D4037'; pt.size = 0;
+      pt.maxLife = duration; pt.life = duration;
       pt.vx = 0; pt.vy = 0;
       pt.extra = { rx: 0, ry: 0, alpha: 1 };
       list.push(pt);
@@ -1081,6 +1026,470 @@ export const PARTICLE_TYPES: Record<ParticleType, ParticleTypeConfig> = {
       ctx.fillStyle = pt.color;
       ctx.fill();
       ctx.restore();
+    },
+  },
+
+  // ================================================================
+  //  咒法骑士（Big Cannon）粒子
+  // ================================================================
+
+  // ---- cannon_charge_orb：实心蓄力能量球 ----
+  cannon_charge_orb: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'cannon_charge_orb'; pt.color = color;
+      pt.size = size; pt.maxLife = duration; pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const progress = 1 - ratio;
+      // 实心能量球随时间从小到大
+      const r = pt.size * progress;
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      // 外层粉紫圈
+      ctx.strokeStyle = '#cc33ff';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 2.5, 0, Math.PI * 2);
+      ctx.stroke();
+      // 内层实心白芯
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+  },
+
+  // ---- cannon_charge_ring：放大扩散的蓄力圆环、击中爆闪环 ----
+  cannon_charge_ring: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'cannon_charge_ring'; pt.color = color;
+      pt.size = size; pt.maxLife = duration; pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const progress = 1 - ratio;
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      
+      // 无论是蓄力还是击中，圆环均为放大扩散且淡出
+      const r = pt.size * (0.15 + progress * 0.85);
+      const alpha = ratio;
+      ctx.globalAlpha = alpha;
+      
+      // 绘制粉紫描边环
+      ctx.strokeStyle = '#ff66ff';
+      ctx.lineWidth = 4 * ratio + 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.restore();
+    },
+  },
+
+  // ---- cannon_charge_mist：汇聚紫色蓄力烟雾（高可见度） ----
+  cannon_charge_mist: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.type = 'cannon_charge_mist'; pt.color = color;
+      pt.size = size * (0.6 + Math.random() * 0.6);
+      pt.maxLife = duration * (0.8 + Math.random() * 0.4);
+      pt.life = pt.maxLife;
+      pt.extra = extra || {};
+      
+      const angle = Math.random() * Math.PI * 2;
+      if (extra?.mode === 'hit') {
+        pt.x = x; pt.y = y;
+        const speed = 120 + Math.random() * 140;
+        pt.vx = Math.cos(angle) * speed;
+        pt.vy = Math.sin(angle) * speed;
+      } else {
+        // 汇聚：在外围产生，流向施法者中心
+        const dist = 75 + Math.random() * 20;
+        pt.x = x + Math.cos(angle) * dist;
+        pt.y = y + Math.sin(angle) * dist;
+        const speed = dist / pt.maxLife;
+        pt.vx = -Math.cos(angle) * speed;
+        pt.vy = -Math.sin(angle) * speed;
+        pt.extra.ownerId = extra?.ownerId;
+        pt.extra.dx = pt.x - x;
+        pt.extra.dy = pt.y - y;
+        pt.extra.relativeVel = true;
+      }
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      // 极高的可见度：使用实心圆配合高不透明度
+      const alpha = ratio * 0.95;
+      const sz = pt.size * (0.6 + (1 - ratio) * 0.5);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#cc55ff';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, sz * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+    update(_pt: Particle, _dt: number) {
+      // 依靠相对坐标同步施法者位置
+    },
+  },
+
+  // ---- cannon_hit_rays：命中相隔 120 度的三条紫色放射线（旋转缩放） ----
+  cannon_hit_rays: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], _extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'cannon_hit_rays'; pt.color = color;
+      pt.size = size; pt.maxLife = duration; pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      pt.extra = { startAngle: Math.random() * Math.PI * 2, rotSpeed: 5 + Math.random() * 4 };
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const elapsed = pt.maxLife - pt.life;
+      const angle = pt.extra.startAngle + elapsed * pt.extra.rotSpeed;
+      // 随时间缩放（变短）和淡出
+      const length = pt.size * ratio;
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      ctx.globalAlpha = ratio;
+      ctx.strokeStyle = '#cc33ff';
+      ctx.lineWidth = 4 * ratio + 1.2;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        const a = angle + (i * Math.PI * 2) / 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.cos(a) * length, Math.sin(a) * length);
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+  },
+
+
+
+  // ================================================================
+  //  冲锋哥（Rush）粒子
+  // ================================================================
+
+  // ---- rush_wind_ring：冲锋时的圆形/半圆形破风效果（跟随角色，4帧序列） ----
+  rush_wind_ring: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'rush_wind_ring'; pt.color = color;
+      pt.size = size; pt.maxLife = duration; pt.life = duration;
+      pt.vx = 0; pt.vy = 0;
+      pt.extra = extra || {};
+      if (pt.extra.ownerId) {
+        pt.extra.dx = 0;
+        pt.extra.dy = 0;
+      }
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const progress = 1 - ratio;
+      const dir = pt.extra?.dir || 1;
+      
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      
+      // 4帧程序化序列帧动画
+      if (progress < 0.25) {
+        // 第1帧：较小月牙，快速形成，半透明
+        const t = progress / 0.25;
+        const r = pt.size * 0.6 * t;
+        ctx.globalAlpha = t * 0.95;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (dir === 1) {
+          ctx.arc(10, 0, r, -Math.PI / 2, Math.PI / 2);
+          ctx.arc(8, 0, r * 0.85, Math.PI / 2, -Math.PI / 2, true);
+        } else {
+          ctx.arc(-10, 0, r, Math.PI / 2, 3 * Math.PI / 2);
+          ctx.arc(-8, 0, r * 0.85, 3 * Math.PI / 2, Math.PI / 2, true);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (progress < 0.65) {
+        // 第2帧：完整大月牙（中间粗两端细），附带淡蓝色内层亮环，高不透明度
+        const r = pt.size;
+        ctx.globalAlpha = 0.95;
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (dir === 1) {
+          ctx.arc(10, 0, r, -Math.PI / 2, Math.PI / 2);
+          ctx.arc(6, 0, r * 0.82, Math.PI / 2, -Math.PI / 2, true);
+        } else {
+          ctx.arc(-10, 0, r, Math.PI / 2, 3 * Math.PI / 2);
+          ctx.arc(-6, 0, r * 0.82, 3 * Math.PI / 2, Math.PI / 2, true);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#aae8ff';
+        ctx.beginPath();
+        if (dir === 1) {
+          ctx.arc(8, 0, r - 3, -Math.PI * 0.4, Math.PI * 0.4);
+          ctx.arc(6, 0, (r - 3) * 0.82, Math.PI * 0.4, -Math.PI * 0.4, true);
+        } else {
+          ctx.arc(-8, 0, r - 3, Math.PI * 0.6, Math.PI * 1.4);
+          ctx.arc(-6, 0, (r - 3) * 0.82, Math.PI * 1.4, Math.PI * 0.6, true);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (progress < 0.88) {
+        // 第3帧：撕裂开裂效果，圆弧从中间断裂为两部分，淡出
+        const t = (progress - 0.65) / 0.23;
+        const r = pt.size * (1 + t * 0.1);
+        ctx.globalAlpha = (1 - t) * 0.85;
+        ctx.fillStyle = '#ffffff';
+        
+        // 上半部月牙
+        ctx.beginPath();
+        if (dir === 1) {
+          ctx.arc(10, -4, r, -Math.PI * 0.5, Math.PI * 0.1);
+          ctx.arc(7, -4, r * 0.82, Math.PI * 0.1, -Math.PI * 0.5, true);
+        } else {
+          ctx.arc(-10, -4, r, Math.PI * 0.9, Math.PI * 1.5);
+          ctx.arc(-7, -4, r * 0.82, Math.PI * 1.5, Math.PI * 0.9, true);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // 下半部月牙
+        ctx.beginPath();
+        if (dir === 1) {
+          ctx.arc(10, 4, r, -Math.PI * 0.1, Math.PI * 0.5);
+          ctx.arc(7, 4, r * 0.82, Math.PI * 0.5, -Math.PI * 0.1, true);
+        } else {
+          ctx.arc(-10, 4, r, Math.PI * 0.5, Math.PI * 1.1);
+          ctx.arc(-7, 4, r * 0.82, Math.PI * 1.1, Math.PI * 0.5, true);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // 第4帧：完全消散
+      }
+      ctx.restore();
+    },
+    update(pt: Particle, _dt: number) {
+      // 在 update 中动态从月牙末端顶点产生破碎飞散粒子
+      const progress = 1 - (pt.life / pt.maxLife);
+      if (progress > 0.1 && progress < 0.75) {
+        const r = pt.size * (0.6 + progress * 0.4);
+        const dir = pt.extra?.dir || 1;
+        const tipX = pt.x + dir * 10;
+        const tipY1 = pt.y - r;
+        const tipY2 = pt.y + r;
+        
+        if (Math.random() < 0.45) {
+          // 动态注入到 vfx
+          (window as any).vfx?.addParticle(tipX, tipY1, 'rush_shatter_spark', 0.4, '#ffffff', 4, { dir });
+          (window as any).vfx?.addParticle(tipX, tipY2, 'rush_shatter_spark', 0.4, '#ffffff', 4, { dir });
+        }
+      }
+    },
+  },
+
+  // ---- rush_shatter_spark：冲锋圆弧向两侧飞散的破碎粒子 ----
+  rush_shatter_spark: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'rush_shatter_spark'; pt.color = color;
+      pt.size = size * (0.5 + Math.random() * 0.6);
+      pt.maxLife = duration * (0.6 + Math.random() * 0.5);
+      pt.life = pt.maxLife;
+      const dir = extra?.dir || 1;
+      const isUp = Math.random() < 0.5;
+      const angle = isUp 
+        ? (-Math.PI / 2 + (Math.random() - 0.5) * 0.8) 
+        : (Math.PI / 2 + (Math.random() - 0.5) * 0.8);
+      const speed = 100 + Math.random() * 150;
+      pt.vx = Math.cos(angle) * speed - dir * 60;
+      pt.vy = Math.sin(angle) * speed;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      ctx.save();
+      ctx.globalAlpha = ratio * 0.85;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+      ctx.restore();
+    },
+    update(pt: Particle, _dt: number) {
+      pt.vx *= 0.94;
+      pt.vy *= 0.94;
+    },
+  },
+
+  // ---- rush_wind_trail：冲锋留在原地的烟雾粒子 ----
+  rush_wind_trail: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x;
+      pt.y = y + (Math.random() - 0.5) * size * 0.4;
+      pt.type = 'rush_wind_trail'; pt.color = color;
+      pt.size = size * (0.6 + Math.random() * 0.5);
+      pt.maxLife = duration * (0.6 + Math.random() * 0.5);
+      pt.life = pt.maxLife;
+      const dir = extra?.dir || 1;
+      pt.vx = -dir * (80 + Math.random() * 70);
+      pt.vy = (Math.random() - 0.5) * 30;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const sz = pt.size * ratio;
+      ctx.save();
+      ctx.globalAlpha = ratio * 0.5;
+      ctx.fillStyle = '#cccccc';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+    update(pt: Particle, _dt: number) {
+      pt.vx *= 0.93;
+      pt.vy *= 0.93;
+    },
+  },
+
+  // ================================================================
+  //  肃清哥（Reap）粒子
+  // ================================================================
+
+  // ---- reap_blood_arc：血色漩涡/旋风环绕线 ----
+  reap_blood_arc: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[]) {
+      const count = 3;
+      for (let i = 0; i < count; i++) {
+        const pt = pool.get();
+        pt.x = x; pt.y = y; pt.type = 'reap_blood_arc'; pt.color = color;
+        pt.size = size * (1.25 + i * 0.12);
+        pt.maxLife = duration * (0.75 + i * 0.1); pt.life = pt.maxLife;
+        pt.vx = 0; pt.vy = 0;
+        pt.extra = {
+          startAngle: (i * Math.PI * 2) / count + Math.random() * 0.4,
+          angleSpan: Math.PI * 0.7 + Math.random() * Math.PI * 0.4,
+          rotSpeed: 10 + i * 3,
+          thickness: 5 - i * 1,
+        };
+        list.push(pt);
+      }
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const elapsed = pt.maxLife - pt.life;
+      const angle = pt.extra.startAngle + elapsed * pt.extra.rotSpeed;
+      const alpha = ratio;
+      const r = pt.size * (0.8 + (1 - ratio) * 0.3);
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#8b0000';
+      ctx.lineWidth = pt.extra.thickness + 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(0, 0, r, angle, angle + pt.extra.angleSpan);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#ff1111';
+      ctx.lineWidth = pt.extra.thickness * 0.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, angle + 0.1, angle + pt.extra.angleSpan - 0.1);
+      ctx.stroke();
+      ctx.restore();
+    },
+  },
+
+  // ---- reap_blood_mist：血雾效果 ----
+  reap_blood_mist: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      const r = Math.random() * size * 0.8;
+      const theta = Math.random() * Math.PI * 2;
+      pt.x = x + Math.cos(theta) * r;
+      pt.y = y + Math.sin(theta) * r;
+      pt.type = 'reap_blood_mist'; pt.color = color;
+      pt.size = size * (0.4 + Math.random() * 0.5);
+      pt.maxLife = duration * (0.8 + Math.random() * 0.4);
+      pt.life = pt.maxLife;
+      pt.vx = Math.cos(theta) * (20 + Math.random() * 40);
+      pt.vy = Math.sin(theta) * (20 + Math.random() * 40) - 20;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const alpha = ratio * 0.55;
+      const sz = pt.size * (0.6 + (1 - ratio) * 0.8);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const grad = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, sz);
+      grad.addColorStop(0, '#990000');
+      grad.addColorStop(0.4, 'rgba(160, 0, 0, 0.35)');
+      grad.addColorStop(1, 'rgba(100, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+    update(pt: Particle, _dt: number) {
+      pt.vx *= 0.95;
+      pt.vy *= 0.95;
+    },
+  },
+
+  // ---- reap_blood_drop：旋转甩出的血滴粒子 ----
+  reap_blood_drop: {
+    spawn(x: number, y: number, color: string, size: number, duration: number, pool: Pool<Particle>, list: Particle[], extra?: any) {
+      const pt = pool.get();
+      pt.x = x; pt.y = y; pt.type = 'reap_blood_drop'; pt.color = color;
+      pt.size = size * (0.4 + Math.random() * 0.6);
+      pt.maxLife = duration * (0.5 + Math.random() * 0.5);
+      pt.life = pt.maxLife;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 70 + Math.random() * 100;
+      pt.vx = Math.cos(angle) * speed;
+      pt.vy = Math.sin(angle) * speed - 20;
+      pt.extra = extra || {};
+      list.push(pt);
+    },
+    render(ctx: CanvasRenderingContext2D, pt: Particle) {
+      const ratio = pt.life / pt.maxLife;
+      const sz = Math.max(1.5, pt.size * ratio);
+      const alpha = ratio;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = ratio > 0.5 ? '#cc0000' : '#880000';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    },
+    update(pt: Particle, dt: number) {
+      pt.vx *= 0.96;
+      pt.vy *= 0.96;
+      pt.vy += 80 * dt;
     },
   },
 };

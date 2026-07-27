@@ -52,6 +52,14 @@ export class UIManager {
 
     const state = gameEngine.state;
 
+    if (state === 'OPENING') {
+      const gameBg = document.getElementById('gameBg');
+      if (gameBg) gameBg.style.backgroundImage = 'none';
+      this._teamEditorUI = new TeamEditorUI(this.container);
+      this._teamEditorUI.renderOpening();
+      return;
+    }
+
     if (state === 'MATCH_LOBBY') {
       this._lobbyUI = new LobbyUI(this.container);
       this._lobbyUI.render();
@@ -65,7 +73,7 @@ export class UIManager {
       gameBg.style.backgroundPosition = "top left";
       gameBg.style.backgroundRepeat = "no-repeat";
       if (state === 'TEAM_EDIT') {
-        gameBg.style.backgroundImage = "url('editor.png')";
+        gameBg.style.backgroundImage = "none";
       } else {
         gameBg.style.backgroundImage = "url('ground.png')";
       }

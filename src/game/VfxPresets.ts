@@ -78,12 +78,14 @@ export const SKILL = {
   },
   /** 火炮技能 */
   bigCannon: {
-    chargeRing: { type: 'wind_circle', duration: 0.4,  color: '#ffdd44', size: 25 } as ParticlePreset,
-    coreGlow:   { type: 'heal_circle', duration: 1.2,  color: '#ffdd44', size: 18 } as ParticlePreset,
-    spark:      { type: 'energy_spark',duration: 0.6,  color: '#ffee44', size: 18 } as ParticlePreset,
+    chargeOrb:  { type: 'cannon_charge_orb',  duration: 0.65, color: '#cc66ff', size: 24 } as ParticlePreset,
+    chargeRing: { type: 'cannon_charge_ring', duration: 0.65, color: '#cc66ff', size: 60 } as ParticlePreset,
+    chargeMist: { type: 'cannon_charge_mist', duration: 0.8,  color: '#cc66ff', size: 12 } as ParticlePreset,
     muzzle:     { type: 'explosion',   duration: 0.15, color: '#ffffff', size: 24 } as ParticlePreset,
-    hit:        { type: 'explosion',   duration: 0.35, color: '#ffffff', size: 40 } as ParticlePreset,
-    shockRing:  { type: 'wind_circle', duration: 0.35, color: '#ffffff', size: 80 } as ParticlePreset,
+    hitOrb:     { type: 'cannon_charge_orb',  duration: 0.35, color: '#ff66ff', size: 50 } as ParticlePreset,
+    hitRing:    { type: 'cannon_charge_ring', duration: 0.5, color: '#ff66ff', size: 130 } as ParticlePreset,
+    hitRays:    { type: 'cannon_hit_rays',    duration: 0.8,  color: '#cc66ff', size: 100 } as ParticlePreset,
+    hitMist:    { type: 'cannon_charge_mist', duration: 0.6,  color: '#cc66ff', size: 45 } as ParticlePreset,
   },
   /** 多重射击 */
   multishot: {
@@ -106,8 +108,9 @@ export const SKILL = {
   },
   /** 肃清哥 - 血刃收割（月牙刀光旋转） */
   reap: {
-    ring: { type: 'crescent', duration: 0.8, color: '#df3e23', size: 50 } as ParticlePreset,
-    hit:  { type: 'explosion', duration: 0.5, color: '#8b0000', size: 10 } as ParticlePreset,
+    bloodArc:  { type: 'reap_blood_arc',  duration: 0.65, color: '#cc0000', size: 65 } as ParticlePreset,
+    bloodMist: { type: 'reap_blood_mist', duration: 0.7,  color: '#cc0000', size: 25 } as ParticlePreset,
+    bloodDrop: { type: 'reap_blood_drop', duration: 0.55, color: '#cc0000', size: 6  } as ParticlePreset,
   },
   /** 学徒哥 - 生命均衡 */
   lifeBalance: {
@@ -120,7 +123,9 @@ export const SKILL = {
   },
   /** 冲锋哥 - 野蛮冲撞 */
   rush: {
-    trail: { type: 'dust', duration: 0.8, color: '#999999', size: 20 } as ParticlePreset,
+    windRing: { type: 'rush_wind_ring', duration: 0.5, color: '#ffffff', size: 60 } as ParticlePreset,
+    shatter:  { type: 'rush_shatter_spark', duration: 0.4, color: '#ffffff', size: 4 } as ParticlePreset,
+    trail:    { type: 'rush_wind_trail', duration: 0.4, color: '#cccccc', size: 16 } as ParticlePreset,
   },
   /** 治疗光环 */
   healAura: {

@@ -4,10 +4,10 @@ import { BULLET_SPRITES } from './VfxPresets';
 import { Particle, ParticleType, PARTICLE_TYPES } from './ParticleTypes';
 
 export const buttleImage = new Image();
-buttleImage.src = 'buttle.png';
+buttleImage.src = `buttle.png?v=${Date.now()}`;
 
 export const tntImage = new Image();
-tntImage.src = 'tnt.png';
+tntImage.src = `tnt.png?v=${Date.now()}`;
 
 export interface FloatingText {
   x: number;
@@ -92,10 +92,10 @@ export interface BoltProfile {
 
 export const BOLT_PROFILES: Record<string, BoltProfile> = {
   lightning: { size:14, speed:400, color:'#a0e0ff', colMul:2.0, trailLife:0.125, trailSize:[1,3],   trailColor:'#a0e0ff',     trailCount:1, trailSpawnChance:0.25 },
-  fire:      { size:12, speed:400, color:'#ff6600', colMul:2.5, trailLife:0.25,  trailSize:[3,9],   trailColor:'fire_trail',  trailCount:3, trailSpawnChance:1 },
-  heal:      { size:10, speed:400, color:'#5ac54f', colMul:2.0, trailLife:0.3,   trailSize:[1.5,3.5],trailColor:'heal_trail',  trailCount:2, trailSpawnChance:1 },
+  fire:      { size:12, speed:400, color:'#ff6600', colMul:2.5, trailLife:0.125, trailSize:[4,10],  trailColor:'fire_trail',  trailCount:3, trailSpawnChance:1 },
+  heal:      { size:10, speed:400, color:'#5ac54f', colMul:2.0, trailLife:0.15,  trailSize:[2.2,4.5],trailColor:'heal_trail',  trailCount:2, trailSpawnChance:1 },
   void:      { size:28, speed:400, color:'#c880ff', colMul:1.2, trailLife:0.175, trailSize:[1,2.5], trailColor:'#c880ff',     trailCount:1, trailSpawnChance:0.85 },
-  cannon:    { size:24, speed:700, color:'#9040e0', colMul:3.5, trailLife:0.2,   trailSize:[2,6],   trailColor:'#a040e0',trailCount:3, trailSpawnChance:1 },
+  cannon:    { size:24, speed:700, color:'#9040e0', colMul:3.5, trailLife:0.25,  trailSize:[3,7],   trailColor:'cannon_trail',trailCount:2, trailSpawnChance:0.8 },
   empowered: { size:20, speed:1600, color:'#ffff44', colMul:2.5, trailLife:0.35,  trailSize:[4,8],   trailColor:'#ffdd44',     trailCount:2, trailSpawnChance:1 },
 };
 
@@ -451,8 +451,25 @@ export class VfxManager {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const pt = this.particles[i];
       pt.life -= dt;
-      pt.x += pt.vx * dt;
-      pt.y += pt.vy * dt;
+      if (pt.extra && pt.extra.ownerId) {
+        const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
+        if (ownerPos) {
+          const dx = pt.extra.dx || 0;
+          const dy = pt.extra.dy || 0;
+          pt.x = ownerPos.x + dx;
+          pt.y = ownerPos.y + dy;
+          if (pt.extra.relativeVel) {
+            pt.extra.dx = dx + pt.vx * dt;
+            pt.extra.dy = dy + pt.vy * dt;
+          }
+        } else {
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+        }
+      } else {
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
       PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
       if (pt.life <= 0) {
         this.particles.splice(i, 1);
@@ -464,8 +481,25 @@ export class VfxManager {
     for (let i = this.backgroundParticles.length - 1; i >= 0; i--) {
       const pt = this.backgroundParticles[i];
       pt.life -= dt;
-      pt.x += pt.vx * dt;
-      pt.y += pt.vy * dt;
+      if (pt.extra && pt.extra.ownerId) {
+        const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
+        if (ownerPos) {
+          const dx = pt.extra.dx || 0;
+          const dy = pt.extra.dy || 0;
+          pt.x = ownerPos.x + dx;
+          pt.y = ownerPos.y + dy;
+          if (pt.extra.relativeVel) {
+            pt.extra.dx = dx + pt.vx * dt;
+            pt.extra.dy = dy + pt.vy * dt;
+          }
+        } else {
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+        }
+      } else {
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
       PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
       if (pt.life <= 0) {
         this.backgroundParticles.splice(i, 1);
@@ -833,42 +867,24 @@ export class VfxManager {
       }
 
       case 'cannon': {
-        // 凝聚能量法球：深紫厚重
-        const cr = r * 3.0;
-        const outerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
-        outerGrad.addColorStop(0, 'rgba(255,255,255,1)');
-        outerGrad.addColorStop(0.08, 'rgba(220,180,255,0.95)');
-        outerGrad.addColorStop(0.2, 'rgba(180,90,240,0.85)');
-        outerGrad.addColorStop(0.4, 'rgba(130,30,210,0.6)');
-        outerGrad.addColorStop(0.65, 'rgba(80,10,150,0.3)');
-        outerGrad.addColorStop(0.85, 'rgba(50,5,90,0.1)');
-        outerGrad.addColorStop(1, 'rgba(30,0,60,0)');
-        ctx.fillStyle = outerGrad;
+        // 白芯、粉紫描边光环的法球弹
+        const outerR = r * 1.5;
+        ctx.save();
+        
+        // 外层粉紫描边
+        ctx.strokeStyle = '#ff66ff';
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(0, 0, cr, 0, Math.PI * 2);
+        ctx.arc(0, 0, outerR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 核心白球
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
         ctx.fill();
 
-        // 内层紫芯
-        const innerGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
-        innerGrad.addColorStop(0, 'rgba(255,255,255,1)');
-        innerGrad.addColorStop(0.2, 'rgba(240,210,255,0.95)');
-        innerGrad.addColorStop(0.6, 'rgba(180,100,240,0.5)');
-        innerGrad.addColorStop(1, 'rgba(120,40,200,0)');
-        ctx.fillStyle = innerGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 脉冲光晕
-        const pulseR = r * 2.5 + Math.sin(p.pulse!) * r * 0.6;
-        const pulseGrad = ctx.createRadialGradient(0, 0, r * 1.6, 0, 0, pulseR);
-        pulseGrad.addColorStop(0, 'rgba(180,100,240,0)');
-        pulseGrad.addColorStop(0.5, `rgba(150,60,220,${0.25 + f * 0.2})`);
-        pulseGrad.addColorStop(1, 'rgba(100,20,180,0)');
-        ctx.fillStyle = pulseGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.restore();
         break;
       }
     }

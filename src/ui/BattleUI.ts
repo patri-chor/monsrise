@@ -1,6 +1,5 @@
 import { gameEngine, PlacedMonster } from '../game/GameEngine';
 import { DB_MONSTERS, BADGE_SPRITES, DB_BADGES, getSkillDescription } from '../game/Database';
-import { renderSkillIconHtml } from '../game/IconMapping';
 import { renderAvatarHtml } from './shared/AvatarRenderer';
 import { battleSystem } from '../game/BattleSystem';
 import { uiManager } from './UIManager';
@@ -110,6 +109,8 @@ export class BattleUI {
 
     this._container.innerHTML = `
       <div id="battleView" class="ui-interactive">
+        <!-- 退出实验模式按钮 -->
+        <button id="exitBattleBtn" class="pixel-btn" style="position: absolute; left: 40px; top: 40px; width: 140px; height: 55px; font-size: 20px; z-index: 100;">退出</button>
         
         <!-- Top HUD Scoreboard -->
         <div class="battle-scoreboard-top">
@@ -748,6 +749,13 @@ export class BattleUI {
   }
 
   private bindEvents(): void {
+    // Exit button
+    const exitBtn = document.getElementById('exitBattleBtn');
+    exitBtn?.addEventListener('click', () => {
+      gameEngine.restartGame();
+      uiManager.syncStateWithUI();
+    });
+
     const isP1 = gameEngine.state === 'PREPARATION_LEFT';
     const isP2 = gameEngine.state === 'PREPARATION_RIGHT';
 
@@ -1287,9 +1295,6 @@ export class BattleUI {
     this.updateDetailsCardContent();
   }
 
-  private getSkillIconHtml(skillName: string): string {
-    return renderSkillIconHtml(skillName);
-  }
 
   public updateDetailsCardContent(): void {
     const cardContainer = document.getElementById('battleDetailsCardContainer');
@@ -1411,16 +1416,11 @@ export class BattleUI {
       <div class="details-val details-val-atk">${selectedMonster.atk}</div>
       <div class="details-val details-val-ats">${selectedMonster.ats.toFixed(2)}</div>
       <div class="details-val details-val-range">${selectedMonster.range}</div>
-      <div class="details-val details-val-shield">${selectedMonster.shield}</div>
-      <div class="details-val details-val-cd">${dbMonster.skillCd}</div>
       <div class="details-val details-val-speed">${selectedMonster.speed}</div>
 
       <!-- Skill Box -->
       <div class="details-skill-section">
-        <div class="details-skill-icon-frame">
-          ${this.getSkillIconHtml(dbMonster.skill)}
-        </div>
-        <div class="details-skill-desc-box">
+        <div class="details-skill-desc-box" style="left: 0; width: 100%; padding: 0 10px;">
           <div style="color:#e5c158; font-size:30px; margin-bottom:4px;">${dbMonster.skill} (CD: ${dbMonster.skillCd}s)</div>
           <div>${getSkillDescription(dbMonster)}</div>
         </div>

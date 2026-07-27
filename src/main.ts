@@ -10,14 +10,21 @@ import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
 import { networkManager } from './net/NetworkManager';
 
-// Preloader for image assets
+// Preloader for image assets — cache-bust with build time
+const _IMG_VERSION = Date.now();
 const ASSETS_TO_LOAD = {
-  spritesheet: 'all.png',
-  ground: 'ground.png',
-  bench: 'bench.png',
-  editorBg: 'editor.png',
-  detailsBg: 'details.png',
-  readyBtn: 'complete.png'
+  spritesheet: `all.png?v=${_IMG_VERSION}`,
+  ground: `ground.png?v=${_IMG_VERSION}`,
+  bench: `bench.png?v=${_IMG_VERSION}`,
+  editorBg: `editor.png?v=${_IMG_VERSION}`,
+  detailsBg: `details.png?v=${_IMG_VERSION}`,
+  readyBtn: `complete.png?v=${_IMG_VERSION}`,
+  bgSky: `background/sky.png?v=${_IMG_VERSION}`,
+  bgYun1: `background/yun1.png?v=${_IMG_VERSION}`,
+  bgYun2: `background/yun2png.png?v=${_IMG_VERSION}`,
+  bgYun3: `background/yun3.png?v=${_IMG_VERSION}`,
+  bgYun4: `background/yun4.png?v=${_IMG_VERSION}`,
+  bgShip: `background/ship.png?v=${_IMG_VERSION}`
 };
 
 const loadedImages: Record<string, HTMLImageElement> = {};
@@ -318,8 +325,29 @@ window.addEventListener('DOMContentLoaded', () => {
     // 3. Initialize HTML UI Manager
     uiManager.init('uiOverlay');
 
-    // 4. Start Director run loop
+    // 4. 锁定横屏方向
+    lockOrientation();
+
+    // 5. Start Director run loop
     director.startLoop();
   });
 });
 export { loadedImages };
+
+/** 锁定屏幕方向为横屏，若浏览器不支持 API 则静默失败 */
+function lockOrientation(): void {
+  const orientation = screen.orientation as any;
+  if (orientation && orientation.lock) {
+    orientation.lock('landscape').catch(() => {});
+  }
+}
+
+/** 请求全屏（需用户手势触发），隐藏浏览器 UI 和状态栏 */
+export function requestFullscreen(): void {
+  const el = document.documentElement;
+  if (el.requestFullscreen) {
+    el.requestFullscreen().catch(() => {});
+  } else if ((el as any).webkitRequestFullscreen) {
+    (el as any).webkitRequestFullscreen();
+  }
+}
