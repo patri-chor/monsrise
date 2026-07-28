@@ -441,6 +441,15 @@ export class BigCannonSkill extends BaseSkill {
       (caster as any).chargingCannon = false;
       battle.scheduler.unschedule(intervalKey);
 
+      // 蓄力期间被眩晕 → 打断
+      if (caster.statusEffects.some((e: any) => e.type === 'stun')) {
+        const pos = battle.screenPositions.get(caster.id);
+        if (pos) {
+          vfx.addFloatingText(pos.x, pos.y, "打断!", '#ff3333');
+        }
+        return;
+      }
+
       if (battle.active && !caster.isDead) {
         const pos = battle.screenPositions.get(caster.id);
         if (!pos) return;

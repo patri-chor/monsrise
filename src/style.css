@@ -1,22 +1,40 @@
+/* =============================================
+   字体 & 全局变量
+   ============================================= */
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Silkscreen&display=swap');
 
 @font-face {
   font-family: 'Zpix';
   src: url('/zpix.ttf') format('truetype');
 }
 
+:root {
+  --base-w: 2556px;
+  --base-h: 1179px;
+  --color-gold: #e5c158;
+  --color-green: #5ac54f;
+  --color-red: #df3e23;
+  --color-blue: #4ba3e3;
+  --color-dark: #1a1c2c;
+  --color-darker: #0b0c10;
+  --font-pixel: 'Press Start 2P', 'Zpix', monospace;
+  --font-data: 'Silkscreen', 'Zpix', monospace;
+}
+
+/* =============================================
+   基础重置
+   ============================================= */
 html {
   touch-action: manipulation;
 }
 
-/* Reset and base styles */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   user-select: none;
   image-rendering: pixelated;
-  /* Disable rounded corners, soft shadows globally */
   border-radius: 0 !important;
   box-shadow: none !important;
 }
@@ -33,11 +51,14 @@ body {
   align-items: center;
 }
 
+/* =============================================
+   游戏容器 & Canvas 层
+   ============================================= */
 #gameContainer {
   position: relative;
   width: 100vw;
   height: 100vh;
-  background-color: #1a1c2c;
+  background-color: var(--color-dark);
   overflow: hidden;
 }
 
@@ -83,6 +104,9 @@ body {
   pointer-events: auto;
 }
 
+/* =============================================
+   通用 UI 组件（按钮、面板、卡槽、文字）
+   ============================================= */
 /* Retro UI Panels using 9-slice */
 .pixel-panel {
   pointer-events: auto;
@@ -177,8 +201,9 @@ body {
   color: #4ba3e3;
 }
 
-/* --- Screen 1: Team Editor --- */
-
+/* =============================================
+   队伍编辑页（开屏 + 编辑面板 + 选择面板）
+   ============================================= */
 /* --- Multi-layer Airship Background --- */
 .team-editor-bg-container {
   position: absolute;
@@ -209,8 +234,8 @@ body {
 }
 
 @keyframes scrollBg {
-  from { background-position-x: -2556px; }
-  to { background-position-x: 0; }
+  from { background-position-x: 0; }
+  to { background-position-x: -2556px; }
 }
 
 .bg-layer.yun {
@@ -240,8 +265,8 @@ body {
 }
 
 @keyframes floatCloud {
-  0% { transform: translateX(-600px); }
-  100% { transform: translateX(2556px); }
+  0% { transform: translateX(2556px); }
+  100% { transform: translateX(-600px); }
 }
 
 /* Cloud 1: 547x179, offset -687 -91 */
@@ -373,8 +398,7 @@ body {
 /* --- UI 滑入动画 --- */
 
 #teamEditor.anim-in .editor-left-panel,
-#teamEditor.anim-in .details-card,
-#teamEditor.anim-in .editor-actions-container {
+#teamEditor.anim-in .details-card {
   opacity: 0;
 }
 
@@ -384,9 +408,6 @@ body {
 #teamEditor.anim-in .editor-left-panel {
   animation: slideInLeftPanel 1.0s cubic-bezier(0.25, 1, 0.5, 1) 1.0s both;
 }
-#teamEditor.anim-in .editor-actions-container {
-  animation: slideInActionsContainer 1.0s cubic-bezier(0.25, 1, 0.5, 1) 1.2s both;
-}
 
 @keyframes slideInLeftPanel {
   from { transform: translateY(-120%) scale(0.8); opacity: 0; }
@@ -395,10 +416,6 @@ body {
 @keyframes slideInDetailsCard {
   from { transform: translateX(120%) scale(0.8); opacity: 0; }
   to { transform: translateX(0) scale(0.8); opacity: 1; }
-}
-@keyframes slideInActionsContainer {
-  from { transform: translateY(120%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 #teamEditor {
@@ -417,83 +434,122 @@ body {
 }
 
 /* Left panel wrapping grid and buttons */
-/* Size: 739x563 -> 2x: 1478px x 1126px */
-/* Source: UI.png X=0, Y=29 */
+/* Size: 741x389 -> 2x: 1482px x 778px */
+/* Source: UI.png X=0, Y=23 */
 .editor-left-panel {
-  width: 1478px;
-  height: 1126px;
-  top:80px;
-  background-image: url('/UI.png') !important;
-  background-position: 0px -58px !important;
-  background-size: 3840px 2160px !important;
+  width: 1526px;
+  height: 910px;
+  top: 55px;
+  background-image: url('/edite/bg.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 1526px 910px !important;
   image-rendering: pixelated;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
-  padding: 240px 100px 40px 100px; /* 留出顶部滚筒/拉杆和底部按钮的空隙 */
+  padding: 120px 60px 40px 60px;
   box-sizing: border-box;
   flex-shrink: 0;
   transform: scale(0.8);
-  transform-origin: left top;
+  transform-origin: left center;
 }
 
-/* Drum team index display overlay */
-.drum-team-display {
+.fullscreen-deco-frame {
   position: absolute;
-  left: 546px;
-  top: 45px;
-  width: 262px;
-  height: 90px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'Zpix', monospace;
-  font-size: 38px;
-  color: #e5c158;
-  text-shadow: 3px 3px 0px #000;
+  left: 0;
+  top: 0;
+  width: 2556px;
+  height: 1179px;
+  background-image: url('/edite/set.png') !important;
+  background-size: 2556px 1179px !important;
+  background-position: 0px 0px !important;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
   pointer-events: none;
-  z-index: 12;
+  z-index: 999;
 }
 
-/* Lever interactive click boundary */
-.squad-lever-btn {
+/* Squad Tab buttons container - absolutely placed on top of panel tabs */
+.squad-tabs-container {
   position: absolute;
-  left: 960px;
-  top: 140px;
-  width: 206px;
-  height: 60px;
-  background: transparent !important;
+  top: -75px;
+  left: 90px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+  height: 100px;
+}
+
+/* Squad Tab buttons - styled with custom texture slices */
+.squad-tab-btn {
+  position: relative;
+  isolation: isolate;
+  width: 242px;
+  height: 130px;
+  background: none !important;
   border: none;
   cursor: pointer;
-  z-index: 20;
-}
-.squad-lever-btn:active {
-  transform: translateY(2px);
+  margin-right: -14px;
+  transform: scale(0.95);
+  z-index: 10;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 40px;
+  padding-bottom: -10px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 40px;
+  text-align: left;
+  color: #fff;
+  text-shadow: 4px 4px 0px #524e4e;
+  outline: none;
 }
 
-/* 8 slots Grid - now positioned inside left panel */
+.squad-tab-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/edite/tab1.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 242px 130px !important;
+  image-rendering: pixelated;
+  mix-blend-mode: darken;
+  z-index: -1;
+}
+
+.squad-tab-btn.active {
+  color: #e5c158;
+}
+
+.squad-tab-btn.active::before {
+  background-image: url('/edite/tab2.png') !important;
+}
+
+/* 8 slots Grid - now positioned inside left panel, scaled for slot background */
 .squad-grid-container {
   position: relative;
-  top: -50px;
+  left: -56px;
+  top: -102px;
   display: grid;
-  grid-template-columns: repeat(4, 326px);
-  grid-template-rows: repeat(2, 312px);
-  gap: 8px; /* 间距极其紧密 */
+  grid-template-columns: repeat(4, 320px);
+  grid-template-rows: repeat(2, 308px); 
+  gap: 10px 0px;
   justify-content: center;
   align-content: center;
   margin-top: 10px;
   flex-grow: 1;
 }
 
-/* Squad Slot: X=47, Y=476, W=163, H=156 -> 2x: 326px x 312px */
+/* Squad Slot: uses inner.png scaled 2x */
 .squad-cell {
-  width: 326px;
-  height: 312px;
-  background-image: url('/UI.png') !important;
-  background-position: -314px -1264px !important;
-  background-size: 3840px 2160px !important;
+  width: 320px;
+  height: 308px;
+  background-image: url('/edite/inner.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 320px 308px !important;
   border: none;
   cursor: pointer;
   display: flex;
@@ -507,25 +563,80 @@ body {
   filter: brightness(1.1);
 }
 .squad-cell img {
-  width: 200px;
-  height: 200px;
+  width: 140px;
+  height: 140px;
   object-fit: contain;
   image-rendering: pixelated;
   background: transparent;
+  transform: scale(1.2);
+}
+
+/* 🔄 Switch button absolutely placed at top right of squad-cell */
+.monster-switch-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 64px;
+  height: 72px;
+  background-image: url('/edite/switch.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 64px 72px !important;
+  image-rendering: pixelated;
+  cursor: pointer;
+  z-index: 20;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+.squad-cell[data-selected="true"] .monster-switch-btn {
+  display: flex;
+}
+.monster-switch-btn:hover {
+  transform: scale(1.15) rotate(30deg);
 }
 
 
-/* Mode buttons container - positioned outside and below left panel */
+/* 模式按钮 — 归属于 left panel 内部底部 */
 .editor-actions-container {
   display: flex;
-  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 110px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  position: absolute;
+  top: 735px;
+  height: 150px;
+  width: 1606px;
+  left: -110px;
+  transform: scale(0.8);
+  transform-origin: center center;
+}
+
+.editor-actions-container button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: pointer;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 48px;
+  color: #fff;
+  text-shadow: 2px 2px 0px #000;
+  width: 400px;
+  height: 60px;
+  display: flex;
   justify-content: center;
   align-items: center;
-  gap: 20px;
-  margin-top: auto; /* 自动贴在队伍面板底部 */
-  margin-bottom: -15px; /* 精确贴近底部铜管 */
-  width: 100%;
-  z-index: 10;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+.editor-actions-container button:hover {
+  color: #e5c158;
+  transform: scale(1.05);
+}
+.editor-actions-container button:active {
+  transform: scale(0.95);
 }
 
 .bottom-action-btn.active::before {
@@ -533,20 +644,6 @@ body {
 }
 
 /* Bottom buttons using UI.png slice: X=312, Y=476, W=171, H=68 -> 2x: 342px x 136px */
-.bottom-action-btn.transparent-btn {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: #e5c158 !important; /* Gold text */
-  text-shadow: 2px 2px 0px #000 !important;
-}
-.bottom-action-btn.transparent-btn::before {
-  display: none !important;
-}
-.bottom-action-btn.transparent-btn:active {
-  transform: translateY(2px);
-}
-
 .bottom-action-btn {
   position: relative;
   isolation: isolate;
@@ -589,19 +686,20 @@ body {
 }
 
 /* Details card on the right */
-/* Size: 474x437 -> 2x: 948px x 874px */
-/* Source: UI.png X=754, Y=110 */
+/* Size: 474x437 ->2x: 948px x 874px */
 .details-card {
   width: 948px;
   height: 874px;
-  background-image: url('/UI.png') !important;
-  background-position: -1508px -220px !important;
-  background-size: 3840px 2160px !important;
+  left: -179px;
+  top: -10px;
+  background-image: url('/edite/detail.png') !important;
+  background-position: 0px 0px !important;
+  background-size: 948px 874px !important;
   image-rendering: pixelated;
   position: relative;
   box-sizing: border-box;
   flex-shrink: 0;
-  transform: scale(0.72);
+  transform: scale(0.8);
   transform-origin: right center;
 }
 
@@ -609,21 +707,21 @@ body {
 
 .details-avatar-frame {
   position: absolute;
-  left: 80px;
-  top: 80px;
-  width: 220px;
-  height: 220px;
-  background: transparent;
+  left: 45px;
+  top: 50px;
+  width: 250px;
+  height: 250px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .details-avatar-frame img {
   position: absolute;
-  left: 76px;
-  top: 93px;
-  width: 240px;
-  height: 240px;
+  left: 35px;
+  top: 30px;
+  width: 200px;
+  height: 200px;
+  transform: scale(1.3);
   object-fit: contain;
   image-rendering: pixelated;
   background: transparent;
@@ -631,9 +729,9 @@ body {
 
 .details-stars-container {
   position: absolute;
-  left: 164px;
-  top: 404px;
-  width: 220px;
+  left: 149px;
+  top: 406px;
+  width: 250px;
   display: flex;
   justify-content: center;
   font-size: 24px;
@@ -642,61 +740,62 @@ body {
 
 .details-type-tag {
   position: absolute;
-  left: 442px;
-  top: 475px;
+  left: 475px;
+  top: 490px;
+  width: 250px;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 24px;
+  font-size: 16px;
   color: #ffffff;
+  text-align: center;
 }
 
 .details-name-banner {
   position: absolute;
-  left: 214px;
-  top: 463px;
+  left: 144px;
+  top: 484px;
+  width: 250px;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 32px;
+  font-size: 24px;
   color: #e5c158;
   text-shadow: 2px 2px 0px #000;
+  text-align: center;
   font-weight: bold;
 }
 
-/* Precise raw stat values positioned over blank spaces in UI.png */
+/* Precise raw stat values positioned over blank spaces in edite/detail.png */
 .details-val {
   position: absolute;
-  left: 580px;
-  width: 220px;
-  height: 44px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 26px;
-  font-weight: bold;
-  color: #fff; /* White stats for better readability */
-  text-shadow: 2px 2px 0px #000; /* Drop shadow border */
+  font-family: 'Silkscreen', 'Zpix', monospace;
+  font-size: 20px;
+  font-weight: normal;
+  color: #4a3424; /* 木质深棕色，与面板底色极其协调 */
   display: flex;
-  justify-content: flex-end; /* Align right */
+  justify-content: flex-start;
   align-items: center;
+  text-shadow: none;
   background-color: transparent;
   z-index: 12;
+  letter-spacing: -6px; /* 负字距拉紧，解决等宽间距过宽问题 */
 }
 
-.details-val-hp { top: 156px; }
-.details-val-atk { top: 222px; }
-.details-val-ats { top: 280px; }
-.details-val-range { top: 340px; }
-.details-val-speed { top: 400px; }
-.details-val-shield { display: none !important; }
-.details-val-cd { display: none !important; }
+.details-val-hp { left: 550px; top: 144px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center;}
+.details-val-atk { left: 550px; top: 209px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center;}
+.details-val-ats { left: 550px; top: 277px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center;}
+.details-val-range { left: 550px; top: 342px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center; }
+.details-val-speed { left: 550px; top: 406px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center; }
+
 
 /* Skill box section in details card */
 .details-skill-section {
   position: absolute;
-  left: 118px;
-  top: 532px;
-  width: 620px;
-  height: 180px;
+  left: 96px;
+  top: 567px;
+  width: 670px;
+  height: 120px;
   display: flex;
-  background-color: rgba(0, 0, 0, 0.45);
-  border: 4px solid #5d402c;
-  padding: 16px;
+  background-color: transparent !important; /* 彻底透明，透出 detail.png 已经画好的技能槽 */
+  border: none !important;
+  padding: 12px;
   box-sizing: border-box;
 }
 
@@ -724,10 +823,10 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 20px;
-  color: #fff;
+  font-size: 16px;
+  color: #ffffff; /* 纯白色文字 */
   line-height: 1.4;
-  text-shadow: 2px 2px 0px #000;
+  text-shadow: 2px 2px 0px #000; /* 描边增强可读性 */
   overflow-y: auto;
 }
 
@@ -735,7 +834,7 @@ body {
 .details-badges-section {
   position: absolute;
   left: 100px;
-  top: 688px;
+  top: 710px;
   width: 660px;
   height: 132px;
   display: flex;
@@ -761,9 +860,17 @@ body {
   background: transparent;
 }
 
-/* 队伍栏在编辑时保持常驻 */
-.editor-left-panel {
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+/* 队伍栏上滑过渡属性 - 仅在怪兽/徽章选择面板切换时生效，避免 innerHTML 重建时误触发 */
+#teamEditor.monster-selecting .editor-left-panel,
+#teamEditor.monster-selecting  {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 当怪兽选择面板打开时，触发上移 */
+#teamEditor.monster-selecting .editor-left-panel {
+  transform: translateY(-120%) scale(0.8);
+  opacity: 0;
 }
 
 /* Modals/Popups (Monster Selection list & Badge Selection list) */
@@ -784,40 +891,40 @@ body {
 /* --- 怪兽选择面板 (作为队伍左栏的同级替代件) --- */
 .monster-select-panel {
   position: absolute;
-  left: 1330px;
-  top: 80px; /* 垂直对齐 */
+  left: 100px;
+  top: 35px; /* 垂直完美居中 */
   width: 1399px; /* Block 1 的 1.8 倍宽度 */
   height: 1109px; /* Block 1 的 1.8 倍高度 */
   background-image: url('/UI2.png') !important;
   background-position: 0px 0px !important;
   background-size: 1728px 1109px !important; /* 960 * 1.8 x 616 * 1.8 */
   image-rendering: pixelated;
-  padding: 110px 32px 60px 32px;
+  padding: 130px 32px 100px 32px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   z-index: 200; /* 高层级，防止被详情面板盖住 */
   
-  /* 从右侧滑入，且应用 0.8 倍缩放 */
-  transform: translateX(120%) scale(0.8);
-  transform-origin: left top;
+  /* 仅 translateY 平移，无不透明度渐显 */
+  transform: translateY(1200px);
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* 激活进场 */
 .monster-select-panel.open {
-  transform: translateX(0) scale(0.8) !important;
+  transform: translateY(0);
 }
 
 /* 滚动区域 */
 .monster-select-panel .modal-grid-scroll {
   overflow-y: auto;
   flex-grow: 1;
+  top: 20px;
   background-color: transparent !important;
   border: none !important;
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(5, 254px);
+  grid-template-columns: repeat(5, 245px);
   gap: 20px 16px;
   margin-bottom: 12px;
   justify-content: center;
@@ -836,7 +943,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 24px;
+  padding: -10px;
   box-sizing: border-box;
   cursor: pointer;
 }
@@ -850,6 +957,7 @@ body {
 .modal-monster-card img {
   width: 164px;
   height: 164px;
+  scale: 1.3;
   margin-top: 10px;
   margin-bottom: 12px;
   object-fit: contain;
@@ -873,8 +981,8 @@ body {
 
 .badge-select-panel {
   position: absolute;
-  left: 1330px;
-  top: 80px; /* 垂直对齐 */
+  left: 100px;
+  top: 35px; /* 垂直完美居中 */
   width: 1399px; /* Block 1 的 1.8 倍宽度 */
   height: 1109px; /* Block 1 的 1.8 倍高度 */
   background-image: url('/UI2.png') !important;
@@ -887,14 +995,13 @@ body {
   flex-direction: column;
   z-index: 200; /* 高层级，防止被详情面板盖住 */
   
-  /* 从右侧滑入，且应用 0.8 倍缩放 */
-  transform: translateX(120%) scale(0.8);
-  transform-origin: left top;
+  /* 仅 translateY 平移，无不透明度渐显 */
+  transform: translateY(1200px);
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .badge-select-panel.open {
-  transform: translateX(0) scale(0.8) !important;
+  transform: translateY(0);
 }
 
 .badge-select-panel .badge-grid-scroll {
@@ -913,18 +1020,18 @@ body {
 .badge-row {
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 20px;
   width: 100%;
 }
 
-/* 从第二行开始纵向重叠 45px，达到蜂巢式咬合效果 */
+/* 从第二行开始纵向重叠 28px，达到蜂巢式咬合效果 */
 .badge-row + .badge-row {
-  margin-top: -45px;
+  margin-top: -28px;
 }
 
-/* 偶数行向右偏移半个卡片的圆心宽度 ( W/2 + gap/2 = 90 + 4 = 94px ) */
+/* 偶数行向右偏移半个卡片的圆心宽度 ( W/2 + gap/2 = 90 + 10 = 100px ) */
 .badge-row:nth-child(even) {
-  padding-left: 94px;
+  padding-left: 100px;
   box-sizing: border-box;
 }
 
@@ -977,6 +1084,52 @@ body {
   background: #141923;
 }
 
+/* =============================================
+   战斗页
+   ============================================= */
+/* --- Battle Background Container (sky + yun clouds + ground foreground) --- */
+.battle-bg-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Ground1 foreground layer (like ship in team editor) */
+.bg-layer.battle-ground {
+  position: absolute;
+  left: 0;
+  top: auto;
+  bottom: 50px;
+  width: 100%;
+  height: 100%;
+  background-image: url('fight/ground1.png') !important;
+  background-size: 100% 100%;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  z-index: 3;
+  transform: scale(0.95);
+}
+
+/* Inner wrapper for battle background - sways all child layers together */
+.battle-bg-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  animation: swayBattle 6s ease-in-out infinite;
+}
+
+@keyframes swayBattle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 
 /* --- Screen 2: Battle View --- */
 #battleView {
@@ -985,37 +1138,57 @@ body {
   top: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 5;
+  z-index: 10;
   box-sizing: border-box;
 }
 
 /* New Scoreboard HUD matching expected screenshot (Scaled down by 1.5x from 120px) */
 .battle-scoreboard-top {
   position: absolute;
-  top: 25px;
+  top: 0px;
   left: 50%;
-  transform: translateX(-50%);
-  width: 1800px;
+  transform: translateX(-50%) scale(0.8);
+  transform-origin: top center;
+  width: 2606px;
+  height: 216px;
+  background-image: url('/fight/top.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 24px;
+  padding: 0 45px;
+  box-sizing: border-box;
   z-index: 10;
   pointer-events: none;
 }
 
 .scoreboard-team-row {
+  position: absolute;
+  left: 0px;
+  width: 900px;
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
   pointer-events: auto;
 }
 
+.battle-scoreboard-top > .scoreboard-team-row:nth-child(1) {
+  left: 102px;
+  top: -30px;
+}
+
+.battle-scoreboard-top > .scoreboard-team-row:nth-child(3) {
+  left: 1622px;
+  top: -30px;
+}
+
 .scoreboard-circle {
-  width: 80px;
-  height: 80px;
+  width: 184px;
+  height: 184px;
   border-radius: 50%;
-  border: 4px solid #1a1c2c;
-  background-color: rgba(26, 28, 44, 0.9);
+  border: none !important;
+  background-color: transparent !important;
   overflow: hidden;
   position: relative;
   display: flex;
@@ -1024,16 +1197,20 @@ body {
   box-sizing: border-box;
 }
 .scoreboard-circle.dead {
-  border-color: #5a5a5a;
+  filter: grayscale(0.85);
 }
 .scoreboard-circle.question {
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 24px;
+  font-size: 28px;
   color: #888;
   font-weight: bold;
 }
 
 .scoreboard-center-hud {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 18px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -1041,10 +1218,11 @@ body {
 }
 
 .player-avatar-frame {
-  width: 100px;
-  height: 100px;
-  border: 5px solid #1a1c2c;
-  background-color: rgba(0, 0, 0, 0.5);
+  width: 138px;
+  height: 138px;
+  border-radius: 50%;
+  border: none !important;
+  background-color: transparent !important;
   overflow: hidden;
   position: relative;
   display: flex;
@@ -1052,68 +1230,64 @@ body {
   align-items: center;
   box-sizing: border-box;
 }
-.player-avatar-frame.p1-frame {
-  border-color: #4ba3e3;
-}
-.player-avatar-frame.p2-frame {
-  border-color: #df3e23;
-}
 
 .scoreboard-center-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 360px;
+  width: 250px;
   text-align: center;
 }
 
 .scoreboard-timer {
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 48px;
+  font-size: 54px;
   color: #fff;
   font-weight: bold;
   text-shadow: 3px 3px 0px #000;
-  line-height: 1.1;
+  line-height: 1.0;
+  margin-top: 15px;
 }
 
 .scoreboard-phase-text {
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 42px;
-  color: #fff;
-  text-shadow: 5px 5px 0px #000;
-  margin-top: 8px;
+  font-size: 28px;
+  color: #e5c158;
+  text-shadow: 2px 2px 0px #000;
+  margin-top: 4px;
 }
 
-/* Battle Bottom UI Container */
+/* Battle Bottom UI Container - Styled with team.png (931x166 scaled 2x) */
 .battle-hud-bottom {
   position: absolute;
-  bottom: 0px;
-  left: 669px; /* Centered layout: (2556 - 1218) / 2 = 669px */
-  width: 1218px;
-  height: 264px; /* Native background image height! */
+  top: 850px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  transform-origin: bottom center;
+  width: 1862px;
+  height: 332px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   padding: 0;
   z-index: 10;
-  background-image: url('/bench.png');
-  background-size: 100% 100%;
+  background-image: url('/fight/team.png') !important;
+  background-size: 100% 100% !important;
   background-repeat: no-repeat;
   background-color: transparent;
   border: none;
   box-sizing: border-box;
 }
 
-/* Header bar inside the bench container for stats */
+/* Header bar inside the bench container for stats - placed on top part of team.png */
 .bench-header-bar {
-  width: 100%;
-  height: 76px;
+  height: 100px;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 80px;
   padding: 0;
-  margin-top: 20px; /* Align vertical placement inside purple bar */
+  margin-top: 15px;
 }
 
 .bench-header-stat {
@@ -1121,23 +1295,23 @@ body {
   align-items: center;
   gap: 8px;
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 20px;
+  font-size: 24px;
   color: #fff;
   text-shadow: 2px 2px 0px #000;
 }
 
 .bench-header-stat img {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
-/* 8 bench slots matching coordinates on bench.png exactly */
+/* 8 bench slots matching coordinates on team.png scaled 2x */
 .bench-container {
   position: absolute;
-  left: 30px;
-  top: 113px;
-  width: 1156px;
-  height: 123px;
+  left: 220px;
+  top: 137px;
+  width: 1400px;
+  height: 180px;
   display: flex;
   justify-content: space-between;
   background-color: transparent;
@@ -1146,8 +1320,8 @@ body {
 }
 
 .bench-slot {
-  width: 128px;
-  height: 123px;
+  width: 160px;
+  height: 160px;
   border: none;
   background-color: transparent;
   display: flex;
@@ -1158,8 +1332,8 @@ body {
 }
 
 .bench-slot img {
-  width: 80px;
-  height: 80px;
+  width: 110px;
+  height: 110px;
   pointer-events: none;
 }
 
@@ -1167,20 +1341,22 @@ body {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  font-size: 18px;
+  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-size: 20px;
   color: #e5c158;
   text-shadow: 2px 2px 0px #000;
+  font-weight: bold;
 }
 
-/* Complete button using complete.png background directly */
+/* Complete button using fight.png (71x83 scaled 2x) */
 .action-ready-btn {
   position: absolute;
-  left: 1920px; /* Aligned exactly to the right of the bench container */
-  bottom: 20px;
-  width: 196px;
-  height: 150px;
-  background-image: url('/complete.png');
-  background-size: 100% 100%;
+  left: 1685px;
+  top: 154px;
+  width: 142px;
+  height: 166px;
+  background-image: url('/fight/fight.png') !important;
+  background-size: 100% 100% !important;
   background-repeat: no-repeat;
   background-color: transparent;
   border: none;
@@ -1189,8 +1365,8 @@ body {
 }
 
 .action-ready-btn:active {
-  filter: brightness(0.8);
-  padding-top: 4px;
+  filter: brightness(0.85);
+  transform: translateY(2px);
 }
 
 /* Grid layout cell markers overlay on Canvas (Matches screenConfig exactly) */
@@ -1231,38 +1407,34 @@ body {
   pointer-events: none;
 }
 
-/* Occupied cells - hide default grid during drag */
-.battle-grid-overlay.dragging .battle-grid-cell.occupied:not(.drag-hover):not(.drag-hover-locked):not(.drag-target-landing):not(.drag-atk-range) {
+/* Occupied cells hidden during drag, except highlighted states */
+.battle-grid-overlay.dragging .battle-grid-cell.occupied {
   opacity: 0;
   pointer-events: auto;
 }
 
 /* Active drop target highlight - green */
+.battle-grid-cell.drag-hover,
+.battle-grid-cell.drag-hover-locked,
+.battle-grid-cell.drag-target-landing,
+.battle-grid-cell.drag-atk-range {
+  opacity: 1 !important;
+}
 .battle-grid-cell.drag-hover {
   background-color: rgba(76, 175, 80, 0.35);
   border: 6px solid #4caf50;
-  opacity: 1 !important;
 }
-
-/* Locked cell - red border when dragging over */
 .battle-grid-cell.drag-hover-locked {
   background-color: rgba(220, 50, 50, 0.3);
   border: 6px solid #dc3232;
-  opacity: 1 !important;
 }
-
-/* Landing target cell highlight - yellow (Drill dig / Iron Monkey throw) */
 .battle-grid-cell.drag-target-landing {
-  background-color: rgba(255, 235, 59, 0.35) !important;
-  border: 6px dashed #ffeb3b !important;
-  opacity: 1 !important;
+  background-color: rgba(255, 235, 59, 0.35);
+  border: 6px dashed #ffeb3b;
 }
-
-/* Attack range highlight - semi-transparent white */
 .battle-grid-cell.drag-atk-range {
   background-color: rgba(255, 255, 255, 0.3);
   border: 6px solid rgba(255, 255, 255, 0.6);
-  opacity: 1 !important;
 }
 
 /* Drag overlay helper */
@@ -1323,6 +1495,9 @@ body {
 }
 
 
+/* =============================================
+   结算 & 回放页
+   ============================================= */
 /* --- Screen 3: Round Summary / Match End --- */
 .summary-overlay {
   position: absolute;
@@ -1433,7 +1608,9 @@ body {
   text-align: right;
 }
 
-/* ── 手机竖屏强制横屏 ── */
+/* =============================================
+   响应式：手机竖屏强制横屏
+   ============================================= */
 @media screen and (orientation: portrait) {
   #gameContainer {
     position: fixed;
@@ -1445,140 +1622,4 @@ body {
     transform-origin: top left;
     translate: 100vw 0;
   }
-}
-
-/* ==========================================================================
-   Lobby Dashboard & Staggered Ship Transitions (Dual-State UI System)
-   ========================================================================== */
-
-/* Fullscreen Blackout transition overlay */
-#transitionOverlay {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #000;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 9999;
-  transition: opacity 0.4s ease-in-out;
-}
-#transitionOverlay.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
-/* Lobby control board style */
-.lobby-action-panel {
-  position: absolute;
-  left: 100px;
-  top: 80px;
-  width: 500px;
-  height: 778px;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 50px 24px;
-  box-sizing: border-box;
-  
-  /* Gold corner copper board pixel style */
-  border-style: solid;
-  border-image: url('/ui_panel_9slice.png') 16 stretch;
-  border-width: 16px;
-  background-color: #283241;
-  image-rendering: pixelated;
-
-  transform: scale(0.8);
-  transform-origin: left center;
-  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.lobby-title {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 26px;
-  color: #e5c158;
-  text-shadow: 2px 2px 0px #000;
-  margin-bottom: 60px;
-  text-align: center;
-}
-
-.lobby-menu-list {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  width: 100%;
-  align-items: center;
-}
-
-.lobby-menu-btn {
-  width: 380px;
-  height: 80px;
-  font-size: 22px;
-}
-
-/* --- Ship dynamic layout and sway animation adjustments --- */
-.ship-enter-wrapper {
-  transform: translateX(35%); /* 大厅模式，展现左2/3大船头且稍微偏右偏多 */
-  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-/* EDIT Mode (not lobby): Ship shifts left to show mid-aft part (Right 2/3) */
-#gameContainer:not(.lobby-view) .team-editor-bg-container .ship-enter-wrapper {
-  transform: translateX(0%) !important;
-}
-
-/* BATTLE Mode: Ship sinks into bottom of screen */
-#gameContainer.transition-fight .team-editor-bg-container .ship-enter-wrapper {
-  transform: translateY(600px) !important;
-  transition: transform 0.8s cubic-bezier(0.5, 0, 0.75, 0) !important;
-}
-
-/* --- Panel dynamic movements inside lobby / edit modes --- */
-
-/* LOBBY VIEW Mode configurations */
-#gameContainer.lobby-view .editor-left-panel {
-  transform: translateX(1100px) scale(0.8) !important;
-  transform-origin: left top !important;
-}
-#gameContainer.lobby-view .squad-cell {
-  pointer-events: none !important;
-  cursor: default !important;
-}
-
-#gameContainer.lobby-view .details-card {
-  transform: translateX(120%) scale(0.8) !important;
-  pointer-events: none;
-}
-
-#gameContainer.lobby-view .lobby-action-panel {
-  transform: translateX(0) scale(0.8) !important;
-}
-
-/* EDIT Mode configurations */
-#gameContainer:not(.lobby-view) .editor-left-panel {
-  transform: translateX(0) scale(0.8);
-  transform-origin: left top;
-}
-
-#gameContainer:not(.lobby-view) .lobby-action-panel {
-  transform: translateX(-150%) scale(0.8);
-  pointer-events: none;
-}
-
-/* Details card default state: offscreen, active slides in */
-.details-card {
-  transform: translateX(120%) scale(0.8);
-  transform-origin: right center;
-  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-}
-#gameContainer:not(.lobby-view) .details-card.active {
-  transform: translateX(0) scale(0.8) !important;
-}
-
-/* Hide backToLobbyBtn inside lobby view to prevent clutter */
-#gameContainer.lobby-view #backToLobbyBtn {
-  display: none !important;
 }

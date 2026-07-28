@@ -1,8 +1,8 @@
 import { gameEngine, TeamSlot } from '../game/GameEngine';
-import { DB_MONSTERS, DB_BADGES, BADGE_SPRITES, getSkillDescription } from '../game/Database';
-import { renderSkillIconHtml } from '../game/IconMapping';
+import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { uiManager } from './UIManager';
 import { requestFullscreen } from '../main';
+import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
 import gsap from 'gsap';
 
 export class TeamEditorUI {
@@ -15,7 +15,6 @@ export class TeamEditorUI {
   private _activeMonsterSelectIndex: number | null = null; // slot index to switch monster
   private _activeBadgeSelectIndex: number | null = null;   // badge index to change (0, 1, or 2)
   private _previewMonster: any = null;                      // monster data for right-side detail preview
-  private _currentTab: 'monster' | 'badge' = 'monster';
 
   // Random cloud assets
   private _randomYunFar: string = '';
@@ -59,9 +58,6 @@ export class TeamEditorUI {
     }
   }
 
-  private getSkillIconHtml(skillName: string): string {
-    return renderSkillIconHtml(skillName);
-  }
 
   private updateDetailsCard(monster: any): void {
     this._previewMonster = monster;
@@ -71,86 +67,17 @@ export class TeamEditorUI {
     if (!detailCard) return;
 
     detailCard.style.zIndex = '101';
-    detailCard.innerHTML = `
-      <!-- Avatar -->
-      <div class="details-avatar-frame">
-        ${monster ? `
-          <img src="all.png" style="
-            object-fit: none;
-            object-position: -${monster.sx}px -${monster.sy}px;
-            width: ${monster.sw}px;
-            height: ${monster.sh}px;
-          " />
-        ` : ''}
-      </div>
 
-      <!-- Stars -->
-      <div class="details-stars-container">★★★</div>
+    const slotCount = monster.cost === 4 ? 3 : 2;
+    const badgesHtml = Array(slotCount).fill(0).map((_, badgeIdx) => {
+      const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
+      const badge = DB_BADGES.find(b => b.id === badgeId);
+      const equippedClass = badge ? 'equipped' : '';
+      const imgHtml = badge ? renderBadgeImg(badge.id, 64) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
+      return `<div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">${imgHtml}</div>`;
+    }).join('');
 
-      <!-- Meta info -->
-      <div class="details-type-tag">[ ${monster.race} | ${monster.role} ]</div>
-      <div class="details-name-banner">${monster.name}</div>
-
-      <!-- Stats text overlays -->
-      <div class="details-val details-val-hp">${monster.hp}/${monster.hp}</div>
-      <div class="details-val details-val-atk">${monster.atk}</div>
-      <div class="details-val details-val-ats">${monster.ats}</div>
-      <div class="details-val details-val-range">${monster.range}</div>
-      <div class="details-val details-val-shield">0</div>
-      <div class="details-val details-val-cd">${monster.skillCd}s</div>
-      <div class="details-val details-val-speed">${monster.speed}</div>
-
-      <!-- Skill Box -->
-      <div class="details-skill-section">
-        <div class="details-skill-icon-frame">
-          ${this.getSkillIconHtml(monster.skill)}
-        </div>
-        <div class="details-skill-desc-box">
-          <div style="color:#e5c158; font-size:18px; margin-bottom:4px;">${monster.skill} (CD: ${monster.skillCd}s)</div>
-          <div>${getSkillDescription(monster)}</div>
-        </div>
-      </div>
-
-      <!-- Equipped Badges Slots -->
-      <div class="details-badges-section">
-        ${Array(monster.cost === 4 ? 3 : 2).fill(0).map((_, badgeIdx) => {
-          const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
-          const badge = DB_BADGES.find(b => b.id === badgeId);
-          
-          let badgeImgHtml = `<span style="font-size:24px; color:#5a5a5a;">+</span>`;
-          if (badge) {
-            const sprite = BADGE_SPRITES[badge.id];
-            if (sprite) {
-              const scale = 64 / sprite.sw;
-              const imgW = 2556 * scale;
-              const imgH = 1417 * scale;
-              const left = -sprite.sx * scale;
-              const top = -sprite.sy * scale;
-              badgeImgHtml = `
-                <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-                  <img src="badge.png" style="
-                    position: absolute;
-                    left: ${left}px;
-                    top: ${top}px;
-                    width: ${imgW}px;
-                    height: ${imgH}px;
-                    border: none;
-                    background: transparent;
-                  " />
-                </div>
-              `;
-            }
-          }
-
-          const equippedClass = badge ? 'equipped' : '';
-          return `
-            <div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">
-              ${badgeImgHtml}
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+    detailCard.innerHTML = renderDetailCard(monster, { badgesHtml }, getSkillDescription(monster));
   }
 
   public render(): void {
@@ -191,6 +118,7 @@ export class TeamEditorUI {
       <div id="teamEditor" class="ui-interactive${gameEngine.fromOpening ? ' anim-in' : ''}">
         ${teamEditorContent}
       </div>
+      <div class="fullscreen-deco-frame"></div>
       ${modalsContent}
     `;
       this._bgRendered = true;
@@ -201,6 +129,12 @@ export class TeamEditorUI {
         editorEl.classList.remove('anim-in');
         editorEl.innerHTML = teamEditorContent;
       }
+      // Ensure deco frame exists (avoids losing it on re-render)
+      if (!this._container.querySelector('.fullscreen-deco-frame')) {
+        const frame = document.createElement('div');
+        frame.className = 'fullscreen-deco-frame';
+        this._container.appendChild(frame);
+      }
       // Replace modals
       this._container.querySelectorAll('.modal-overlay').forEach(m => m.remove());
       if (modalsContent.trim()) {
@@ -209,6 +143,26 @@ export class TeamEditorUI {
     }
 
     this.bindEvents();
+
+    // If modal is active, trigger CSS classes, bind events, and run GSAP sliding animations
+    const editorEl = this._container.querySelector('#teamEditor') as HTMLElement | null;
+    if (editorEl) {
+      if (this._activeMonsterSelectIndex !== null || this._activeBadgeSelectIndex !== null) {
+        editorEl.classList.add('monster-selecting');
+        this.afterRenderModal();
+        
+        const panel = this._container.querySelector('.monster-select-panel, .badge-select-panel') as HTMLElement | null;
+        if (panel) {
+          panel.classList.add('open');
+          gsap.fromTo(panel,
+            { y: 1200 },
+            { y: 0, duration: 0.5, ease: 'power2.out' }
+          );
+        }
+      } else {
+        editorEl.classList.remove('monster-selecting');
+      }
+    }
 
     // Reset opening animation flag after first render
     if (gameEngine.fromOpening) {
@@ -226,7 +180,7 @@ export class TeamEditorUI {
           <div class="squad-tabs-container">
             ${Array(5).fill(0).map((_, tIdx) => {
               const activeClass = gameEngine.selectedTeamIndex === tIdx ? 'active' : '';
-              return `<button class="squad-tab-btn ${activeClass}" data-team-index="${tIdx}"></button>`;
+              return `<button class="squad-tab-btn ${activeClass}" data-team-index="${tIdx}">${tIdx + 1}</button>`;
             }).join('')}
           </div>
 
@@ -235,111 +189,45 @@ export class TeamEditorUI {
             ${activeTeam.map((slot: TeamSlot, index: number) => {
               const monster = DB_MONSTERS.find(m => m.id === slot.monsterId);
               return `
-                <div class="squad-cell" data-index="${index}">
+                <div class="squad-cell" data-index="${index}" ${index === this._selectedSlotIndex ? 'data-selected="true"' : ''}>
                   ${monster ? `
-                    <img src="all.png" style="
-                      object-fit: none;
-                      object-position: -${monster.sx}px -${monster.sy}px;
-                      width: ${monster.sw}px;
-                      height: ${monster.sh}px;
-                    " />
-                  ` : ''}
+                    ${renderSpriteImg(monster.sx, monster.sy, monster.sw, monster.sh, { transform: 'scale(1.2)' })}
+                    <div class="monster-switch-btn" data-index="${index}"></div>
+                  ` : `
+                    <div class="monster-add-btn" data-index="${index}" style="font-size: 32px; color: #5a3c24; font-family: 'Press Start 2P', 'Zpix', monospace; opacity: 0.6;">＋</div>
+                  `}
                 </div>
               `;
             }).join('')}
           </div>
 
-        </div>
+          <!-- Bottom Actions（归属于 left panel 内部） -->
+          <div class="editor-actions-container">
+            <button id="lobbyExperimentalModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">实验模式</button>
+            <button id="lobbyAiModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">人机对战</button>
+            <button id="lobbyOnlineModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">联机模式</button>
+          </div>
 
-        <!-- Bottom Actions (now outside left panel) -->
-        <div class="editor-actions-container">
-          <button id="teamEditModeBtn" class="bottom-action-btn ${this._currentTab === 'monster' ? 'active' : ''}">队伍编辑</button>
-          <button id="badgeEditModeBtn" class="bottom-action-btn ${this._currentTab === 'badge' ? 'active' : ''}">徽章编辑</button>
-          <button id="searchMatchBtn" class="bottom-action-btn">实验模式</button>
-          <button id="createMatchBtn" class="bottom-action-btn">AI对战</button>
-          <button id="joinMatchBtn" class="bottom-action-btn">搜索对战</button>
         </div>
 
         <!-- Right Panel: Monster details card -->
         <div class="details-card" style="${this._previewMonster ? 'z-index: 101;' : ''}">
-          <!-- Avatar -->
-          <div class="details-avatar-frame">
-            ${selectedMonster ? `
-              <img src="all.png" style="
-                object-fit: none;
-                object-position: -${selectedMonster.sx}px -${selectedMonster.sy}px;
-                width: ${selectedMonster.sw}px;
-                height: ${selectedMonster.sh}px;
-              " />
-            ` : ''}
-          </div>
-
-          <!-- Stars -->
-          <div class="details-stars-container">★★★</div>
-
-          <!-- Meta info -->
-          <div class="details-type-tag">[ ${selectedMonster.race} | ${selectedMonster.role} ]</div>
-          <div class="details-name-banner">${selectedMonster.name}</div>
-
-          <!-- Stats text overlays (absolute positioned over details background) -->
-          <div class="details-val details-val-hp">${selectedMonster.hp}/${selectedMonster.hp}</div>
-          <div class="details-val details-val-atk">${selectedMonster.atk}</div>
-          <div class="details-val details-val-ats">${selectedMonster.ats}</div>
-          <div class="details-val details-val-range">${selectedMonster.range}</div>
-          <div class="details-val details-val-shield">0</div>
-          <div class="details-val details-val-cd">${selectedMonster.skillCd}s</div>
-          <div class="details-val details-val-speed">${selectedMonster.speed}</div>
-
-          <!-- Skill Box -->
-          <div class="details-skill-section">
-            <div class="details-skill-icon-frame">
-              ${this.getSkillIconHtml(selectedMonster.skill)}
-            </div>
-            <div class="details-skill-desc-box">
-              <div style="color:#e5c158; font-size:18px; margin-bottom:4px;">${selectedMonster.skill} (CD: ${selectedMonster.skillCd}s)</div>
-              <div>${getSkillDescription(selectedMonster)}</div>
-            </div>
-          </div>
-
-          <!-- Equipped Badges Slots -->
-          <div class="details-badges-section">
-            ${Array(selectedMonster.cost === 4 ? 3 : 2).fill(0).map((_, badgeIdx) => {
-              const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
-              const badge = DB_BADGES.find(b => b.id === badgeId);
-              
-              let badgeImgHtml = `<span style="font-size:24px; color:#5a5a5a;">+</span>`;
-              if (badge) {
-                const sprite = BADGE_SPRITES[badge.id];
-                if (sprite) {
-                  const scale = 64 / sprite.sw;
-                  const imgW = 2556 * scale;
-                  const imgH = 1417 * scale;
-                  const left = -sprite.sx * scale;
-                  const top = -sprite.sy * scale;
-                  badgeImgHtml = `
-                    <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-                      <img src="badge.png" style="
-                        position: absolute;
-                        left: ${left}px;
-                        top: ${top}px;
-                        width: ${imgW}px;
-                        height: ${imgH}px;
-                        border: none;
-                        background: transparent;
-                      " />
-                    </div>
-                  `;
-                }
-              }
-
-              const equippedClass = badge ? 'equipped' : '';
-              return `
-                <div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">
-                  ${badgeImgHtml}
-                </div>
-              `;
-            }).join('')}
-          </div>
+          ${renderDetailCard(
+            selectedMonster,
+            {
+              badgesHtml: (() => {
+                const slotCount = selectedMonster.cost === 4 ? 3 : 2;
+                return Array(slotCount).fill(0).map((_, badgeIdx) => {
+                  const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
+                  const badge = DB_BADGES.find(b => b.id === badgeId);
+                  const equippedClass = badge ? 'equipped' : '';
+                  const imgHtml = badge ? renderBadgeImg(badge.id, 64) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
+                  return `<div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">${imgHtml}</div>`;
+                }).join('');
+              })(),
+            },
+            getSkillDescription(selectedMonster)
+          )}
         </div>
 
         <!-- Monster Selection panel (sibling of left panel and details-card) -->
@@ -432,6 +320,12 @@ export class TeamEditorUI {
       const activeSlot = activeTeam[this._selectedSlotIndex];
       editorDiv.innerHTML = this.buildTeamEditorContent(activeTeam, selectedMonster, activeSlot);
       this._container.appendChild(editorDiv);
+      // Add set frame border (must be present from start)
+      if (!this._container.querySelector('.fullscreen-deco-frame')) {
+        const frame = document.createElement('div');
+        frame.className = 'fullscreen-deco-frame';
+        this._container.appendChild(frame);
+      }
       // Also add modals if needed
       const modalsContent = `
         ${this._activeMonsterSelectIndex !== null ? this.renderMonsterSelectModal() : ''}
@@ -455,31 +349,53 @@ export class TeamEditorUI {
         const teamIdx = parseInt(tab.getAttribute('data-team-index') || '0', 10);
         gameEngine.selectedTeamIndex = teamIdx;
         gameEngine.saveTeams();
+        this._previewMonster = null; // Reset details preview on tab switch
         this.render();
       });
     });
 
-    // Grid Cell Selection: click to open monster select panel or badge select panel based on current mode Tab
+    // Grid Cell Selection: click main area of squad cell to preview monster detail
     const cells = document.querySelectorAll('.squad-cell');
     cells.forEach(c => {
-      c.addEventListener('click', () => {
-        const index = parseInt(c.getAttribute('data-index') || '0', 10);
-        this._selectedSlotIndex = index;
-        if (this._currentTab === 'badge') {
-          const slot = gameEngine.activeTeam[index];
-          if (!slot || slot.monsterId === 0) {
-            alert("请先在此位置上阵怪兽！");
-            return;
-          }
-          this._activeBadgeSelectIndex = 0; // Default configure badge index 0 for this monster
-        } else {
-          this._activeMonsterSelectIndex = index;
+      const index = parseInt(c.getAttribute('data-index') || '0', 10);
+      c.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('monster-switch-btn') || target.classList.contains('monster-add-btn')) {
+          return; // Skip main preview event for switch/add clicks
         }
+
+        this._selectedSlotIndex = index;
+        const activeTeam = gameEngine.activeTeam;
+        const slot = activeTeam[index];
+        if (slot && slot.monsterId > 0) {
+          const monster = DB_MONSTERS.find(m => m.id === slot.monsterId);
+          if (monster) {
+            this._previewMonster = monster;
+            this.render();
+          }
+        } else {
+          // Empty slot: open monster selector directly
+          this._previewMonster = null;
+          this._selectedSlotIndex = index;
+          this._activeMonsterSelectIndex = index;
+          this.render();
+        }
+      });
+    });
+
+    // 🔄 Switch and ＋ Add buttons: trigger monster selection panel directly
+    const switchBtns = document.querySelectorAll('.monster-switch-btn, .monster-add-btn');
+    switchBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Avoid triggering cell click detail updates
+        const index = parseInt(btn.getAttribute('data-index') || '0', 10);
+        this._selectedSlotIndex = index;
+        this._activeMonsterSelectIndex = index;
         this.render();
       });
     });
 
-    // Badge Slots Click
+    // Badge Slots Click inside Right detail card
     const badgeSlots = document.querySelectorAll('.details-badge-slot-frame');
     badgeSlots.forEach(slot => {
       slot.addEventListener('click', () => {
@@ -489,17 +405,17 @@ export class TeamEditorUI {
       });
     });
 
-    // Bottom Action Buttons
-    const searchMatch = document.getElementById('searchMatchBtn');
-    searchMatch?.addEventListener('click', () => {
+    // Bottom Action Game Mode Buttons
+    const experimentalBtn = document.getElementById('lobbyExperimentalModeBtn');
+    experimentalBtn?.addEventListener('click', () => {
       // Transition to experimental mode prep left
       gameEngine.state = 'PREPARATION_LEFT';
       gameEngine.resetBoardForNextRound();
       uiManager.syncStateWithUI();
     });
 
-    const createMatch = document.getElementById('createMatchBtn');
-    createMatch?.addEventListener('click', () => {
+    const aiBtn = document.getElementById('lobbyAiModeBtn');
+    aiBtn?.addEventListener('click', () => {
       // AI Battle mode: generate AI team and start preparation
       const ai = new BattleAI();
       ai.setDifficulty('normal');
@@ -533,9 +449,9 @@ export class TeamEditorUI {
       uiManager.syncStateWithUI();
     });
 
-    const joinMatch = document.getElementById('joinMatchBtn');
-    joinMatch?.addEventListener('click', () => {
-      // 保存当前队伍到 teams[0]
+    const onlineBtn = document.getElementById('lobbyOnlineModeBtn');
+    onlineBtn?.addEventListener('click', () => {
+      // Save current team to teams[0]
       gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
         monsterId: s.monsterId,
         badgeIds: [...s.badgeIds]
@@ -545,90 +461,10 @@ export class TeamEditorUI {
       uiManager.syncStateWithUI();
     });
 
-    const teamEditModeBtn = document.getElementById('teamEditModeBtn');
-    teamEditModeBtn?.addEventListener('click', () => {
-      this._currentTab = 'monster';
-      this.switchTabPage('monster');
-    });
-
-    const badgeEditModeBtn = document.getElementById('badgeEditModeBtn');
-    badgeEditModeBtn?.addEventListener('click', () => {
-      this._currentTab = 'badge';
-      this.switchTabPage('badge');
-    });
-
     // Online confirm button - no longer needed, flow handled in LobbyUI
   }
 
-  /** GSAP page transition: close current modal panel → open target tab modal panel */
-  private switchTabPage(targetTab: 'monster' | 'badge'): void {
-    const editorEl = this._container.querySelector('#teamEditor') as HTMLElement | null;
-    if (!editorEl) return;
 
-    // Find currently open modal panel
-    const oldPanel: HTMLElement | null = targetTab === 'monster'
-      ? this._container.querySelector('.badge-select-panel.open')
-      : this._container.querySelector('.monster-select-panel.open');
-
-    const clearOldPanel = () => {
-      editorEl.classList.remove('monster-selecting');
-      if (oldPanel) {
-        oldPanel.classList.remove('open');
-      }
-    };
-
-    const renderAndAnimateIn = () => {
-      clearOldPanel();
-
-      // Set modal states for target tab
-      if (targetTab === 'monster') {
-        this._activeBadgeSelectIndex = null;
-        this._activeMonsterSelectIndex = 0;
-        this._previewMonster = null;
-      } else {
-        this._activeMonsterSelectIndex = null;
-        this._activeBadgeSelectIndex = 0;
-        this._previewMonster = null;
-      }
-
-      // Render new content
-      const activeTeam = gameEngine.activeTeam;
-      const selectedMonster = DB_MONSTERS.find(
-        m => m.id === activeTeam[this._selectedSlotIndex]?.monsterId
-      ) || DB_MONSTERS[0];
-      const activeSlot = activeTeam[this._selectedSlotIndex];
-
-      editorEl.classList.remove('anim-in');
-      editorEl.innerHTML = this.buildTeamEditorContent(activeTeam, selectedMonster, activeSlot);
-      this.bindEvents();
-      this.afterRenderModal();
-
-      // Animate new panel in
-      requestAnimationFrame(() => {
-        editorEl.classList.add('monster-selecting');
-        const newPanel: HTMLElement | null = targetTab === 'monster'
-          ? this._container.querySelector('.monster-select-panel')
-          : this._container.querySelector('.badge-select-panel');
-        if (newPanel) {
-          newPanel.classList.add('open');
-          gsap.fromTo(newPanel,
-            { y: 1200, opacity: 1 },
-            { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
-          );
-        }
-      });
-    };
-
-    if (oldPanel) {
-      // Animate old panel out downwards, then render new
-      gsap.to(oldPanel, {
-        y: 1200, opacity: 1, duration: 0.6, ease: 'power2.in',
-        onComplete: renderAndAnimateIn
-      });
-    } else {
-      renderAndAnimateIn();
-    }
-  }
 
   // --- Modal Rendering ---
   private renderMonsterSelectModal(): string {
@@ -641,21 +477,14 @@ export class TeamEditorUI {
             const activeClass = isSelected ? 'active' : '';
             return `
               <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-                <img src="all.png" style="
-                  object-fit: none;
-                  object-position: -${m.sx}px -${m.sy}px;
-                  width: ${m.sw}px;
-                  height: ${m.sh}px;
-                  transform: scale(0.8);
-                  transform-origin: center;
-                " />
+                ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(0.8)', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
                 <div class="modal-monster-name">${m.name}</div>
                 <div class="modal-monster-cost">${m.cost} 费</div>
               </div>
             `;
           }).join('')}
         </div>
-        <button id="closeMonsterModalBtn" class="pixel-btn" style="width: 240px; height: 60px; font-size: 24px; align-self: center;">返回</button>
+        <button id="closeMonsterModalBtn" class="pixel-btn" style="width: 240px; height: 60px; font-size: 24px; position: absolute; top: 1020px;">返回</button>
       </div>
     `;
   }
@@ -692,31 +521,12 @@ export class TeamEditorUI {
             const renderBadgeCard = (b: any): string => {
               const isUsed = activeSlot && activeSlot.badgeIds.some((id: number, idx: number) => idx !== this._activeBadgeSelectIndex && id === b.id);
               const cardStyle = isUsed ? 'opacity: 0.4; pointer-events: none; filter: grayscale(1);' : '';
-              const sprite = BADGE_SPRITES[b.id];
-              let badgeHtml = '';
-              if (sprite) {
-                const scale = 100 / sprite.sw;
-                const imgW = 2556 * scale;
-                const imgH = 1417 * scale;
-                const left = -sprite.sx * scale;
-                const top = -sprite.sy * scale;
-                badgeHtml = `
-                  <div style="width: 100px; height: 100px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent; flex-shrink: 0; margin-bottom: 8px; border-radius: 50%;">
-                    <img src="badge.png" style="
-                      position: absolute;
-                      left: ${left}px;
-                      top: ${top}px;
-                      width: ${imgW}px;
-                      height: ${imgH}px;
-                      border: none;
-                      background: transparent;
-                    " />
-                  </div>
-                `;
-              }
+              const badgeHtml = renderBadgeImg(b.id, 100);
               return `
                 <div class="modal-badge-card" data-badge-id="${b.id}" style="${cardStyle}">
-                  ${badgeHtml}
+                  <div style="width: 100px; height: 100px; margin-bottom: 8px;">
+                    ${badgeHtml}
+                  </div>
                   <div class="modal-badge-name">${b.name}</div>
                 </div>
               `;
@@ -857,14 +667,7 @@ export class TeamEditorUI {
       const activeClass = isSelected ? 'active' : '';
       return `
         <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-          <img src="all.png" style="
-            object-fit: none;
-            object-position: -${m.sx}px -${m.sy}px;
-            width: ${m.sw}px;
-            height: ${m.sh}px;
-            transform: scale(0.8);
-            transform-origin: center;
-          " />
+          ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(0.8)', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
           <div class="modal-monster-name">${m.name}</div>
           <div class="modal-monster-cost">${m.cost} 费</div>
         </div>

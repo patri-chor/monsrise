@@ -366,7 +366,12 @@ export class BattleSystem {
       // Decrement skill rotation timer（肃清哥旋转）
       if ((m as any)._rotationRemaining > 0) {
         (m as any)._rotationRemaining -= dt;
-        m.state = 'skill';
+        if ((m as any)._rotationRemaining <= 0) {
+          (m as any)._rotationRemaining = 0;
+          m.state = 'idle';
+        } else {
+          m.state = 'skill';
+        }
       }
 
       // Smooth position interpolation must run BEFORE stun check so leaps/knockbacks update visually
@@ -599,13 +604,26 @@ export class BattleSystem {
             if (effect.type === 'poison') {
               tickDmg = 15; // Poison: 15 dmg/s
             } else if (effect.type === 'bleed') {
-              tickDmg = Math.round(m.maxHp * 0.02); // 2% max HP per second
+              tickDmg = Math.round(m.maxHp * 0.015 * (effect.stacks || 1)); // 1.5%/层
             } else if (effect.type === 'burn') {
               tickDmg = 20; // Burn: 20 dmg/s
             }
 
             const ticks = Math.floor(effect.tickTimer);
             this.applyDamage(m, tickDmg * ticks, null, { bypassesShield: true });
+
+            // 肃清吸血：流血伤害的50%回复给施加者
+            if (effect.type === 'bleed' && typeof effect.source === 'string') {
+              const sourceMonster = this._monsters.find(sm => sm.id === effect.source);
+              if (sourceMonster && !sourceMonster.isDead && sourceMonster.dbId === 101) {
+                const healAmt = Math.round(tickDmg * 0.5 * ticks);
+                sourceMonster.hp = Math.min(sourceMonster.maxHp, sourceMonster.hp + healAmt);
+                const srcPos = this.screenPositions.get(sourceMonster.id);
+                if (srcPos) {
+                  vfx.addFloatingText(srcPos.x, srcPos.y, `${healAmt}`, '#5ac54f');
+                }
+              }
+            }
 
             // If burn, also deal damage to all adjacent targets
             if (effect.type === 'burn') {
@@ -1560,11 +1578,25 @@ export class BattleSystem {
     value?: number;
     source?: any;
     tickTimer?: number;
+    stacks?: number;
   }): void {
     if (target.isDead || (target as any).resurrecting) return;
     if (!badgeOnApplyStatusEffect(target, effect)) {
       return; // Immune!
     }
+
+    // 流血可叠加3层，每层1.5% maxHP/s，合并为单个debuff
+    if (effect.type === 'bleed') {
+      const existing = target.statusEffects.find(e => e.type === 'bleed');
+      if (existing) {
+        existing.stacks = Math.min(3, (existing.stacks || 1) + 1);
+        existing.duration = Math.max(existing.duration, effect.duration);
+        existing.source = effect.source;
+        return;
+      }
+      effect.stacks = 1;
+    }
+
     if (effect.type === 'chill') {
       const hasChill = target.statusEffects.some(e => e.type === 'chill');
       if (!hasChill) {

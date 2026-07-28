@@ -165,7 +165,7 @@ export class Sprite extends Component {
           ctx.fillRect(hx + barW + 2, hy, 32, 24);
           ctx.strokeRect(hx + barW + 2, hy, 32, 24);
           ctx.fillStyle = '#7dd4ff';
-          ctx.font = `20px 'Press Start 2P', 'Zpix', monospace`;
+          ctx.font = `20px 'Silkscreen', 'Zpix', monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(this.shield.toString(), hx + barW + 2 + 16, hy + 12);

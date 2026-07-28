@@ -631,8 +631,8 @@ export class VfxManager {
       const ratio = t.life / t.maxLife;
       ctx.globalAlpha = Math.min(1, ratio * 1.5);
       
-      let fontSize = t.isCrit ? 24 : 18;
-      ctx.font = t.isCrit ? `bold ${fontSize}px 'Press Start 2P', 'Zpix', monospace` : `${fontSize}px 'Press Start 2P', 'Zpix', monospace`;
+      let fontSize = t.isCrit ? 32 : 24;
+      ctx.font = t.isCrit ? `bold ${fontSize}px 'Silkscreen', 'Zpix', monospace` : `${fontSize}px 'Silkscreen', 'Zpix', monospace`;
       
       if (t.isCrit) {
         ctx.save();

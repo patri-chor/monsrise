@@ -2,7 +2,7 @@
  * 根据头像列表中索引渲染头像 HTML。
  * 头像精灵图 avatars.png 每格 170×170，按6列排列。
  */
-export function renderAvatarHtml(avatarIndex: number, frameClass: 'p1-frame' | 'p2-frame', size: number = 90): string {
+export function renderAvatarHtml(avatarIndex: number, frameClass: 'p1-frame' | 'p2-frame', size: number = 135): string {
   const col = avatarIndex % 6;
   const row = Math.floor(avatarIndex / 6);
   const sx = col * 170;

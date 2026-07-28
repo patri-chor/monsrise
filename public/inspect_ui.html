@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      background-color: #222;
+      color: white;
+      font-family: monospace;
+      padding: 20px;
+    }
+    #controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    #controls button {
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #444;
+      color: white;
+      border: 1px solid #666;
+    }
+    #controls button.active {
+      background-color: #007bff;
+      border-color: #0056b3;
+    }
+    #container {
+      position: relative;
+      display: inline-block;
+      border: 2px solid #555;
+    }
+    #uiImg {
+      display: block;
+      image-rendering: pixelated;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+      cursor: crosshair;
+    }
+    #coordInfo {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: #0f0;
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      font-size: 18px;
+      font-family: monospace;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <h1> Monsrise UI Sprite Inspector </h1>
+  <div id="controls">
+    <button onclick="changeImg('/UI.png', this)" class="active">UI.png</button>
+    <button onclick="changeImg('/UI2.png', this)">UI2.png</button>
+    <button onclick="changeImg('/monster_rise_ui.png', this)">monster_rise_ui.png</button>
+    <span id="dims"></span>
+  </div>
+
+  <div id="container">
+    <img id="uiImg" src="/UI.png" />
+    <canvas id="gridCanvas"></canvas>
+  </div>
+
+  <div id="coordInfo">
+    Hover coordinates:<br/>
+    X: <span id="curX">0</span>px<br/>
+    Y: <span id="curY">0</span>px
+  </div>
+
+  <script>
+    const img = document.getElementById('uiImg');
+    const canvas = document.getElementById('gridCanvas');
+    const curX = document.getElementById('curX');
+    const curY = document.getElementById('curY');
+    const dims = document.getElementById('dims');
+
+    function drawGrid() {
+      if (!img.complete) return;
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      dims.innerText = `Dimensions: ${img.naturalWidth} x ${img.naturalHeight}`;
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw horizontal grid lines every 50px
+      ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+      ctx.lineWidth = 0.5;
+      for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff0';
+        ctx.font = '10px monospace';
+        ctx.fillText(y, 2, y + 10);
+      }
+
+      // Draw vertical grid lines every 50px
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff0';
+        ctx.font = '10px monospace';
+        ctx.fillText(x, x + 2, 10);
+      }
+
+      // Draw lighter grid lines every 10px
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.2)';
+      for (let y = 0; y < canvas.height; y += 10) {
+        if (y % 50 === 0) continue;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      for (let x = 0; x < canvas.width; x += 10) {
+        if (x % 50 === 0) continue;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    img.onload = drawGrid;
+    if (img.complete) drawGrid();
+
+    function changeImg(src, btn) {
+      document.querySelectorAll('#controls button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      img.src = src;
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.round(e.clientX - rect.left);
+      const y = Math.round(e.clientY - rect.top);
+      curX.innerText = x;
+      curY.innerText = y;
+    });
+  </script>
+</body>
+</html>

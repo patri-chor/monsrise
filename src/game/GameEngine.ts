@@ -44,6 +44,7 @@ export interface PlacedMonster {
     value?: number;
     source?: any;
     tickTimer?: number;
+    stacks?: number;
   }[];
   state: 'idle' | 'walk' | 'attack' | 'skill';
 }

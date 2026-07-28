@@ -52,6 +52,12 @@ export class UIManager {
 
     const state = gameEngine.state;
 
+    // Clean up battle background when leaving battle states
+    if (!['PREPARATION_LEFT', 'PREPARATION_RIGHT', 'BATTLE'].includes(state)) {
+      const battleBgLayer = document.getElementById('battleBgLayer');
+      if (battleBgLayer) battleBgLayer.remove();
+    }
+
     if (state === 'OPENING') {
       const gameBg = document.getElementById('gameBg');
       if (gameBg) gameBg.style.backgroundImage = 'none';
@@ -72,10 +78,12 @@ export class UIManager {
       gameBg.style.backgroundSize = "100% 100%";
       gameBg.style.backgroundPosition = "top left";
       gameBg.style.backgroundRepeat = "no-repeat";
-      if (state === 'TEAM_EDIT') {
+      // Battle states use their own sky+yun+ground background inside BattleUI
+      const useBattleBg = ['OPENING', 'MATCH_LOBBY', 'TEAM_EDIT', 'PREPARATION_LEFT', 'PREPARATION_RIGHT', 'BATTLE'];
+      if (useBattleBg.includes(state)) {
         gameBg.style.backgroundImage = "none";
       } else {
-        gameBg.style.backgroundImage = "url('ground.png')";
+        gameBg.style.backgroundImage = "url('fight/ground1.png')";
       }
     }
 

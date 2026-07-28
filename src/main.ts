@@ -1,3 +1,6 @@
+// ============================================
+//  入口文件 — 资源预加载 → UI 缩放 → 系统初始化 → 启动
+// ============================================
 import './style.css';
 import { director } from './core/Director';
 import { Node } from './core/Node';
@@ -10,7 +13,9 @@ import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
 import { networkManager } from './net/NetworkManager';
 
-// Preloader for image assets — cache-bust with build time
+// ============================================
+//  资源预加载
+// ============================================
 const _IMG_VERSION = Date.now();
 const ASSETS_TO_LOAD = {
   spritesheet: `all.png?v=${_IMG_VERSION}`,
@@ -58,7 +63,9 @@ function preloadAssets(onComplete: () => void): void {
   });
 }
 
-// Cocos-like BoardSyncComponent to manage canvas board rendering
+// ============================================
+//  游戏循环组件（Canvas 板同步）
+// ============================================
 class BoardSyncComponent extends Component {
   private _monstersContainer!: Node;
   private _monsterNodes: Map<string, Node> = new Map();
@@ -120,8 +127,8 @@ class BoardSyncComponent extends Component {
         );
         
         // Melee facing P1 (faces right) or P2 (faces left) with 0.8 scale to fit cell
-        mNode.scaleX = (m.gridX >= 6) ? -0.8 : 0.8;
-        mNode.scaleY = 0.8;
+        mNode.scaleX = (m.gridX >= 6) ? -0.9 : 0.9;
+        mNode.scaleY = 0.9;
 
         this._monstersContainer.addChild(mNode);
         this._monsterNodes.set(m.id, mNode);
@@ -141,17 +148,21 @@ class BoardSyncComponent extends Component {
 
         if ((m as any)._chargeDir !== undefined) {
           // 冲锋朝向：强制锁定冲锋方向
-          mNode.scaleX = (m as any)._chargeDir === 1 ? 0.8 : -0.8;
+          mNode.scaleX = (m as any)._chargeDir === 1 ? -0.9 : 0.9;
+          mNode.scaleY = 0.9;
         } else if (smoothPos && targetPos && Math.abs(targetPos.x - smoothPos.x) > 1) {
           // Face the direction of active movement
-          mNode.scaleX = (targetPos.x > smoothPos.x) ? 0.8 : -0.8;
+          mNode.scaleX = (targetPos.x > smoothPos.x) ? 0.9 : -0.9;
+          mNode.scaleY = 0.9;
         } else {
           // Face the closest enemy
           const enemy = (battleSystem as any).findClosestEnemy(m);
           if (enemy) {
-            mNode.scaleX = (enemy.gridX > m.gridX) ? 0.8 : -0.8;
+            mNode.scaleX = (enemy.gridX > m.gridX) ? 0.9 : -0.9;
+            mNode.scaleY = 0.9;
           } else {
-            mNode.scaleX = (m.team === 1) ? 0.8 : -0.8;
+            mNode.scaleX = (m.team === 1) ? 0.9 : -0.9;
+            mNode.scaleY = 0.9;
           }
         }
 
@@ -199,7 +210,8 @@ class BoardSyncComponent extends Component {
         // Use grid cell center positions during prep
         const gridPos = gridToScreen(m.gridX, m.gridY);
         mNode.position = { x: gridPos.x, y: gridPos.y };
-        mNode.scaleX = (m.team === 2) ? -0.8 : 0.8;
+        mNode.scaleX = (m.team === 2) ? -0.9 : 0.9;
+        mNode.scaleY = 0.9;
         mNode.rotation = 0;
       }
 
@@ -235,7 +247,9 @@ class BoardSyncComponent extends Component {
   }
 }
 
-// Start Game Entry Point
+// ============================================
+//  系统初始化 & 启动
+// ============================================
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
   
@@ -250,13 +264,23 @@ window.addEventListener('DOMContentLoaded', () => {
     canvas.height = 1179;
     director.init(canvas);
 
-    // Dynamic UI scaling to fill viewport in lockstep with stretched background (Uniform scale & Center)
+    // Utility: apply scale+translate to a DOM element
+    function applyTransform(el: HTMLElement | null, baseW: number, baseH: number, scale: number, ox: number, oy: number) {
+      if (!el) return;
+      el.style.position = 'absolute';
+      el.style.left = '0';
+      el.style.top = '0';
+      el.style.width = `${baseW}px`;
+      el.style.height = `${baseH}px`;
+      el.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`;
+      el.style.transformOrigin = 'top left';
+    }
+
+    // Dynamic UI scaling to fill viewport
     function resizeUI() {
-      const uiOverlay = document.getElementById('uiOverlay');
       const baseWidth = 2556;
       const baseHeight = 1179;
       
-      // 竖屏时 CSS 旋转了容器，宽高应互换来计算 scale
       const isPortrait = window.innerHeight > window.innerWidth;
       const vw = isPortrait ? window.innerHeight : window.innerWidth;
       const vh = isPortrait ? window.innerWidth : window.innerHeight;
@@ -264,37 +288,11 @@ window.addEventListener('DOMContentLoaded', () => {
       const scale = Math.min(vw / baseWidth, vh / baseHeight);
       const offsetX = (vw - baseWidth * scale) / 2;
       const offsetY = (vh - baseHeight * scale) / 2;
-      
-      const gameBg = document.getElementById('gameBg');
-      if (gameBg) {
-        gameBg.style.position = 'absolute';
-        gameBg.style.left = '0';
-        gameBg.style.top = '0';
-        gameBg.style.width = `${baseWidth}px`;
-        gameBg.style.height = `${baseHeight}px`;
-        gameBg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-        gameBg.style.transformOrigin = 'top left';
-      }
 
-      if (uiOverlay) {
-        uiOverlay.style.position = 'absolute';
-        uiOverlay.style.left = '0';
-        uiOverlay.style.top = '0';
-        uiOverlay.style.width = `${baseWidth}px`;
-        uiOverlay.style.height = `${baseHeight}px`;
-        uiOverlay.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-        uiOverlay.style.transformOrigin = 'top left';
-      }
-      
-      if (canvas) {
-        canvas.style.position = 'absolute';
-        canvas.style.left = '0';
-        canvas.style.top = '0';
-        canvas.style.width = `${baseWidth}px`;
-        canvas.style.height = `${baseHeight}px`;
-        canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-        canvas.style.transformOrigin = 'top left';
-      }
+      applyTransform(document.getElementById('gameBg'), baseWidth, baseHeight, scale, offsetX, offsetY);
+      applyTransform(document.getElementById('uiOverlay'), baseWidth, baseHeight, scale, offsetX, offsetY);
+      applyTransform(canvas, baseWidth, baseHeight, scale, offsetX, offsetY);
+      applyTransform(document.getElementById('battleBgLayer'), baseWidth, baseHeight, scale, offsetX, offsetY);
     }
     window.addEventListener('resize', resizeUI);
     resizeUI();
@@ -312,7 +310,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (isDev) {
       networkManager.connect('ws://localhost:3001');
     } else {
-      // 根据页面协议自动选择 ws:// 或 wss://
       const wsProtocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
       networkManager.connect(`${wsProtocol}${location.host}/ws`);
     }
@@ -325,7 +322,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // 3. Initialize HTML UI Manager
     uiManager.init('uiOverlay');
 
-    // 4. 锁定横屏方向
+    // 4. Lock landscape orientation
     lockOrientation();
 
     // 5. Start Director run loop

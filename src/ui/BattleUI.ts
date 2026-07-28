@@ -1,6 +1,7 @@
 import { gameEngine, PlacedMonster } from '../game/GameEngine';
-import { DB_MONSTERS, BADGE_SPRITES, DB_BADGES, getSkillDescription } from '../game/Database';
+import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { renderAvatarHtml } from './shared/AvatarRenderer';
+import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
 import { battleSystem } from '../game/BattleSystem';
 import { uiManager } from './UIManager';
 import { networkManager } from '../net/NetworkManager';
@@ -36,25 +37,15 @@ export class BattleUI {
     }
 
     const deadClass = isDead ? 'dead' : '';
-    const scale = (84 / dbMonster.sw); // 略超容器
-    const scaleX = flip ? -scale : scale;
+    const scaleVal = (168 / dbMonster.sw);
+    const scaleX = flip ? -scaleVal : scaleVal;
 
     return `
       <div class="scoreboard-circle ${deadClass}" style="display: flex; justify-content: center; align-items: center; position: relative;">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
-          width: ${dbMonster.sw}px;
-          height: ${dbMonster.sh}px;
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%) scale(${scaleX}, ${scale});
-          transform-origin: center;
-          display: block;
-          border: none;
-          background: transparent;
-        " />
+        ${renderSpriteImg(dbMonster.sx, dbMonster.sy, dbMonster.sw, dbMonster.sh, {
+          absoluteCenter: true,
+          transform: `scale(${scaleX}, ${scaleVal})`
+        })}
       </div>
     `;
   }
@@ -107,8 +98,40 @@ export class BattleUI {
     const usedBudget = isP1 ? gameEngine.p1TotalCost : gameEngine.p2TotalCost;
 
 
+    // Ensure battle background layer is in gameContainer (between canvas and uiOverlay)
+    // This prevents it from covering #gameCanvas which renders monsters at z-index:2
+    const gameContainer = document.getElementById('gameContainer');
+    let bgEl = document.getElementById('battleBgLayer');
+    if (!bgEl) {
+      bgEl = document.createElement('div');
+      bgEl.id = 'battleBgLayer';
+      bgEl.className = 'battle-bg-container';
+      const uiOverlay = document.getElementById('uiOverlay');
+      if (uiOverlay && gameContainer) {
+        gameContainer.insertBefore(bgEl, uiOverlay);
+      } else if (gameContainer) {
+        gameContainer.appendChild(bgEl);
+      }
+      // Only set innerHTML once on creation — resetting it every frame breaks CSS animations
+      bgEl.innerHTML = `
+        <div class="battle-bg-inner">
+          <div class="bg-layer sky"></div>
+          <div class="bg-layer yun layer-far" style="background-image: url('/background/yun1.png');"></div>
+          <div class="bg-layer yun layer-near" style="background-image: url('/background/yun2png.png');"></div>
+          <div class="bg-layer battle-ground"></div>
+        </div>
+      `;
+    }
+    // Sync scale transform from #gameBg (set by resizeUI in main.ts)
+    const gameBg = document.getElementById('gameBg');
+    if (gameBg) {
+      bgEl.style.transform = gameBg.style.transform;
+      bgEl.style.transformOrigin = gameBg.style.transformOrigin;
+    }
+
     this._container.innerHTML = `
       <div id="battleView" class="ui-interactive">
+
         <!-- 退出实验模式按钮 -->
         <button id="exitBattleBtn" class="pixel-btn" style="position: absolute; left: 40px; top: 40px; width: 140px; height: 55px; font-size: 20px; z-index: 100;">退出</button>
         
@@ -184,28 +207,13 @@ export class BattleUI {
 
         <!-- Bottom HUD Panel (Bench list, remaining budgets) -->
         <div class="battle-hud-bottom">
-          <!-- Purple mask to cover pre-drawn background stats -->
-          <div style="position: absolute; left: 16px; top: 16px; width: 1186px; height: 50px; background-color: #8030b6; z-index: 1;"></div>
-          
-          <!-- Cost display absolute positioned at top-left in both prep and battle phases -->
-          <div class="bench-header-stat" style="position: absolute; left: 36px; top: 26px; z-index: 2;">
-            <div style="width: 24px; height: 24px; overflow: hidden; position: relative; display: inline-block;">
-              <img src="details.png" style="
-                position: absolute;
-                left: -226px;
-                top: -17px;
-                width: 395px;
-                height: 413px;
-                border: none;
-              " />
-            </div>
-            <span>${usedBudget} / ${currentBudgetLimit}</span>
+          <!-- Cost display absolute positioned at top-left -->
+          <div class="bench-header-stat" style="position: absolute; left: 258px; top: 52px; z-index: 2;">
+            <span>当前预算: ${usedBudget} / ${currentBudgetLimit}</span>
           </div>
 
-          ${`
-
-            <!-- 8 bench slots（战斗阶段显示P1队伍） -->
-            <div class="bench-container" style="z-index: 2;">
+          <!-- 8 bench slots -->
+          <div class="bench-container" style="z-index: 2;">
               ${(isBattle ? p1Draft : (isP1 ? p1Draft : p2Draft)).map((slot, index) => {
                 const dbMonster = DB_MONSTERS.find(m => m.id === slot.monsterId);
                 const isUsed = isBattle ? false : (dbMonster ? usedMonsterIds.has(slot.monsterId) : false);
@@ -213,29 +221,20 @@ export class BattleUI {
                   <div class="bench-slot" data-slot-index="${index}" data-used="${isUsed}" draggable="false" ${isUsed ? 'style="filter:grayscale(0.85);cursor:not-allowed;opacity:0.6;"' : ''}>
                     ${dbMonster ? `
                       <div style="
-                        width: ${dbMonster.sw * 0.55}px;
-                        height: ${dbMonster.sh * 0.55}px;
+                        width: ${dbMonster.sw * 0.8}px;
+                        height: ${dbMonster.sh * 0.8}px;
                         position: relative;
                         display: flex;
                         justify-content: center;
                         align-items: center;
                         pointer-events: none;
                       ">
-                        <img src="all.png" draggable="false" style="
-                          object-fit: none;
-                          object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
-                          width: ${dbMonster.sw}px;
-                          height: ${dbMonster.sh}px;
-                          transform: translate(-50%, -50%) ${(isP2 && !isBattle) ? 'scale(-0.55, 0.55)' : 'scale(0.55)'};
-                          transform-origin: center;
-                          position: absolute;
-                          left: 50%;
-                          top: 50%;
-                          display: block;
-                          border: none;
-                          background: transparent;
-                          pointer-events: none;
-                        " />
+                        ${renderSpriteImg(dbMonster.sx, dbMonster.sy, dbMonster.sw, dbMonster.sh, {
+                          absoluteCenter: true,
+                          draggable: false,
+                          transform: (isP2 && !isBattle) ? 'scale(-0.8, 0.8)' : 'scale(0.8)',
+                          extraStyle: 'pointer-events: none;'
+                        })}
                       </div>
                       <div class="bench-slot-cost">${dbMonster.cost}费</div>
                     ` : ''}
@@ -243,15 +242,12 @@ export class BattleUI {
                 `;
               }).join('')}
             </div>
-
-          `}
+            ${!isBattle ? `<button id="completePrepBtn" class="action-ready-btn"></button>` : ''}
         </div>
-        
-        ${!isBattle ? `<button id="completePrepBtn" class="action-ready-btn"></button>` : ''}
 
         
         <!-- Right Side details card overlay (Visible when a monster is selected) -->
-        <div id="battleDetailsCardContainer" class="details-card" style="display: none; left: 1980px; top: 310px; z-index: 15;"></div>
+        <div id="battleDetailsCardContainer" class="details-card" style="display: none; left: 1550px; top: 100px; z-index: 15;"></div>
         
         <!-- Center screen announcement overlay (Full Screen) -->
         <div id="battleAnnouncement" style="
@@ -290,7 +286,7 @@ export class BattleUI {
   }
 
   // --- Prep timer logic ---
-  private _prepTimeLeft: number = 20;
+  private _prepTimeLeft: number = 2000;
 
   private getPrepTimeLeft(): number {
     return this._prepTimeLeft;
@@ -299,7 +295,7 @@ export class BattleUI {
   private startPrepTimer(): void {
     if (gameEngine.state === 'BATTLE') return;
 
-    this._prepTimeLeft = 20;
+    this._prepTimeLeft = 2000;
     
     if (this._timerInterval) {
       clearInterval(this._timerInterval);
@@ -547,15 +543,16 @@ export class BattleUI {
     this.showBattleStartAnnouncement();
   }
 
-  private showBattleStartAnnouncement(): void {
-    const el = document.getElementById('battleAnnouncement');
-    if (!el) {
-      // Fallback: start immediately
-      this._doStartBattle();
-      return;
-    }
+  /* ============================================
+     公告动画（合并自 3 个重复方法）
+     ============================================ */
 
-    el.textContent = '开始';
+  /** 显示简单公告（出现→消失→回调） */
+  private _showSimpleAnnouncement(text: string, onDone: () => void): void {
+    const el = document.getElementById('battleAnnouncement');
+    if (!el) { onDone(); return; }
+
+    el.textContent = text;
     el.style.display = 'flex';
     el.style.opacity = '0';
     el.offsetHeight; // force reflow
@@ -565,9 +562,58 @@ export class BattleUI {
       el.style.opacity = '0';
       setTimeout(() => {
         el.style.display = 'none';
-        this._doStartBattle();
+        onDone();
       }, 500);
     }, 1200);
+  }
+
+  /** 显示多阶段公告（得分→游戏结束或下一回合） */
+  private _showScoreAnnouncement(scoreText: string, isGameOver: boolean, onAdvance: () => void): void {
+    const el = document.getElementById('battleAnnouncement');
+    if (!el) { onAdvance(); return; }
+
+    el.style.display = 'flex';
+    el.style.opacity = '0';
+
+    el.textContent = scoreText;
+    el.offsetHeight;
+    el.style.opacity = '1';
+
+    setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => {
+        if (isGameOver) {
+          el.textContent = '游戏结束';
+          el.style.opacity = '1';
+          setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => {
+              el.style.display = 'none';
+              if (gameEngine.mode === 'online') {
+                networkManager.leaveMatch();
+                gameEngine.mode = 'experimental';
+              }
+              gameEngine.state = 'GAME_OVER';
+              uiManager.syncStateWithUI();
+            }, 500);
+          }, 1500);
+        } else {
+          el.textContent = `第 ${gameEngine.currentRound + 1} 回合`;
+          el.style.opacity = '1';
+          setTimeout(() => {
+            el.style.opacity = '0';
+            setTimeout(() => {
+              el.style.display = 'none';
+              onAdvance();
+            }, 500);
+          }, 1500);
+        }
+      }, 500);
+    }, 1800);
+  }
+
+  private showBattleStartAnnouncement(): void {
+    this._showSimpleAnnouncement('开始', () => this._doStartBattle());
   }
 
   private _doStartBattle(): void {
@@ -580,172 +626,46 @@ export class BattleUI {
   }
 
   private showRoundEndAnnouncement(winner: 1 | 2 | null): void {
-    const el = document.getElementById('battleAnnouncement');
-    if (!el) {
-      uiManager.syncStateWithUI();
-      return;
-    }
-
     if (this._isOnline) {
-      // 联机模式：只发送结果 + 显示本地结果，等服务器回 roundResult 再推进
       networkManager.sendBattleEnd(winner);
-      el.style.display = 'flex';
-      el.style.opacity = '0';
-      if (winner === 1) {
-        el.textContent = "我方得分";
-      } else if (winner === 2) {
-        el.textContent = "对手得分";
-      } else {
-        el.textContent = "平局";
-      }
-      el.offsetHeight;
-      el.style.opacity = '1';
+      const scoreText = winner === 1 ? '我方得分' : winner === 2 ? '对手得分' : '平局';
+      this._showSimpleAnnouncement(scoreText, () => {});
       return;
     }
 
-    // Record this round's result and elapsed time
     gameEngine.roundResults.push(winner);
     const elapsed = Math.max(0, 40 - battleSystem.timeLeft);
     gameEngine.lastRoundElapsed = elapsed;
     gameEngine.saveRoundStats(elapsed);
 
-    // Update scoreboard
     const scoreTextEl = document.querySelector('.scoreboard-phase-text');
     if (scoreTextEl) scoreTextEl.textContent = `${gameEngine.p1Score} - ${gameEngine.p2Score}`;
 
-    this._showResultOverlay(el, winner);
-  }
-
-  private _showResultOverlay(el: HTMLElement, winner: 1 | 2 | null): void {
-    el.style.display = 'flex';
-    el.style.opacity = '0';
-
-    if (winner === 1) {
-      el.textContent = "我方得分";
-    } else if (winner === 2) {
-      el.textContent = "对手得分";
-    } else {
-      el.textContent = "平局";
-    }
-
-    el.offsetHeight;
-    el.style.opacity = '1';
-
+    const scoreText = winner === 1 ? '我方得分' : winner === 2 ? '对手得分' : '平局';
     const isGameOver = gameEngine.isGameOver();
-
-    setTimeout(() => {
-      el.style.opacity = '0';
-      setTimeout(() => {
-        if (isGameOver) {
-          el.textContent = "游戏结束";
-          el.style.opacity = '1';
-          setTimeout(() => {
-            el.style.opacity = '0';
-            setTimeout(() => {
-              el.style.display = 'none';
-              if (gameEngine.mode === 'online') {
-                networkManager.leaveMatch();
-                gameEngine.mode = 'experimental';
-              }
-              gameEngine.state = 'GAME_OVER';
-              uiManager.syncStateWithUI();
-            }, 500);
-          }, 1500);
-        } else {
-          el.textContent = `第 ${gameEngine.currentRound + 1} 回合`;
-          el.style.opacity = '1';
-          setTimeout(() => {
-            el.style.opacity = '0';
-            setTimeout(() => {
-              el.style.display = 'none';
-              gameEngine.currentRound += 1;
-              gameEngine.state = 'PREPARATION_LEFT' as any;
-              gameEngine.resetBoardForNextRound();
-              uiManager.syncStateWithUI();
-            }, 500);
-          }, 1500);
-        }
-      }, 500);
-    }, 1800);
+    this._showScoreAnnouncement(scoreText, isGameOver, () => {
+      gameEngine.currentRound += 1;
+      gameEngine.state = 'PREPARATION_LEFT' as any;
+      gameEngine.resetBoardForNextRound();
+      uiManager.syncStateWithUI();
+    });
   }
 
   private showRoundResultAnnouncement(winner: 1 | 2 | null): void {
-    const el = document.getElementById('battleAnnouncement');
-    if (!el) {
-      // 直接推进
-      this._advanceRoundOrEnd();
-      return;
-    }
-
-    // 显示对手确认的结果
     const isGameOver = gameEngine.isGameOver();
+    const scoreText = winner === 1
+      ? (gameEngine.isOnlineHost ? '我方得分' : '对手得分')
+      : winner === 2
+        ? (gameEngine.isOnlineHost ? '对手得分' : '我方得分')
+        : '平局';
 
-    el.style.display = 'flex';
-    el.style.opacity = '0';
-
-    if (winner === 1) {
-      el.textContent = gameEngine.isOnlineHost ? "我方得分" : "对手得分";
-    } else if (winner === 2) {
-      el.textContent = gameEngine.isOnlineHost ? "对手得分" : "我方得分";
-    } else {
-      el.textContent = "平局";
-    }
-
-    el.offsetHeight;
-    el.style.opacity = '1';
-
-    setTimeout(() => {
-      el.style.opacity = '0';
-      setTimeout(() => {
-        if (isGameOver) {
-          el.textContent = "游戏结束";
-          el.style.opacity = '1';
-          setTimeout(() => {
-            el.style.opacity = '0';
-            setTimeout(() => {
-              el.style.display = 'none';
-              if (gameEngine.mode === 'online') {
-                networkManager.leaveMatch();
-                gameEngine.mode = 'experimental';
-              }
-              gameEngine.state = 'GAME_OVER';
-              uiManager.syncStateWithUI();
-            }, 500);
-          }, 1500);
-        } else {
-          el.textContent = `第 ${gameEngine.currentRound + 1} 回合`;
-          el.style.opacity = '1';
-          setTimeout(() => {
-            el.style.opacity = '0';
-            setTimeout(() => {
-              el.style.display = 'none';
-              gameEngine.currentRound += 1;
-              gameEngine.state = gameEngine.isOnlineHost ? 'PREPARATION_LEFT' : 'PREPARATION_RIGHT';
-              gameEngine.resetBoardForNextRound();
-              networkManager.phase = 'placing';
-              uiManager.syncStateWithUI();
-            }, 500);
-          }, 1500);
-        }
-      }, 500);
-    }, 1800);
-  }
-
-  private _advanceRoundOrEnd(): void {
-    const isGameOver = gameEngine.isGameOver();
-    if (isGameOver) {
-      if (gameEngine.mode === 'online') {
-        networkManager.leaveMatch();
-        gameEngine.mode = 'experimental';
-      }
-      gameEngine.state = 'GAME_OVER';
-    } else {
+    this._showScoreAnnouncement(scoreText, isGameOver, () => {
       gameEngine.currentRound += 1;
       gameEngine.state = gameEngine.isOnlineHost ? 'PREPARATION_LEFT' : 'PREPARATION_RIGHT';
       gameEngine.resetBoardForNextRound();
       networkManager.phase = 'placing';
-    }
-    uiManager.syncStateWithUI();
+      uiManager.syncStateWithUI();
+    });
   }
 
   private bindEvents(): void {
@@ -821,27 +741,19 @@ export class BattleUI {
               dragEl = document.createElement('div');
               dragEl.className = 'drag-avatar-helper';
               dragEl.style.position = 'absolute';
-              dragEl.style.width = `${dbMonster.sw * 1.1}px`;
-              dragEl.style.height = `${dbMonster.sh * 1.1}px`;
+              dragEl.style.width = `${dbMonster.sw}px`;
+              dragEl.style.height = `${dbMonster.sh}px`;
               dragEl.style.pointerEvents = 'none';
               dragEl.style.zIndex = '9999';
               const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
               dragEl.style.transform = `translate(-50%, -50%) scale(${s})`;
 
               dragEl.innerHTML = `
-                <img src="all.png" draggable="false" style="
-                  object-fit: none;
-                  object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
-                  width: ${dbMonster.sw}px;
-                  height: ${dbMonster.sh}px;
-                  transform: translate(-50%, -50%) ${isP2 ? 'scale(-1.1, 1.1)' : 'scale(1.1)'};
-                  transform-origin: center;
-                  position: absolute;
-                  left: 50%;
-                  top: 50%;
-                  display: block;
-                  border: none;
-                " />
+                ${renderSpriteImg(dbMonster.sx, dbMonster.sy, dbMonster.sw, dbMonster.sh, {
+                  absoluteCenter: true,
+                  draggable: false,
+                  transform: isP2 ? 'scale(-1, 1)' : 'scale(1)'
+                })}
               `;
               document.body.appendChild(dragEl);
             }
@@ -1051,27 +963,19 @@ export class BattleUI {
               dragEl = document.createElement('div');
               dragEl.className = 'drag-avatar-helper';
               dragEl.style.position = 'absolute';
-              dragEl.style.width = `${dbMonster.sw * 1.1}px`;
-              dragEl.style.height = `${dbMonster.sh * 1.1}px`;
+              dragEl.style.width = `${dbMonster.sw}px`;
+              dragEl.style.height = `${dbMonster.sh}px`;
               dragEl.style.pointerEvents = 'none';
               dragEl.style.zIndex = '9999';
               const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
               dragEl.style.transform = `translate(-50%, -50%) scale(${s})`;
 
               dragEl.innerHTML = `
-                <img src="all.png" draggable="false" style="
-                  object-fit: none;
-                  object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
-                  width: ${dbMonster.sw}px;
-                  height: ${dbMonster.sh}px;
-                  transform: translate(-50%, -50%) ${sourceMonster.team === 2 ? 'scale(-1.1, 1.1)' : 'scale(1.1)'};
-                  transform-origin: center;
-                  position: absolute;
-                  left: 50%;
-                  top: 50%;
-                  display: block;
-                  border: none;
-                " />
+                ${renderSpriteImg(dbMonster.sx, dbMonster.sy, dbMonster.sw, dbMonster.sh, {
+                  absoluteCenter: true,
+                  draggable: false,
+                  transform: sourceMonster.team === 2 ? 'scale(-1, 1)' : 'scale(1)'
+                })}
               `;
               document.body.appendChild(dragEl);
             }
@@ -1295,7 +1199,6 @@ export class BattleUI {
     this.updateDetailsCardContent();
   }
 
-
   public updateDetailsCardContent(): void {
     const cardContainer = document.getElementById('battleDetailsCardContainer');
     if (!cardContainer) return;
@@ -1358,79 +1261,19 @@ export class BattleUI {
     const maxSlots = Math.max(selectedMonster.badges.length, dbMonster.cost === 4 ? 3 : 2);
     const badgesHtml = Array(maxSlots).fill(0).map((_, badgeIdx) => {
       const badge = selectedMonster.badges[badgeIdx];
-      let badgeImgHtml = `<span style="font-size:24px; color:#5a5a5a;">+</span>`;
-      if (badge) {
-        const sprite = BADGE_SPRITES[badge.id];
-        if (sprite) {
-          const scale = 64 / sprite.sw;
-          const imgW = 2556 * scale;
-          const imgH = 1417 * scale;
-          const left = -sprite.sx * scale;
-          const top = -sprite.sy * scale;
-          badgeImgHtml = `
-            <div style="width: 64px; height: 64px; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; background: transparent;">
-              <img src="badge.png" style="
-                position: absolute;
-                left: ${left}px;
-                top: ${top}px;
-                width: ${imgW}px;
-                height: ${imgH}px;
-                border: none;
-                background: transparent;
-              " />
-            </div>
-          `;
-        }
-      }
-
+      const imgHtml = badge ? renderBadgeImg(badge.id, 64) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
       const equippedClass = badge ? 'equipped' : '';
-      return `
-        <div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}" style="cursor: default;">
-          ${badgeImgHtml}
-        </div>
-      `;
+      return `<div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">${imgHtml}</div>`;
     }).join('');
 
-    cardContainer.innerHTML = `
-      <!-- Avatar Frame -->
-      <div class="details-avatar-frame">
-        <img src="all.png" style="
-          object-fit: none;
-          object-position: -${dbMonster.sx}px -${dbMonster.sy}px;
-          width: ${dbMonster.sw}px;
-          height: ${dbMonster.sh}px;
-        " />
-      </div>
-
-      <!-- Stars and Race/Role -->
-      <div class="details-stars-container" style="font-size: 10px; flex-direction: column; align-items: center; gap: 2px;">
-        <span style="font-size: 14px; color: #e5c158;">★★★</span>
-        <span style="color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-weight: bold; font-size: 20px;">[ ${dbMonster.race} | ${dbMonster.role} ]</span>
-      </div>
-
-      <!-- Name banner -->
-      <div class="details-name-banner">${dbMonster.name}</div>
-
-      <!-- Stats overlays (values only) -->
-      <div class="details-val details-val-hp">${selectedMonster.hp}/${selectedMonster.maxHp}</div>
-      <div class="details-val details-val-atk">${selectedMonster.atk}</div>
-      <div class="details-val details-val-ats">${selectedMonster.ats.toFixed(2)}</div>
-      <div class="details-val details-val-range">${selectedMonster.range}</div>
-      <div class="details-val details-val-speed">${selectedMonster.speed}</div>
-
-      <!-- Skill Box -->
-      <div class="details-skill-section">
-        <div class="details-skill-desc-box" style="left: 0; width: 100%; padding: 0 10px;">
-          <div style="color:#e5c158; font-size:30px; margin-bottom:4px;">${dbMonster.skill} (CD: ${dbMonster.skillCd}s)</div>
-          <div>${getSkillDescription(dbMonster)}</div>
-        </div>
-      </div>
-
-      <!-- Equipped Badges Slots -->
-      <div class="details-badges-section" style="background-color: #b4b3a1;">
-        ${badgesHtml}
-      </div>
-    `;
+    cardContainer.innerHTML = renderDetailCard(dbMonster, {
+      hp: selectedMonster.hp,
+      maxHp: selectedMonster.maxHp,
+      atk: selectedMonster.atk,
+      ats: selectedMonster.ats,
+      shield: selectedMonster.shield,
+      badgesHtml
+    }, getSkillDescription(dbMonster));
   }
 }
 export const CANVAS_W = 1280;

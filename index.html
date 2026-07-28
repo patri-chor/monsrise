@@ -26,5 +26,7 @@
   
   <script src="/ai-bundle.iife.js"></script>
   <script type="module" src="./src/main.ts"></script>
+  <!-- Force preload Silkscreen font for Canvas text rendering -->
+  <div style="font-family: 'Silkscreen'; position: absolute; visibility: hidden; pointer-events: none; width: 0; height: 0; overflow: hidden;">preloader</div>
 </body>
 </html>
