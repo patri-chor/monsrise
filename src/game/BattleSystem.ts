@@ -2,7 +2,7 @@ import { gameEngine, PlacedMonster } from './GameEngine';
 import { vfx, tntImage } from './VfxManager';
 import type { Projectile, BoltType } from './VfxManager';
 import { BOLT_PROFILES } from './VfxManager';
-import { HIT, SKILL, BULLET_OFFSET, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
+import { HIT, SKILL, BULLET_OFFSET, BULLET_SPEED, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
 import { screenConfig, gridToScreen } from './ScreenConfig';
 import { getSkill } from './SkillSystem';
 import { GameTickScheduler } from './GameTickScheduler';
@@ -141,6 +141,11 @@ export class BattleSystem {
   public scheduler: GameTickScheduler = new GameTickScheduler();
   public _summonCounter: number = 0;
 
+  /** 友方目标技能的施法范围（用于徽章 onSkillCast 触发） */
+  private static readonly ALLY_SKILL_RANGES: Record<string, number> = {
+    'life_link': 3, 'recovery': 1, 'attack': 2, 'heal_sword': 2, 'shield': 1, 'leap': 1
+  };
+
 
   private constructor() {
     this.resetGrid();
@@ -274,6 +279,16 @@ export class BattleSystem {
       if (skillInstance) {
         skillInstance.onStartOfBattle(m, this);
       }
+
+      // 友方技能的 onStartOfBattle 也触发徽章技能效果（如 recovery 祈祷哥 + 元素涌动/中毒）
+      const allyRange = BattleSystem.ALLY_SKILL_RANGES[m.data.skill];
+      if (allyRange !== undefined) {
+        const allies = this.getMonstersInGridRange(m.gridX, m.gridY, allyRange)
+          .filter((a: PlacedMonster) => isP1Monster(a) === isP1Monster(m) && !a.isDead && !(a as any).resurrecting);
+        for (const ally of allies) {
+          badgeOnSkillCast(m, { attacker: m, target: ally, battle: this, engine: gameEngine });
+        }
+      }
     }
   }
 
@@ -399,10 +414,12 @@ export class BattleSystem {
         continue; // Skip combat actions during ending phase
       }
 
-      // Attack logic timer progress
+      // Attack logic timer progress (only accumulates in attack state)
       let atkTimer = this._attackTimers.get(m.id) || 0;
-      atkTimer += dt;
-      this._attackTimers.set(m.id, atkTimer);
+      if (m.state === 'attack') {
+        atkTimer += dt;
+        this._attackTimers.set(m.id, atkTimer);
+      }
 
       // Cooldown progress for skill
       const cdSpeed = this._cdMultipliers.get(m.id) || 1.0;
@@ -411,6 +428,14 @@ export class BattleSystem {
       let actedThisFrame = false;
       const burstCount = (m as any).burstCount || 0;
       const interval = burstCount > 0 ? burstCount / m.ats : 1 / m.ats;
+
+      // 攻击状态下校验目标是否仍在射程内
+      if (m.state === 'attack') {
+        const target = this.findClosestEnemy(m, true);
+        if (!target || !this.isInAttackRange(m, target)) {
+          m.state = 'idle';
+        }
+      }
 
       if ((m as any).burstAttacksLeft > 0) {
         // 段内连发（不中断，继续射完）
@@ -496,8 +521,8 @@ export class BattleSystem {
         }
       }
 
-      // 本帧没有动作：移动 AI
-      if (!actedThisFrame) {
+      // 本帧没有动作：移动 AI（attack 状态原地攻击，不触发移动）
+      if (!actedThisFrame && m.state !== 'attack') {
         this.performMovementAI(m, dt);
       }
     }
@@ -692,6 +717,9 @@ export class BattleSystem {
         }
 
         if (effect.duration <= 0) {
+          if (effect.type === 'poison') {
+            m.speed /= 0.8;
+          }
           m.statusEffects.splice(i, 1);
         }
       }
@@ -823,9 +851,10 @@ export class BattleSystem {
       return;
     }
 
-    const sPos = this.screenPositions.get(m.id);
-    const tPos = this._targetPositions.get(m.id);
-    if (sPos && tPos) {
+    if (m.state === 'walk' || m.state === 'attack') {
+      const sPos = this.screenPositions.get(m.id);
+      const tPos = this._targetPositions.get(m.id);
+      if (sPos && tPos) {
       const dx = tPos.x - sPos.x;
       const dy = tPos.y - sPos.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -888,6 +917,7 @@ export class BattleSystem {
       } else {
         sPos.x += (dx / dist) * speed * dt;
         sPos.y += (dy / dist) * speed * dt;
+      }
       }
     }
   }
@@ -1009,6 +1039,17 @@ export class BattleSystem {
                 this.dealDamageImpact(m, occupant);
               }
             }, undefined, undefined, cfg.arcHeight, m.id);
+          } else if (m.dbId === 126) {
+            const destPos = gridToScreen(target.gridX, target.gridY);
+            const destGridX = target.gridX;
+            const destGridY = target.gridY;
+            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, 600, DEFAULT_BULLET.color, () => {
+              const occupant = this._gridOccupation[destGridX]?.[destGridY];
+              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+                this.dealDamageImpact(m, occupant);
+              }
+            }, undefined, undefined, 120, m.id);
+            vfx.applyBulletSprite(pr, m.dbId);
           } else if (boltType) {
             const cfg = BOLT_PROFILES[boltType];
             pr = vfx.addProjectile(pos.x, pos.y, extX, extY, cfg.speed, cfg.color, () => {}, undefined, boltType, undefined, m.id);
@@ -1035,7 +1076,8 @@ export class BattleSystem {
             const spreadAngle = baseAngle + (gameEngine.random() - 0.5) * (Math.PI / 36);
             const spreadExtX = sx + Math.cos(spreadAngle) * 2500;
             const spreadExtY = sy + Math.sin(spreadAngle) * 2500;
-            pr = vfx.addProjectile(sx, sy, spreadExtX, spreadExtY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
+            const bulletSpeed = BULLET_SPEED[m.dbId] ?? DEFAULT_BULLET.speed;
+            pr = vfx.addProjectile(sx, sy, spreadExtX, spreadExtY, bulletSpeed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
             pr.onHit = (hitId: string) => {
               const ht = this._monsters.find(e => e.id === hitId);
               if (ht) this.dealDamageImpact(m, ht);
@@ -1114,6 +1156,11 @@ export class BattleSystem {
       this.applyChill(target, 2.0);
     }
 
+    // ID 126 Mini Monkey poison effect on basic attacks
+    if (attacker.dbId === 126) {
+      this.applyStatusEffect(target, { type: 'poison', duration: 4.0 });
+    }
+
     // Apply Priest (祈祷哥) heal links
     const linkedIds = this._priestLinks.get(attacker.id);
     if (linkedIds) {
@@ -1162,7 +1209,12 @@ export class BattleSystem {
     // 1. 徽章减伤（badge 12 结阵守, badge 14 独狼守 等）
     finalDmg = badgeModifyIncomingDamage(target, finalDmg, { attacker, target, damage: finalDmg, battle: this, engine: gameEngine });
 
-    // 2. Shield reduction
+    // 2. 坚固状态：30% 免伤
+    if (target.statusEffects.some(e => e.type === 'fortified')) {
+      finalDmg = Math.round(finalDmg * 0.7);
+    }
+
+    // 3. Shield reduction
     if (target.shield > 0 && !bypassesShield) {
       const layersToReduce = isShieldBreaker ? 4 : 1;
       const absorption = Math.round(finalDmg * 0.6);
@@ -1375,7 +1427,7 @@ export class BattleSystem {
     }
 
     if (this.isInAttackRange(m, target)) {
-      m.state = 'idle';
+      m.state = 'attack';
       return; // Don't move if target is already in range
     }
 
@@ -1403,8 +1455,20 @@ export class BattleSystem {
       const result = skillInstance.onCast(m, this);
       if (result) {
         // 徽章技能释放触发（badge 4 元素涌动 等）
-        const target = this.findClosestEnemy(m, true);
-        badgeOnSkillCast(m, { attacker: m, target: target || undefined, battle: this, engine: gameEngine });
+        // 根据技能类型选择正确的目标：友方技能 → 所有范围内友军，敌方技能 → 最近敌人
+        const allyRange = BattleSystem.ALLY_SKILL_RANGES[m.data.skill];
+        if (allyRange !== undefined) {
+          const allies = this.getMonstersInGridRange(m.gridX, m.gridY, allyRange)
+            .filter((a: PlacedMonster) => isP1Monster(a) === isP1Monster(m) && !a.isDead && !(a as any).resurrecting);
+          for (const ally of allies) {
+            badgeOnSkillCast(m, { attacker: m, target: ally, battle: this, engine: gameEngine });
+          }
+        } else {
+          const target = this.findClosestEnemy(m, true);
+          if (target) {
+            badgeOnSkillCast(m, { attacker: m, target, battle: this, engine: gameEngine });
+          }
+        }
       }
       return result;
     }
@@ -1573,7 +1637,7 @@ export class BattleSystem {
   }
 
   public applyStatusEffect(target: PlacedMonster, effect: {
-    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible';
+    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible' | 'fortified';
     duration: number;
     value?: number;
     source?: any;
@@ -1601,6 +1665,23 @@ export class BattleSystem {
       const hasChill = target.statusEffects.some(e => e.type === 'chill');
       if (!hasChill) {
         target.ats *= 0.7;
+      }
+    }
+
+    // 中毒降低 20% 移动速度
+    if (effect.type === 'poison') {
+      const hasPoison = target.statusEffects.some(e => e.type === 'poison');
+      if (!hasPoison) {
+        target.speed *= 0.8;
+      }
+    }
+
+    // 坚固不可叠加，重复施加时仅刷新持续时间为较大值
+    if (effect.type === 'fortified') {
+      const existing = target.statusEffects.find(e => e.type === 'fortified');
+      if (existing) {
+        existing.duration = Math.max(existing.duration, effect.duration);
+        return;
       }
     }
     target.statusEffects.push(effect);
@@ -1638,31 +1719,14 @@ export class BattleSystem {
   private endBattle(winner: 1 | 2 | null): void {
     this.active = false;
     this.scheduler.clear();
-    
-    // Reset monsters back to their initial positions and status from database config
-    for (const m of gameEngine.boardMonsters) {
-      m.hp = m.data.hp;
-      m.maxHp = m.data.hp;
-      m.atk = m.data.atk;
-      m.ats = m.data.ats;
-      m.range = m.data.range;
-      m.speed = m.data.speed;
-      m.shield = 0;
-      m.skillCdProgress = 0;
-      m.isDead = false;
-      m.statusEffects = [];
-      (m as any).skillAnimationTimeLeft = 0;
-      (m as any).burrowing = false;
-      (m as any).resurrecting = false;
-      (m as any).noSprite = false;
-      (m as any).phalanxAtkAdded = 0;
-      m.gridX = m.initialGridX;
-      m.gridY = m.initialGridY;
-      m.flashTime = 0;
 
-      badgeOnPlace(m, { battle: this, engine: gameEngine });
+    // 注意：这里不再重置怪兽数据 —— 战斗结束保持现有画面（尸体保持尸体、存活怪保持原位），
+    // 等结算文字播完后，由进入布阵时的 resetBoardForNextRound() 统一恢复数据并重放怪兽。
+    // 仅清除瞬时受击白闪，避免结算期间/下一回合怪兽发白。
+    for (const m of gameEngine.boardMonsters) {
+      m.flashTime = 0;
     }
-    
+
     if (!gameEngine.isReplaying) {
       if (winner === 1) {
         gameEngine.p1Score += 1;

@@ -28,6 +28,7 @@ export class Sprite extends Component {
   public skillCd: number = 0;
   public statusEffects: any[] = [];
   public isGhost: boolean = false;
+  public isDeadBody: boolean = false;
   /** stealth 状态下的半透明度（0 全透明 ~ 1 不透明），undefined 表示无 stealth */
   public stealthAlpha: number | undefined;
 
@@ -59,6 +60,11 @@ export class Sprite extends Component {
   public draw(ctx: CanvasRenderingContext2D): void {
     if (!this.enabled || !this.image || !this.node.active) return;
 
+    ctx.imageSmoothingEnabled = false;
+    (ctx as any).mozImageSmoothingEnabled = false;
+    (ctx as any).webkitImageSmoothingEnabled = false;
+    (ctx as any).msImageSmoothingEnabled = false;
+
     const wPos = this.node.worldPosition;
     
     // Use absolute dimensions for drawImage to prevent browser layout engine errors
@@ -72,8 +78,10 @@ export class Sprite extends Component {
     // ---- 贴图层（imageOnly / all 模式绘制） ----
     if (Sprite.drawMode !== 'hudOnly') {
       ctx.save();
-      // 半透明优先级：stealth > ghost
-      if (this.stealthAlpha !== undefined) {
+      // 半透明优先级：尸体 > stealth > ghost
+      if (this.isDeadBody) {
+        ctx.globalAlpha = 0.9; // 尸体半透明淡化
+      } else if (this.stealthAlpha !== undefined) {
         ctx.globalAlpha = this.stealthAlpha;
       } else if (this.isGhost) {
         ctx.globalAlpha = 0.4;
@@ -97,6 +105,13 @@ export class Sprite extends Component {
       const dx = -absW * this.anchorX;
       const dy = -absH * this.anchorY;
 
+      // 死亡尸体：用 canvas filter 真·亮度降低（保留色彩），不发灰不发白
+      const deadBody = this.isDeadBody;
+      const filterSupported = deadBody && typeof (ctx as any).filter === 'string';
+      if (filterSupported) {
+        ctx.filter = 'brightness(0.65)';
+      }
+
       if (this.sw > 0 && this.sh > 0) {
         ctx.drawImage(
           this.image,
@@ -113,10 +128,25 @@ export class Sprite extends Component {
         ctx.drawImage(this.image, dx, dy, absW, absH);
       }
 
-      if (this.flashTime > 0) {
+      if (filterSupported) {
+        ctx.filter = 'none';
+      }
+
+      // 死亡尸体不叠加受击白色闪烁（避免发白）
+      if (this.flashTime > 0 && !deadBody) {
         ctx.save();
         ctx.globalCompositeOperation = 'source-atop';
         ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1.0, this.flashTime / this.flashDuration)})`;
+        ctx.fillRect(dx, dy, absW, absH);
+        ctx.restore();
+      }
+
+      // 不支持 canvas filter 的浏览器（旧版 Safari）回退为黑色蒙层压暗
+      if (deadBody && !filterSupported) {
+        ctx.save();
+        ctx.globalAlpha = 1; // 蒙层不受尸体半透明影响
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'; // 等效 brightness(0.65)
         ctx.fillRect(dx, dy, absW, absH);
         ctx.restore();
       }
@@ -125,7 +155,7 @@ export class Sprite extends Component {
 
     // ---- HUD 层（hudOnly / all 模式绘制） ----
     if (Sprite.drawMode !== 'imageOnly') {
-      if (this.hp !== null && !this.isGhost) {
+      if (this.hp !== null && this.hp > 0 && !this.isGhost) {
         // Draw HP Bar
         const barW = 50;
         const barH = 8;
@@ -189,6 +219,7 @@ export class Sprite extends Component {
             else if (effect.type === 'stun') symbol = '⚡️';
             else if (effect.type === 'chill') symbol = '❄️';
             else if (effect.type === 'invincible') symbol = '🛡️';
+            else if (effect.type === 'fortified') symbol = '🪨';
             
             if (symbol) {
                ctx.fillStyle = '#000';

@@ -39,7 +39,7 @@ export interface PlacedMonster {
   // Statuses
   isDead: boolean;
   statusEffects: {
-    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible';
+    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible' | 'fortified';
     duration: number;
     value?: number;
     source?: any;
@@ -215,13 +215,14 @@ export class GameEngine {
   private initDefaultTeams(): void {
     this.teams = [];
     // 10 teams
+    const validMonsters = DB_MONSTERS.filter(m => !m.isSummon);
     for (let t = 0; t < 10; t++) {
       const team: TeamSlot[] = [];
       // 8 slots per team
       for (let s = 0; s < 8; s++) {
         // Assign some default monsters from DB
-        const dbIdx = (t * 8 + s) % DB_MONSTERS.length;
-        const monster = DB_MONSTERS[dbIdx];
+        const dbIdx = (t * 8 + s) % validMonsters.length;
+        const monster = validMonsters[dbIdx];
         const badgeIds: number[] = [];
         // Default empty badges
         team.push({
@@ -380,6 +381,7 @@ export class GameEngine {
 
   public resetBoardForNextRound(): void {
     // Keep boardMonsters, but restore stats and position from database config
+    this.boardMonsters = this.boardMonsters.filter(m => !m.id.startsWith('summon_') && m.dbId !== 126 && !m.data.isSummon);
     for (const m of this.boardMonsters) {
       m.hp = m.data.hp;
       m.maxHp = m.data.hp;
@@ -391,6 +393,7 @@ export class GameEngine {
       m.skillCdProgress = 0;
       m.isDead = false;
       m.statusEffects = [];
+      m.flashTime = 0; // 清除受击白闪，避免下一局怪兽发白
       (m as any).skillAnimationTimeLeft = 0;
       (m as any).digging = false;
       (m as any).resurrecting = false;
@@ -467,10 +470,10 @@ export class GameEngine {
   }
 
   public initRandomAvatars(): void {
-    const idx1 = Math.floor(Math.random() * 36);
-    let idx2 = Math.floor(Math.random() * 36);
+    const idx1 = Math.floor(Math.random() * 16);
+    let idx2 = Math.floor(Math.random() * 16);
     while (idx2 === idx1) {
-      idx2 = Math.floor(Math.random() * 36);
+      idx2 = Math.floor(Math.random() * 16);
     }
     this.p1AvatarIndex = idx1;
     this.p2AvatarIndex = idx2;

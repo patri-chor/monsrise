@@ -1,8 +1,17 @@
 /* =============================================
    字体 & 全局变量
    ============================================= */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Silkscreen&display=swap');
+/* 本地托管像素字体，避免 Google Fonts 网络阻塞 */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/PressStart2P.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Silkscreen';
+  src: url('/fonts/Silkscreen.woff2') format('woff2');
+  font-display: swap;
+}
 
 @font-face {
   font-family: 'Zpix';
@@ -81,10 +90,22 @@ body {
   left: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 2;
+  z-index: 4;
   transform-origin: top left;
   background: transparent;
   pointer-events: none;
+}
+
+/* Battle Ground Layer (ship/foreground, below canvas, above sky+clouds) */
+.battle-ground-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2556px;
+  height: 1179px;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
 }
 
 /* UI Overlay Layer */
@@ -94,7 +115,7 @@ body {
   left: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 3;
+  z-index: 5;
   pointer-events: auto;
   transform-origin: top left;
 }
@@ -228,14 +249,14 @@ body {
 }
 
 .bg-layer.sky {
-  background-image: url('/background/sky.png');
+  background-image: url('/background/sky.webp');
   background-size: 100% 100%;
   z-index: 1;
 }
 
 @keyframes scrollBg {
-  from { background-position-x: 0; }
-  to { background-position-x: -2556px; }
+  from { background-position-x: -2556px; }
+  to { background-position-x: 2556px; }
 }
 
 .bg-layer.yun {
@@ -262,11 +283,13 @@ body {
   image-rendering: pixelated;
   pointer-events: none;
   z-index: 2;
+  transform: translateX(-600px);
+  animation-fill-mode: backwards;
 }
 
 @keyframes floatCloud {
-  0% { transform: translateX(2556px); }
-  100% { transform: translateX(-600px); }
+  0% { transform: translateX(-600px); }
+  100% { transform: translateX(2556px); }
 }
 
 /* Cloud 1: 547x179, offset -687 -91 */
@@ -354,13 +377,50 @@ body {
   50% { transform: translateY(-8px) rotate(0.15deg); }
 }
 
+/* --- 退出过渡动画 --- */
+
+.fullscreen-deco-frame.exiting {
+  animation: decoFrameOut 0.5s ease forwards;
+}
+@keyframes decoFrameOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+#teamEditor.exiting {
+  animation: teamEditorFadeOut 0.5s ease forwards;
+}
+@keyframes teamEditorFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.ship-enter-wrapper.exiting {
+  animation: shipExit 0.8s ease-in forwards;
+}
+@keyframes shipExit {
+  from { transform: translateY(0); }
+  to   { transform: translateY(120%); }
+}
+
+/* 战斗 UI 延迟入场 */
+#battleView.delayed-ui {
+  opacity: 0;
+  pointer-events: none;
+  animation: battleUIIn 0.5s ease 2s forwards;
+}
+@keyframes battleUIIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* --- 开屏按钮 --- */
 
 .opening-screen {
   position: absolute;
   left: 0; top: 0;
   width: 100%; height: 100%;
-  z-index: 100;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -372,7 +432,7 @@ body {
 .start-logo {
   width: 1039px;
   height: 825px;
-  background: url('/start.png') no-repeat center;
+  background: url('/background/start.png') no-repeat center;
   background-size: contain;
   image-rendering: pixelated;
   position: relative;
@@ -397,14 +457,10 @@ body {
 
 /* --- UI 滑入动画 --- */
 
-#teamEditor.anim-in .editor-left-panel,
-#teamEditor.anim-in .details-card {
+#teamEditor.anim-in .editor-left-panel {
   opacity: 0;
 }
 
-#teamEditor.anim-in .details-card {
-  animation: slideInDetailsCard 1.0s cubic-bezier(0.25, 1, 0.5, 1) 0.8s both;
-}
 #teamEditor.anim-in .editor-left-panel {
   animation: slideInLeftPanel 1.0s cubic-bezier(0.25, 1, 0.5, 1) 1.0s both;
 }
@@ -413,23 +469,19 @@ body {
   from { transform: translateY(-120%) scale(0.8); opacity: 0; }
   to { transform: translateY(0) scale(0.8); opacity: 1; }
 }
-@keyframes slideInDetailsCard {
-  from { transform: translateX(120%) scale(0.8); opacity: 0; }
-  to { transform: translateX(0) scale(0.8); opacity: 1; }
-}
 
 #teamEditor {
   position: absolute;
   left: 0;
   top: 0;
-  width: 2556px;
-  height: 1179px;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center; /* 垂直居中 */
   padding: 80px 100px 40px 100px;
-  z-index: 10;
+  z-index: 5;
   box-sizing: border-box;
 }
 
@@ -468,7 +520,13 @@ body {
   background-repeat: no-repeat;
   image-rendering: pixelated;
   pointer-events: none;
-  z-index: 999;
+  z-index: 50;
+  opacity: 0;
+  animation: decoFrameIn 0.5s ease 2s forwards;
+}
+@keyframes decoFrameIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* Squad Tab buttons container - absolutely placed on top of panel tabs */
@@ -494,7 +552,7 @@ body {
   cursor: pointer;
   margin-right: -14px;
   transform: scale(0.95);
-  z-index: 10;
+  z-index: 5;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -555,12 +613,20 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10;
+  z-index: 5;
   position: relative;
   image-rendering: pixelated;
 }
 .squad-cell:hover {
   filter: brightness(1.1);
+}
+/* Drag swap visual feedback */
+.squad-cell.dragging {
+  opacity: 0.35;
+  filter: grayscale(0.5);
+}
+.squad-cell.drag-over {
+  filter: brightness(1.15);
 }
 .squad-cell img {
   width: 140px;
@@ -568,7 +634,6 @@ body {
   object-fit: contain;
   image-rendering: pixelated;
   background: transparent;
-  transform: scale(1.2);
 }
 
 /* 🔄 Switch button absolutely placed at top right of squad-cell */
@@ -583,7 +648,7 @@ body {
   background-size: 64px 72px !important;
   image-rendering: pixelated;
   cursor: pointer;
-  z-index: 20;
+  z-index: 10;
   display: none;
   justify-content: center;
   align-items: center;
@@ -602,14 +667,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 110px;
+  gap: 103px;
   margin-top: 20px;
   margin-bottom: 20px;
   position: absolute;
   top: 735px;
   height: 150px;
   width: 1606px;
-  left: -110px;
+  left: -113px;
   transform: scale(0.8);
   transform-origin: center center;
 }
@@ -701,6 +766,18 @@ body {
   flex-shrink: 0;
   transform: scale(0.8);
   transform-origin: right center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes fadeInDetails {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.details-card.visible {
+  animation: fadeInDetails 0.2s ease forwards;
+  pointer-events: auto;
 }
 
 /* Details card absolute elements */
@@ -774,7 +851,7 @@ body {
   align-items: center;
   text-shadow: none;
   background-color: transparent;
-  z-index: 12;
+  z-index: 6;
   letter-spacing: -6px; /* 负字距拉紧，解决等宽间距过宽问题 */
 }
 
@@ -789,9 +866,9 @@ body {
 .details-skill-section {
   position: absolute;
   left: 96px;
-  top: 567px;
+  top: 550px;
   width: 670px;
-  height: 120px;
+  height: 146px;
   display: flex;
   background-color: transparent !important; /* 彻底透明，透出 detail.png 已经画好的技能槽 */
   border: none !important;
@@ -844,16 +921,31 @@ body {
 }
 
 .details-badge-slot-frame {
-  width: 96px;
-  height: 96px;
-  background-image: none !important;
-  background-color: transparent !important;
+  width: 115px;
+  height: 115px;
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   border: none;
   image-rendering: pixelated;
+  background: transparent;
+}
+
+/* 六角形占位框 */
+.details-badge-slot-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(229, 193, 88, 0.08);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.details-badge-slot-frame.equipped::after {
+  background: rgba(229, 193, 88, 0.15);
 }
 .details-badge-slot-frame img {
   image-rendering: pixelated;
@@ -884,30 +976,26 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  z-index: 20;
   pointer-events: auto;
 }
 
-/* --- 怪兽选择面板 (作为队伍左栏的同级替代件) --- */
+/* 怪兽选择面板 */
 .monster-select-panel {
   position: absolute;
   left: 100px;
-  top: 35px; /* 垂直完美居中 */
-  width: 1399px; /* Block 1 的 1.8 倍宽度 */
-  height: 1109px; /* Block 1 的 1.8 倍高度 */
-  background-image: url('/UI2.png') !important;
+  top: 161px;
+  width: 1399px;
+  height: 1109px;
+  background-image: url('/edite/UI2.png') !important;
   background-position: 0px 0px !important;
-  background-size: 1728px 1109px !important; /* 960 * 1.8 x 616 * 1.8 */
+  background-size: 1728px 1109px !important;
   image-rendering: pixelated;
-  padding: 130px 32px 100px 32px;
+  padding: 130px 32px 290px 32px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  z-index: 200; /* 高层级，防止被详情面板盖住 */
-  
-  /* 仅 translateY 平移，无不透明度渐显 */
-  transform: translateY(1200px);
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 35;
 }
 
 /* 激活进场 */
@@ -934,7 +1022,7 @@ body {
 .modal-monster-card {
   width: 254px;
   height: 302px;
-  background-image: url('/UI2.png') !important;
+  background-image: url('/edite/UI2.png') !important;
   background-position: -1474px -99px !important;
   background-size: 1728px 1108px !important;
   image-rendering: pixelated;
@@ -982,22 +1070,18 @@ body {
 .badge-select-panel {
   position: absolute;
   left: 100px;
-  top: 35px; /* 垂直完美居中 */
+  top: 169px; /* 垂直完美居中 */
   width: 1399px; /* Block 1 的 1.8 倍宽度 */
-  height: 1109px; /* Block 1 的 1.8 倍高度 */
-  background-image: url('/UI2.png') !important;
+  height: 939px; /* Block 1 的 1.8 倍高度 */
+  background-image: url('/edite/UI2.png') !important;
   background-position: 0px 0px !important;
   background-size: 1728px 1109px !important; /* 960 * 1.8 x 616 * 1.8 */
   image-rendering: pixelated;
-  padding: 110px 32px 60px 32px;
+  padding: 100px 50px 70px 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  z-index: 200; /* 高层级，防止被详情面板盖住 */
-  
-  /* 仅 translateY 平移，无不透明度渐显 */
-  transform: translateY(1200px);
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 35; /* 高层级，防止被详情面板盖住 */
 }
 
 .badge-select-panel.open {
@@ -1006,63 +1090,112 @@ body {
 
 .badge-select-panel .badge-grid-scroll {
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   flex-grow: 1;
+  margin-right: -500px;
   background-color: transparent !important;
   border: none !important;
-  padding: 20px 40px 10px 40px;
+  padding: 50px 40px 100px 40px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   margin-bottom: 12px;
 }
 
+.badge-select-panel .badge-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* 蜂窝排版：行包裹器 */
 .badge-row {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 0px;
   width: 100%;
 }
 
 /* 从第二行开始纵向重叠 28px，达到蜂巢式咬合效果 */
 .badge-row + .badge-row {
-  margin-top: -28px;
+  margin-top: -25px;
 }
 
 /* 偶数行向右偏移半个卡片的圆心宽度 ( W/2 + gap/2 = 90 + 10 = 100px ) */
 .badge-row:nth-child(even) {
-  padding-left: 100px;
+  padding-left: 76px;
   box-sizing: border-box;
 }
 
-/* 徽章卡片本身：缩小尺寸便于紧密贴合 */
+/* 徽章卡片：紧贴图标 */
 .modal-badge-card {
-  width: 180px;
-  height: 180px;
+  width: 150px;
+  height: 150px;
   background-color: transparent !important;
   border: none !important;
-  padding: 8px;
+  padding: 0;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
   text-align: center;
   cursor: pointer;
   box-sizing: border-box;
   transition: transform 0.2s ease, filter 0.2s ease;
-  justify-content: flex-start;
+  position: relative;
 }
 
 .modal-badge-card:hover {
-  transform: scale(1.1); /* 鼠标悬浮微微放大，更具质感 */
+  transform: scale(1.1);
+  z-index: 5;
 }
 
-.modal-badge-name {
+.modal-badge-card.selected {
+  opacity: 1;
+  filter: grayscale(1);
+}
+
+/* 徽章 tooltip：默认隐藏，hover 或长按时在右侧显示 */
+.badge-tooltip {
+  display: none;
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 0;
+  transform: none;
+  background: #1a1c2c;
+  border: 2px solid #e5c158;
+  padding: 14px 18px;
+  z-index: 40;
+  pointer-events: none;
+  text-align: left;
+  min-width: 280px;
+  max-width: 350px;
+}
+
+.badge-tooltip.show {
+  display: block;
+}
+
+.badge-tooltip-name {
   font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 16px;
+  font-size: 28px;
   color: #e5c158;
   text-shadow: 1px 1px 0px #000;
-  margin-top: 4px;
-  word-break: break-all;
+  margin-bottom: 4px;
+}
+
+.badge-tooltip-desc {
+  font-family: 'Zpix', monospace;
+  font-size: 24px;
+  color: #ccc;
+  white-space: normal;
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+/* 桌面端 hover 显示 tooltip */
+@media (hover: hover) {
+  .modal-badge-card:hover .badge-tooltip {
+    display: block;
+  }
 }
 
 /* Custom Scrollbar Styles for Retro Look */
@@ -1094,24 +1227,34 @@ body {
   top: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 1;
+  z-index: 2;
   overflow: hidden;
   pointer-events: none;
 }
 
-/* Ground1 foreground layer (like ship in team editor) */
+/* Ground1 foreground layer (ship) */
+.battle-ground-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  animation: groundEnter 3.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes groundEnter {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
 .bg-layer.battle-ground {
   position: absolute;
   left: 0;
-  top: auto;
-  bottom: 50px;
+  top: 0;
   width: 100%;
   height: 100%;
-  background-image: url('fight/ground1.png') !important;
+  background-image: url('/fight/ground1.webp') !important;
   background-size: 100% 100%;
   background-position: bottom center;
   background-repeat: no-repeat;
-  z-index: 3;
   transform: scale(0.95);
 }
 
@@ -1195,6 +1338,7 @@ body {
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
+  cursor: pointer;
 }
 .scoreboard-circle.dead {
   filter: grayscale(0.85);
@@ -1235,7 +1379,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 250px;
+  width: 230px;
   text-align: center;
 }
 
@@ -1369,6 +1513,26 @@ body {
   transform: translateY(2px);
 }
 
+.exit-battle-btn {
+  position: absolute;
+  left: 35px;
+  top: 154px;
+  width: 142px;
+  height: 166px;
+  background-image: url('/fight/exit.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 20;
+}
+
+.exit-battle-btn:active {
+  filter: brightness(0.85);
+  transform: translateY(2px);
+}
+
 /* Grid layout cell markers overlay on Canvas (Matches screenConfig exactly) */
 .battle-grid-overlay {
   position: absolute;
@@ -1437,13 +1601,23 @@ body {
   border: 6px solid rgba(255, 255, 255, 0.6);
 }
 
+/* Occupied cells: hover feedback for detail card click */
+.battle-grid-cell.occupied {
+  cursor: pointer;
+}
+.battle-grid-cell.occupied:hover {
+  opacity: 0.4;
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
 /* Drag overlay helper */
 .drag-avatar-helper {
   position: absolute;
   width: 64px;
   height: 64px;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 50;
   transform: translate(-50%, -50%);
   image-rendering: pixelated;
 }
@@ -1455,11 +1629,9 @@ body {
   bottom: 20%;
   left: 23%;
   right: 23%;
-  display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  grid-template-rows: repeat(5, 1fr);
-  pointer-events: none;
   z-index: 8;
+  display: grid;
+  pointer-events: none;
 }
 
 .hp-bar-cell {
@@ -1509,7 +1681,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 200;
+  z-index: 30;
   pointer-events: auto;
 }
 
@@ -1517,7 +1689,7 @@ body {
 .summary-content {
   width: 576px;
   height: 603px;
-  background-image: url('/details.png');
+  background-image: url('/edite/detail.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
   padding: 48px;

@@ -2,6 +2,7 @@ import { PlacedMonster, gameEngine } from './GameEngine';
 import { vfx } from './VfxManager';
 import { getMonsterBadges, badgeGetRangeBonus } from './BadgeSystem';
 import { isP1Monster, LEAP_PEAK_HEIGHT, LEAP_DURATION, THROW_PEAK_HEIGHT, THROW_DURATION } from './BattleSystem';
+import { DB_MONSTERS } from './Database';
 import { gridToScreen } from './ScreenConfig';
 import { HIT, SKILL, STATUS_EFFECT } from './VfxPresets';
 
@@ -778,9 +779,29 @@ export class OpenFireSkill extends BaseSkill {
   }
 }
 
-// 115: Unyielding (铲土人)
+// 115: Unyielding (铲土人) — 永久坚固 + 每10s给范围2内队友施加坚固
 export class UnyieldingSkill extends BaseSkill {
   readonly name = 'unyielding';
+
+  public onStartOfBattle(caster: PlacedMonster, battle: any): void {
+    // 铲土人自身永久拥有坚固
+    battle.applyStatusEffect(caster, { type: 'fortified', duration: Infinity });
+
+    // 每 10 秒给范围 2 内队友施加坚固，持续 4 秒
+    battle.scheduler.scheduleInterval(() => {
+      if (caster.isDead || !battle.active) return;
+      const allies = battle._monsters
+        .filter((a: PlacedMonster) => a.team === caster.team && !a.isDead && a.id !== caster.id)
+        .filter((a: PlacedMonster) => {
+          const dx = Math.abs(a.gridX - caster.gridX);
+          const dy = Math.abs(a.gridY - caster.gridY);
+          return dx + dy <= 2;
+        });
+      for (const ally of allies) {
+        battle.applyStatusEffect(ally, { type: 'fortified', duration: 4.0 });
+      }
+    }, 10);
+  }
 
   public onCast(caster: PlacedMonster, battle: any): boolean {
     battle.applyHealWithChefBonus(caster, caster, 500, battle);
@@ -837,23 +858,11 @@ export class ThrowSkill extends BaseSkill {
   public onStartOfBattle(caster: PlacedMonster, battle: any): void {
     const dir = (caster.team === 1) ? -1 : 1;
     let bestAlly: PlacedMonster | null = null;
-    // Strictly adjacent behind
+    // 仅投掷紧邻身后一格的友方
     for (const m of battle._monsters) {
       if (!m.isDead && m.team === caster.team && m.gridX === caster.gridX + dir && m.gridY === caster.gridY) {
         bestAlly = m;
         break;
-      }
-    }
-    // Fallback: any ally directly behind in the same row
-    if (!bestAlly) {
-      for (const m of battle._monsters) {
-        if (!m.isDead && m.team === caster.team && m.gridY === caster.gridY) {
-          const isBehind = (caster.team === 1) ? (m.gridX < caster.gridX) : (m.gridX > caster.gridX);
-          if (isBehind) {
-            bestAlly = m;
-            break;
-          }
-        }
       }
     }
 
@@ -970,7 +979,7 @@ export class SlashSkill extends BaseSkill {
         vfx.spawnParticle(pos.x, pos.y, SKILL.slash.dust);
 
         battle.applyDamage(target, Math.round(caster.atk * 1.6), caster);
-        battle.addShield(caster, 2);
+        battle.addShield(caster, 1);
       }
 
       slashCount++;
@@ -1157,40 +1166,43 @@ export class BashSkill extends BaseSkill {
     if ((caster as any).bashCount % 2 === 0) {
       const freeCell = battle.findClosestFreeCell(caster.gridX, caster.gridY);
       if (freeCell) {
-        const miniMonkey: PlacedMonster = {
-          id: `summon_${caster.id}_${battle._summonCounter++}`,
-          dbId: 123,
-          data: caster.data,
-          badges: [],
-          gridX: freeCell.gridX,
-          gridY: freeCell.gridY,
-          initialGridX: freeCell.gridX,
-          initialGridY: freeCell.gridY,
-          placedRound: caster.placedRound,
-          team: caster.team,
-          hp: Math.round(caster.data.hp * 0.2),
-          maxHp: Math.round(caster.data.hp * 0.2),
-          atk: Math.round(caster.data.atk * 0.2),
-          ats: caster.data.ats,
-          range: caster.data.range,
-          speed: caster.data.speed,
-          shield: 0,
-          skillCdProgress: 0,
-          isDead: false,
-          statusEffects: [],
-          state: 'idle'
-        };
+        const monkeyData = DB_MONSTERS.find(m => m.id === 126);
+        if (monkeyData) {
+          const miniMonkey: PlacedMonster = {
+            id: `summon_${caster.id}_${battle._summonCounter++}`,
+            dbId: 126,
+            data: monkeyData,
+            badges: [],
+            gridX: freeCell.gridX,
+            gridY: freeCell.gridY,
+            initialGridX: freeCell.gridX,
+            initialGridY: freeCell.gridY,
+            placedRound: caster.placedRound,
+            team: caster.team,
+            hp: monkeyData.hp,
+            maxHp: monkeyData.hp,
+            atk: monkeyData.atk,
+            ats: monkeyData.ats,
+            range: monkeyData.range,
+            speed: monkeyData.speed,
+            shield: 0,
+            skillCdProgress: 0,
+            isDead: false,
+            statusEffects: [],
+            state: 'idle'
+          };
 
-        battle._monsters.push(miniMonkey);
-        gameEngine.boardMonsters.push(miniMonkey);
-        battle._gridOccupation[freeCell.gridX][freeCell.gridY] = miniMonkey;
+          battle._monsters.push(miniMonkey);
+          gameEngine.boardMonsters.push(miniMonkey);
+          battle._gridOccupation[freeCell.gridX][freeCell.gridY] = miniMonkey;
 
-        const scrPos = gridToScreen(freeCell.gridX, freeCell.gridY);
-        battle.screenPositions.set(miniMonkey.id, { ...scrPos });
-        battle._targetPositions.set(miniMonkey.id, { ...scrPos });
-        battle._attackTimers.set(miniMonkey.id, 1 / miniMonkey.ats);
+          const scrPos = gridToScreen(freeCell.gridX, freeCell.gridY);
+          battle.screenPositions.set(miniMonkey.id, { ...scrPos });
+          battle._targetPositions.set(miniMonkey.id, { ...scrPos });
+          battle._attackTimers.set(miniMonkey.id, 1 / miniMonkey.ats);
 
-        vfx.spawnParticle(scrPos.x, scrPos.y, HIT.summonFlash);
+          vfx.spawnParticle(scrPos.x, scrPos.y, HIT.summonFlash);
+        }
       }
     }
     return true;

@@ -9,6 +9,9 @@ buttleImage.src = `buttle.png?v=${Date.now()}`;
 export const tntImage = new Image();
 tntImage.src = `tnt.png?v=${Date.now()}`;
 
+export const flImage = new Image();
+flImage.src = `fl.png?v=${Date.now()}`;
+
 export interface FloatingText {
   x: number;
   y: number;
@@ -252,7 +255,8 @@ export class VfxManager {
   public applyBulletSprite(pr: Projectile, dbId: number): void {
     const sprite = BULLET_SPRITES[dbId];
     if (sprite) {
-      pr.imageRect = { img: buttleImage, ...sprite, rotate: true };
+      const img = dbId === 126 ? flImage : buttleImage;
+      pr.imageRect = { img, ...sprite, rotate: true };
     }
   }
 

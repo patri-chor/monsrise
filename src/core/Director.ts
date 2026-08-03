@@ -71,8 +71,14 @@ export class Director {
   }
 
   private render(): void {
-    // Clear canvas
+    // Clear canvas（使用内部分辨率，在 scale 之前）
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // 设计分辨率 → Canvas 内部分辨率映射（1280/2556≈0.5, 590/1179≈0.5）
+    const sx = this.canvas.width / 2556;
+    const sy = this.canvas.height / 1179;
+    this.ctx.save();
+    this.ctx.scale(sx, sy);
 
     // 第 -1 层：背景粒子（献祭火焰等，在怪物之下）
     vfx.drawBackground(this.ctx);
@@ -93,6 +99,8 @@ export class Director {
 
     // 重置模式
     Sprite.drawMode = 'all';
+
+    this.ctx.restore();
   }
 
   private drawNode(node: Node): void {

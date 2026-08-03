@@ -19,18 +19,21 @@ import { networkManager } from './net/NetworkManager';
 const _IMG_VERSION = Date.now();
 const ASSETS_TO_LOAD = {
   spritesheet: `all.png?v=${_IMG_VERSION}`,
-  ground: `ground.png?v=${_IMG_VERSION}`,
-  bench: `bench.png?v=${_IMG_VERSION}`,
-  editorBg: `editor.png?v=${_IMG_VERSION}`,
-  detailsBg: `details.png?v=${_IMG_VERSION}`,
-  readyBtn: `complete.png?v=${_IMG_VERSION}`,
-  bgSky: `background/sky.png?v=${_IMG_VERSION}`,
+  bgSky: `background/sky.webp?v=${_IMG_VERSION}`,
   bgYun1: `background/yun1.png?v=${_IMG_VERSION}`,
-  bgYun2: `background/yun2png.png?v=${_IMG_VERSION}`,
-  bgYun3: `background/yun3.png?v=${_IMG_VERSION}`,
-  bgYun4: `background/yun4.png?v=${_IMG_VERSION}`,
-  bgShip: `background/ship.png?v=${_IMG_VERSION}`
+  bgYun2: `background/yun2.png?v=${_IMG_VERSION}`,
 };
+
+const frameImages = new Map<number, HTMLImageElement>();
+function getFrameImage(dbId: number): HTMLImageElement {
+  let img = frameImages.get(dbId);
+  if (!img) {
+    img = new Image();
+    img.src = `frames/${dbId}.png`;
+    frameImages.set(dbId, img);
+  }
+  return img;
+}
 
 const loadedImages: Record<string, HTMLImageElement> = {};
 
@@ -102,7 +105,8 @@ class BoardSyncComponent extends Component {
     const activeIds = new Set<string>();
 
     for (const m of gameEngine.boardMonsters) {
-      if (m.isDead && !(m as any).resurrecting) continue;
+      const shouldRenderDead = isBattle && m.isDead && !(m as any).resurrecting;
+      if (m.isDead && !(m as any).resurrecting && !shouldRenderDead) continue;
       
       activeIds.add(m.id);
 
@@ -110,25 +114,15 @@ class BoardSyncComponent extends Component {
       const hide = (m.placedRound === gameEngine.currentRound) && ((isP1 && m.gridX >= 6) || (isP2 && m.gridX < 5));
 
       let mNode = this._monsterNodes.get(m.id);
+      const baseScale = (8.5/10) * m.data.scale;
       if (!mNode) {
         // Create new Node for monster
         mNode = new Node(`Monster_${m.id}`);
-        const sprite = mNode.addComponent(Sprite);
-        
-        // Setup sprite texture coordinate clipping
-        sprite.setSprite(
-          loadedImages.spritesheet,
-          m.data.sx,
-          m.data.sy,
-          m.data.sw,
-          m.data.sh,
-          m.data.sw,
-          m.data.sh
-        );
+        mNode.addComponent(Sprite);
         
         // Melee facing P1 (faces right) or P2 (faces left) with 0.8 scale to fit cell
-        mNode.scaleX = (m.gridX >= 6) ? -0.9 : 0.9;
-        mNode.scaleY = 0.9;
+        mNode.scaleX = (m.gridX >= 6) ? -baseScale : baseScale;
+        mNode.scaleY = baseScale;
 
         this._monstersContainer.addChild(mNode);
         this._monsterNodes.set(m.id, mNode);
@@ -137,37 +131,59 @@ class BoardSyncComponent extends Component {
       // Update active state based on fog of war and noSprite status
       mNode.active = !hide && !(m as any).noSprite;
 
+      // 死亡下落动画计算 (500ms 沉降半个格子高度约 63px)
+      let dy = 0;
+      if (m.isDead) {
+        if (!(m as any).deathTime) {
+          (m as any).deathTime = Date.now();
+        }
+        const elapsed = Date.now() - (m as any).deathTime;
+        const progress = Math.min(1, elapsed / 200);
+        dy = progress * 20;
+      } else {
+        (m as any).deathTime = undefined;
+        (m as any)._deadFacing = undefined;
+      }
+
       // Update position and flip scaleX dynamically
       if (isBattle) {
         // Use smooth interpolated positions from BattleSystem during combat
         const smoothPos = battleSystem.screenPositions.get(m.id);
         const targetPos = (battleSystem as any)._targetPositions.get(m.id);
         if (smoothPos) {
-          mNode.position = { x: smoothPos.x, y: smoothPos.y };
+          mNode.position = { x: smoothPos.x, y: smoothPos.y + dy - 20 };
         }
 
-        if ((m as any)._chargeDir !== undefined) {
+        if (m.isDead) {
+          // 尸体固定死亡瞬间朝向，不随敌人移动改变；不做技能旋转
+          if (!(m as any)._deadFacing) {
+            (m as any)._deadFacing = mNode.scaleX < 0 ? -1 : 1;
+          }
+          mNode.scaleX = (m as any)._deadFacing * baseScale;
+          mNode.scaleY = baseScale;
+          mNode.rotation = 0;
+        } else if ((m as any)._chargeDir !== undefined) {
           // 冲锋朝向：强制锁定冲锋方向
-          mNode.scaleX = (m as any)._chargeDir === 1 ? -0.9 : 0.9;
-          mNode.scaleY = 0.9;
+          mNode.scaleX = (m as any)._chargeDir === 1 ? -baseScale : baseScale;
+          mNode.scaleY = baseScale;
         } else if (smoothPos && targetPos && Math.abs(targetPos.x - smoothPos.x) > 1) {
           // Face the direction of active movement
-          mNode.scaleX = (targetPos.x > smoothPos.x) ? 0.9 : -0.9;
-          mNode.scaleY = 0.9;
+          mNode.scaleX = (targetPos.x > smoothPos.x) ? baseScale : -baseScale;
+          mNode.scaleY = baseScale;
         } else {
           // Face the closest enemy
           const enemy = (battleSystem as any).findClosestEnemy(m);
           if (enemy) {
-            mNode.scaleX = (enemy.gridX > m.gridX) ? 0.9 : -0.9;
-            mNode.scaleY = 0.9;
+            mNode.scaleX = (enemy.gridX > m.gridX) ? baseScale : -baseScale;
+            mNode.scaleY = baseScale;
           } else {
-            mNode.scaleX = (m.team === 1) ? 0.9 : -0.9;
-            mNode.scaleY = 0.9;
+            mNode.scaleX = (m.team === 1) ? baseScale : -baseScale;
+            mNode.scaleY = baseScale;
           }
         }
 
         // Skill rotation（肃清哥、见习骑士：反方向蓄力 + 加速减速一圈）
-        if (state === 'BATTLE' && (m as any)._rotationDuration && (m as any)._rotationRemaining > 0) {
+        if (state === 'BATTLE' && !m.isDead && (m as any)._rotationDuration && (m as any)._rotationRemaining > 0) {
           const total = (m as any)._rotationDuration as number;
           const remaining = (m as any)._rotationRemaining as number;
           const elapsed = total - remaining;
@@ -209,9 +225,9 @@ class BoardSyncComponent extends Component {
       } else {
         // Use grid cell center positions during prep
         const gridPos = gridToScreen(m.gridX, m.gridY);
-        mNode.position = { x: gridPos.x, y: gridPos.y };
-        mNode.scaleX = (m.team === 2) ? -0.9 : 0.9;
-        mNode.scaleY = 0.9;
+        mNode.position = { x: gridPos.x, y: gridPos.y + dy - 20 };
+        mNode.scaleX = (m.team === 2) ? -baseScale : baseScale;
+        mNode.scaleY = baseScale;
         mNode.rotation = 0;
       }
 
@@ -234,8 +250,48 @@ class BoardSyncComponent extends Component {
         } else {
           sprite.hp = null;
         }
+
+        // 动态计算序列帧 sx/sy/isDeadBody 并更新 Sprite 贴图
+        const frameImg = getFrameImage(m.dbId);
+
+        // 统一所有怪兽的单帧大小为 40x40 像素
+        const fw = 40;
+        const fh = 40;
+        const displayW = m.data.sw;
+        const displayH = m.data.sh;
+
+        let sx = 0;
+        let sy = 0;
+        let isDeadBody = false;
+        if (m.isDead) {
+          sy = fh * 2;
+          sx = 0;
+          isDeadBody = true;
+        } else {
+          if (m.state === 'walk') {
+            sy = fh;
+            const frameIndex = Math.floor(Date.now() / 100) % 8;
+            sx = frameIndex * fw;
+          } else {
+            sy = 0;
+            const speed = (m.state === 'attack' || m.state === 'skill') ? 60 : 120;
+            const frameIndex = Math.floor(Date.now() / speed) % 8;
+            sx = frameIndex * fw;
+          }
+        }
+        sprite.isDeadBody = isDeadBody;
+        sprite.setSprite(frameImg, sx, sy, fw, fh, displayW, displayH);
       }
     }
+
+    // 排序：死亡尸体先绘制（最底层），活着的怪兽后绘制（顶层），尸体不遮挡活怪
+    const deadNodes: Node[] = [];
+    const aliveNodes: Node[] = [];
+    for (const c of this._monstersContainer.children) {
+      const sp = c.getComponent(Sprite);
+      (sp && sp.isDeadBody ? deadNodes : aliveNodes).push(c);
+    }
+    this._monstersContainer.children = [...deadNodes, ...aliveNodes];
 
     // Clean up nodes for monsters that were removed
     this._monsterNodes.forEach((node, id) => {
@@ -260,8 +316,8 @@ window.addEventListener('DOMContentLoaded', () => {
     registerAllBadges();
 
     // 1. Initialize Cocos-like Director
-    canvas.width = 2556;
-    canvas.height = 1179;
+    canvas.width = 1280;
+    canvas.height = 590;
     director.init(canvas);
 
     // Utility: apply scale+translate to a DOM element
@@ -293,6 +349,7 @@ window.addEventListener('DOMContentLoaded', () => {
       applyTransform(document.getElementById('uiOverlay'), baseWidth, baseHeight, scale, offsetX, offsetY);
       applyTransform(canvas, baseWidth, baseHeight, scale, offsetX, offsetY);
       applyTransform(document.getElementById('battleBgLayer'), baseWidth, baseHeight, scale, offsetX, offsetY);
+      applyTransform(document.getElementById('battleGroundLayer'), baseWidth, baseHeight, scale, offsetX, offsetY);
     }
     window.addEventListener('resize', resizeUI);
     resizeUI();
@@ -339,8 +396,10 @@ function lockOrientation(): void {
   }
 }
 
-/** 请求全屏（需用户手势触发），隐藏浏览器 UI 和状态栏 */
+/** 请求全屏（需用户手势触发），隐藏浏览器 UI 和状态栏。iOS 不支持，静默跳过 */
 export function requestFullscreen(): void {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) return;
   const el = document.documentElement;
   if (el.requestFullscreen) {
     el.requestFullscreen().catch(() => {});

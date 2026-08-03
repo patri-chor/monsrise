@@ -3,7 +3,6 @@ import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { uiManager } from './UIManager';
 import { requestFullscreen } from '../main';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
-import gsap from 'gsap';
 
 export class TeamEditorUI {
   private _container: HTMLDivElement;
@@ -15,11 +14,20 @@ export class TeamEditorUI {
   private _activeMonsterSelectIndex: number | null = null; // slot index to switch monster
   private _activeBadgeSelectIndex: number | null = null;   // badge index to change (0, 1, or 2)
   private _previewMonster: any = null;                      // monster data for right-side detail preview
+  private _pendingBadgeIds: number[] = [];                   // 徽章面板中临时选中的徽章 ID
+  private _dragSourceIndex: number | null = null;              // 拖拽交换的源槽位索引
+  // 怪兽切换还原追踪
+  private _switchOriginSlotIndex: number = -1;                // 切换前槽位索引
+  private _switchOriginMonsterId: number = 0;                 // 切换前怪兽 ID
+  private _switchOriginBadgeIds: number[] = [];               // 切换前徽章 ID 列表
+  // 徽章选择还原追踪
+  private _badgeOriginIds: number[] = [];                     // 徽章面板打开前原始徽章列表
+  private _badgeChanged: boolean = false;                     // 徽章面板中是否有修改
 
   // Random cloud assets
   private _randomYunFar: string = '';
   private _randomYunNear: string = '';
-  private _chosenClouds: { idx: number; top: number; duration: number; delay: number }[] = [];
+  private _chosenClouds: { idx: number; top: number; duration: number; delay: number; scale: number }[] = [];
   private _bgRendered: boolean = false;
 
   constructor(container: HTMLDivElement) {
@@ -31,7 +39,7 @@ export class TeamEditorUI {
   private initRandomClouds(): void {
     const cloudPool = [
       '/background/yun1.png',
-      '/background/yun2png.png',
+      '/background/yun2.png',
       '/background/yun3.png'
     ];
     // Random select far layer
@@ -51,9 +59,10 @@ export class TeamEditorUI {
       const cloudIdx = availableIndices.splice(rIdx, 1)[0];
       this._chosenClouds.push({
         idx: cloudIdx,
-        top: 50 + Math.random() * 250,
+        top: 50 + Math.random() * 550,
         duration: 90 + Math.random() * 90,
-        delay: -Math.random() * 90
+        delay: Math.random() * 90,
+        scale: 1.5 + Math.random() * 0.3
       });
     }
   }
@@ -73,11 +82,71 @@ export class TeamEditorUI {
       const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
       const badge = DB_BADGES.find(b => b.id === badgeId);
       const equippedClass = badge ? 'equipped' : '';
-      const imgHtml = badge ? renderBadgeImg(badge.id, 64) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
+      const imgHtml = badge ? renderBadgeImg(badge.id, 115) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
       return `<div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">${imgHtml}</div>`;
     }).join('');
 
     detailCard.innerHTML = renderDetailCard(monster, { badgesHtml }, getSkillDescription(monster));
+    detailCard.classList.add('visible');
+
+    // 重新绑定徽章槽位点击事件（innerHTML 替换后旧事件已失效）
+    const badgeSlots = detailCard.querySelectorAll('.details-badge-slot-frame');
+    badgeSlots.forEach(slot => {
+      slot.addEventListener('click', () => {
+        const badgeIdx = parseInt(slot.getAttribute('data-badge-slot') || '0', 10);
+        // 保存原始徽章列表 + 自动卸下当前徽章
+        const team = gameEngine.activeTeam;
+        const s = team[this._selectedSlotIndex];
+        this._badgeOriginIds = s?.badgeIds ? [...s.badgeIds] : [];
+        this._badgeChanged = false;
+        if (s?.badgeIds?.[badgeIdx]) {
+          s.badgeIds[badgeIdx] = 0;
+          gameEngine.saveTeams();
+        }
+        this._activeBadgeSelectIndex = badgeIdx;
+        this.render();
+      });
+    });
+  }
+
+  // 实时更新详情卡徽章槽位（不重建整个DOM）
+  private refreshDetailBadges(): void {
+    const slots = document.querySelectorAll('.details-badge-slot-frame');
+    const monster = this._previewMonster;
+    const slotCount = monster?.cost === 4 ? 3 : 2;
+    for (let i = 0; i < slotCount; i++) {
+      const badgeId = this._pendingBadgeIds[i] || 0;
+      const badge = DB_BADGES.find(b => b.id === badgeId);
+      const slot = slots[i] as HTMLElement;
+      if (!slot) continue;
+      if (badge) {
+        slot.classList.add('equipped');
+        slot.innerHTML = renderBadgeImg(badge.id, 115);
+      } else {
+        slot.classList.remove('equipped');
+        slot.innerHTML = '<span style="font-size:24px; color:#5a5a5a;">+</span>';
+      }
+    }
+  }
+
+  /** 局部切换选中的怪兽槽位（仅更新 data-selected 属性 + 详情卡，不重建 DOM） */
+  private _selectSlot(index: number, monster: any): void {
+    this._selectedSlotIndex = index;
+    this._previewMonster = monster;
+
+    // 更新 squad-cell 的 data-selected 属性
+    const cells = this._container.querySelectorAll('.squad-cell');
+    cells.forEach(c => {
+      const cellIndex = parseInt(c.getAttribute('data-index') || '0', 10);
+      if (cellIndex === index && monster) {
+        c.setAttribute('data-selected', 'true');
+      } else {
+        c.removeAttribute('data-selected');
+      }
+    });
+
+    // 局部刷新右侧详情卡
+    this.updateDetailsCard(monster);
   }
 
   public render(): void {
@@ -103,11 +172,13 @@ export class TeamEditorUI {
         
         <!-- Separate cloud sprites from yun4.png -->
         ${this._chosenClouds.map(c => `
-          <div class="cloud-sprite cloud-${c.idx}" style="
-            top: ${c.top}px;
-            animation: floatCloud ${c.duration}s linear infinite;
-            animation-delay: ${c.delay}s;
-          "></div>
+          <div style="position: absolute; top: ${c.top}px; left: 0; transform: scale(${c.scale}); transform-origin: center center; pointer-events: none; z-index: 2;">
+            <div class="cloud-sprite cloud-${c.idx}" style="
+              position: static;
+              animation: floatCloud ${c.duration}s linear infinite;
+              animation-delay: ${c.delay}s;
+            "></div>
+          </div>
         `).join('')}
 
         <div class="ship-enter-wrapper">
@@ -150,15 +221,6 @@ export class TeamEditorUI {
       if (this._activeMonsterSelectIndex !== null || this._activeBadgeSelectIndex !== null) {
         editorEl.classList.add('monster-selecting');
         this.afterRenderModal();
-        
-        const panel = this._container.querySelector('.monster-select-panel, .badge-select-panel') as HTMLElement | null;
-        if (panel) {
-          panel.classList.add('open');
-          gsap.fromTo(panel,
-            { y: 1200 },
-            { y: 0, duration: 0.5, ease: 'power2.out' }
-          );
-        }
       } else {
         editorEl.classList.remove('monster-selecting');
       }
@@ -189,9 +251,9 @@ export class TeamEditorUI {
             ${activeTeam.map((slot: TeamSlot, index: number) => {
               const monster = DB_MONSTERS.find(m => m.id === slot.monsterId);
               return `
-                <div class="squad-cell" data-index="${index}" ${index === this._selectedSlotIndex ? 'data-selected="true"' : ''}>
+                <div class="squad-cell" data-index="${index}" ${monster ? 'draggable="true"' : ''} ${index === this._selectedSlotIndex && this._previewMonster ? 'data-selected="true"' : ''}>
                   ${monster ? `
-                    ${renderSpriteImg(monster.sx, monster.sy, monster.sw, monster.sh, { transform: 'scale(1.2)' })}
+                    ${renderSpriteImg(monster.sx, monster.sy, monster.sw, monster.sh, { transform: `scale(${1.2 * monster.scale})` })}
                     <div class="monster-switch-btn" data-index="${index}"></div>
                   ` : `
                     <div class="monster-add-btn" data-index="${index}" style="font-size: 32px; color: #5a3c24; font-family: 'Press Start 2P', 'Zpix', monospace; opacity: 0.6;">＋</div>
@@ -211,7 +273,7 @@ export class TeamEditorUI {
         </div>
 
         <!-- Right Panel: Monster details card -->
-        <div class="details-card" style="${this._previewMonster ? 'z-index: 101;' : ''}">
+        <div class="details-card${this._previewMonster ? ' visible' : ''}" style="${this._previewMonster ? 'z-index: 31;' : ''}">
           ${renderDetailCard(
             selectedMonster,
             {
@@ -221,7 +283,7 @@ export class TeamEditorUI {
                   const badgeId = (activeSlot && activeSlot.badgeIds) ? activeSlot.badgeIds[badgeIdx] : undefined;
                   const badge = DB_BADGES.find(b => b.id === badgeId);
                   const equippedClass = badge ? 'equipped' : '';
-                  const imgHtml = badge ? renderBadgeImg(badge.id, 64) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
+                  const imgHtml = badge ? renderBadgeImg(badge.id, 115) : '<span style="font-size:24px; color:#5a5a5a;">+</span>';
                   return `<div class="details-badge-slot-frame ${equippedClass}" data-badge-slot="${badgeIdx}">${imgHtml}</div>`;
                 }).join('');
               })(),
@@ -239,31 +301,8 @@ export class TeamEditorUI {
     `;
 
     this.bindEvents();
-    if (this._activeMonsterSelectIndex !== null) {
+    if (this._activeMonsterSelectIndex !== null || this._activeBadgeSelectIndex !== null) {
       document.getElementById('teamEditor')?.classList.add('monster-selecting');
-      setTimeout(() => {
-        const modal = this._container.querySelector('.monster-select-panel') as HTMLElement | null;
-        if (modal) {
-          modal.classList.add('open');
-          gsap.fromTo(modal,
-            { y: 1200, opacity: 1 },
-            { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
-          );
-        }
-      }, 50);
-    }
-    if (this._activeBadgeSelectIndex !== null) {
-      document.getElementById('teamEditor')?.classList.add('monster-selecting');
-      setTimeout(() => {
-        const modal = this._container.querySelector('.badge-select-panel') as HTMLElement | null;
-        if (modal) {
-          modal.classList.add('open');
-          gsap.fromTo(modal,
-            { y: 1200, opacity: 1 },
-            { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
-          );
-        }
-      }, 50);
     }
     this.afterRenderModal();
   }
@@ -276,11 +315,13 @@ export class TeamEditorUI {
         <div class="bg-layer yun layer-far" style="background-image: url('${this._randomYunFar}');"></div>
         <div class="bg-layer yun layer-near" style="background-image: url('${this._randomYunNear}');"></div>
         ${this._chosenClouds.map(c => `
-          <div class="cloud-sprite cloud-${c.idx}" style="
-            top: ${c.top}px;
-            animation: floatCloud ${c.duration}s linear infinite;
-            animation-delay: ${c.delay}s;
-          "></div>
+          <div style="position: absolute; top: ${c.top}px; left: 0; transform: scale(${c.scale}); transform-origin: center center; pointer-events: none; z-index: 2;">
+            <div class="cloud-sprite cloud-${c.idx}" style="
+              position: static;
+              animation: floatCloud ${c.duration}s linear infinite;
+              animation-delay: ${c.delay}s;
+            "></div>
+          </div>
         `).join('')}
       </div>
       <div class="opening-screen">
@@ -370,8 +411,7 @@ export class TeamEditorUI {
         if (slot && slot.monsterId > 0) {
           const monster = DB_MONSTERS.find(m => m.id === slot.monsterId);
           if (monster) {
-            this._previewMonster = monster;
-            this.render();
+            this._selectSlot(index, monster);
           }
         } else {
           // Empty slot: open monster selector directly
@@ -381,6 +421,58 @@ export class TeamEditorUI {
           this.render();
         }
       });
+
+      // Drag swap: dragstart — mark source slot
+      c.addEventListener('dragstart', ((e: DragEvent) => {
+        const activeTeam = gameEngine.activeTeam;
+        const slot = activeTeam[index];
+        if (!slot || slot.monsterId <= 0) {
+          e.preventDefault();
+          return;
+        }
+        this._dragSourceIndex = index;
+        c.classList.add('dragging');
+        e.dataTransfer!.effectAllowed = 'move';
+        e.dataTransfer!.setData('text/plain', String(index));
+      }) as EventListener);
+
+      // dragover — allow drop, highlight target
+      c.addEventListener('dragover', ((e: DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer!.dropEffect = 'move';
+        c.classList.add('drag-over');
+      }) as EventListener);
+
+      c.addEventListener('dragleave', () => {
+        c.classList.remove('drag-over');
+      });
+
+      // drop — swap monsters
+      c.addEventListener('drop', ((e: DragEvent) => {
+        e.preventDefault();
+        c.classList.remove('drag-over');
+        if (this._dragSourceIndex === null) return;
+        const sourceIdx = this._dragSourceIndex;
+        const targetIdx = index;
+        if (sourceIdx === targetIdx) return;
+
+        const team = gameEngine.activeTeam;
+        const temp: TeamSlot = { ...team[sourceIdx] };
+        team[sourceIdx] = { ...team[targetIdx] };
+        team[targetIdx] = temp;
+
+        gameEngine.saveTeams();
+        this._dragSourceIndex = null;
+        this._previewMonster = null;
+        this.render();
+      }) as EventListener);
+
+      // dragend — cleanup
+      c.addEventListener('dragend', () => {
+        c.classList.remove('dragging');
+        document.querySelectorAll('.squad-cell').forEach(cell => cell.classList.remove('drag-over'));
+        this._dragSourceIndex = null;
+      });
     });
 
     // 🔄 Switch and ＋ Add buttons: trigger monster selection panel directly
@@ -389,7 +481,15 @@ export class TeamEditorUI {
       btn.addEventListener('click', (e) => {
         e.stopPropagation(); // Avoid triggering cell click detail updates
         const index = parseInt(btn.getAttribute('data-index') || '0', 10);
+        const activeTeam = gameEngine.activeTeam;
+        const slot = activeTeam[index];
+        // 保存原始状态用于面板关闭时还原
+        this._switchOriginSlotIndex = index;
+        this._switchOriginMonsterId = slot?.monsterId || 0;
+        this._switchOriginBadgeIds = slot?.badgeIds ? [...slot.badgeIds] : [];
+        // 清除选中状态
         this._selectedSlotIndex = index;
+        this._previewMonster = null;
         this._activeMonsterSelectIndex = index;
         this.render();
       });
@@ -400,6 +500,15 @@ export class TeamEditorUI {
     badgeSlots.forEach(slot => {
       slot.addEventListener('click', () => {
         const badgeIdx = parseInt(slot.getAttribute('data-badge-slot') || '0', 10);
+        // 保存原始徽章列表 + 自动卸下当前徽章
+        const team = gameEngine.activeTeam;
+        const s = team[this._selectedSlotIndex];
+        this._badgeOriginIds = s?.badgeIds ? [...s.badgeIds] : [];
+        this._badgeChanged = false;
+        if (s?.badgeIds?.[badgeIdx]) {
+          s.badgeIds[badgeIdx] = 0;
+          gameEngine.saveTeams();
+        }
         this._activeBadgeSelectIndex = badgeIdx;
         this.render();
       });
@@ -408,60 +517,75 @@ export class TeamEditorUI {
     // Bottom Action Game Mode Buttons
     const experimentalBtn = document.getElementById('lobbyExperimentalModeBtn');
     experimentalBtn?.addEventListener('click', () => {
-      // Transition to experimental mode prep left
-      gameEngine.state = 'PREPARATION_LEFT';
-      gameEngine.resetBoardForNextRound();
-      uiManager.syncStateWithUI();
+      this._startBattleTransition(() => {
+        gameEngine.state = 'PREPARATION_LEFT';
+        gameEngine.resetBoardForNextRound();
+        uiManager.syncStateWithUI();
+      });
     });
 
     const aiBtn = document.getElementById('lobbyAiModeBtn');
     aiBtn?.addEventListener('click', () => {
-      // AI Battle mode: generate AI team and start preparation
-      const ai = new BattleAI();
-      ai.setDifficulty('normal');
-      const aiHand: AICard[] = DB_MONSTERS.map(m => ({
-        monsterId: m.id,
-        badgeIds: []
-      }));
-      const aiTeamResult = ai.buildTeam(aiHand);
+      this._startBattleTransition(() => {
+        const ai = new BattleAI();
+        ai.setDifficulty('normal');
+        const aiHand: AICard[] = DB_MONSTERS.filter(m => !m.isSummon).map(m => ({
+          monsterId: m.id,
+          badgeIds: []
+        }));
+        const aiTeamResult = ai.buildTeam(aiHand);
 
-      // Copy player's selected team to teams[0]
-      gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
-        monsterId: s.monsterId,
-        badgeIds: [...s.badgeIds]
-      }));
+        // Copy player's selected team to teams[0]
+        gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+          monsterId: s.monsterId,
+          badgeIds: [...s.badgeIds]
+        }));
 
-      const aiTeamSlots: { monsterId: number; badgeIds: number[] }[] = aiTeamResult.cards.map(
-        (m: { monsterId: number; badgeIds: number[] }) => ({
-          monsterId: m.monsterId,
-          badgeIds: m.badgeIds
-        })
-      );
-      while (aiTeamSlots.length < 8) {
-        aiTeamSlots.push({ monsterId: 0, badgeIds: [] });
-      }
-      
-      gameEngine.teams[1] = aiTeamSlots;
-      (gameEngine as any)._aiInstance = ai;
-      gameEngine.mode = 'ai';
-      gameEngine.state = 'PREPARATION_LEFT';
-      gameEngine.resetBoardForNextRound();
-      uiManager.syncStateWithUI();
+        const aiTeamSlots: { monsterId: number; badgeIds: number[] }[] = aiTeamResult.cards.map(
+          (m: { monsterId: number; badgeIds: number[] }) => ({
+            monsterId: m.monsterId,
+            badgeIds: m.badgeIds
+          })
+        );
+        while (aiTeamSlots.length < 8) {
+          aiTeamSlots.push({ monsterId: 0, badgeIds: [] });
+        }
+        
+        gameEngine.teams[1] = aiTeamSlots;
+        (gameEngine as any)._aiInstance = ai;
+        gameEngine.mode = 'ai';
+        gameEngine.state = 'PREPARATION_LEFT';
+        gameEngine.resetBoardForNextRound();
+        uiManager.syncStateWithUI();
+      });
     });
 
     const onlineBtn = document.getElementById('lobbyOnlineModeBtn');
     onlineBtn?.addEventListener('click', () => {
-      // Save current team to teams[0]
-      gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
-        monsterId: s.monsterId,
-        badgeIds: [...s.badgeIds]
-      }));
-      gameEngine.mode = 'online';
-      gameEngine.state = 'MATCH_LOBBY';
-      uiManager.syncStateWithUI();
+      this._startBattleTransition(() => {
+        gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+          monsterId: s.monsterId,
+          badgeIds: [...s.badgeIds]
+        }));
+        gameEngine.mode = 'online';
+        gameEngine.state = 'MATCH_LOBBY';
+        uiManager.syncStateWithUI();
+      });
     });
 
     // Online confirm button - no longer needed, flow handled in LobbyUI
+
+    // Click outside detail card → hide it
+    const hideDetailsOnOutsideClick = (e: MouseEvent) => {
+      if (!this._previewMonster) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('.squad-cell') || target.closest('.details-card') || target.closest('.details-badge-slot-frame') || target.closest('.monster-select-panel') || target.closest('.badge-select-panel')) {
+        return;
+      }
+      this._previewMonster = null;
+      this.render();
+    };
+    this._container.addEventListener('click', hideDetailsOnOutsideClick);
   }
 
 
@@ -472,19 +596,19 @@ export class TeamEditorUI {
     return `
       <div class="monster-select-panel">
         <div class="modal-grid-scroll">
-          ${DB_MONSTERS.map(m => {
+          ${DB_MONSTERS.filter(m => !m.isSummon).map(m => {
             const isSelected = activeTeam.some(slot => slot.monsterId === m.id);
             const activeClass = isSelected ? 'active' : '';
             return `
               <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-                ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(0.8)', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
+                ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(${0.8 * m.scale})', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
                 <div class="modal-monster-name">${m.name}</div>
                 <div class="modal-monster-cost">${m.cost} 费</div>
               </div>
             `;
           }).join('')}
         </div>
-        <button id="closeMonsterModalBtn" class="pixel-btn" style="width: 240px; height: 60px; font-size: 24px; position: absolute; top: 1020px;">返回</button>
+        <button id="closeMonsterModalBtn" style="background: transparent; border: none; color: #ededed; font-family: 'Press Start 2P', 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; left: 580px; top: 822px; width: 237px;">返回</button>
       </div>
     `;
   }
@@ -497,16 +621,9 @@ export class TeamEditorUI {
           ${(() => {
             const badgeCardsHtmls: string[] = [];
 
-            // Unequip card as index 0
-            const unequipCard = `
-              <div class="modal-badge-card" data-badge-id="0">
-                <div style="width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; border: 3px dashed #ff3333; border-radius: 50%; margin-bottom: 8px; box-sizing: border-box;">
-                  <span style="font-size: 36px; color: #ff3333;">×</span>
-                </div>
-                <div class="modal-badge-name" style="color: #ff3333; font-family: 'Press Start 2P', 'Zpix', monospace; font-size: 16px; text-shadow: 1px 1px 0px #000;">卸下徽章</div>
-              </div>
-            `;
-            badgeCardsHtmls.push(unequipCard);
+            // 初始化待选徽章列表：从当前怪兽已有徽章中复制
+            const currentBadgeIds = (activeSlot?.badgeIds || []).filter((id: number) => id > 0);
+            this._pendingBadgeIds = [...currentBadgeIds];
 
             const BADGE_GROUPS: number[][] = [
               [23, 8, 17, 6, 7, 11, 28, 30],   // 韧性、厚皮、大厨、回环、吸血、预防、加固、反应装甲
@@ -519,15 +636,15 @@ export class TeamEditorUI {
             BADGE_GROUPS.flat().forEach(id => groupedIds.add(id));
 
             const renderBadgeCard = (b: any): string => {
-              const isUsed = activeSlot && activeSlot.badgeIds.some((id: number, idx: number) => idx !== this._activeBadgeSelectIndex && id === b.id);
-              const cardStyle = isUsed ? 'opacity: 0.4; pointer-events: none; filter: grayscale(1);' : '';
-              const badgeHtml = renderBadgeImg(b.id, 100);
+              const isSelected = this._pendingBadgeIds.includes(b.id);
+              const badgeHtml = renderBadgeImg(b.id, 150);
               return `
-                <div class="modal-badge-card" data-badge-id="${b.id}" style="${cardStyle}">
-                  <div style="width: 100px; height: 100px; margin-bottom: 8px;">
-                    ${badgeHtml}
+                <div class="modal-badge-card${isSelected ? ' selected' : ''}" data-badge-id="${b.id}">
+                  ${badgeHtml}
+                  <div class="badge-tooltip">
+                    <div class="badge-tooltip-name">${b.name}</div>
+                    <div class="badge-tooltip-desc">${b.desc}</div>
                   </div>
-                  <div class="modal-badge-name">${b.name}</div>
                 </div>
               `;
             };
@@ -544,10 +661,10 @@ export class TeamEditorUI {
               }
             }
 
-            // Pack every 6 cards into a row
+            // Pack every 8 cards into a row
             const rows: string[] = [];
-            for (let i = 0; i < badgeCardsHtmls.length; i += 6) {
-              const chunk = badgeCardsHtmls.slice(i, i + 6);
+            for (let i = 0; i < badgeCardsHtmls.length; i += 8) {
+              const chunk = badgeCardsHtmls.slice(i, i + 8);
               rows.push(`
                 <div class="badge-row">
                   ${chunk.join('')}
@@ -557,7 +674,7 @@ export class TeamEditorUI {
             return rows.join('');
           })()}
         </div>
-        <button id="closeBadgeModalBtn" class="pixel-btn" style="width: 240px; height: 60px; font-size: 24px; align-self: center;">返回</button>
+        <button id="closeBadgeModalBtn" style="background: transparent; border: none; color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; top: 823px; left: 575px; width: 250px;">返回</button>
       </div>
     `;
   }
@@ -571,88 +688,99 @@ export class TeamEditorUI {
     const closeMonster = document.getElementById('closeMonsterModalBtn');
     if (closeMonster) {
       closeMonster.addEventListener('click', () => {
-        const modal = this._container.querySelector('.monster-select-panel');
-        document.getElementById('teamEditor')?.classList.remove('monster-selecting');
-        if (modal) {
-          gsap.to(modal, {
-            y: 1200, duration: 0.6, ease: 'power2.in',
-            onComplete: () => {
-              this._previewMonster = null;
-              this._activeMonsterSelectIndex = null;
-              this.render();
-            }
-          });
-        } else {
-          this._previewMonster = null;
-          this._activeMonsterSelectIndex = null;
-          this.render();
+        // 如果原始怪兽在面板中被卸下（用户点了同一只怪兽卸下后又关闭面板），还原
+        if (this._switchOriginMonsterId > 0 && this._switchOriginSlotIndex >= 0) {
+          const team = gameEngine.activeTeam;
+          const originSlot = team[this._switchOriginSlotIndex];
+          if (originSlot?.monsterId === 0) {
+            originSlot.monsterId = this._switchOriginMonsterId;
+            originSlot.badgeIds = [...this._switchOriginBadgeIds];
+            gameEngine.saveTeams();
+          }
         }
+        this._switchOriginMonsterId = 0;
+        this._switchOriginSlotIndex = -1;
+        this._switchOriginBadgeIds = [];
+        document.getElementById('teamEditor')?.classList.remove('monster-selecting');
+        this._activeMonsterSelectIndex = null;
+        this.render();
       });
     }
 
     const closeBadge = document.getElementById('closeBadgeModalBtn');
     if (closeBadge) {
       closeBadge.addEventListener('click', () => {
-        const panel = this._container.querySelector('.badge-select-panel');
-        document.getElementById('teamEditor')?.classList.remove('monster-selecting');
-        if (panel) {
-          gsap.to(panel, {
-            y: 1200, duration: 0.6, ease: 'power2.in',
-            onComplete: () => {
-              this._previewMonster = null;
-              this._activeBadgeSelectIndex = null;
-              this.render();
-            }
-          });
-        } else {
-          this._previewMonster = null;
-          this._activeBadgeSelectIndex = null;
-          this.render();
+        // 如果面板中没有主动修改徽章，还原原始徽章列表
+        if (!this._badgeChanged) {
+          const team = gameEngine.activeTeam;
+          const s = team[this._selectedSlotIndex];
+          if (s) {
+            s.badgeIds = [...this._badgeOriginIds];
+            gameEngine.saveTeams();
+          }
         }
+        document.getElementById('teamEditor')?.classList.remove('monster-selecting');
+        this._activeBadgeSelectIndex = null;
+        this._pendingBadgeIds = [];
+        this.render();
       });
     }
 
-    // Badge card: single click selects (equips) and slides out
+    // Badge card: single click selects (equips)
+    // Mobile long-press shows tooltip
     const badgeCards = document.querySelectorAll('.modal-badge-card');
     badgeCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const badgeId = parseInt(card.getAttribute('data-badge-id') || '0', 10);
-        if (this._activeBadgeSelectIndex !== null) {
-          const activeSlot = gameEngine.activeTeam[this._selectedSlotIndex];
-          if (activeSlot) {
-            if (badgeId === 0) {
-              // Unequip
-              activeSlot.badgeIds[this._activeBadgeSelectIndex] = 0;
-              activeSlot.badgeIds = activeSlot.badgeIds.filter(id => id > 0);
-            } else {
-              const alreadyHas = activeSlot.badgeIds.some((id, idx) => idx !== this._activeBadgeSelectIndex && id === badgeId);
-              if (alreadyHas) {
-                alert("一个怪兽不能选择两个相同的徽章！");
-                return;
-              }
-              activeSlot.badgeIds[this._activeBadgeSelectIndex] = badgeId;
-            }
-            gameEngine.saveTeams();
+      let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+      let isLongPress = false;
 
-            // Slide out panel using GSAP
-            const panel = this._container.querySelector('.badge-select-panel');
-            document.getElementById('teamEditor')?.classList.remove('monster-selecting');
-            if (panel) {
-              gsap.to(panel, {
-                y: 1200, duration: 0.6, ease: 'power2.in',
-                onComplete: () => {
-                  this._previewMonster = null;
-                  this._activeBadgeSelectIndex = null;
-                  this.render();
-                }
-              });
-            } else {
-              this._previewMonster = null;
-              this._activeBadgeSelectIndex = null;
-              this.render();
-            }
+      card.addEventListener('touchstart', () => {
+        isLongPress = false;
+        longPressTimer = setTimeout(() => {
+          isLongPress = true;
+          card.querySelector('.badge-tooltip')?.classList.add('show');
+        }, 500);
+      }, { passive: true });
+
+      card.addEventListener('touchend', () => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+        card.querySelector('.badge-tooltip')?.classList.remove('show');
+      });
+
+      card.addEventListener('touchmove', () => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+        card.querySelector('.badge-tooltip')?.classList.remove('show');
+      }, { passive: true });
+
+      card.addEventListener('click', () => {
+        if (isLongPress) return; // long press → don't trigger click
+        this._badgeChanged = true;
+        const badgeId = parseInt(card.getAttribute('data-badge-id') || '0', 10);
+        if (badgeId === 0) return; // 卸下卡已删除
+        
+        const idx = this._pendingBadgeIds.indexOf(badgeId);
+        if (idx >= 0) {
+          this._pendingBadgeIds.splice(idx, 1);
+        } else {
+          const activeSlot = gameEngine.activeTeam[this._selectedSlotIndex];
+          const monster = this._previewMonster || DB_MONSTERS.find(m => m.id === activeSlot?.monsterId);
+          const maxSlots = (monster && monster.cost === 4) ? 3 : 2;
+          if (this._pendingBadgeIds.length >= maxSlots) {
+            return; // 已达上限，静默忽略
           }
+          this._pendingBadgeIds.push(badgeId);
         }
+        // 实时提交到数据并刷新详情卡
+        const slot = gameEngine.activeTeam[this._selectedSlotIndex];
+        if (slot) {
+          slot.badgeIds = [...this._pendingBadgeIds];
+          const m = this._previewMonster || DB_MONSTERS.find(m => m.id === slot.monsterId);
+          const max = (m && m.cost === 4) ? 3 : 2;
+          while (slot.badgeIds.length < max) slot.badgeIds.push(0);
+          gameEngine.saveTeams();
+          this.refreshDetailBadges();
+        }
+        // 更新面板内该卡片的选中态视觉效果
+        card.classList.toggle('selected', this._pendingBadgeIds.includes(badgeId));
       });
     });
   }
@@ -662,12 +790,12 @@ export class TeamEditorUI {
     if (!gridScroll) return;
 
     const activeTeam = gameEngine.activeTeam;
-    gridScroll.innerHTML = DB_MONSTERS.map(m => {
+    gridScroll.innerHTML = DB_MONSTERS.filter(m => !m.isSummon).map(m => {
       const isSelected = activeTeam.some(slot => slot.monsterId === m.id);
       const activeClass = isSelected ? 'active' : '';
       return `
         <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-          ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(0.8)', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
+          ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(${0.8 * m.scale})', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
           <div class="modal-monster-name">${m.name}</div>
           <div class="modal-monster-cost">${m.cost} 费</div>
         </div>
@@ -680,7 +808,8 @@ export class TeamEditorUI {
   private bindMonsterCardEvents(): void {
     const monsterCards = this._container.querySelectorAll('.modal-monster-card');
     monsterCards.forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        e.stopPropagation(); // 防止refreshMonsterGrid销毁DOM后冒泡触发外部点击隐藏详情卡
         const id = parseInt(card.getAttribute('data-monster-id') || '0', 10);
         const monster = DB_MONSTERS.find(m => m.id === id) || null;
         if (!monster) return;
@@ -713,7 +842,7 @@ export class TeamEditorUI {
             gameEngine.saveTeams();
             this.refreshMonsterGrid();
           } else {
-            alert("队伍已满！请先点击已选中的怪兽将其撤下，再进行选择。");
+            // 队伍已满，点击无效（静默忽略）
           }
         }
       });
@@ -726,5 +855,20 @@ export class TeamEditorUI {
     if (this._activeMonsterSelectIndex !== null || this._activeBadgeSelectIndex !== null) {
       this.afterRenderModal();
     }
+  }
+
+  private _startBattleTransition(callback: () => void) {
+    const decoFrame = this._container.querySelector('.fullscreen-deco-frame');
+    const teamEditor = document.getElementById('teamEditor');
+    const shipWrapper = this._container.querySelector('.ship-enter-wrapper');
+
+    decoFrame?.classList.add('exiting');
+    teamEditor?.classList.add('exiting');
+    shipWrapper?.classList.add('exiting');
+
+    // 标记本次为过渡入场，BattleUI 检查后播放延迟淡入
+    document.body.setAttribute('data-battle-transition', 'true');
+
+    setTimeout(callback, 800);
   }
 }

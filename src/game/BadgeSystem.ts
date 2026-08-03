@@ -824,14 +824,18 @@ class BombBadge extends BaseBadge {
 class PoisonBadge extends BaseBadge {
   readonly id = 25;
   readonly name = '中毒';
-  readonly desc = '攻击或技能给目标施加中毒效果';
+  readonly desc = '攻击或技能给目标施加中毒效果，并降低20%移动速度';
 
   onAfterDealDamage(_m: PlacedMonster, ctx: BadgeContext): void {
     const target = ctx.target;
     if (!target || target.isDead) return;
-    if (!target.statusEffects.some(e => e.type === 'poison')) {
-      target.statusEffects.push({ type: 'poison', duration: 4.0 });
-    }
+    ctx.battle?.applyStatusEffect(target, { type: 'poison', duration: 4.0 });
+  }
+
+  onSkillCast(_m: PlacedMonster, ctx: BadgeContext): void {
+    const target = ctx.target;
+    if (!target || target.isDead) return;
+    ctx.battle?.applyStatusEffect(target, { type: 'poison', duration: 4.0 });
   }
 }
 
@@ -932,36 +936,67 @@ class CooperativeOffenseBadge extends BaseBadge {
 class ReactiveArmorBadge extends BaseBadge {
   readonly id = 30;
   readonly name = '反应装甲';
-  readonly desc = '自身护盾破裂或减少时，对周围1格造成4倍于当前剩余盾值的伤害（受攻击徽章增幅）';
+  readonly desc = '自身护盾破裂或减少时，对周围1格造成4倍于当前剩余盾值的伤害；生命每累计减少20%，获得1层护盾（受攻击徽章增幅）';
+
+  /** 累计掉血量追踪：monsterId → 累计损失生命值（仅记录携带此徽章的怪兽） */
+  private static hpLossTracker: Map<string, number> = new Map();
+
+  onStartOfBattle(m: PlacedMonster, _ctx?: BadgeContext): void {
+    ReactiveArmorBadge.hpLossTracker.delete(m.id);
+  }
+
+  onAfterDeath(m: PlacedMonster, _ctx?: BadgeContext): void {
+    ReactiveArmorBadge.hpLossTracker.delete(m.id);
+  }
 
   onAfterTakeDamage(m: PlacedMonster, ctx: BadgeContext): void {
     const battle = ctx.battle;
-    if (!battle || m.shield <= 0) return;
+    if (!battle) return;
 
-    const dmg = m.shield * 4;
-    const pos = battle.screenPositions.get(m.id);
-    if (pos) {
-      // 中心白闪（50ms 瞬闪）
-      vfx.addParticle(pos.x, pos.y, 'blast_core', 0.1, '#ffffff', 90);
-      // 硬质碎片爆发 ×3 层覆盖一格范围（~128px）
-      for (let burst = 0; burst < 3; burst++) {
-        battle.scheduler.schedule(() => {
-          const sp = battle.screenPositions.get(m.id);
-          if (!sp) return;
-          for (let i = 0; i < 3; i++) {
-            vfx.spawnParticle(sp.x, sp.y, HIT.reactiveArmor);
-          }
-        }, burst * 0.04);
+    const isShieldCall = ctx.shieldReduced !== undefined && ctx.shieldReduced > 0;
+    const isHpLossCall = ctx.shieldReduced === undefined;
+
+    // --- Part 1: 护盾减少时，反伤周围敌人（仅在 shield 减少那次回调处理） ---
+    if (isShieldCall && m.shield > 0) {
+      const dmg = m.shield * 4;
+      const pos = battle.screenPositions.get(m.id);
+      if (pos) {
+        // 中心白闪（50ms 瞬闪）
+        vfx.addParticle(pos.x, pos.y, 'blast_core', 0.1, '#ffffff', 90);
+        // 硬质碎片爆发 ×3 层覆盖一格范围（~128px）
+        for (let burst = 0; burst < 3; burst++) {
+          battle.scheduler.schedule(() => {
+            const sp = battle.screenPositions.get(m.id);
+            if (!sp) return;
+            for (let i = 0; i < 3; i++) {
+              vfx.spawnParticle(sp.x, sp.y, HIT.reactiveArmor);
+            }
+          }, burst * 0.04);
+        }
+      }
+
+      const enemyRange = 1 + badgeGetRangeBonus(m);
+      const enemies = battle.getMonstersInGridRange(m.gridX, m.gridY, enemyRange)
+        .filter((e: PlacedMonster) => e.team !== m.team && !e.isDead && !(e as any).resurrecting);
+      for (const e of enemies) {
+        battle.applyDamage(e, dmg, m);
+        // 反甲伤害触发祈祷链疗
+        battle.tryTriggerPriestHeal(m);
       }
     }
 
-    const enemyRange = 1 + badgeGetRangeBonus(m);
-    const enemies = battle.getMonstersInGridRange(m.gridX, m.gridY, enemyRange)
-      .filter((e: PlacedMonster) => e.team !== m.team && !e.isDead && !(e as any).resurrecting);
-    for (const e of enemies) {
-      battle.applyDamage(e, dmg, m);
-      // 反甲伤害触发祈祷链疗
-      battle.tryTriggerPriestHeal(m);
+    // --- Part 2: 被动血量下降 → 累计每损失 20% 最大生命值，获得 1 层护盾 ---
+    if (isHpLossCall && ctx.damage && ctx.damage > 0 && !m.isDead) {
+      const current = ReactiveArmorBadge.hpLossTracker.get(m.id) || 0;
+      let total = current + ctx.damage;
+      const threshold = Math.round(m.maxHp * 0.2);
+
+      while (total >= threshold) {
+        battle.addShield(m, 1);
+        total -= threshold;
+      }
+
+      ReactiveArmorBadge.hpLossTracker.set(m.id, total);
     }
   }
 }

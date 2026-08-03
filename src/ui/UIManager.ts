@@ -2,7 +2,6 @@ import { gameEngine } from '../game/GameEngine';
 import { TeamEditorUI } from './TeamEditorUI';
 import { BattleUI } from './BattleUI';
 import { SummaryUI } from './SummaryUI';
-import { ReplayUI } from './ReplayUI';
 import { LobbyUI } from './LobbyUI';
 
 export class UIManager {
@@ -20,7 +19,6 @@ export class UIManager {
   private _teamEditorUI: TeamEditorUI | null = null;
   private _battleUI: BattleUI | null = null;
   private _summaryUI: SummaryUI | null = null;
-  private _replayUI: ReplayUI | null = null;
   private _lobbyUI: LobbyUI | null = null;
 
   private constructor() {}
@@ -42,20 +40,18 @@ export class UIManager {
     if (this._battleUI) {
       this._battleUI.onDestroy();
     }
-    if (this._replayUI) {
-      this._replayUI.onDestroy();
-    }
     this._teamEditorUI = null;
     this._battleUI = null;
     this._summaryUI = null;
-    this._replayUI = null;
 
     const state = gameEngine.state;
 
-    // Clean up battle background when leaving battle states
+    // Clean up battle background layers when leaving battle states
     if (!['PREPARATION_LEFT', 'PREPARATION_RIGHT', 'BATTLE'].includes(state)) {
       const battleBgLayer = document.getElementById('battleBgLayer');
       if (battleBgLayer) battleBgLayer.remove();
+      const battleGroundLayer = document.getElementById('battleGroundLayer');
+      if (battleGroundLayer) battleGroundLayer.remove();
     }
 
     if (state === 'OPENING') {
@@ -83,7 +79,7 @@ export class UIManager {
       if (useBattleBg.includes(state)) {
         gameBg.style.backgroundImage = "none";
       } else {
-        gameBg.style.backgroundImage = "url('fight/ground1.png')";
+        gameBg.style.backgroundImage = "url('fight/ground1.webp')";
       }
     }
 
@@ -101,8 +97,8 @@ export class UIManager {
       this._summaryUI = new SummaryUI(this.container);
       this._summaryUI.render();
     } else if (state === 'REPLAY') {
-      this._replayUI = new ReplayUI(this.container);
-      this._replayUI.render();
+      this._battleUI = new BattleUI(this.container, true);
+      this._battleUI.render();
     }
   }
 
@@ -111,8 +107,8 @@ export class UIManager {
     if (this._battleUI && gameEngine.state === 'BATTLE') {
       this._battleUI.updateHpBars();
       this._battleUI.updateDetailsCard();
-    } else if (this._replayUI && gameEngine.state === 'REPLAY') {
-      this._replayUI.updateReplayFrame();
+    } else if (this._battleUI && gameEngine.state === 'REPLAY') {
+      this._battleUI.updateReplayFrame();
     }
   }
 }

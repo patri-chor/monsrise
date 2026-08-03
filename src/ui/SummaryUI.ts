@@ -173,7 +173,7 @@ export class SummaryUI {
         z-index:50; overflow:hidden;
       ">
         <!-- Background -->
-        <img src="end.png" draggable="false" style="
+        <img src="fight/end.png" draggable="false" style="
           position:absolute; top:0; left:0; width:100%; height:100%;
           object-fit:fill; pointer-events:none; image-rendering:pixelated;
         " />
@@ -246,13 +246,13 @@ export class SummaryUI {
         ">
           <button id="summaryReplayBtn" style="
             width:200px; height:116px;
-            background:url('replay.png') center/contain no-repeat;
+            background:url('fight/replay.png') center/contain no-repeat;
             background-color:transparent;
             cursor:pointer; border:none; pointer-events:auto;
           "></button>
           <button id="summaryActionBtn" style="
             width:200px; height:116px;
-            background:url('end2.png') center/contain no-repeat;
+            background:url('fight/end2.png') center/contain no-repeat;
             background-color:transparent;
             cursor:pointer; border:none; pointer-events:auto;
           "></button>

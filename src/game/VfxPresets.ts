@@ -248,6 +248,7 @@ export const BULLET_SPRITES: Record<number, BulletSpriteConfig> = {
   120: { sx: 5, sy: 26, sw: 37, sh: 12, dw: 55, dh: 18 },//金面
   122: { sx: 32, sy: 10, sw: 19, sh: 7, dw: 28, dh: 10 },//丛林
   121: { sx: 12, sy: 48, sw: 28, sh: 3, dw: 41, dh: 4 }, //僧小猴
+  126: { sx: 0, sy: 0, sw: 49, sh: 47, dw: 49, dh: 47 }, //小猴子 (fl贴图)
 };
 
 /** 子弹发射位置偏移（相对怪兽屏幕中心，单位 px） */
@@ -258,6 +259,11 @@ export const BULLET_OFFSET: Record<number, { dx: number; dy: number }> = {
   120: { dx: 0, dy: 20 },  // 金面
   122: { dx: 0, dy: 0 },  // 丛林
   121: { dx: 0, dy: 0 },  // 僧小猴
+};
+
+/** 每怪自定义子弹速度（单位 px/s），未配置则使用 DEFAULT_BULLET.speed */
+export const BULLET_SPEED: Record<number, number> = {
+  109: 1200,  // 银狙骑士
 };
 
 /** 默认子弹参数 */

@@ -1038,6 +1038,40 @@ test('T4_WRK_04', 'Replay Accuracy Verification', () => {
   assertEqual(gameEngine.p2Score, p2S, "Replay P2 score matches");
 });
 
+test('T5_SUMMON_MONKEY', 'Mini Monkey summon properties and poison attack', () => {
+  // 1. Verify not in database for regular team editing (isSummon)
+  const regularMonsters = DB_MONSTERS.filter(m => !m.isSummon);
+  const foundMonkeyInRegular = regularMonsters.some(m => m.id === 126);
+  assertIsTrue(!foundMonkeyInRegular, "Mini monkey should be filtered out from regular selection");
+
+  // 2. Summon via baseball monkey (123) and check properties
+  const m = gameEngine.placeMonster({ monsterId: 123, badgeIds: [] }, 4, 2, true);
+  (m as any).bashCount = 1;
+  const target = gameEngine.placeMonster({ monsterId: 103, badgeIds: [] }, 6, 2, false);
+  
+  battleSystem.startBattle();
+  runBattleTicks(6.5);
+
+  const clones = gameEngine.boardMonsters.filter(x => x.id.startsWith('summon_') && x.dbId === 126);
+  assertEqual(clones.length, 1, "One mini monkey summoned");
+
+  const miniMonkey = clones[0];
+  assertEqual(miniMonkey.maxHp, 100, "Mini monkey HP should be 100");
+  assertEqual(miniMonkey.atk, 40, "Mini monkey ATK should be 40");
+  assertEqual(miniMonkey.ats, 0.43, "Mini monkey ATS should be 0.43");
+  assertEqual(miniMonkey.range, 4, "Mini monkey Range should be 4");
+
+  // 3. Verify poison status effect applied to target by mini monkey
+  target!.hp = 2000;
+  target!.maxHp = 2000;
+  target!.isDead = false;
+
+  // Let the mini monkey attack the target
+  runBattleTicks(5.0);
+  const targetHasPoison = target!.statusEffects.some(e => e.type === 'poison');
+  assertIsTrue(targetHasPoison, "Target hit by mini monkey should gain poison effect");
+});
+
 restoreTimers();
 
 // 4. Summarize and Print Results
