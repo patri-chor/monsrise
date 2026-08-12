@@ -80,9 +80,7 @@ export class SummaryUI {
         position:absolute;
         left:${BOX_X0 + i * BOX_STEP}px; top:${BOX_Y0}px;
         width:${BOX_W}px; height:${BOX_H}px;
-        background:url('B2.png') center/contain no-repeat;
         background-color:#555650;
-        background-blend-mode:multiply;
         border:${border};
         ${shadow}
         ${tint}
@@ -95,7 +93,7 @@ export class SummaryUI {
         display:flex;
         justify-content:center;
         align-items:center;
-        font-family:'Press Start 2P','Zpix',monospace;
+        font-family:'Zpix',monospace;
         font-size:36px;
         color:#fff;
         text-shadow:2px 2px 0 #000;
@@ -144,7 +142,7 @@ export class SummaryUI {
         ">
           <div style="width:${SPRITE_BOX + 10}px;display:flex;justify-content:center;">${sprite}</div>
           <div style="flex:1;display:flex;justify-content:space-around;align-items:center;
-            font-family:'Press Start 2P','Zpix',monospace;font-size:${FS_DATA}px;color:#fff;">
+            font-family:'Zpix',monospace;font-size:${FS_DATA}px;color:#fff;">
             <div style="width:160px;text-align:center;">${stat.killCount}</div>
             <div style="width:260px;text-align:center;">${Math.round(stat.damageDealt)}</div>
             <div style="width:260px;text-align:center;">${Math.round(stat.damageTaken)}</div>
@@ -160,7 +158,7 @@ export class SummaryUI {
 
     const statsRows = allStats.length === 0
       ? `<div style="padding:80px 0;text-align:center;
-           font-family:'Press Start 2P','Zpix',monospace;font-size:${FS_HEADER}px;color:#666;">无战斗数据</div>`
+           font-family:'Zpix',monospace;font-size:${FS_HEADER}px;color:#666;">无战斗数据</div>`
       : [
           ...myStats.map(s => renderRow(s, true)),
           teamDivider,
@@ -189,7 +187,7 @@ export class SummaryUI {
           pointer-events:none;
         ">
           <span style="
-            font-family:'Press Start 2P','Zpix',monospace;
+            font-family:'Zpix',monospace;
             font-size:${FS_TITLE}px; color:#fff;
             text-shadow:5px 5px 0 #000,-5px -5px 0 #000,5px -5px 0 #000,-5px 5px 0 #000;
           ">${title}</span>
@@ -201,7 +199,7 @@ export class SummaryUI {
           left:${TABLE_LEFT}px; right:${TABLE_RIGHT}px;
           top:${BOX_Y0 + BOX_H + 16}px;
           display:flex; justify-content:space-between; align-items:center;
-          font-family:'Press Start 2P','Zpix',monospace; font-size:${FS_STATS}px; color:#ccc;
+          font-family:'Zpix',monospace; font-size:${FS_STATS}px; color:#ccc;
           pointer-events:none;
         ">
           <span>战斗用时 &nbsp;${elapsed.toFixed(2)} 秒</span>
@@ -215,7 +213,7 @@ export class SummaryUI {
           top:${TABLE_TOP - HDR_H}px; height:${HDR_H}px;
           display:flex; align-items:center;
           border-bottom:2px solid rgba(255,255,255,0.18);
-          font-family:'Press Start 2P','Zpix',monospace; font-size:${FS_HEADER}px; color:#ccc;
+          font-family:'Zpix',monospace; font-size:${FS_HEADER}px; color:#ccc;
           padding-left:${SPRITE_BOX + 18}px;
           pointer-events:none;
         ">
@@ -289,7 +287,7 @@ export class SummaryUI {
       gameEngine.currentRound = 1;
       gameEngine.state = 'REPLAY';
 
-      uiManager.syncStateWithUI();
+      uiManager.flashTo(() => uiManager.syncStateWithUI());
     });
 
     // Continue / next round
@@ -297,7 +295,7 @@ export class SummaryUI {
       if (gameEngine.state === 'GAME_OVER') {
         this._selectedRound = 0;
         gameEngine.restartGame();
-        uiManager.syncStateWithUI();
+        uiManager.flashTo(() => uiManager.syncStateWithUI());
       } else {
         if (gameEngine.isGameOver()) {
           gameEngine.state = 'GAME_OVER';
@@ -306,7 +304,7 @@ export class SummaryUI {
           gameEngine.currentRound += 1;
           gameEngine.state = 'PREPARATION_LEFT';
           gameEngine.resetBoardForNextRound();
-          uiManager.syncStateWithUI();
+          uiManager.flashTo(() => uiManager.syncStateWithUI());
         }
       }
     });

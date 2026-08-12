@@ -1,5 +1,5 @@
 import { Pool } from '../core/Pool';
-import { screenConfig } from './BattleSystem';
+import { screenConfig } from './Database';
 import { BULLET_SPRITES } from './VfxPresets';
 import { Particle, ParticleType, PARTICLE_TYPES } from './ParticleTypes';
 
@@ -122,6 +122,8 @@ export class VfxManager {
   public getTargetPosition: ((id: string) => { x: number; y: number } | undefined) | null = null;
   /** 子弹碰撞检测：传入子弹坐标，返回命中的怪物ID或null */
   public bulletCollisionCheck: ((x: number, y: number, size?: number, ownerId?: string) => string | null) | null = null;
+  /** 无头/性能模式：粒子纯视觉，可整体关闭（子弹/技能投掷物等战斗逻辑不受影响） */
+  public particlesEnabled: boolean = true;
 
   // Pools
   private _textPool = new Pool<FloatingText>(
@@ -171,11 +173,11 @@ export class VfxManager {
     
     if (isDamage) {
       t.x = x + (Math.random() - 0.5) * 70;
-      t.y = y - 20 + (Math.random() - 0.5) * 24;
+      t.y = y - 50 + (Math.random() - 0.5) * 24;
       t.vy = isCrit ? -55 : -45;
     } else {
       t.x = x + (Math.random() - 0.5) * 16;
-      t.y = y - 20 + (Math.random() - 0.5) * 20;
+      t.y = y - 50 + (Math.random() - 0.5) * 20;
       t.vy = -35;
     }
     
@@ -269,6 +271,7 @@ export class VfxManager {
     size: number = 8,
     extra?: any
   ): void {
+    if (!this.particlesEnabled) return; // 无头模式跳过纯视觉粒子
     PARTICLE_TYPES[type].spawn(x, y, color, size, duration, this._particlePool, this.particles, extra);
   }
 
@@ -282,6 +285,7 @@ export class VfxManager {
     x: number, y: number, type: Particle['type'], duration: number,
     color: string, size: number = 8, extra?: any
   ): void {
+    if (!this.particlesEnabled) return; // 无头模式跳过纯视觉粒子
     PARTICLE_TYPES[type].spawn(x, y, color, size, duration, this._particlePool, this.backgroundParticles, extra);
   }
 
@@ -291,18 +295,20 @@ export class VfxManager {
   }
 
   public update(dt: number): void {
-    // 1. Update floating texts
-    for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-      const t = this.floatingTexts[i];
-      t.life -= dt;
-      t.y += t.vy * dt;
-      if (t.isCrit) {
-        const elapsed = t.maxLife - t.life;
-        t.scale = Math.min(1, 0.5 + (elapsed / (t.maxLife * 0.5)) * 0.5);
-      }
-      if (t.life <= 0) {
-        this.floatingTexts.splice(i, 1);
-        this._textPool.put(t);
+    // 1. Update floating texts（纯视觉伤害数字：无头模式跳过，真实网页正常显示）
+    if (this.particlesEnabled) {
+      for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+        const t = this.floatingTexts[i];
+        t.life -= dt;
+        t.y += t.vy * dt;
+        if (t.isCrit) {
+          const elapsed = t.maxLife - t.life;
+          t.scale = Math.min(1, 0.5 + (elapsed / (t.maxLife * 0.5)) * 0.5);
+        }
+        if (t.life <= 0) {
+          this.floatingTexts.splice(i, 1);
+          this._textPool.put(t);
+        }
       }
     }
 
@@ -342,8 +348,8 @@ export class VfxManager {
         curY = this.getParabolicY(p);
       }
 
-      // ===== 粒子子弹：拖尾更新 =====
-      if (p.boltType) {
+      // ===== 粒子子弹：拖尾更新（纯视觉维护：无头模式跳过，不消费 Math.random，不影响战斗逻辑） =====
+      if (p.boltType && this.particlesEnabled) {
         const cfg = BOLT_PROFILES[p.boltType];
         p.age!++;
         if (p.trail) {
@@ -354,53 +360,55 @@ export class VfxManager {
         p.flash = Math.sin(p.age! * 0.25) * 0.5 + 0.5;
         p.pulse! += 0.16;
 
-        // 配置驱动的拖尾粒子生成
-        const angle = Math.atan2(dy, dist > 0 ? dx : 0.001);
-        const spawnChance = p.boltType === 'lightning' ? cfg.trailSpawnChance * (0.5 + p.flash!) : cfg.trailSpawnChance;
-        if (Math.random() >= spawnChance) { /* skip this frame */ }
-        else {
-          for (let ti = 0; ti < cfg.trailCount; ti++) {
-            const pt = this._particlePool.get();
-            if (p.boltType === 'lightning' && p.trail && p.trail.length > 1) {
-              // 闪电：从拖尾中随机点迸发
-              const tp = p.trail[Math.floor(Math.random() * p.trail.length)];
-              pt.x = tp.x + (Math.random() - 0.5) * 4;
-              pt.y = tp.y + (Math.random() - 0.5) * 4;
-              pt.vx = (Math.random() - 0.5) * 0.6;
-              pt.vy = (Math.random() - 0.5) * 0.6;
-            } else if (p.boltType === 'fire') {
-              // 火焰：向后散开
-              const a = angle + Math.PI + (Math.random() - 0.5) * 0.9;
-              const s = 0.15 + Math.random() * 0.55;
-              pt.x = p.x + (Math.random() - 0.5) * 5;
-              pt.y = curY + (Math.random() - 0.5) * 5;
-              pt.vx = Math.cos(a) * s - (dx / (dist || 1)) * p.speed * 0.08 * dt;
-              pt.vy = Math.sin(a) * s - (dy / (dist || 1)) * p.speed * 0.08 * dt;
-            } else if (p.boltType === 'cannon') {
-              // 法球：从最后拖尾点散开
-              if (!p.trail || p.trail.length === 0) { this._particlePool.put(pt); continue; }
-              const r2 = p.size * 1.1;
-              const tp = p.trail[p.trail.length - 1];
-              const back2 = angle + Math.PI + (Math.random() - 0.5) * 0.6;
-              pt.x = tp.x + (Math.random() - 0.5) * r2;
-              pt.y = tp.y + (Math.random() - 0.5) * r2;
-              pt.vx = Math.cos(back2) * (0.5 + Math.random() * 1.5);
-              pt.vy = Math.sin(back2) * (0.5 + Math.random() * 1.5);
-            } else {
-              // heal / void: 随机散射
-              const ra = Math.random() * Math.PI * 2;
-              const rs = 0.3 + Math.random() * 1;
-              const back = p.boltType === 'void' ? angle + Math.PI : ra;
-              pt.x = p.x + (Math.random() - 0.5) * 10;
-              pt.y = curY + (Math.random() - 0.5) * 10;
-              pt.vx = Math.cos(back) * rs;
-              pt.vy = Math.sin(back) * rs - (p.boltType === 'heal' ? 0.3 : 0);
+        // 配置驱动的拖尾粒子生成（纯视觉，无头模式跳过）
+        if (this.particlesEnabled) {
+          const angle = Math.atan2(dy, dist > 0 ? dx : 0.001);
+          const spawnChance = p.boltType === 'lightning' ? cfg.trailSpawnChance * (0.5 + p.flash!) : cfg.trailSpawnChance;
+          if (Math.random() >= spawnChance) { /* skip this frame */ }
+          else {
+            for (let ti = 0; ti < cfg.trailCount; ti++) {
+              const pt = this._particlePool.get();
+              if (p.boltType === 'lightning' && p.trail && p.trail.length > 1) {
+                // 闪电：从拖尾中随机点迸发
+                const tp = p.trail[Math.floor(Math.random() * p.trail.length)];
+                pt.x = tp.x + (Math.random() - 0.5) * 4;
+                pt.y = tp.y + (Math.random() - 0.5) * 4;
+                pt.vx = (Math.random() - 0.5) * 0.6;
+                pt.vy = (Math.random() - 0.5) * 0.6;
+              } else if (p.boltType === 'fire') {
+                // 火焰：向后散开
+                const a = angle + Math.PI + (Math.random() - 0.5) * 0.9;
+                const s = 0.15 + Math.random() * 0.55;
+                pt.x = p.x + (Math.random() - 0.5) * 5;
+                pt.y = curY + (Math.random() - 0.5) * 5;
+                pt.vx = Math.cos(a) * s - (dx / (dist || 1)) * p.speed * 0.08 * dt;
+                pt.vy = Math.sin(a) * s - (dy / (dist || 1)) * p.speed * 0.08 * dt;
+              } else if (p.boltType === 'cannon') {
+                // 法球：从最后拖尾点散开
+                if (!p.trail || p.trail.length === 0) { this._particlePool.put(pt); continue; }
+                const r2 = p.size * 1.1;
+                const tp = p.trail[p.trail.length - 1];
+                const back2 = angle + Math.PI + (Math.random() - 0.5) * 0.6;
+                pt.x = tp.x + (Math.random() - 0.5) * r2;
+                pt.y = tp.y + (Math.random() - 0.5) * r2;
+                pt.vx = Math.cos(back2) * (0.5 + Math.random() * 1.5);
+                pt.vy = Math.sin(back2) * (0.5 + Math.random() * 1.5);
+              } else {
+                // heal / void: 随机散射
+                const ra = Math.random() * Math.PI * 2;
+                const rs = 0.3 + Math.random() * 1;
+                const back = p.boltType === 'void' ? angle + Math.PI : ra;
+                pt.x = p.x + (Math.random() - 0.5) * 10;
+                pt.y = curY + (Math.random() - 0.5) * 10;
+                pt.vx = Math.cos(back) * rs;
+                pt.vy = Math.sin(back) * rs - (p.boltType === 'heal' ? 0.3 : 0);
+              }
+              pt.life = cfg.trailLife; pt.maxLife = cfg.trailLife;
+              pt.size = cfg.trailSize[0] + Math.random() * (cfg.trailSize[1] - cfg.trailSize[0]);
+              pt.color = cfg.trailColor;
+              pt.type = 'bolt_trail';
+              this.particles.push(pt);
             }
-            pt.life = cfg.trailLife; pt.maxLife = cfg.trailLife;
-            pt.size = cfg.trailSize[0] + Math.random() * (cfg.trailSize[1] - cfg.trailSize[0]);
-            pt.color = cfg.trailColor;
-            pt.type = 'bolt_trail';
-            this.particles.push(pt);
           }
         }
       }
@@ -452,62 +460,66 @@ export class VfxManager {
     }
 
     // 3. Update particles
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const pt = this.particles[i];
-      pt.life -= dt;
-      if (pt.extra && pt.extra.ownerId) {
-        const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
-        if (ownerPos) {
-          const dx = pt.extra.dx || 0;
-          const dy = pt.extra.dy || 0;
-          pt.x = ownerPos.x + dx;
-          pt.y = ownerPos.y + dy;
-          if (pt.extra.relativeVel) {
-            pt.extra.dx = dx + pt.vx * dt;
-            pt.extra.dy = dy + pt.vy * dt;
+    if (this.particlesEnabled) {
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const pt = this.particles[i];
+        pt.life -= dt;
+        if (pt.extra && pt.extra.ownerId) {
+          const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
+          if (ownerPos) {
+            const dx = pt.extra.dx || 0;
+            const dy = pt.extra.dy || 0;
+            pt.x = ownerPos.x + dx;
+            pt.y = ownerPos.y + dy;
+            if (pt.extra.relativeVel) {
+              pt.extra.dx = dx + pt.vx * dt;
+              pt.extra.dy = dy + pt.vy * dt;
+            }
+          } else {
+            pt.x += pt.vx * dt;
+            pt.y += pt.vy * dt;
           }
         } else {
           pt.x += pt.vx * dt;
           pt.y += pt.vy * dt;
         }
-      } else {
-        pt.x += pt.vx * dt;
-        pt.y += pt.vy * dt;
-      }
-      PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
-      if (pt.life <= 0) {
-        this.particles.splice(i, 1);
-        this._particlePool.put(pt);
+        PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
+        if (pt.life <= 0) {
+          this.particles.splice(i, 1);
+          this._particlePool.put(pt);
+        }
       }
     }
 
     // 4. Update background particles
-    for (let i = this.backgroundParticles.length - 1; i >= 0; i--) {
-      const pt = this.backgroundParticles[i];
-      pt.life -= dt;
-      if (pt.extra && pt.extra.ownerId) {
-        const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
-        if (ownerPos) {
-          const dx = pt.extra.dx || 0;
-          const dy = pt.extra.dy || 0;
-          pt.x = ownerPos.x + dx;
-          pt.y = ownerPos.y + dy;
-          if (pt.extra.relativeVel) {
-            pt.extra.dx = dx + pt.vx * dt;
-            pt.extra.dy = dy + pt.vy * dt;
+    if (this.particlesEnabled) {
+      for (let i = this.backgroundParticles.length - 1; i >= 0; i--) {
+        const pt = this.backgroundParticles[i];
+        pt.life -= dt;
+        if (pt.extra && pt.extra.ownerId) {
+          const ownerPos = this.getTargetPosition?.(pt.extra.ownerId);
+          if (ownerPos) {
+            const dx = pt.extra.dx || 0;
+            const dy = pt.extra.dy || 0;
+            pt.x = ownerPos.x + dx;
+            pt.y = ownerPos.y + dy;
+            if (pt.extra.relativeVel) {
+              pt.extra.dx = dx + pt.vx * dt;
+              pt.extra.dy = dy + pt.vy * dt;
+            }
+          } else {
+            pt.x += pt.vx * dt;
+            pt.y += pt.vy * dt;
           }
         } else {
           pt.x += pt.vx * dt;
           pt.y += pt.vy * dt;
         }
-      } else {
-        pt.x += pt.vx * dt;
-        pt.y += pt.vy * dt;
-      }
-      PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
-      if (pt.life <= 0) {
-        this.backgroundParticles.splice(i, 1);
-        this._particlePool.put(pt);
+        PARTICLE_TYPES[pt.type]?.update?.(pt, dt);
+        if (pt.life <= 0) {
+          this.backgroundParticles.splice(i, 1);
+          this._particlePool.put(pt);
+        }
       }
     }
   }
@@ -635,22 +647,25 @@ export class VfxManager {
       const ratio = t.life / t.maxLife;
       ctx.globalAlpha = Math.min(1, ratio * 1.5);
       
-      let fontSize = t.isCrit ? 32 : 24;
-      ctx.font = t.isCrit ? `bold ${fontSize}px 'Silkscreen', 'Zpix', monospace` : `${fontSize}px 'Silkscreen', 'Zpix', monospace`;
+      let fontSize = t.isCrit ? 36 : 28;
+      ctx.font = `bold ${fontSize}px 'Zpix', monospace`;
+      
+      const tx = Math.floor(t.x);
+      const ty = Math.floor(t.y);
       
       if (t.isCrit) {
         ctx.save();
-        ctx.translate(t.x, t.y);
+        ctx.translate(tx, ty);
         ctx.scale(t.scale, t.scale);
-        ctx.translate(-t.x, -t.y);
+        ctx.translate(-tx, -ty);
       }
       
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 4;
-      ctx.strokeText(t.text, t.x, t.y);
+      // 阴影
+      ctx.fillStyle = '#000000';
+      ctx.fillText(t.text, tx + 3, ty + 3);
       
       ctx.fillStyle = t.color;
-      ctx.fillText(t.text, t.x, t.y);
+      ctx.fillText(t.text, tx, ty);
       
       if (t.isCrit) {
         ctx.restore();

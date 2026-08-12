@@ -1,4 +1,5 @@
 import { gameEngine } from '../game/GameEngine';
+import { music } from '../game/MusicManager';
 import { TeamEditorUI } from './TeamEditorUI';
 import { BattleUI } from './BattleUI';
 import { SummaryUI } from './SummaryUI';
@@ -32,6 +33,29 @@ export class UIManager {
     this.syncStateWithUI();
   }
 
+  private _flashTimer: number | null = null;
+
+  /**
+   * 闪黑过渡：黑屏淡入 → delayMs 后执行 callback（状态切换）→ 停留 holdMs 后淡出
+   * 用于大状态切换（进战斗、进结算、结算按钮等），幂等（重复调用重置计时器）。
+   * 默认 220ms 切换 + 250ms 停留（合计约 470ms 后淡出）。
+   */
+  public flashTo(callback: () => void, delayMs = 220, holdMs = 250): void {
+    const overlay = document.getElementById('transitionOverlay');
+    if (this._flashTimer !== null) {
+      window.clearTimeout(this._flashTimer);
+      this._flashTimer = null;
+    }
+    if (overlay) overlay.style.opacity = '1';
+    window.setTimeout(() => {
+      this._flashTimer = null;
+      callback();
+    }, delayMs);
+    window.setTimeout(() => {
+      if (overlay) overlay.style.opacity = '0';
+    }, delayMs + holdMs);
+  }
+
   public syncStateWithUI(): void {
     // Clear container
     this.container.innerHTML = '';
@@ -45,6 +69,9 @@ export class UIManager {
     this._summaryUI = null;
 
     const state = gameEngine.state;
+
+    // 按游戏状态自动切换音乐（大厅 vs 战斗）
+    music.syncWithState(state);
 
     // Clean up battle background layers when leaving battle states
     if (!['PREPARATION_LEFT', 'PREPARATION_RIGHT', 'BATTLE'].includes(state)) {
@@ -63,6 +90,9 @@ export class UIManager {
     }
 
     if (state === 'MATCH_LOBBY') {
+      // 联机大厅与队伍编辑界面同时存在（类似详情卡），面板浮于右侧
+      this._teamEditorUI = new TeamEditorUI(this.container);
+      this._teamEditorUI.render();
       this._lobbyUI = new LobbyUI(this.container);
       this._lobbyUI.render();
       return;
@@ -71,15 +101,16 @@ export class UIManager {
     // Manage state-specific background image in DOM Layer 1
     const gameBg = document.getElementById('gameBg');
     if (gameBg) {
-      gameBg.style.backgroundSize = "100% 100%";
-      gameBg.style.backgroundPosition = "top left";
+      gameBg.style.backgroundSize = "cover";
+      gameBg.style.backgroundPosition = "center";
       gameBg.style.backgroundRepeat = "no-repeat";
-      // Battle states use their own sky+yun+ground background inside BattleUI
+      // Battle states use their own bg.png background inside BattleUI
       const useBattleBg = ['OPENING', 'MATCH_LOBBY', 'TEAM_EDIT', 'PREPARATION_LEFT', 'PREPARATION_RIGHT', 'BATTLE'];
       if (useBattleBg.includes(state)) {
         gameBg.style.backgroundImage = "none";
       } else {
-        gameBg.style.backgroundImage = "url('fight/ground1.webp')";
+        // 结算界面（ROUND_END / GAME_OVER）同样用战斗背景 bg.png
+        gameBg.style.backgroundImage = "url('fight/bg.png')";
       }
     }
 

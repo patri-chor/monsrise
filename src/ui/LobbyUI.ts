@@ -16,8 +16,8 @@ export class LobbyUI {
 
   private bindNetworkEvents(): void {
     this._unsubs.push(
-      networkManager.on('poolUpdate', () => this.render()),
-      networkManager.on('roomCreated', (data) => { this.render(); this.showRoomCode(data.roomId); }),
+      networkManager.on('poolUpdate', () => this.updatePool()),
+      networkManager.on('roomCreated', () => this.render()),
       networkManager.on('matchFound', () => this.onMatchFound()),
       networkManager.on('error', (data) => alert(data.msg || '服务器错误')),
       networkManager.on('opponentDC', () => {
@@ -33,17 +33,10 @@ export class LobbyUI {
         gameEngine.resetBoardForNextRound();
         uiManager.syncStateWithUI();
       }),
+      // 连接状态实时刷新
+      networkManager.on('onConnect', () => this.updateStatus()),
+      networkManager.on('onDisconnect', () => this.updateStatus()),
     );
-  }
-
-  private saveNick(nick: string): void {
-    this._nick = nick;
-    localStorage.setItem('monsrise_nick', nick);
-  }
-
-  private showRoomCode(code: string): void {
-    this.render();
-    navigator.clipboard?.writeText(code).catch(() => {});
   }
 
   private onMatchFound(): void {
@@ -56,19 +49,23 @@ export class LobbyUI {
   }
 
   public render(): void {
-    const nick = this._nick;
     const connected = networkManager.connected;
     const roomId = networkManager.roomId;
     const pool = networkManager.matchPool;
-    const statusColor = connected ? '#4caf50' : '#f44336';
     const statusText = connected ? '已连接' : '未连接';
 
+    // 只替换联机面板自身，保留同容器中与其共存的队伍编辑界面等兄弟节点
+    const prev = document.getElementById('lobbyView');
+    if (prev) prev.remove();
+
+    const tmp = document.createElement('div');
     if (this._matched) {
-      this._container.innerHTML = `
+      tmp.innerHTML = `
         <div id="lobbyView" style="
           position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+          z-index: 30; background: rgba(0, 0, 0, 0.7);
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          font-family: 'Press Start 2P', 'Zpix', monospace; color: #fff;
+          font-family: 'Zpix', monospace; color: #fff;
         ">
           <div style="font-size: 36px; color: #4caf50; margin-bottom: 40px;">
             ✓ 匹配成功
@@ -78,97 +75,116 @@ export class LobbyUI {
           </div>
         </div>
       `;
-      return;
+    } else {
+      tmp.innerHTML = `
+        <div id="lobbyView" class="net-lobby">
+          <div class="net-panel">
+            <!-- 顶部标题栏 -->
+            <div class="net-title">联机模式</div>
+
+            <!-- 创建房间 + 加入房间（居中） -->
+            <div class="net-top-row">
+              <button id="lobbyCreateBtn" class="net-btn net-btn-green">创建房间</button>
+              <button id="lobbyJoinBtn" class="net-btn net-btn-blue">加入房间</button>
+            </div>
+
+            <!-- 房间码：输入 / 显示 + 复制键 -->
+            <div class="net-room-box">
+              <input id="lobbyRoomInput" type="text" maxlength="4" placeholder="4位房间码" value="${roomId}" />
+              <button id="lobbyCopyBtn" class="net-copy-btn${roomId ? '' : ' hidden'}">复制</button>
+            </div>
+
+            <!-- 搜索对战（与创建房间左对齐） -->
+            <button id="lobbyMatchBtn" class="net-btn net-btn-purple">搜索对战</button>
+
+            <!-- 对战池 -->
+            <div class="net-pool-box">
+              <div class="net-pool-title" id="netPoolTitle">对战池（${pool.length}人等待）</div>
+              <div class="net-pool-list" id="netPoolList">
+                ${pool.length === 0
+                  ? '<div class="net-pool-empty">暂无玩家等待</div>'
+                  : pool.map(p => `<div class="net-pool-item">${p.nick}</div>`).join('')}
+              </div>
+            </div>
+
+            <!-- 底部栏（netp 问号所在高度的栏）：连接情况 + 返回 -->
+            <div class="net-bottom-bar">
+              <div class="net-status">
+                <span>连接情况：</span>
+                <span class="net-status-val ${connected ? 'online' : 'offline'}">${statusText}</span>
+              </div>
+              <button id="lobbyBackBtn" class="net-back-btn">返回</button>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
-    this._container.innerHTML = `
-      <div id="lobbyView" style="
-        position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        font-family: 'Press Start 2P', 'Zpix', monospace; color: #fff;
-        background: rgba(0,0,0,0.75);
-      ">
-        <div style="font-size: 96px; margin-bottom: 40px; color: #e5c158; text-shadow: 6px 6px 0 #000;">
-          联机对战
-        </div>
-        <div style="font-size: 28px; margin-bottom: 20px; color: ${statusColor};">
-          ● ${statusText}
-        </div>
-        <div style="margin-bottom: 40px; display: flex; gap: 16px; align-items: center;">
-          <input id="lobbyNickInput" type="text" maxlength="8" placeholder="输入昵称" value="${nick}"
-            style="padding: 16px 32px; font-size: 32px; font-family: inherit; border: 4px solid #666; border-radius: 8px;
-            background: #222; color: #fff; width: 320px; text-align: center;" />
-          <button id="lobbyNickSaveBtn" style="
-            padding: 16px 32px; font-size: 28px; font-family: inherit; cursor: pointer;
-            background: #444; color: #fff; border: 4px solid #666; border-radius: 8px;">保存</button>
-        </div>
-        <div style="display: flex; gap: 32px; margin-bottom: 40px;">
-          <button id="lobbyMatchBtn" style="
-            padding: 32px 64px; font-size: 36px; font-family: inherit; cursor: pointer;
-            background: #2e7d32; color: #fff; border: 6px solid #4caf50; border-radius: 16px;">
-            ⚔ 自动匹配
-          </button>
-          <button id="lobbyCreateBtn" style="
-            padding: 32px 64px; font-size: 36px; font-family: inherit; cursor: pointer;
-            background: #1565c0; color: #fff; border: 6px solid #42a5f5; border-radius: 16px;">
-            ＋ 创建房间
-          </button>
-        </div>
-        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 20px;">
-          <span style="font-size: 28px;">房间号：</span>
-          <input id="lobbyRoomInput" type="text" maxlength="4" placeholder="4位房号"
-            style="padding: 16px 24px; font-size: 32px; font-family: inherit; border: 4px solid #666; border-radius: 8px;
-            background: #222; color: #fff; width: 200px; text-align: center;" />
-          <button id="lobbyJoinBtn" style="
-            padding: 16px 40px; font-size: 28px; font-family: inherit; cursor: pointer;
-            background: #6a1b9a; color: #fff; border: 4px solid #ab47bc; border-radius: 8px;">加入</button>
-        </div>
-        ${roomId ? `
-          <div style="margin: 20px 0; padding: 20px 40px; background: #1a3a1a; border: 4px solid #4caf50; border-radius: 16px; font-size: 32px;">
-            房间号：<span style="color: #e5c158; font-size: 48px;">${roomId}</span>
-            <br/><span style="font-size: 24px; color: #999;">等待对手加入...</span>
-          </div>
-        ` : ''}
-        ${pool.length > 0 ? `
-          <div style="margin-top: 20px; padding: 24px 48px; background: rgba(255,255,255,0.05); border-radius: 16px; max-height: 320px; overflow-y: auto;">
-            <div style="font-size: 28px; color: #aaa; margin-bottom: 16px;">匹配池 (${pool.length}人等待)</div>
-            ${pool.map(p => `<div style="font-size: 24px; color: #ccc; padding: 4px 0;">${p.nick}</div>`).join('')}
-          </div>
-        ` : ''}
-        <button id="lobbyBackBtn" style="
-          margin-top: 40px; padding: 20px 48px; font-size: 28px; font-family: inherit; cursor: pointer;
-          background: transparent; color: #999; border: 4px solid #555; border-radius: 8px;">返回主菜单</button>
-      </div>
-    `;
+    const node = tmp.firstElementChild as HTMLElement;
+    this._container.appendChild(node);
 
-    this.bindButtons();
+    if (!this._matched) this.bindButtons();
+  }
+
+  /** 关闭联机界面：清理网络订阅并移除面板（保留队伍编辑界面，避免重建闪烁） */
+  public close(): void {
+    for (const unsub of this._unsubs) unsub();
+    this._unsubs = [];
+    networkManager.leaveMatch();
+    document.getElementById('lobbyView')?.remove();
+    gameEngine.state = 'TEAM_EDIT';
+    gameEngine.mode = 'experimental';
+  }
+
+  /** 仅刷新对战池列表，避免整屏重建导致输入框失焦/闪烁 */
+  private updatePool(): void {
+    const listEl = document.getElementById('netPoolList');
+    const titleEl = document.getElementById('netPoolTitle');
+    if (!listEl || !titleEl) return;
+    const pool = networkManager.matchPool;
+    titleEl.textContent = `对战池（${pool.length}人等待）`;
+    listEl.innerHTML = pool.length === 0
+      ? '<div class="net-pool-empty">暂无玩家等待</div>'
+      : pool.map(p => `<div class="net-pool-item">${p.nick}</div>`).join('');
+  }
+
+  /** 仅刷新连接状态指示器 */
+  private updateStatus(): void {
+    const valEl = document.querySelector('#lobbyView .net-status-val');
+    if (!valEl) return;
+    const connected = networkManager.connected;
+    valEl.className = `net-status-val ${connected ? 'online' : 'offline'}`;
+    valEl.textContent = connected ? '已连接' : '未连接';
   }
 
   private bindButtons(): void {
-    const saveNick = () => {
-      const input = document.getElementById('lobbyNickInput') as HTMLInputElement;
-      if (input) this.saveNick(input.value.trim() || '玩家');
-    };
+    const nick = () => this._nick || '玩家';
 
-    document.getElementById('lobbyNickSaveBtn')?.addEventListener('click', saveNick);
-    document.getElementById('lobbyMatchBtn')?.addEventListener('click', () => { saveNick(); networkManager.joinMatch(this._nick); });
-    document.getElementById('lobbyCreateBtn')?.addEventListener('click', () => { saveNick(); networkManager.createRoom(this._nick); });
+    document.getElementById('lobbyCreateBtn')?.addEventListener('click', () => {
+      networkManager.createRoom(nick());
+    });
 
     document.getElementById('lobbyJoinBtn')?.addEventListener('click', () => {
-      saveNick();
       const input = document.getElementById('lobbyRoomInput') as HTMLInputElement;
-      const code = input?.value.trim();
-      if (!code || code.length !== 4) { alert('请输入4位房间号'); return; }
-      networkManager.joinRoom(code, this._nick);
+      const code = input?.value.trim() || '';
+      if (code.length !== 4) { alert('请输入4位房间号'); return; }
+      networkManager.joinRoom(code, nick());
+    });
+
+    document.getElementById('lobbyCopyBtn')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      if (!networkManager.roomId) return;
+      navigator.clipboard?.writeText(networkManager.roomId).catch(() => {});
+      btn.textContent = '已复制';
+      setTimeout(() => { btn.textContent = '复制'; }, 1200);
+    });
+
+    document.getElementById('lobbyMatchBtn')?.addEventListener('click', () => {
+      networkManager.joinMatch(nick());
     });
 
     document.getElementById('lobbyBackBtn')?.addEventListener('click', () => {
-      for (const unsub of this._unsubs) unsub();
-      this._unsubs = [];
-      networkManager.leaveMatch();
-      gameEngine.state = 'TEAM_EDIT';
-      gameEngine.mode = 'experimental';
-      uiManager.syncStateWithUI();
+      this.close();
     });
   }
 }

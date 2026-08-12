@@ -7,16 +7,88 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="/icon.png" sizes="192x192">
   <link rel="apple-touch-icon" href="/icon.png">
-  <title>怪兽崛起v1.4</title>
-  <style>html { touch-action: manipulation; }</style>
+  <title>怪兽崛起v1.5</title>
+  <style>
+    html { touch-action: manipulation; }
+    /* ---- 载入界面（内联样式，首屏秒显，不依赖 JS） ---- */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(120% 100% at 50% 0%, #2c4372 0%, #16233f 55%, #0b0c10 100%);
+      transition: opacity 0.6s ease;
+    }
+    #loadingOverlay.done { opacity: 0; pointer-events: none; }
+    .loading-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 26px;
+      padding: 0 24px;
+    }
+    .loading-title {
+      font-family: 'Press Start 2P', 'Zpix', monospace;
+      font-size: clamp(28px, 6vw, 44px);
+      color: #e5c158;
+      text-shadow: 3px 0 0 #000, -3px 0 0 #000, 0 3px 0 #000, 0 -3px 0 #000, 0 6px 0 #000;
+      letter-spacing: 8px;
+      animation: loadTitleFloat 2s ease-in-out infinite;
+    }
+    .loading-subtitle {
+      font-family: 'Press Start 2P', 'Zpix', monospace;
+      font-size: 16px;
+      color: #9fb4d8;
+      text-shadow: 2px 2px 0 #000;
+      letter-spacing: 4px;
+      margin-top: -14px;
+    }
+    .loading-bar {
+      width: 70vw;
+      max-width: 480px;
+      height: 26px;
+      padding: 4px;
+      border: 4px solid #e5c158;
+      background: #0b0c10;
+      image-rendering: pixelated;
+    }
+    .loading-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: repeating-linear-gradient(90deg, #5ac54f 0 14px, #78d46f 14px 28px);
+      transition: width 0.25s ease-out;
+    }
+    .loading-text {
+      font-family: 'Press Start 2P', 'Zpix', monospace;
+      font-size: 16px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+    }
+    @keyframes loadTitleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
 </head>
 <body>
+  <div id="loadingOverlay">
+    <div class="loading-inner">
+      <div class="loading-title">怪兽崛起</div>
+      <div class="loading-subtitle">MONSTER RISE</div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+      <div class="loading-text" id="loadingText">加载中 0%</div>
+    </div>
+  </div>
   <div id="gameContainer">
     <!-- Background layer (z-index: 1) -->
     <div id="gameBg"></div>
     
     <!-- Canvas rendering (z-index: 2) -->
-    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+    <canvas id="gameCanvas" width="2556" height="1179"></canvas>
     
     <!-- HTML DOM UI Overlay (z-index: 3) -->
     <div id="uiOverlay">
@@ -24,8 +96,28 @@
     </div>
   </div>
   
+  <!-- 全屏闪黑过渡层：状态切换时淡入黑屏 → 切换 → 淡出 -->
+  <div id="transitionOverlay" style="
+    position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+    background: #000; opacity: 0; pointer-events: none; z-index: 999;
+    transition: opacity 0.2s ease;
+  "></div>
+
+  <!-- 右上角声音按钮：音量 0-100%，每次点击调整 20% -->
+  <button id="soundToggleBtn" type="button" title="音量">🔊 100</button>
+
   <script src="/ai-bundle.iife.js"></script>
   <script type="module" src="./src/main.ts"></script>
+  <!-- 保险丝：若 15 秒后载入层仍未被游戏 JS 移除（如 main.ts 被覆盖导致隐藏逻辑丢失），强制淡出，防止永久卡在载入界面 -->
+  <script>
+    setTimeout(function () {
+      var overlay = document.getElementById('loadingOverlay');
+      if (overlay && !overlay.classList.contains('done')) {
+        overlay.classList.add('done');
+        setTimeout(function () { overlay.remove(); }, 700);
+      }
+    }, 15000);
+  </script>
   <!-- Force preload Silkscreen font for Canvas text rendering -->
   <div style="font-family: 'Silkscreen'; position: absolute; visibility: hidden; pointer-events: none; width: 0; height: 0; overflow: hidden;">preloader</div>
 </body>

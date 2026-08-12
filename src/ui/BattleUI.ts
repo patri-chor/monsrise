@@ -2,10 +2,16 @@ import { gameEngine, PlacedMonster } from '../game/GameEngine';
 import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { renderAvatarHtml } from './shared/AvatarRenderer';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
-import { battleSystem, gridToScreen } from '../game/BattleSystem';
+import { battleSystem } from '../game/BattleSystem';
+import { gridToScreen } from '../game/Database';
+import { director } from '../core/Director';
 import { uiManager } from './UIManager';
 import { networkManager } from '../net/NetworkManager';
 import { vfx } from '../game/VfxManager';
+import { buildSnapshot } from '../engine/placement/snapshot';
+import { loadModelFromUrl, planRoundPlacementsModel } from '../engine/train/model_planner';
+import { planForRound } from '../engine/train/features';
+import { FORMATION_LIBRARY } from '../ai/formation_library';
 
 // 联机等待状态需跨 BattleUI 实例持久化（syncStateWithUI 会重建实例）
 let _globalIsWaiting: boolean = false;
@@ -120,12 +126,11 @@ export class BattleUI {
     const usedBudget = isP1 ? gameEngine.p1TotalCost : gameEngine.p2TotalCost;
 
 
-    // Ensure battle background layers are in gameContainer
-    // Sky+clouds below canvas (z-index:2), ground below canvas (z-index:3)
+    // Ensure battle background layer is in gameContainer
+    // 单张静态 bg.png（取代 sky+云+船 的多层动画结构，iOS 上避免背景动画导致 Safari 崩溃）
     const gameContainer = document.getElementById('gameContainer');
     const gameCanvas = document.getElementById('gameCanvas');
     let bgEl = document.getElementById('battleBgLayer');
-    let groundEl = document.getElementById('battleGroundLayer');
 
     if (!bgEl) {
       bgEl = document.createElement('div');
@@ -137,26 +142,7 @@ export class BattleUI {
         gameContainer.appendChild(bgEl);
       }
       bgEl.innerHTML = `
-        <div class="battle-bg-inner">
-          <div class="bg-layer sky"></div>
-          <div class="bg-layer yun layer-far" style="background-image: url('/background/yun1.png');"></div>
-          <div class="bg-layer yun layer-near" style="background-image: url('/background/yun2.png');"></div>
-        </div>
-      `;
-    }
-    if (!groundEl) {
-      groundEl = document.createElement('div');
-      groundEl.id = 'battleGroundLayer';
-      groundEl.className = 'battle-ground-layer';
-      if (gameCanvas && gameContainer) {
-        gameContainer.insertBefore(groundEl, gameCanvas);
-      } else if (gameContainer) {
-        gameContainer.appendChild(groundEl);
-      }
-      groundEl.innerHTML = `
-        <div class="battle-ground-wrapper">
-          <div class="bg-layer battle-ground"></div>
-        </div>
+        <div class="bg-layer battle-bg"></div>
       `;
     }
 
@@ -165,8 +151,6 @@ export class BattleUI {
     if (gameBg) {
       bgEl.style.transform = gameBg.style.transform;
       bgEl.style.transformOrigin = gameBg.style.transformOrigin;
-      groundEl.style.transform = gameBg.style.transform;
-      groundEl.style.transformOrigin = gameBg.style.transformOrigin;
     }
 
     this._container.innerHTML = `
@@ -221,6 +205,9 @@ export class BattleUI {
             }).join('')}
           </div>
         </div>
+
+        <!-- 战斗倍速切换（1x → 2x → 3x） -->
+        <button id="speedToggleBtn" class="speed-toggle-btn" style="display:none;">1x</button>
 
         <!-- 11x5 Grid Overlay over Canvas -->
         <div id="battleGrid" class="battle-grid-overlay">
@@ -294,28 +281,6 @@ export class BattleUI {
         <!-- Right Side details card overlay (Visible when a monster is selected) -->
         <div id="battleDetailsCardContainer" class="details-card" style="display: none; left: 1590px; top: 80px; z-index: 6;"></div>
         
-        <!-- Center screen announcement overlay (Full Screen) -->
-        <div id="battleAnnouncement" style="
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          font-size: 80px;
-          color: #ffffff;
-          text-shadow: 6px 6px 0px #000000, -6px -6px 0px #000000, 6px -6px 0px #000000, -6px 6px 0px #000000, 6px 0px 0px #000000, -6px 0px 0px #000000, 0px 6px 0px #000000, 0px -6px 0px #000000;
-          background: url('fight/fade.png') center/cover no-repeat;
-          background-size: 100% 100%;
-          display: none;
-          opacity: 0;
-          transition: opacity 0.5s ease-in-out;
-          justify-content: center;
-          align-items: center;
-          z-index: 40;
-          pointer-events: none;
-          white-space: nowrap;
-        "></div>
-        
         <!-- Online waiting overlay (仅用于隐藏确认按钮，无文字无遮罩) -->
         <div id="onlineWaitOverlay" style="
           display: none; z-index: 45; pointer-events: none;
@@ -323,23 +288,37 @@ export class BattleUI {
       </div>
     `;
 
-    // 战斗 UI 延迟入场：仅从队伍界面过渡时应用
-    if (document.body.getAttribute('data-battle-transition') === 'true') {
-      document.body.removeAttribute('data-battle-transition');
-      const battleView = document.getElementById('battleView');
-      if (battleView) {
-        battleView.classList.add('delayed-ui');
-        // 入场动画完成后移除类，恢复点击
-        setTimeout(() => {
-          battleView.classList.remove('delayed-ui');
-        }, 2500);
-      }
-    }
-
+    this._ensureAnnouncementOverlay();
     this.bindEvents();
+    // 战斗倍速切换（1x → 2x → 3x → 1x）
+    const speedBtn = document.getElementById('speedToggleBtn');
+    if (speedBtn) {
+      speedBtn.onclick = () => {
+        director.timeScale = director.timeScale >= 3 ? 1 : director.timeScale + 1;
+        speedBtn.textContent = `${director.timeScale}x`;
+      };
+    }
     this.startPrepTimer();
     this.updateDetailsCardContent();
     if (this._isOnline) this.bindNetworkForBattle();
+  }
+
+  private _ensureAnnouncementOverlay(): void {
+    const gc = document.getElementById('gameContainer');
+    if (!gc) return;
+    let el = document.getElementById('battleAnnouncement');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'battleAnnouncement';
+      el.style.cssText = 'position:absolute;left:0;top:0;width:2556px;height:1179px;font-size:80px;color:#ffffff;text-shadow:6px 6px 0px #000000,-6px -6px 0px #000000,6px -6px 0px #000000,-6px 6px 0px #000000,6px 0px 0px #000000,-6px 0px 0px #000000,0px 6px 0px #000000,0px -6px 0px #000000;background:url(\'fight/fade.png\') center/cover no-repeat;background-size:100% 100%;display:flex;opacity:0;transition:opacity 0.5s ease-in-out;justify-content:center;align-items:center;z-index:6;pointer-events:none;white-space:nowrap;';
+      gc.appendChild(el);
+      // 跟随 uiOverlay 的缩放和偏移
+      const uiOverlay = document.getElementById('uiOverlay');
+      if (uiOverlay) {
+        el.style.transform = uiOverlay.style.transform;
+        el.style.transformOrigin = uiOverlay.style.transformOrigin;
+      }
+    }
   }
 
   private _renderReplay(): void {
@@ -430,11 +409,10 @@ export class BattleUI {
         </div>
 
         <div id="battleDetailsCardContainer" class="details-card" style="display: none; left: 1590px; top: 80px; z-index: 6;"></div>
-
-        <div id="battleAnnouncement" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; font-size: 80px; color: #ffffff; text-shadow: 6px 6px 0px #000000, -6px -6px 0px #000000, 6px -6px 0px #000000, -6px 6px 0px #000000, 6px 0px 0px #000000, -6px 0px 0px #000000, 0px 6px 0px #000000, 0px -6px 0px #000000; background: url('fight/fade.png') center/cover no-repeat; background-size: 100% 100%; display: none; justify-content: center; align-items: center; z-index: 999; text-align: center; pointer-events: none; white-space: nowrap;"></div>
       </div>
     `;
 
+    this._ensureAnnouncementOverlay();
     this.bindEvents();
     this.updateDetailsCardContent();
     this.startPlacementPlayback();
@@ -557,8 +535,10 @@ export class BattleUI {
           el.style.display = 'flex';
           el.style.opacity = '1';
           setTimeout(() => {
-            gameEngine.state = 'GAME_OVER';
-            uiManager.syncStateWithUI();
+            uiManager.flashTo(() => {
+              gameEngine.state = 'GAME_OVER';
+              uiManager.syncStateWithUI();
+            });
           }, 2000);
         } else {
           gameEngine.state = 'GAME_OVER';
@@ -619,9 +599,37 @@ export class BattleUI {
     };
   }
 
-  /** AI auto-placement: repeatedly call AI to place P2 monsters, then start battle */
-  private runAIPlacements(): void {
+  /** AI auto-placement: 优先训练模型规划整轮布阵；模型加载失败回退 ai-bundle 规则引擎 */
+  private async runAIPlacements(): Promise<void> {
     console.log('[AI] Starting AI placements...');
+
+    const aiHand = gameEngine.teams[1].filter(s => s.monsterId > 0);
+
+    // ---- 优先：训练模型驱动整轮规划（雾战快照：AI 仅见玩家前 4 槽位徽章 + 已布棋盘） ----
+    try {
+      const model = await loadModelFromUrl('model.json');
+      const snap = buildSnapshot(gameEngine, 'p2', aiHand, gameEngine.teams[0]);
+      // 开局坦克先验：匹配 AI 卡组对应的阵型树，R1 强制树计划首动作（与训练/评估一致）
+      const aiIds = aiHand.map(s => s.monsterId).sort((a, b) => a - b).join(',');
+      const fm = FORMATION_LIBRARY.find(f =>
+        f.team.filter(s => s.monsterId > 0).map(s => s.monsterId).sort((a, b) => a - b).join(',') === aiIds,
+      );
+      const treePlan = fm ? planForRound(fm.tree, gameEngine.currentRound) : undefined;
+      const forceTree = fm && gameEngine.currentRound === 1 ? planForRound(fm.tree, 1) : undefined;
+      const plan = planRoundPlacementsModel(snap, model, treePlan, forceTree);
+      console.log(`[AI] Model plan: ${plan.map(p => `${p.monsterId}@${p.x},${p.y}`).join(' ') || '(空)'}`);
+      for (const p of plan) {
+        const slot = gameEngine.teams[1].find(s => s.monsterId === p.monsterId);
+        if (!slot) continue;
+        const placed = gameEngine.placeMonster(slot, p.x, p.y, false);
+        if (!placed) console.warn(`[AI] 模型放置失败: ${p.monsterId}@${p.x},${p.y}`);
+      }
+      console.log(`[AI] Model placements done. P2 monsters: ${gameEngine.boardMonsters.filter(m => m.gridX >= 6).length}`);
+      this.showBattleStartAnnouncement();
+      return;
+    } catch (e) {
+      console.warn('[AI] 模型加载失败，回退规则引擎:', e);
+    }
 
     let ai = (gameEngine as any)._aiInstance as BattleAI;
     if (!ai) {
@@ -745,8 +753,10 @@ export class BattleUI {
                 networkManager.leaveMatch();
                 gameEngine.mode = 'experimental';
               }
-              gameEngine.state = 'GAME_OVER';
-              uiManager.syncStateWithUI();
+              uiManager.flashTo(() => {
+                gameEngine.state = 'GAME_OVER';
+                uiManager.syncStateWithUI();
+              });
             }, 500);
           }, 1500);
         } else {
@@ -834,8 +844,10 @@ export class BattleUI {
     // Exit button
     const exitBtn = document.getElementById('exitBattleBtn');
     exitBtn?.addEventListener('click', () => {
-      gameEngine.restartGame();
-      uiManager.syncStateWithUI();
+      uiManager.flashTo(() => {
+        gameEngine.restartGame();
+        uiManager.syncStateWithUI();
+      });
     });
 
     const isP1 = gameEngine.state === 'PREPARATION_LEFT';
@@ -973,7 +985,7 @@ export class BattleUI {
                           const ax = gx + dx, ay = gy + dy;
                           if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
                           const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
-                          if (aCell) aCell.classList.add('drag-atk-range');
+                          if (aCell && !gameEngine.getMonsterAt(ax, ay)) aCell.classList.add('drag-atk-range');
                         }
                       }
                     } else {
@@ -985,7 +997,7 @@ export class BattleUI {
                           const ax = gx + dx, ay = gy + dy;
                           if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
                           const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
-                          if (aCell) aCell.classList.add('drag-atk-range');
+                          if (aCell && !gameEngine.getMonsterAt(ax, ay)) aCell.classList.add('drag-atk-range');
                         }
                       }
                     }
@@ -1197,7 +1209,7 @@ export class BattleUI {
                           const ax = tx + dx, ay = ty + dy;
                           if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
                           const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
-                          if (aCell) aCell.classList.add('drag-atk-range');
+                          if (aCell && !gameEngine.getMonsterAt(ax, ay)) aCell.classList.add('drag-atk-range');
                         }
                       }
                     } else {
@@ -1209,7 +1221,7 @@ export class BattleUI {
                           const ax = tx + dx, ay = ty + dy;
                           if (ax < 0 || ax > 10 || ay < 0 || ay > 4) continue;
                           const aCell = document.querySelector(`.battle-grid-cell[data-grid-x="${ax}"][data-grid-y="${ay}"]`);
-                          if (aCell) aCell.classList.add('drag-atk-range');
+                          if (aCell && !gameEngine.getMonsterAt(ax, ay)) aCell.classList.add('drag-atk-range');
                         }
                       }
                     }
@@ -1396,6 +1408,13 @@ export class BattleUI {
 
   // Sync health bars with smoothly moving canvas monster entities
   public updateHpBars(): void {
+    // 战斗倍速按钮：仅在战斗进行中显示，并同步当前倍速标签
+    const speedBtn = document.getElementById('speedToggleBtn');
+    if (speedBtn) {
+      speedBtn.style.display = battleSystem.active ? 'block' : 'none';
+      speedBtn.textContent = `${director.timeScale}x`;
+    }
+
     if (gameEngine.state === 'BATTLE') {
       const timerEl = document.querySelector('.scoreboard-timer');
       if (timerEl) {
@@ -1424,6 +1443,9 @@ export class BattleUI {
     }
     for (const unsub of this._unsubscribers) unsub();
     this._unsubscribers = [];
+    // 清理公告浮层
+    const annEl = document.getElementById('battleAnnouncement');
+    if (annEl) annEl.remove();
   }
 
   public updateDetailsCard(): void {
@@ -1721,7 +1743,7 @@ export class BattleUI {
     const gridW = 1380;
     const gridH = 707;
     const leftOffset = 588;
-    const topOffset = 236;
+    const topOffset = 240;
 
     container.innerHTML = living.map(m => {
       const scrPos = battleSystem.screenPositions.get(m.id);
@@ -1772,7 +1794,7 @@ export class BattleUI {
             </div>
           ` : ''}
           ${m.shield > 0 ? `
-            <div style="position: absolute; left: 54px; top: 20px; background:#0d2d52; border:1px solid #4ba3e3; color:#7dd4ff; font-family:'Press Start 2P','Zpix',monospace; font-size:12px; line-height:1; padding:2px 3px; display:flex;align-items:center;justify-content:center; min-width:10px; text-align:center; white-space:nowrap;">${m.shield}</div>
+            <div style="position: absolute; left: 54px; top: 20px; background:#0d2d52; border:1px solid #4ba3e3; color:#7dd4ff; font-family:'Zpix', monospace; font-size:12px; line-height:1; padding:2px 3px; display:flex;align-items:center;justify-content:center; min-width:10px; text-align:center; white-space:nowrap;">${m.shield}</div>
           ` : ''}
         </div>
       `;

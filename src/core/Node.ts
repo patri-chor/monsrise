@@ -46,6 +46,18 @@ export class Node {
     return { x: this.x, y: this.y };
   }
 
+  // World scale calculation
+  public get worldScale(): { x: number; y: number } {
+    if (this.parent) {
+      const pScale = this.parent.worldScale;
+      return {
+        x: this.scaleX * pScale.x,
+        y: this.scaleY * pScale.y
+      };
+    }
+    return { x: this.scaleX, y: this.scaleY };
+  }
+
   // Child management
   public addChild(child: Node): void {
     if (child.parent) {

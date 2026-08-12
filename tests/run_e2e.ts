@@ -738,8 +738,23 @@ test('T1_F5_25', 'Poison (25)', () => {
 
 test('T1_F5_26', 'Forest Shadow (26)', () => {
   const m = gameEngine.placeMonster({ monsterId: 101, badgeIds: [26] }, 4, 2, true);
+  gameEngine.placeMonster({ monsterId: 101, badgeIds: [] }, 6, 2, false);
   battleSystem.startBattle();
-  assertIsTrue(m!.statusEffects.some(e => e.type === 'stealth'), "Should start stealth");
+
+  const badges = getMonsterBadges(m!);
+  const jungleShadowBadge = badges.find(b => b.id === 26);
+  assertIsTrue(jungleShadowBadge !== undefined, "Monster should have Jungle Shadow badge");
+
+  const ctx = { battle: battleSystem, engine: gameEngine };
+
+  // Simulate 4 casts
+  jungleShadowBadge!.onSkillCast(m!, ctx);
+  jungleShadowBadge!.onSkillCast(m!, ctx);
+  jungleShadowBadge!.onSkillCast(m!, ctx);
+  jungleShadowBadge!.onSkillCast(m!, ctx);
+
+  const clones = gameEngine.boardMonsters.filter(x => x.id.startsWith(`summon_${m!.id}_`) && x.dbId === 126);
+  assertEqual(clones.length, 3, "Jungle Shadow badge should summon exactly 3 mini monkeys max");
 });
 
 test('T1_F5_27', 'Immolation (27)', () => {
@@ -1070,6 +1085,23 @@ test('T5_SUMMON_MONKEY', 'Mini Monkey summon properties and poison attack', () =
   runBattleTicks(5.0);
   const targetHasPoison = target!.statusEffects.some(e => e.type === 'poison');
   assertIsTrue(targetHasPoison, "Target hit by mini monkey should gain poison effect");
+});
+
+test('T6_WEAPON_ANIMATION', 'Weapon direction target locking', () => {
+  const m = gameEngine.placeMonster({ monsterId: 101, badgeIds: [] }, 4, 2, true);
+  const target = gameEngine.placeMonster({ monsterId: 102, badgeIds: [] }, 6, 3, false);
+  
+  battleSystem.startBattle();
+  target!.hp = 1; // 让目标一击必杀
+  runBattleTicks(0.1);
+  
+  // Verify target is locked correctly
+  const lockedId = (m as any).currentTargetId;
+  assertEqual(lockedId, target!.id, "Attacker should correctly lock target ID in battleSystem");
+  
+  // Run battle until target dies
+  runBattleTicks(5.0);
+  assertEqual(target!.isDead, true, "Target should eventually die under attack");
 });
 
 restoreTimers();

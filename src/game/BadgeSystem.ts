@@ -1,6 +1,6 @@
 import { PlacedMonster, gameEngine } from './GameEngine';
 import { vfx } from './VfxManager';
-import { gridToScreen } from './ScreenConfig';
+import { gridToScreen, DB_MONSTERS } from './Database';
 import { HIT } from './VfxPresets';
 
 /**
@@ -223,6 +223,12 @@ export abstract class BaseBadge {
     void _dt;
     void _ctx;
   }
+
+  /**
+   * 战斗开始时清理本徽章的跨战斗残留状态（按怪兽 id 存储的 Map/Set/计时器等）。
+   * 默认空操作；有状态徽章必须重写，避免上一场战斗的数据泄漏到下一场。
+   */
+  public clearBattleState(): void {}
 }
 
 // ==================== IntervalTimer 工具类 ====================
@@ -243,6 +249,11 @@ export class IntervalTimer {
     this._timers.set(id, t);
     return false;
   }
+
+  /** 清空所有计时（战斗开始前调用，避免跨战斗残留） */
+  clear(): void {
+    this._timers.clear();
+  }
 }
 
 // ==================== 徽章注册表 ====================
@@ -261,6 +272,11 @@ export function getMonsterBadges(monster: PlacedMonster): BaseBadge[] {
   return monster.badges
     .map(b => BADGE_REGISTRY.get(b.id))
     .filter((b): b is BaseBadge => !!b);
+}
+
+/** 战斗开始前清空所有徽章的跨战斗残留状态（防止上一场数据泄漏到下一场） */
+export function resetBadgeBattleState(): void {
+  for (const badge of BADGE_REGISTRY.values()) badge.clearBattleState();
 }
 
 // ==================== 批量调用工具函数 ====================
@@ -344,6 +360,8 @@ class WitherBadge extends BaseBadge {
   readonly desc = '目标附带负面效果数时，普攻伤害增加40%每效果';
 
   modifyDamage(_m: PlacedMonster, dmg: number, ctx: BadgeContext): number {
+    // 献祭免疫负面效果，凋零对其无效
+    if (ctx.target && getMonsterBadges(ctx.target).some(b => b.id === 27)) return dmg;
     const count = ctx.target?.statusEffects.length ?? 0;
     return count > 0 ? dmg + Math.round(dmg * 0.4 * count) : dmg;
   }
@@ -389,6 +407,10 @@ class ElementSurgeBadge extends BaseBadge {
     }
     this._indexMap.set(key, idx + 1);
   }
+
+  clearBattleState(): void {
+    this._indexMap.clear();
+  }
 }
 
 // --- Badge 5: 助跑 ---
@@ -424,6 +446,10 @@ class RunUpBadge extends BaseBadge {
     s.lastGx = m.gridX;
     s.lastGy = m.gridY;
   }
+
+  clearBattleState(): void {
+    this._state.clear();
+  }
 }
 
 // --- Badge 6: 回复光环 ---
@@ -456,6 +482,10 @@ class RegenAuraBadge extends BaseBadge {
     for (const ally of allies) {
       battle.applyHealWithChefBonus(m, ally, spread, battle);
     }
+  }
+
+  clearBattleState(): void {
+    this._timer.clear();
   }
 }
 
@@ -543,6 +573,10 @@ class PhalanxDefenseBadge extends BaseBadge {
         }
       }
     }
+  }
+
+  clearBattleState(): void {
+    this._timer.clear();
   }
 }
 
@@ -670,6 +704,10 @@ class CounterBadge extends BaseBadge {
   onAfterDeath(m: PlacedMonster, _ctx: BadgeContext): void {
     this._ready.delete(m.id);
   }
+
+  clearBattleState(): void {
+    this._ready.clear();
+  }
 }
 
 // --- Badge 22: 鲁莽 ---
@@ -700,9 +738,17 @@ class RecklessBadge extends BaseBadge {
     const s = this._state.get(m.id);
     if (!s || s.stacks === 0) return;
     s.timer -= dt;
-    if (s.timer <= 0) {
+    // 宽限一格 tick 再判定到期（timer < -dt 而非 timer <= 0）：
+    // 持续 2s 的层数与攻击间隔恰好 2s 的怪（如救星骑士连段轮次）在帧/浮点误差下，
+    // 下一次出手落地时 timer 会落在 0 或 -ε，导致层数提前清零、无法跨轮连续叠到 3 层。
+    // 留一格余量后，只要攻击节奏不断，层数就能跨轮延续；停止攻击超过 2s+tick 仍正常清空。
+    if (s.timer < -dt) {
       s.stacks = 0;
     }
+  }
+
+  clearBattleState(): void {
+    this._state.clear();
   }
 }
 
@@ -746,6 +792,10 @@ class TenacityBadge extends BaseBadge {
       s.pulse = 0;
     }
   }
+
+  clearBattleState(): void {
+    this._state.clear();
+  }
 }
 
 // --- Badge 24: 炸弹 ---
@@ -760,6 +810,10 @@ class BombBadge extends BaseBadge {
     const loss = Math.floor(m.hp * 0.8);
     m.hp = Math.max(1, m.hp - loss);
     this._totalDmg.set(m.id, loss);
+  }
+
+  clearBattleState(): void {
+    this._totalDmg.clear();
   }
 
   onAfterTakeDamage(m: PlacedMonster, ctx: BadgeContext): void {
@@ -843,7 +897,67 @@ class PoisonBadge extends BaseBadge {
 class JungleShadowBadge extends BaseBadge {
   readonly id = 26;
   readonly name = '丛林之影';
-  readonly desc = '战斗开始隐身3秒，隐身期间必暴击且不被选为目标';
+  readonly desc = '释放技能时召唤一只小猴子（最多三次）';
+
+  public onPlace(m: PlacedMonster, _ctx?: BadgeContext): void {
+    (m as any).jungleShadowSummonCount = 0;
+  }
+
+  public onSkillCast(m: PlacedMonster, ctx: BadgeContext): void {
+    const battle = ctx.battle;
+    if (!battle) return;
+
+    if (!(m as any).jungleShadowSummonCount) {
+      (m as any).jungleShadowSummonCount = 0;
+    }
+
+    if ((m as any).jungleShadowSummonCount >= 3) {
+      return;
+    }
+
+    const freeCell = battle.findClosestFreeCell(m.gridX, m.gridY);
+    if (freeCell) {
+      const monkeyData = DB_MONSTERS.find(mon => mon.id === 126);
+      if (monkeyData) {
+        const miniMonkey: PlacedMonster = {
+          id: `summon_${m.id}_${battle._summonCounter++}`,
+          dbId: 126,
+          data: monkeyData,
+          badges: [],
+          gridX: freeCell.gridX,
+          gridY: freeCell.gridY,
+          initialGridX: freeCell.gridX,
+          initialGridY: freeCell.gridY,
+          placedRound: m.placedRound,
+          team: m.team,
+          hp: monkeyData.hp,
+          maxHp: monkeyData.hp,
+          atk: monkeyData.atk,
+          ats: monkeyData.ats,
+          range: monkeyData.range,
+          speed: monkeyData.speed,
+          shield: 0,
+          skillCdProgress: 0,
+          isDead: false,
+          statusEffects: [],
+          state: 'idle'
+        };
+
+        battle._monsters.push(miniMonkey);
+        gameEngine.boardMonsters.push(miniMonkey);
+        battle._gridOccupation[freeCell.gridX][freeCell.gridY] = miniMonkey;
+
+        const scrPos = gridToScreen(freeCell.gridX, freeCell.gridY);
+        battle.screenPositions.set(miniMonkey.id, { ...scrPos });
+        battle._targetPositions.set(miniMonkey.id, { ...scrPos });
+        battle._attackTimers.set(miniMonkey.id, 1 / miniMonkey.ats);
+
+        vfx.spawnParticle(scrPos.x, scrPos.y, HIT.summonFlash);
+
+        (m as any).jungleShadowSummonCount++;
+      }
+    }
+  }
 }
 
 // --- Badge 27: 献祭 ---
@@ -856,7 +970,7 @@ class SacrificeBadge extends BaseBadge {
   private _fireTimer = 0;
 
   onApplyStatusEffect(_m: PlacedMonster, effect: any): boolean {
-    const blockedTypes = ['stun', 'chill', 'burn', 'poison', 'bleed'];
+    const blockedTypes = ['stun', 'chill', 'burn', 'poison', 'bleed', 'freeze'];
     if (blockedTypes.includes(effect.type)) {
       return false;
     }
@@ -905,6 +1019,11 @@ class SacrificeBadge extends BaseBadge {
         }
       }
     }
+  }
+
+  clearBattleState(): void {
+    this._timer.clear();
+    this._fireTimer = 0;
   }
 }
 
@@ -999,6 +1118,10 @@ class ReactiveArmorBadge extends BaseBadge {
       ReactiveArmorBadge.hpLossTracker.set(m.id, total);
     }
   }
+
+  clearBattleState(): void {
+    ReactiveArmorBadge.hpLossTracker.clear();
+  }
 }
 
 // --- Badge 31: 哨位 ---
@@ -1031,6 +1154,10 @@ class VoodooBadge extends BaseBadge {
     if (this._timer.tick(m.id, dt, 5.0)) {
       m.hp = Math.floor(m.maxHp * 0.2);
     }
+  }
+
+  clearBattleState(): void {
+    this._timer.clear();
   }
 }
 

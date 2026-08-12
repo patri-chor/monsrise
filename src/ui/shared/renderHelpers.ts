@@ -132,7 +132,7 @@ export function renderDetailCard(
     <!-- Skill Box -->
     <div class="details-skill-section">
       <div class="details-skill-desc-box">
-        <div style="color:#e5c158; font-size:24px; margin-bottom:4px;">${monster.skill} (CD: ${monster.skillCd}s)</div>
+        <div style="color:#e5c158; font-size:32px; margin-bottom:4px;">${monster.skill} (CD: ${monster.skillCd}s)</div>
         <div style="font-size:22px;">${skillText}</div>
       </div>
     </div>

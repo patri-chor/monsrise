@@ -3,19 +3,9 @@
    ============================================= */
 /* 本地托管像素字体，避免 Google Fonts 网络阻塞 */
 @font-face {
-  font-family: 'Press Start 2P';
-  src: url('/fonts/PressStart2P.woff2') format('woff2');
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Silkscreen';
-  src: url('/fonts/Silkscreen.woff2') format('woff2');
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'Zpix';
-  src: url('/zpix.ttf') format('truetype');
+  src: url('/fonts/zpix.ttf') format('truetype');
+  font-display: swap;
 }
 
 :root {
@@ -27,8 +17,8 @@
   --color-blue: #4ba3e3;
   --color-dark: #1a1c2c;
   --color-darker: #0b0c10;
-  --font-pixel: 'Press Start 2P', 'Zpix', monospace;
-  --font-data: 'Silkscreen', 'Zpix', monospace;
+  --font-pixel: 'Zpix', monospace;
+  --font-data: 'Zpix', monospace;
 }
 
 /* =============================================
@@ -50,7 +40,7 @@ html {
 
 body {
   background-color: #0b0c10;
-  font-family: 'Press Start 2P', 'Zpix', monospace, sans-serif;
+  font-family: 'Zpix', monospace, sans-serif;
   color: #fff;
   overflow: hidden;
   width: 100vw;
@@ -90,22 +80,10 @@ body {
   left: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 4;
+  z-index: 5;
   transform-origin: top left;
   background: transparent;
   pointer-events: none;
-}
-
-/* Battle Ground Layer (ship/foreground, below canvas, above sky+clouds) */
-.battle-ground-layer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 2556px;
-  height: 1179px;
-  z-index: 3;
-  pointer-events: none;
-  overflow: hidden;
 }
 
 /* UI Overlay Layer */
@@ -115,7 +93,7 @@ body {
   left: 0;
   width: 2556px;
   height: 1179px;
-  z-index: 5;
+  z-index: 4;
   pointer-events: auto;
   transform-origin: top left;
 }
@@ -132,7 +110,7 @@ body {
 .pixel-panel {
   pointer-events: auto;
   border-style: solid;
-  border-image: url('/ui_panel_9slice.png') 16 stretch;
+  border-color: #2a2c3c;
   border-width: 16px;
   background-color: #1a1c2c;
   color: #fff;
@@ -145,11 +123,11 @@ body {
 .pixel-btn {
   pointer-events: auto;
   border-style: solid;
-  border-image: url('/ui_button_9slice.png') 8 stretch;
+  border-color: #4a6fa5;
   border-width: 8px;
   background-color: #283241;
   color: #fff;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 18px;
   padding: 4px 12px;
   cursor: pointer;
@@ -160,7 +138,7 @@ body {
 }
 
 .pixel-btn:active, .pixel-btn.active {
-  border-image: url('/ui_button_pressed_9slice.png') 8 stretch;
+  border-color: #2a4f75;
   background-color: #141923;
   padding-top: 6px;
   padding-bottom: 2px;
@@ -178,7 +156,7 @@ body {
   pointer-events: auto;
   width: 56px;
   height: 56px;
-  background-image: url('/ui_slot.png');
+  background-color: #1a1c2c;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   display: flex;
@@ -345,18 +323,16 @@ body {
 .ship-enter-wrapper {
   position: absolute;
   bottom: -20px;
-  left: 100%;
-  width: 150%;
+  left: 0;
+  width: 100%;
   height: 38%;
   z-index: 3;
-  animation: shipEnter 3.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-@keyframes shipEnter {
-  0% { left: 100%; }
-  100% { left: -50%; }
-}
-
+/* 船层动画全部改用 background-position（与云 scrollBg 同机制）：
+   background-position 动画不提升 GPU 合成层，iOS Safari 走 CPU 光栅化，
+   不占 GPU tile 内存，真机验证安全。船图 2268x567 按高 100% 缩放为
+   4124x1031（与旧 cover 缩放完全一致），静止位对应旧 top-center 停靠画面。 */
 .bg-layer.ship {
   position: absolute;
   left: 0;
@@ -365,16 +341,24 @@ body {
   width: 100%;
   height: 230%;
   background-image: url('/background/ship.png') !important;
-  background-size: cover;
-  background-position: top center;
   background-repeat: no-repeat;
-  transform-origin: bottom center;
-  animation: swayShip 6s ease-in-out infinite;
+  background-size: auto 100%;
+  background-position-x: -1421px;
+  background-position-y: 0;
+  animation: shipEnterX 3.0s cubic-bezier(0.25, 1, 0.5, 1) forwards,
+             shipFloatY 6s ease-in-out 3.0s infinite;
 }
 
-@keyframes swayShip {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(0.15deg); }
+/* 入场：整幅船景从右侧滑入（等效旧 left:100% -> -50% 的横向进场） */
+@keyframes shipEnterX {
+  0%   { background-position-x: 2556px; }
+  100% { background-position-x: -1421px; }
+}
+
+/* 浮动：上下轻摆 8px（等效旧 swayShip 的 translateY(-8px)，去掉 0.15deg 旋转） */
+@keyframes shipFloatY {
+  0%, 100% { background-position-y: 0; }
+  50%      { background-position-y: -8px; }
 }
 
 /* --- 退出过渡动画 --- */
@@ -395,23 +379,12 @@ body {
   to   { opacity: 0; }
 }
 
-.ship-enter-wrapper.exiting {
-  animation: shipExit 0.8s ease-in forwards;
+.ship-enter-wrapper.exiting .bg-layer.ship {
+  animation: shipExitY 0.8s ease-in forwards;
 }
-@keyframes shipExit {
-  from { transform: translateY(0); }
-  to   { transform: translateY(120%); }
-}
-
-/* 战斗 UI 延迟入场 */
-#battleView.delayed-ui {
-  opacity: 0;
-  pointer-events: none;
-  animation: battleUIIn 0.5s ease 2s forwards;
-}
-@keyframes battleUIIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+@keyframes shipExitY {
+  from { background-position-y: 0; }
+  to   { background-position-y: 620px; }
 }
 
 /* --- 开屏按钮 --- */
@@ -521,12 +494,7 @@ body {
   image-rendering: pixelated;
   pointer-events: none;
   z-index: 50;
-  opacity: 0;
-  animation: decoFrameIn 0.5s ease 2s forwards;
-}
-@keyframes decoFrameIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  opacity: 1;
 }
 
 /* Squad Tab buttons container - absolutely placed on top of panel tabs */
@@ -558,8 +526,8 @@ body {
   align-items: center;
   padding-left: 40px;
   padding-bottom: -10px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 40px;
+  font-family: 'Zpix', monospace;
+  font-size: 60px;
   text-align: left;
   color: #fff;
   text-shadow: 4px 4px 0px #524e4e;
@@ -662,6 +630,33 @@ body {
 }
 
 
+/* 玩家名牌：透明输入框，叠在 set.png 底部铭牌区域，临时用来设置自己的名字（昵称） */
+.player-name-plate {
+  position: absolute;
+  left: 1060px;
+  top: 1105px;
+  width: 450px;
+  height: 60px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: 'Zpix', monospace;
+  font-size: 40px;
+  letter-spacing: 6px;
+  text-align: center;
+  text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+  z-index: 200;
+  pointer-events: auto;
+  caret-color: #ffffff;
+  padding: 0;
+  image-rendering: pixelated;
+}
+.player-name-plate::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 2px 2px 0 #000;
+}
+
 /* 模式按钮 — 归属于 left panel 内部底部 */
 .editor-actions-container {
   display: flex;
@@ -685,7 +680,7 @@ body {
   box-shadow: none !important;
   outline: none !important;
   cursor: pointer;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 48px;
   color: #fff;
   text-shadow: 2px 2px 0px #000;
@@ -720,7 +715,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 45px;
   color: #fff;
   text-shadow: 2px 2px 0px #000;
@@ -731,9 +726,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url('/UI.png') !important;
-  background-position: -624px -952px !important;
-  background-size: 2484px 1264px !important;
+  background: #3a3c4c;
   image-rendering: pixelated;
   mix-blend-mode: darken;               /* 去白边：只影响背景层 */
   z-index: -1;
@@ -820,7 +813,7 @@ body {
   left: 475px;
   top: 490px;
   width: 250px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 16px;
   color: #ffffff;
   text-align: center;
@@ -831,7 +824,7 @@ body {
   left: 144px;
   top: 484px;
   width: 250px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 24px;
   color: #e5c158;
   text-shadow: 2px 2px 0px #000;
@@ -842,7 +835,7 @@ body {
 /* Precise raw stat values positioned over blank spaces in edite/detail.png */
 .details-val {
   position: absolute;
-  font-family: 'Silkscreen', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 20px;
   font-weight: normal;
   color: #4a3424; /* 木质深棕色，与面板底色极其协调 */
@@ -852,7 +845,7 @@ body {
   text-shadow: none;
   background-color: transparent;
   z-index: 6;
-  letter-spacing: -6px; /* 负字距拉紧，解决等宽间距过宽问题 */
+  letter-spacing: 0px; /* 负字距拉紧，解决等宽间距过宽问题 */
 }
 
 .details-val-hp { left: 550px; top: 144px; width: 180px; height: 36px; font-size: 38px; display: flex; justify-content: center;}
@@ -899,7 +892,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 16px;
   color: #ffffff; /* 纯白色文字 */
   line-height: 1.4;
@@ -1045,7 +1038,7 @@ body {
 .modal-monster-card img {
   width: 164px;
   height: 164px;
-  scale: 1.3;
+  scale: 1;
   margin-top: 10px;
   margin-bottom: 12px;
   object-fit: contain;
@@ -1053,7 +1046,7 @@ body {
 }
 
 .modal-monster-name {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 20px;
   color: #fff;
   text-shadow: 2px 2px 0px #000;
@@ -1061,7 +1054,7 @@ body {
 }
 
 .modal-monster-cost {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 18px;
   color: #e5c158;
   text-shadow: 1px 1px 0px #000;
@@ -1175,7 +1168,7 @@ body {
 }
 
 .badge-tooltip-name {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 28px;
   color: #e5c158;
   text-shadow: 1px 1px 0px #000;
@@ -1232,45 +1225,17 @@ body {
   pointer-events: none;
 }
 
-/* Ground1 foreground layer (ship) */
-.battle-ground-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  animation: groundEnter 3.0s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-@keyframes groundEnter {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
-}
-
-.bg-layer.battle-ground {
+/* 战斗背景：单张静态 bg.png（取代 sky+云+船 多层动画，iOS 上避免背景动画崩溃） */
+.bg-layer.battle-bg {
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/fight/ground1.webp') !important;
-  background-size: 100% 100%;
-  background-position: bottom center;
+  background-image: url('/fight/bg.png') !important;
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
-  transform: scale(0.95);
-}
-
-/* Inner wrapper for battle background - sways all child layers together */
-.battle-bg-inner {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  animation: swayBattle 6s ease-in-out infinite;
-}
-
-@keyframes swayBattle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
 }
 
 
@@ -1344,7 +1309,7 @@ body {
   filter: grayscale(0.85);
 }
 .scoreboard-circle.question {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 28px;
   color: #888;
   font-weight: bold;
@@ -1384,21 +1349,46 @@ body {
 }
 
 .scoreboard-timer {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 54px;
+  font-family: 'Zpix', monospace;
+  font-size: 100px;
   color: #fff;
   font-weight: bold;
   text-shadow: 3px 3px 0px #000;
   line-height: 1.0;
-  margin-top: 15px;
+  position: absolute;
+  top: -10px;
 }
 
 .scoreboard-phase-text {
-  font-family: 'Press Start 2P', 'Zpix', monospace;
-  font-size: 28px;
+  font-family: 'Zpix', monospace;
+  font-size: 50px;
   color: #e5c158;
   text-shadow: 2px 2px 0px #000;
-  margin-top: 4px;
+  position: absolute;
+  top: 100px;
+}
+
+/* 战斗倍速切换按钮（右上角，仅战斗中显示） */
+.speed-toggle-btn {
+  position: absolute;
+  top: 240px;
+  right: 90px;
+  width: 130px;
+  height: 68px;
+  z-index: 30;
+  border-style: solid;
+  border-color: #4a6fa5;
+  border-width: 6px;
+  background-color: rgba(26, 28, 44, 0.92);
+  color: #ffd75e;
+  font-family: 'Zpix', monospace;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.speed-toggle-btn:hover {
+  background-color: #283241;
 }
 
 /* Battle Bottom UI Container - Styled with team.png (931x166 scaled 2x) */
@@ -1438,7 +1428,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 24px;
   color: #fff;
   text-shadow: 2px 2px 0px #000;
@@ -1485,7 +1475,7 @@ body {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  font-family: 'Press Start 2P', 'Zpix', monospace;
+  font-family: 'Zpix', monospace;
   font-size: 20px;
   color: #e5c158;
   text-shadow: 2px 2px 0px #000;
@@ -1781,6 +1771,305 @@ body {
 }
 
 /* =============================================
+   联机大厅（net）— netp.png 面板 + b1/b2/b3/txtbox/scroll 贴图
+   所有贴图均按原始比例等倍放大（不拉伸）
+   ============================================= */
+.net-lobby {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 30;
+  font-family: 'Zpix', monospace;
+  color: #fff;
+  /* 与队伍界面共存：整层不拦截点击，只有面板可点 */
+  pointer-events: none;
+}
+
+/* 右侧面板容器：netp.png 511x605 按 1.7x -> 869x1029（保持比例）
+   整体缩小 0.9：视觉 782x926，左上角锚点不变 */
+.net-panel {
+  position: absolute;
+  left: 1622px;
+  top: 105px;
+  width: 869px;
+  height: 1029px;
+  background-image: url('/edite/netp.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  image-rendering: pixelated;
+  pointer-events: auto;
+  z-index: 31;
+  transform: scale(0.9);
+  transform-origin: top left;
+}
+
+/* 顶部标题栏（netp 顶部棕黄横带位置） */
+.net-title {
+  position: absolute;
+  left: 188px;
+  top: 16px;
+  width: 500px;
+  height: 100px;
+  text-align: center;
+  font-size: 62px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000;
+  letter-spacing: 6px;
+}
+
+/* 顶部按钮行（居中）：b1/b2 204x76 按 1.6x -> 326x122 */
+.net-top-row {
+  position: absolute;
+  left: 96px;
+  top: 132px;
+  width: 676px;
+  height: 122px;
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+/* 贴图按钮基类：清除浏览器默认样式（白边/灰底） */
+.net-btn {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  outline: none;
+  background-color: transparent !important;
+  cursor: pointer;
+  font-family: 'Zpix', monospace;
+  font-size: 36px;
+  color: #fff;
+  text-shadow: 3px 3px 0 #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  line-height: 1;
+  /* 像素字体基线偏下，padding-bottom 使文字视觉上移居中对齐 */
+  padding: 0 0 8px 0;
+  image-rendering: pixelated;
+  transition: transform 0.1s, filter 0.1s;
+}
+.net-btn:hover { filter: brightness(1.12); }
+.net-btn:active { transform: scale(0.96); }
+
+.net-btn-green {
+  width: 326px;
+  height: 122px;
+  background-image: url('/edite/b1.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+}
+.net-btn-blue {
+  width: 326px;
+  height: 122px;
+  background-image: url('/edite/b2.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+}
+/* 搜索对战：b3 201x73 按 1.6x -> 322x117，与创建房间左对齐 */
+.net-btn-purple {
+  position: absolute;
+  left: 96px;
+  top: 427px;
+  width: 322px;
+  height: 117px;
+  background-image: url('/edite/b3.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+}
+
+/* 房间码输入框：txtbox.png 433x91 按 1.55x -> 671x141（保持比例） */
+.net-room-box {
+  position: absolute;
+  left: 96px;
+  top: 274px;
+  width: 671px;
+  height: 141px;
+  background-image: url('/edite/txtbox.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  image-rendering: pixelated;
+}
+
+.net-room-box input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 64%;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  text-align: center;
+  font-family: 'Zpix', monospace;
+  font-size: 40px;
+  color: #3a2a1c;
+  letter-spacing: 12px;
+  caret-color: #3a2a1c;
+}
+.net-room-box input::placeholder {
+  color: #a0896c;
+  font-size: 26px;
+  letter-spacing: 2px;
+}
+
+/* 复制键：叠放在 txtbox 右侧深棕块区域 */
+.net-copy-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 36%;
+  height: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0;
+  outline: none;
+  background-color: #483526;
+  color: #fff;
+  font-family: 'Zpix', monospace;
+  font-size: 26px;
+  text-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  image-rendering: pixelated;
+  transition: transform 0.1s, filter 0.1s;
+}
+.net-copy-btn:hover { filter: brightness(1.15); }
+.net-copy-btn:active { transform: scale(0.97); }
+.net-copy-btn.hidden { display: none; }
+
+/* 对战池：scroll.png 449x189 按 1.5x -> 674x284（保持比例） */
+.net-pool-box {
+  position: absolute;
+  left: 96px;
+  top: 591px;
+  width: 674px;
+  height: 284px;
+  background-image: url('/edite/scroll.png') !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  image-rendering: pixelated;
+  box-sizing: border-box;
+}
+
+.net-pool-title {
+  position: absolute;
+  left: 30px;
+  top: 16px;
+  height: 35px;
+  font-size: 30px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.net-pool-list {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  top: 76px;
+  height: 191px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.net-pool-item {
+  font-size: 20px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  padding: 6px 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.net-pool-empty {
+  font-size: 24px;
+  color: #999;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* 底部栏：连接情况 + 返回
+   放在 netp 问号所在高度的横栏（netp y≈527-560 -> 面板 top≈970px），
+   而不是底部的棕黄边框带（netp y=578-599） */
+.net-bottom-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 919px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+}
+
+.net-status {
+  position: absolute;
+  left: 100px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 32px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* 连接状态文字颜色（已连接/未连接） */
+.net-status-val.online { color: #5ac54f; }
+.net-status-val.offline { color: #df3e23; }
+
+.net-back-btn {
+  position: absolute;
+  left: 600px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Zpix', monospace;
+  font-size: 32px;
+  color: #e5c158;
+  text-shadow: 2px 2px 0 #000;
+  padding: 4px 10px;
+}
+.net-back-btn:hover { color: #fff; }
+
+/* =============================================
+   右上角声音按钮（音量 0-100%，每次点击 20%）
+   ============================================= */
+#soundToggleBtn {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 100;
+  font-family: 'Zpix', monospace;
+  font-size: 13px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  background: rgba(11, 12, 16, 0.85);
+  border: 3px solid #e5c158;
+  border-radius: 0;
+  padding: 10px 14px 12px 14px;
+  cursor: pointer;
+  line-height: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  image-rendering: pixelated;
+  transition: transform 0.1s, filter 0.1s;
+}
+#soundToggleBtn:hover { filter: brightness(1.15); }
+#soundToggleBtn:active { transform: scale(0.94); }
+#soundToggleBtn.muted { color: #9aa; border-color: #666; }
+
+/* =============================================
    响应式：手机竖屏强制横屏
    ============================================= */
 @media screen and (orientation: portrait) {
@@ -1794,4 +2083,23 @@ body {
     transform-origin: top left;
     translate: 100vw 0;
   }
+}
+
+/* =============================================
+   iOS 低功耗模式（body.is-ios，由 loader 检测 UA 后标记）
+   真机确认：transform 类动画（队伍面板滑入、旧船 swayShip）一跑
+   iOS Safari 就崩溃。船动画已改用 background-position（与云同机制），
+   iOS 安全，故仅保留对 transform 面板动画的禁用。
+   ============================================= */
+.is-ios #teamEditor.anim-in .editor-left-panel {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* 怪兽/徽章选择弹窗：编辑面板上滑用 transform 过渡（大尺寸层，iOS 会崩）。
+   改为瞬间隐藏/显示（面板立即淡出，弹窗直接覆盖），仅 iOS。 */
+.is-ios #teamEditor.monster-selecting .editor-left-panel {
+  transition: none !important;
+  transform: scale(0.8) !important;
+  opacity: 0 !important;
 }

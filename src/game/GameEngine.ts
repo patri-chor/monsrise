@@ -186,6 +186,21 @@ export class GameEngine {
               slot.badgeIds = [];
             }
           }
+          // 补足 8 槽：旧数据可能存了短队伍（长度 < 8），
+          // 会导致队伍编辑弹窗"只能选 N 只"（找不到空槽位，点击卡片静默忽略）
+          while (team.length < 8) {
+            team.push({ monsterId: 0, badgeIds: [] });
+          }
+        }
+        // 补足队伍数到 10（与默认一致）：旧数据可能只有 1-4 队，
+        // 而队伍编辑 UI 固定渲染 5 个标签，不足时点标签切换会取到
+        // teams[idx] = undefined → render 崩溃（"无法切换队伍/战斗返回卡住"）
+        while (this.teams.length < 10) {
+          this.teams.push(Array.from({ length: 8 }, () => ({ monsterId: 0, badgeIds: [] })));
+        }
+        // 数据异常（空数组/无有效队伍）时回退默认
+        if (this.teams.length === 0) {
+          this.initDefaultTeams();
         }
       } else {
         this.initDefaultTeams();
@@ -194,6 +209,9 @@ export class GameEngine {
       const savedIndex = localStorage.getItem('monsrise_selected_team_index');
       if (savedIndex) {
         this.selectedTeamIndex = parseInt(savedIndex, 10);
+        if (this.selectedTeamIndex >= this.teams.length) {
+          this.selectedTeamIndex = 0;
+        }
       }
     } catch (e) {
       console.error('Failed to load teams from localStorage:', e);
@@ -296,17 +314,17 @@ export class GameEngine {
     const dbMonster = DB_MONSTERS.find(m => m.id === slot.monsterId);
     if (!dbMonster) return null;
 
-    // Check budget
-    const remaining = isPlayer1 ? this.p1RemainingBudget : this.p2RemainingBudget;
-    if (remaining < dbMonster.cost) {
-      return null; // Budget exceeded
+    // Check budget（实验模式不限制预算，可一局放置超过费用的怪兽）
+    if (this.mode !== 'experimental') {
+      const remaining = isPlayer1 ? this.p1RemainingBudget : this.p2RemainingBudget;
+      if (remaining < dbMonster.cost) {
+        return null; // Budget exceeded
+      }
     }
 
     const badges = slot.badgeIds
       .map(id => DB_BADGES.find(b => b.id === id))
       .filter((b): b is BadgeData => !!b);
-
-    console.log(`[placeMonster] monsterId=${dbMonster.id}, slot.badgeIds=[${slot.badgeIds}], resolved badges=[${badges.map(b => b.name).join(',')}]`);
 
     const placed: PlacedMonster = {
       id: `${isPlayer1 ? 'p1' : 'p2'}_r${this.currentRound}_x${gridX}_y${gridY}`,

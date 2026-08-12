@@ -44,7 +44,7 @@ export const DB_MONSTERS: MonsterData[] = [
   { id: 107, name: "咒法骑士", cost: 2, type: 'ranged', hp: 1500, atk: 130, ats: 0.5, range: 5, speed: 2.5, skill: 'big_cannon', skillCd: 0, race: "人类", 
     role: "法师", scale: 1.0, sx: 408, sy: 215, sw: 204, sh: 205, skillCoeff: 7.5, skillDesc: "蓄力重炮：开局蓄力 2s，发射重炮对直线上敌人造成 {dmg} 伤害。" },
   { id: 108, name: "救星骑士", cost: 4, type: 'melee', hp: 3600, atk: 120, ats: 1, range: 1, speed: 2.5, skill: 'leap', skillCd: 8, race: "人类", 
-    role: "战士", scale: 0.9, sx: 617, sy: 205, sw: 204, sh: 205, skillCoeff: 4.5, skillDesc: "守护跳跃：跳跃至友方身边，落点造成 {dmg} 伤害，双方各获 8 层护盾。" },
+    role: "战士", scale: 0.85, sx: 617, sy: 205, sw: 204, sh: 205, skillCoeff: 4.5, skillDesc: "守护跳跃：跳跃至友方身边，落点造成 {dmg} 伤害，双方各获 8 层护盾。" },
   { id: 109, name: "银狙骑士", cost: 2, type: 'ranged', hp: 1000, atk: 300, ats: 0.35, range: 7, speed: 2.5, skill: 'shot', skillCd: 8, race: "人类", 
     role: "射手", scale: 1.0, sx: 0, sy: 420, sw: 204, sh: 205, skillCoeff: 4.0, skillDesc: "银色狙击：下一次普攻造成 4-5 倍伤害（{dmg}-{dmg2}），对高血量敌人伤害更高。" },
   { id: 110, name: "帝国之盾", cost: 2, type: 'melee', hp: 3000, atk: 72, ats: 0.83, range: 1, speed: 2.5, skill: 'shield', skillCd: 6, race: "人类", 
@@ -109,6 +109,7 @@ export const DB_BADGES: BadgeData[] = [
   { id: 23, name: "韧性", desc: "生命值低于20%时，在3秒内回血54%" },
   { id: 24, name: "炸弹", desc: "开局损失80%生命，死亡时对范围1敌人造成承受伤害40%的爆炸伤害" },
   { id: 25, name: "中毒", desc: "攻击或技能给目标施加中毒效果，每s受到15点伤害" },
+  { id: 26, name: "丛林之影", desc: "释放技能时召唤一只小猴子（最多三次）" },
   { id: 27, name: "献祭", desc: "免疫所有控制，每2s让周围1格的怪兽燃烧" },
   { id: 28, name: "加固", desc: "额外获得50%的护盾" },
   { id: 29, name: "协同进攻", desc: "与友方相邻时，攻击速度增加30%" },
@@ -173,3 +174,31 @@ export const BADGE_SPRITES: Record<number, BadgeSprite> = {
   34: { sx: 676, sy: 1146, sw: 138, sh: 147 },
   35: { sx: 954, sy: 1146, sw: 139, sh: 147 },
 };
+
+// ================================================================
+//  屏幕 / 网格配置（原 ScreenConfig.ts，合并入零依赖的 Database
+//  以打破 VfxManager ↔ BattleSystem 之间的循环依赖）
+// ================================================================
+export const screenConfig = {
+  width: 2556,
+  height: 1179,
+  leftOffset: 588,
+  topOffset: 240,
+  gridW: 1380,
+  gridH: 620,
+  gridCols: 11,
+  gridRows: 5,
+  cellGap: 10,
+  get cellW() { return (this.gridW - this.cellGap * (this.gridCols - 1)) / this.gridCols + this.cellGap; },
+  get cellH() { return (this.gridH - this.cellGap * (this.gridRows - 1)) / this.gridRows + this.cellGap; },
+  get cellContentW() { return (this.gridW - this.cellGap * (this.gridCols - 1)) / this.gridCols; },
+  get cellContentH() { return (this.gridH - this.cellGap * (this.gridRows - 1)) / this.gridRows; },
+};
+
+export function gridToScreen(gridX: number, gridY: number): { x: number; y: number } {
+  const cfg = screenConfig;
+  return {
+    x: cfg.leftOffset + gridX * cfg.cellW + cfg.cellContentW / 2,
+    y: cfg.topOffset + gridY * cfg.cellH + cfg.cellContentH / 2
+  };
+}

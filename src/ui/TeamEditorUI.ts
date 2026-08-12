@@ -1,7 +1,10 @@
 import { gameEngine, TeamSlot } from '../game/GameEngine';
 import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { uiManager } from './UIManager';
-import { requestFullscreen } from '../main';
+import { LobbyUI } from './LobbyUI';
+import { networkManager } from '../net/NetworkManager';
+import { music } from '../game/MusicManager';
+import { isIOSDevice, requestFullscreen } from './shared/fullscreen';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
 
 export class TeamEditorUI {
@@ -29,6 +32,8 @@ export class TeamEditorUI {
   private _randomYunNear: string = '';
   private _chosenClouds: { idx: number; top: number; duration: number; delay: number; scale: number }[] = [];
   private _bgRendered: boolean = false;
+  // 联机面板实例：再次点击"联机模式"按钮时关闭已打开的联机界面
+  private _lobbyUI: LobbyUI | null = null;
 
   constructor(container: HTMLDivElement) {
     this._container = container;
@@ -189,7 +194,11 @@ export class TeamEditorUI {
       <div id="teamEditor" class="ui-interactive${gameEngine.fromOpening ? ' anim-in' : ''}">
         ${teamEditorContent}
       </div>
-      <div class="fullscreen-deco-frame"></div>
+      <div class="fullscreen-deco-frame">
+        <!-- 玩家名牌：透明输入框，叠在 set.png 底部铭牌区域，临时用来设置自己的名字 -->
+        <input id="playerNamePlate" class="player-name-plate" type="text" maxlength="12"
+          placeholder="输入你的名字" value="${localStorage.getItem('monsrise_nick') || ''}" />
+      </div>
       ${modalsContent}
     `;
       this._bgRendered = true;
@@ -201,10 +210,22 @@ export class TeamEditorUI {
         editorEl.innerHTML = teamEditorContent;
       }
       // Ensure deco frame exists (avoids losing it on re-render)
-      if (!this._container.querySelector('.fullscreen-deco-frame')) {
-        const frame = document.createElement('div');
+      let frame = this._container.querySelector('.fullscreen-deco-frame') as HTMLElement | null;
+      if (!frame) {
+        frame = document.createElement('div');
         frame.className = 'fullscreen-deco-frame';
         this._container.appendChild(frame);
+      }
+      // 确保玩家名牌输入框存在（放入 set 容器内，作为其子元素显示在 set 之上）
+      if (!frame.querySelector('#playerNamePlate')) {
+        const plate = document.createElement('input');
+        plate.id = 'playerNamePlate';
+        plate.className = 'player-name-plate';
+        plate.type = 'text';
+        plate.maxLength = 12;
+        plate.placeholder = '输入你的名字';
+        plate.value = localStorage.getItem('monsrise_nick') || '';
+        frame.appendChild(plate);
       }
       // Replace modals
       this._container.querySelectorAll('.modal-overlay').forEach(m => m.remove());
@@ -256,7 +277,7 @@ export class TeamEditorUI {
                     ${renderSpriteImg(monster.sx, monster.sy, monster.sw, monster.sh, { transform: `scale(${1.2 * monster.scale})` })}
                     <div class="monster-switch-btn" data-index="${index}"></div>
                   ` : `
-                    <div class="monster-add-btn" data-index="${index}" style="font-size: 32px; color: #5a3c24; font-family: 'Press Start 2P', 'Zpix', monospace; opacity: 0.6;">＋</div>
+                    <div class="monster-add-btn" data-index="${index}" style="font-size: 32px; color: #5a3c24; font-family: 'Zpix', monospace; opacity: 0.6;">＋</div>
                   `}
                 </div>
               `;
@@ -337,11 +358,13 @@ export class TeamEditorUI {
   /** Start button click → reveal team editor UI with slide-in animation */
   private bindOpeningEvents(): void {
     document.getElementById('startGameBtn')?.addEventListener('click', () => {
+      // 用户手势内解锁音乐播放（iOS 自动播放限制），并开始播放大厅音乐
+      music.unlock();
       // 进入全屏（隐藏状态栏/地址栏）
       requestFullscreen();
       // Remove button overlay
       this._container.querySelector('.opening-screen')?.remove();
-      // Insert ship (triggers CSS shipEnter animation on DOM insert)
+      // Insert ship (triggers CSS shipEnterX animation on DOM insert)
       const bgContainer = this._container.querySelector('.team-editor-bg-container');
       if (bgContainer) {
         bgContainer.insertAdjacentHTML('beforeend', `
@@ -350,35 +373,67 @@ export class TeamEditorUI {
           </div>
         `);
       }
-      // Create team editor panels with anim-in class
-      const editorDiv = document.createElement('div');
-      editorDiv.id = 'teamEditor';
-      editorDiv.className = 'ui-interactive anim-in';
-      const activeTeam = gameEngine.activeTeam;
-      const selectedMonster = this._previewMonster || DB_MONSTERS.find(
-        m => m.id === activeTeam[this._selectedSlotIndex]?.monsterId
-      ) || DB_MONSTERS[0];
-      const activeSlot = activeTeam[this._selectedSlotIndex];
-      editorDiv.innerHTML = this.buildTeamEditorContent(activeTeam, selectedMonster, activeSlot);
-      this._container.appendChild(editorDiv);
-      // Add set frame border (must be present from start)
-      if (!this._container.querySelector('.fullscreen-deco-frame')) {
-        const frame = document.createElement('div');
-        frame.className = 'fullscreen-deco-frame';
-        this._container.appendChild(frame);
-      }
-      // Also add modals if needed
-      const modalsContent = `
-        ${this._activeMonsterSelectIndex !== null ? this.renderMonsterSelectModal() : ''}
-        ${this._activeBadgeSelectIndex !== null ? this.renderBadgeSelectModal() : ''}
-      `;
-      if (modalsContent.trim()) {
-        this._container.insertAdjacentHTML('beforeend', modalsContent);
-      }
-      // Bind all UI interaction events
-      this.bindEvents();
-      // Update game state
-      gameEngine.state = 'TEAM_EDIT';
+      // 队伍编辑 UI 构建（含 20+ 张贴图 DOM 一次性插入 + bindEvents）
+      const buildEditor = () => {
+        if (this._container.querySelector('#teamEditor')) return; // 幂等，防止超时兜底重复执行
+        // Create team editor panels with anim-in class
+        const editorDiv = document.createElement('div');
+        editorDiv.id = 'teamEditor';
+        editorDiv.className = 'ui-interactive anim-in';
+        const activeTeam = gameEngine.activeTeam;
+        const selectedMonster = this._previewMonster || DB_MONSTERS.find(
+          m => m.id === activeTeam[this._selectedSlotIndex]?.monsterId
+        ) || DB_MONSTERS[0];
+        const activeSlot = activeTeam[this._selectedSlotIndex];
+        editorDiv.innerHTML = this.buildTeamEditorContent(activeTeam, selectedMonster, activeSlot);
+        if (isIOSDevice()) {
+          // iOS：一次挂载 20+ 张贴图会导致纹理一次性上传、显存峰值崩溃。
+          // 先挂空壳容器，再把子元素分 3 批挂载（每批间隔 120ms），平摊 GPU 纹理上传。
+          this._container.appendChild(editorDiv);
+          const children = Array.from(editorDiv.children);
+          const batchSize = Math.ceil(children.length / 3);
+          children.forEach((child, i) => {
+            const batch = Math.floor(i / batchSize);
+            window.setTimeout(() => {
+              if (child.isConnected) return;
+              editorDiv.appendChild(child);
+            }, batch * 120);
+          });
+        } else {
+          this._container.appendChild(editorDiv);
+        }
+        // Add set frame border (must be present from start)
+        let frame = this._container.querySelector('.fullscreen-deco-frame') as HTMLElement | null;
+        if (!frame) {
+          frame = document.createElement('div');
+          frame.className = 'fullscreen-deco-frame';
+          this._container.appendChild(frame);
+        }
+        // Add player name plate (transparent input over set.png bottom name plate, inside set container)
+        if (!frame.querySelector('#playerNamePlate')) {
+          const plate = document.createElement('input');
+          plate.id = 'playerNamePlate';
+          plate.className = 'player-name-plate';
+          plate.type = 'text';
+          plate.maxLength = 12;
+          plate.placeholder = '输入你的名字';
+          plate.value = localStorage.getItem('monsrise_nick') || '';
+          frame.appendChild(plate);
+        }
+        // Also add modals if needed
+        const modalsContent = `
+          ${this._activeMonsterSelectIndex !== null ? this.renderMonsterSelectModal() : ''}
+          ${this._activeBadgeSelectIndex !== null ? this.renderBadgeSelectModal() : ''}
+        `;
+        if (modalsContent.trim()) {
+          this._container.insertAdjacentHTML('beforeend', modalsContent);
+        }
+        // Bind all UI interaction events
+        this.bindEvents();
+        // Update game state
+        gameEngine.state = 'TEAM_EDIT';
+      };
+      buildEditor();
     });
   }
 
@@ -388,6 +443,10 @@ export class TeamEditorUI {
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const teamIdx = parseInt(tab.getAttribute('data-team-index') || '0', 10);
+        // 防御：teams 不足时补足空队，避免 teams[idx] 为 undefined 导致 render 崩溃
+        while (gameEngine.teams.length <= teamIdx) {
+          gameEngine.teams.push(Array.from({ length: 8 }, () => ({ monsterId: 0, badgeIds: [] })));
+        }
         gameEngine.selectedTeamIndex = teamIdx;
         gameEngine.saveTeams();
         this._previewMonster = null; // Reset details preview on tab switch
@@ -487,6 +546,12 @@ export class TeamEditorUI {
         this._switchOriginSlotIndex = index;
         this._switchOriginMonsterId = slot?.monsterId || 0;
         this._switchOriginBadgeIds = slot?.badgeIds ? [...slot.badgeIds] : [];
+        // 卸下怪兽，让槽位变空以便直接替换
+        if (slot) {
+          slot.monsterId = 0;
+          slot.badgeIds = [];
+          gameEngine.saveTeams();
+        }
         // 清除选中状态
         this._selectedSlotIndex = index;
         this._previewMonster = null;
@@ -562,15 +627,35 @@ export class TeamEditorUI {
 
     const onlineBtn = document.getElementById('lobbyOnlineModeBtn');
     onlineBtn?.addEventListener('click', () => {
-      this._startBattleTransition(() => {
-        gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
-          monsterId: s.monsterId,
-          badgeIds: [...s.badgeIds]
-        }));
-        gameEngine.mode = 'online';
-        gameEngine.state = 'MATCH_LOBBY';
-        uiManager.syncStateWithUI();
-      });
+      // 再次点击：关闭已打开的联机界面
+      if (this._lobbyUI || document.getElementById('lobbyView')) {
+        if (this._lobbyUI) {
+          this._lobbyUI.close();
+        } else {
+          // 面板由联机界面自身（返回按钮）关闭过，仅清理残留状态
+          document.getElementById('lobbyView')?.remove();
+          networkManager.leaveMatch();
+          gameEngine.state = 'TEAM_EDIT';
+          gameEngine.mode = 'experimental';
+        }
+        this._lobbyUI = null;
+        return;
+      }
+      gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+        monsterId: s.monsterId,
+        badgeIds: [...s.badgeIds]
+      }));
+      gameEngine.mode = 'online';
+      gameEngine.state = 'MATCH_LOBBY';
+      // 直接叠加联机面板（类似详情卡浮层），不重建队伍编辑界面，避免闪烁
+      this._lobbyUI = new LobbyUI(uiManager.container);
+      this._lobbyUI.render();
+    });
+
+    // 玩家名牌：输入昵称后保存（临时用于设置自己的名字）
+    const namePlate = document.getElementById('playerNamePlate') as HTMLInputElement | null;
+    namePlate?.addEventListener('change', () => {
+      localStorage.setItem('monsrise_nick', namePlate.value.trim());
     });
 
     // Online confirm button - no longer needed, flow handled in LobbyUI
@@ -601,14 +686,14 @@ export class TeamEditorUI {
             const activeClass = isSelected ? 'active' : '';
             return `
               <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-                ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(${0.8 * m.scale})', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
+                ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: `scale(${0.72 * m.scale})`, extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
                 <div class="modal-monster-name">${m.name}</div>
                 <div class="modal-monster-cost">${m.cost} 费</div>
               </div>
             `;
           }).join('')}
         </div>
-        <button id="closeMonsterModalBtn" style="background: transparent; border: none; color: #ededed; font-family: 'Press Start 2P', 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; left: 580px; top: 822px; width: 237px;">返回</button>
+        <button id="closeMonsterModalBtn" style="background: transparent; border: none; color: #ededed; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; left: 580px; top: 822px; width: 237px;">返回</button>
       </div>
     `;
   }
@@ -674,7 +759,7 @@ export class TeamEditorUI {
             return rows.join('');
           })()}
         </div>
-        <button id="closeBadgeModalBtn" style="background: transparent; border: none; color: #ffffff; font-family: 'Press Start 2P', 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; top: 823px; left: 575px; width: 250px;">返回</button>
+        <button id="closeBadgeModalBtn" style="background: transparent; border: none; color: #ffffff; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; top: 823px; left: 575px; width: 250px;">返回</button>
       </div>
     `;
   }
@@ -786,23 +871,15 @@ export class TeamEditorUI {
   }
 
   private refreshMonsterGrid(): void {
-    const gridScroll = this._container.querySelector('.modal-grid-scroll');
-    if (!gridScroll) return;
-
+    // 只切换 active 类（装备/卸下态），不重建整个卡片网格——
+    // 避免 iOS 上快速点击时反复销毁/重建 40+ 张卡片的 DOM 抖动与内存压力
+    const cards = this._container.querySelectorAll<HTMLElement>('.modal-monster-card');
+    if (!cards.length) return;
     const activeTeam = gameEngine.activeTeam;
-    gridScroll.innerHTML = DB_MONSTERS.filter(m => !m.isSummon).map(m => {
-      const isSelected = activeTeam.some(slot => slot.monsterId === m.id);
-      const activeClass = isSelected ? 'active' : '';
-      return `
-        <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
-          ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: 'scale(${0.8 * m.scale})', extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
-          <div class="modal-monster-name">${m.name}</div>
-          <div class="modal-monster-cost">${m.cost} 费</div>
-        </div>
-      `;
-    }).join('');
-
-    this.bindMonsterCardEvents();
+    cards.forEach(card => {
+      const id = parseInt(card.getAttribute('data-monster-id') || '0', 10);
+      card.classList.toggle('active', activeTeam.some(slot => slot.monsterId === id));
+    });
   }
 
   private bindMonsterCardEvents(): void {
@@ -824,6 +901,10 @@ export class TeamEditorUI {
           // Already equipped: Single click un-equips (remove from team)
           activeTeam[currentSlotIdx].monsterId = 0;
           activeTeam[currentSlotIdx].badgeIds = [];
+          // 如果卸下的是切换来源槽位的怪兽，标记为主动卸下，关闭时不还原
+          if (this._switchOriginSlotIndex === currentSlotIdx) {
+            this._switchOriginMonsterId = 0;
+          }
           gameEngine.saveTeams();
           this.refreshMonsterGrid();
         } else {
@@ -866,9 +947,7 @@ export class TeamEditorUI {
     teamEditor?.classList.add('exiting');
     shipWrapper?.classList.add('exiting');
 
-    // 标记本次为过渡入场，BattleUI 检查后播放延迟淡入
-    document.body.setAttribute('data-battle-transition', 'true');
-
-    setTimeout(callback, 800);
+    // 闪黑过渡：exiting 动画（0.8s）期间黑屏淡入，播完后切状态，随后黑屏淡出
+    uiManager.flashTo(callback, 800, 300);
   }
 }

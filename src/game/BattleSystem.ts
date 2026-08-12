@@ -1,65 +1,97 @@
 import { gameEngine, PlacedMonster } from './GameEngine';
-import { vfx, tntImage } from './VfxManager';
+import { vfx, tntImage, BOLT_PROFILES } from './VfxManager';
 import type { Projectile, BoltType } from './VfxManager';
-import { BOLT_PROFILES } from './VfxManager';
-import { HIT, SKILL, BULLET_OFFSET, BULLET_SPEED, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
-import { screenConfig, gridToScreen } from './ScreenConfig';
+import { HIT, SKILL, STATUS_EFFECT, DEFAULT_BULLET } from './VfxPresets';
+import { screenConfig, gridToScreen } from './Database';
 import { getSkill } from './SkillSystem';
-import { GameTickScheduler } from './GameTickScheduler';
+import { computeAttackPeakTime, getAnimationClip } from './animation/AnimationAnimator';
+import {
+  BULLET_OFFSET, BULLET_SPEED, ATTACK_DELAY, BURST_CONFIG,
+  KNOCKBACK_SPEED_FACTOR, KNOCKBACK_HEIGHT_FACTOR, CHARGE_SPEED_MULTIPLIER, CHARGE_SPEED_FACTOR,
+  COLLISION_REBOUND_X_HEIGHT, COLLISION_REBOUND_CHARGE_HEIGHT,
+  COLLISION_REBOUND_STRENGTH_MIN, COLLISION_REBOUND_STRENGTH_MAX,
+} from './animation/AnimTuning';
 import {
   badgeOnPlace, badgeOnStartOfBattle, badgeModifyDamage, badgeModifyIncomingDamage,
   badgeOnAfterDealDamage, badgeOnAfterTakeDamage, badgeModifyHeal, badgeOnAfterHeal,
   badgeModifyShield, badgeGetRangeBonus, badgeGetCdSpeedBonus, badgeGetAtsMultiplier,
   badgeOnSkillCast, badgeOnBeforeDeath, badgeOnAfterDeath, badgeOnTick,
-  badgeOnApplyStatusEffect, getMonsterBadges, BadgeContext
+  badgeOnApplyStatusEffect, getMonsterBadges, BadgeContext, resetBadgeBattleState
 } from './BadgeSystem';
 
-// 段式攻击配置（用户可手动调整以下参数）
-// count    = 每轮攻击次数
-// delay    = 段内攻击间隔(秒)
-// panelDiv = 面板攻速除数（面板显示 ats / panelDiv，默认 = count）
-// 攻时     = count * delay（每轮攻击总时长，供参考，攻速变化时不变）
-// 间隔     = count / ats（两轮之间的冷却，攻速变化时随之改变）
-const BURST_CONFIG: Record<number, { count: number; delay: number; panelDiv: number }> = {
-  108: { count: 2,  delay: 0.5, panelDiv: 2  },  // 救星骑士   ats=1.00  攻时=1s  间隔=2.00s
-  114: { count: 4,  delay: 0.25, panelDiv: 4  },  // 突突突矿工 ats=2.14  攻时=1s  间隔=1.87s
-  116: { count: 10, delay: 0.37, panelDiv: 10 },  // 钻头       ats=2.38  攻时=3.7s  间隔=4.20s
-  120: { count: 5,  delay: 0.3, panelDiv: 5  },  // 金面猴王   ats=2.50  攻时=1.5s  间隔=2.00s
-  122: { count: 5,  delay: 0.2, panelDiv: 5  },  // 丛林猴     ats=2.70  攻时=1s  间隔=1.85s
-};
+/** 调度任务：延迟一次性或固定间隔执行（供 SkillSystem / BadgeSystem 经 battle.scheduler 使用） */
+interface ScheduledTask {
+  id: string;
+  callback: () => void;
+  delay: number;     // Remaining delay (in seconds)
+  interval: number;  // Interval duration (in seconds, 0 if one-shot)
+  elapsed: number;   // Accumulated elapsed time for interval checks
+}
 
-// ==================== 物理/抛物线可调参数 ====================
+/** 轻量级调度器（原 GameTickScheduler，移入本文件以避免独立文件） */
+class GameTickScheduler {
+  private _tasks: Map<string, ScheduledTask> = new Map();
+  private _taskIdCounter: number = 0;
 
-/** 击退动画速度倍率：1.0=正常, 0.5=慢一半（duration翻倍） */
-const KNOCKBACK_SPEED_FACTOR = 0.5;
+  public schedule(callback: () => void, delaySeconds: number, key?: string): string {
+    const id = key || `task_${this._taskIdCounter++}`;
+    this._tasks.set(id, {
+      id,
+      callback,
+      delay: delaySeconds,
+      interval: 0,
+      elapsed: 0
+    });
+    return id;
+  }
 
-/** 击退抛物线高度倍率 */
-const KNOCKBACK_HEIGHT_FACTOR = 1.0;
+  public scheduleInterval(callback: () => void, intervalSeconds: number, key?: string): string {
+    const id = key || `task_${this._taskIdCounter++}`;
+    this._tasks.set(id, {
+      id,
+      callback,
+      delay: intervalSeconds,
+      interval: intervalSeconds,
+      elapsed: 0
+    });
+    return id;
+  }
 
-/** 冲锋移动速度倍率 */
-const CHARGE_SPEED_FACTOR = 1.0;
+  public unschedule(id: string): void {
+    this._tasks.delete(id);
+  }
 
-/** 跃击（救星）峰值高度（px） */
-export const LEAP_PEAK_HEIGHT = 500;
+  public has(id: string): boolean {
+    return this._tasks.has(id);
+  }
 
-/** 跃击（救星）飞行时长（秒） */
-export const LEAP_DURATION = 0.6;
+  public clear(): void {
+    this._tasks.clear();
+    this._taskIdCounter = 0;
+  }
 
-/** 投掷（铁甲）峰值高度（px） */
-export const THROW_PEAK_HEIGHT = 180;
+  public update(dt: number): void {
+    const tasksToProcess = Array.from(this._tasks.values());
+    for (const task of tasksToProcess) {
+      if (!this._tasks.has(task.id)) continue;
 
-/** 投掷（铁甲）飞行时长（秒） */
-export const THROW_DURATION = 1.0;
-
-/** 碰撞反弹：被投掷怪兽 X 反弹峰值高度（px）≈ 1.5 格 */
-const COLLISION_REBOUND_X_HEIGHT = 188;
-
-/** 碰撞反弹：冲锋哥反弹峰值高度（px）≈ 1 格 */
-const COLLISION_REBOUND_CHARGE_HEIGHT = 125;
-
-/** 碰撞反弹：水平位移格数范围 [min, max] */
-const COLLISION_REBOUND_STRENGTH_MIN = 2;
-const COLLISION_REBOUND_STRENGTH_MAX = 3;
+      if (task.interval > 0) {
+        task.elapsed += dt;
+        while (task.elapsed >= task.interval) {
+          task.elapsed -= task.interval;
+          task.callback();
+          if (!this._tasks.has(task.id)) break;
+        }
+      } else {
+        task.delay -= dt;
+        if (task.delay <= 0) {
+          this._tasks.delete(task.id);
+          task.callback();
+        }
+      }
+    }
+  }
+}
 
 export interface KnockbackState {
   startX: number;
@@ -90,9 +122,6 @@ export function isP1Monster(m: PlacedMonster): boolean {
   return m.team === 1;
 }
 
-// Re-exported from ScreenConfig for backward compatibility
-export { screenConfig, gridToScreen } from './ScreenConfig';
-
 export class BattleSystem {
   private static _instance: BattleSystem | null = null;
   public static get instance(): BattleSystem {
@@ -105,6 +134,9 @@ export class BattleSystem {
   public active: boolean = false;
   public timeLeft: number = 40; // 40 seconds combat limit
   private _monsters: PlacedMonster[] = [];
+  // 逐怪处理顺序翻转旗标：每 tick 交替正序/反序遍历 _monsters，
+  // 消除"谁先入数组谁先动"的先后手 bias（先手滚雪球会让胜负与站位脱钩）
+  private _orderFlip: boolean = false;
   
   // Real-time grid occupation map
   private _gridOccupation: (PlacedMonster | null)[][] = [];
@@ -141,9 +173,13 @@ export class BattleSystem {
   public scheduler: GameTickScheduler = new GameTickScheduler();
   public _summonCounter: number = 0;
 
-  /** 友方目标技能的施法范围（用于徽章 onSkillCast 触发） */
+  /** 友方目标技能的施法范围（有 onCast，用于徽章 onSkillCast 触发） */
   private static readonly ALLY_SKILL_RANGES: Record<string, number> = {
-    'life_link': 3, 'recovery': 1, 'attack': 2, 'heal_sword': 2, 'shield': 1, 'leap': 1
+    'life_link': 3, 'attack': 2, 'heal_sword': 2, 'shield': 1, 'leap': 1
+  };
+  /** 仅 onStartOfBattle 的友方技能（无 onCast），需在战斗开始时触发徽章效果 */
+  private static readonly BATTLE_START_ALLY_SKILL_RANGES: Record<string, number> = {
+    'recovery': 1
   };
 
 
@@ -166,11 +202,14 @@ export class BattleSystem {
     this._leaps.clear();
     this._lastDamagedFriendlyIdP1 = null;
     this._lastDamagedFriendlyIdP2 = null;
+    this._orderFlip = false;
     this._battleEndingTimer = -1;
 
     this.scheduler.clear();
     this._summonCounter = 0;
-    gameEngine.setReplaySeed(gameEngine.currentRound * 1000 + 456);
+    // 训练桥接层可覆盖种子（self-play 多样性）；缺省保持 round*1000+456 确定性
+    const overrideSeed = (this as any)._overrideSeed as number | undefined;
+    gameEngine.setReplaySeed(overrideSeed ?? gameEngine.currentRound * 1000 + 456);
 
     // Decoupled projectile tracking visual target provider
     vfx.getTargetPosition = (id) => this.screenPositions.get(id);
@@ -232,10 +271,11 @@ export class BattleSystem {
       this.screenPositions.set(m.id, { ...screenPos });
       this._targetPositions.set(m.id, { ...screenPos });
       
-      // 先攻击再冷却：初始计时器设为攻击间隔，首帧即触发攻击
-      const initBurstCount = BURST_CONFIG[m.dbId]?.count || 0;
-      const atkInterval = initBurstCount > 0 ? initBurstCount / m.ats : 1 / m.ats;
-      this._attackTimers.set(m.id, atkInterval);
+      // 开局不立即开火：计时器从 0 累积，怪物先走位接近敌人；
+      // 进入射程的瞬间由 performMovementAI 立即打出第一炮（接触即交火），
+      // 避免布阵位置原地齐射的"回合开始异常普攻"。
+      this._attackTimers.set(m.id, 0);
+      (m as any)._justMoved = false;
       
       m.skillCdProgress = 0;
       (m as any).skillReady = false;
@@ -259,6 +299,9 @@ export class BattleSystem {
       gameEngine.clearStats();
     }
 
+    // 战斗开始：清空徽章跨战斗残留状态（防止上一场按 id 缓存的数据泄漏到本场）
+    resetBadgeBattleState();
+
     // Trigger start-of-battle skills/badges
     this.triggerStartOfBattleEffects();
 
@@ -280,8 +323,8 @@ export class BattleSystem {
         skillInstance.onStartOfBattle(m, this);
       }
 
-      // 友方技能的 onStartOfBattle 也触发徽章技能效果（如 recovery 祈祷哥 + 元素涌动/中毒）
-      const allyRange = BattleSystem.ALLY_SKILL_RANGES[m.data.skill];
+      // 仅 onStartOfBattle 的友方技能触发徽章效果（如 recovery 祈祷哥）
+      const allyRange = BattleSystem.BATTLE_START_ALLY_SKILL_RANGES[m.data.skill];
       if (allyRange !== undefined) {
         const allies = this.getMonstersInGridRange(m.gridX, m.gridY, allyRange)
           .filter((a: PlacedMonster) => isP1Monster(a) === isP1Monster(m) && !a.isDead && !(a as any).resurrecting);
@@ -356,7 +399,10 @@ export class BattleSystem {
     this.updateStatusEffects(dt);
 
     // 3. Entity logic (AI, combat, skills)
-    for (const m of this._monsters) {
+    // 每 tick 交替正序/反序遍历，消除数组顺序导致的先后手 bias（先手滚雪球）
+    this._orderFlip = !this._orderFlip;
+    const monstersThisTick = this._orderFlip ? this._monsters.slice().reverse() : this._monsters;
+    for (const m of monstersThisTick) {
       if (m.isDead || (m as any).resurrecting) continue;
 
       // 徽章每帧更新（badge 5 助跑, badge 6 回复光环 等）
@@ -398,8 +444,13 @@ export class BattleSystem {
         (m as any).chargingCannon ||
         ((m as any).skillAnimationTimeLeft && (m as any).skillAnimationTimeLeft > 0) ||
         (m as any).burrowing ||
+        (m as any)._pendingThrow ||
         this._leaps.has(m.id)
       ) {
+        // DEBUG-108
+        if (m.dbId === 108 && (globalThis as any).__dbg) {
+          console.log(`  [SKIP] stun=${m.statusEffects.some(e => e.type === 'stun')} chargingCannon=${!!(m as any).chargingCannon} skAnim=${((m as any).skillAnimationTimeLeft || 0).toFixed(2)} burrowing=${!!(m as any).burrowing} pendingThrow=${!!(m as any)._pendingThrow} leaping=${this._leaps.has(m.id)} state=${m.state}`);
+        }
         if ((m as any).chargingCannon) {
           m.state = 'skill';
         } else if (m.statusEffects.some(e => e.type === 'stun')) {
@@ -460,17 +511,23 @@ export class BattleSystem {
           this._attackTimers.set(m.id, 0);
         }
       } else if (atkTimer >= interval) {
+        // DEBUG-108
+        if (m.dbId === 108 && (globalThis as any).__dbg) {
+          console.log(`  [BRANCH] atkTimer=${atkTimer.toFixed(2)} interval=${interval} skillCd=${m.data.skillCd} cdProg=${m.skillCdProgress?.toFixed(2)} stun=${m.statusEffects.some(e => e.type === 'stun')} skAnim=${(m as any).skillAnimationTimeLeft}`);
+        }
         // 冷却到期：先尝试技能，再普攻
         if (m.data.skillCd > 0 && m.skillCdProgress >= m.data.skillCd) {
           const casted = this.castSkill(m);
           if (casted) {
             m.skillCdProgress = 0;
-            // 技能后保留攻击冷却进度，动画结束后立即攻击
-            this._attackTimers.set(m.id, interval);
             actedThisFrame = true;
 
+            // 技能动画时长：优先用技能剪辑实际时长（AnimationData {dbId}s），无剪辑时按技能类型兜底
             let animDur = 1 / m.ats;
-            if (m.data.skill === 'shield' || m.data.skill === 'shot' || m.data.skill === 'shadow') {
+            const skillClip = getAnimationClip(m.dbId, 'skill')?.clip;
+            if (skillClip) {
+              animDur = skillClip.duration / 100;
+            } else if (m.data.skill === 'shield' || m.data.skill === 'shot' || m.data.skill === 'shadow') {
               animDur = 0.2;
               if (m.data.skill === 'shadow') (m as any)._tiltTotal = animDur;
             } else if (m.data.skill === 'life_link') {
@@ -485,6 +542,11 @@ export class BattleSystem {
             if (animDur > 0) {
               (m as any).skillAnimationTimeLeft = animDur;
               m.state = 'skill';
+              // 技能动画播完后从 0 重新积累攻速间隔，避免"技能一结束立即普攻"
+              this._attackTimers.set(m.id, 0);
+            } else {
+              // 无动画的瞬发技能（buff 类）：保留攻击冷却进度，技能后立即接普攻
+              this._attackTimers.set(m.id, interval);
             }
 
             const pos = this.screenPositions.get(m.id);
@@ -754,7 +816,8 @@ export class BattleSystem {
           this._gridOccupation[m.gridX][m.gridY] = null;
 
           // Capture enemies for splash damage BEFORE pushing occupant
-          splashTargets = this.getAdjacentMonsters(dest.x, dest.y)
+          // （含落点格本身：跳上去的目标敌人应吃到落地伤害）
+          splashTargets = this.getMonstersInGridRange(dest.x, dest.y, 1)
             .filter(e => isP1Monster(e) !== isP1Monster(m));
 
           const other = this._gridOccupation[dest.x][dest.y];
@@ -851,7 +914,7 @@ export class BattleSystem {
       return;
     }
 
-    if (m.state === 'walk' || m.state === 'attack') {
+    if (m.state === 'walk' || m.state === 'attack' || (m as any).burrowing) {
       const sPos = this.screenPositions.get(m.id);
       const tPos = this._targetPositions.get(m.id);
       if (sPos && tPos) {
@@ -937,10 +1000,47 @@ export class BattleSystem {
     // Check range
     if (!this.isInAttackRange(m, target)) return false;
 
+    // 每次实际攻击递增动画触发计数：attack 状态跨整个攻速间隔保持，
+    // 渲染层（main.ts）凭此计数重置武器动画时间，保证每次普攻都重播动画。
+    (m as any).animAttackCount = ((m as any).animAttackCount || 0) + 1;
+
     // Perform attack
     const pos = this.screenPositions.get(m.id)!;
     const tPos = this.screenPositions.get(target.id)!;
 
+    // 发射/命中原点：
+    // - 抛掷型/无动画怪（BULLET_OFFSET 有配置）：子弹从身体中心 + 偏移发出；
+    // - 枪械/法杖类：跟随渲染层同步的动画武器枪口（_weaponMuzzle）。
+    const muzzle = (m as any)._weaponMuzzle;
+    const fireDir = Math.atan2(tPos.y - pos.y, tPos.x - pos.x);
+    const bodyOffset = BULLET_OFFSET[m.dbId];
+    const fireX = bodyOffset ? pos.x + bodyOffset.dx : (muzzle ? muzzle.x + Math.cos(fireDir) * (muzzle.length || 0) : pos.x);
+    const fireY = bodyOffset ? pos.y + bodyOffset.dy : (muzzle ? muzzle.y + Math.sin(fireDir) * (muzzle.length || 0) : pos.y);
+
+    // 出手延迟（远程=子弹出现，近战=伤害触发）：表内数值优先，缺失按动画最远点自动计算
+    const triggerDelay = ATTACK_DELAY[m.dbId] ?? computeAttackPeakTime(m.dbId, 'attack');
+
+    if (m.data.type === 'ranged') {
+      this.scheduler.schedule(() => {
+        if (m.isDead || !this.active) return;
+        this.spawnRangedAttack(m, target, fireX, fireY, tPos.x, tPos.y);
+      }, triggerDelay);
+    } else {
+      this.scheduler.schedule(() => {
+        if (m.isDead || target.isDead || !this.active) return;
+        this.dealDamageImpact(m, target);
+      }, triggerDelay);
+    }
+
+    return true;
+  }
+
+  /**
+   * 远程攻击：生成子弹/投射物。
+   * @param fx/fy 发射原点（跟随动画枪口或 BULLET_OFFSET 偏移）
+   * @param tx/ty 攻击发起瞬间的目标屏幕位置（飞行方向参考）
+   */
+  private spawnRangedAttack(m: PlacedMonster, target: PlacedMonster, fx: number, fy: number, tx: number, ty: number): void {
     // Badge 1 穿透：远程弹丸设为穿透模式
     const isPiercing = m.data.type === 'ranged' && getMonsterBadges(m).some(b => b.id === 1);
 
@@ -948,152 +1048,139 @@ export class BattleSystem {
     const unitBoltMap: Record<number, string> = { 102: 'lightning', 103: 'fire', 105: 'heal', 107: 'void' };
     const boltType = unitBoltMap[m.dbId] as BoltType | undefined;
 
-    if (m.data.type === 'ranged') {
-      if (m.dbId === 104) {
-        // Shotgun: 5 projectiles in 90-degree fan
-        const angle = Math.atan2(tPos.y - pos.y, tPos.x - pos.x);
-        const dist = Math.sqrt((tPos.x - pos.x) ** 2 + (tPos.y - pos.y) ** 2);
-        const angles = [-Math.PI / 4, -Math.PI / 8, 0, Math.PI / 8, Math.PI / 4];
-        
-        angles.forEach((offset, idx) => {
-          const a = angle + offset;
-          const isCenter = idx === 2;
+    if (m.dbId === 104) {
+      // Shotgun: 5 projectiles in 90-degree fan
+      const angle = Math.atan2(ty - fy, tx - fx);
+      const dist = Math.sqrt((tx - fx) ** 2 + (ty - fy) ** 2);
+      const angles = [-Math.PI / 4, -Math.PI / 8, 0, Math.PI / 8, Math.PI / 4];
 
-          if (isPiercing) {
-            const extX = pos.x + Math.cos(a) * (dist + 2500);
-            const extY = pos.y + Math.sin(a) * (dist + 2500);
-            const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
-            vfx.applyBulletSprite(pr, m.dbId);
-            if (isCenter) {
-              this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
-                const ht = this._monsters.find(e => e.id === hitId);
-                if (ht) this.dealDamageImpact(m, ht);
-              });
-            }
-          } else {
-            const extX = pos.x + Math.cos(a) * 2500;
-            const extY = pos.y + Math.sin(a) * 2500;
-            const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
-            vfx.applyBulletSprite(pr, m.dbId);
-            if (isCenter) {
-              pr.onHit = (hitId: string) => {
-                const ht = this._monsters.find(e => e.id === hitId);
-                if (ht) this.dealDamageImpact(m, ht);
-              };
-            }
-          }
-        });
-      } else {
-        // Standard ranged — 子弹不追踪，延伸直线飞行直到碰撞才销毁
-        // 计算方向向量
-        const dX = tPos.x - pos.x;
-        const dY = tPos.y - pos.y;
-        const dirLen = Math.sqrt(dX * dX + dY * dY);
-        const nX = dX / dirLen;
-        const nY = dY / dirLen;
-        const extX = pos.x + nX * 2500;
-        const extY = pos.y + nY * 2500;
+      angles.forEach((fanOffset, idx) => {
+        const a = angle + fanOffset;
+        const isCenter = idx === 2;
 
         if (isPiercing) {
-          const pr = vfx.addProjectile(pos.x, pos.y, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
-          this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
-            const ht = this._monsters.find(e => e.id === hitId);
-            if (ht) this.dealDamageImpact(m, ht);
-          });
+          const extX = fx + Math.cos(a) * (dist + 2500);
+          const extY = fy + Math.sin(a) * (dist + 2500);
+          const pr = vfx.addProjectile(fx, fy, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
           vfx.applyBulletSprite(pr, m.dbId);
-        } else {
-          const isExplosive = m.data.skill === 'explosive';
-          const isSnowball = m.data.skill === 'snowball';
-
-          if (isSnowball) {
-            vfx.spawnParticle(pos.x, pos.y, SKILL.snowballAttack.launch);
+          if (isCenter) {
+            this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
+              const ht = this._monsters.find(e => e.id === hitId);
+              if (ht) this.dealDamageImpact(m, ht);
+            });
           }
-
-          let pr: Projectile;
-          if (isExplosive) {
-            const cfg = SKILL.explosiveAttack.projectile;
-            const destPos = gridToScreen(target.gridX, target.gridY);
-            const destGridX = target.gridX;
-            const destGridY = target.gridY;
-            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
-              const occupant = this._gridOccupation[destGridX]?.[destGridY];
-              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
-                this.dealDamageImpact(m, occupant);
-              }
-            }, undefined, undefined, cfg.arcHeight, m.id);
-            if (cfg.size) pr.size = cfg.size;
-            // 使用 tnt.png 贴图
-            const tntW = tntImage.naturalWidth || tntImage.width || 32;
-            const tntH = tntImage.naturalHeight || tntImage.height || 32;
-            pr.imageRect = { img: tntImage, sx: 0, sy: 0, sw: tntW, sh: tntH, dw: cfg.size || 16, dh: (cfg.size || 16) * tntH / tntW };
-          } else if (isSnowball) {
-            const cfg = SKILL.snowballAttack.projectile;
-            const destPos = gridToScreen(target.gridX, target.gridY);
-            const destGridX = target.gridX;
-            const destGridY = target.gridY;
-            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
-              const occupant = this._gridOccupation[destGridX]?.[destGridY];
-              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
-                const tScr = gridToScreen(occupant.gridX, occupant.gridY);
-                vfx.spawnParticle(tScr.x, tScr.y, HIT.snowballAttack);
-                this.dealDamageImpact(m, occupant);
-              }
-            }, undefined, undefined, cfg.arcHeight, m.id);
-          } else if (m.dbId === 126) {
-            const destPos = gridToScreen(target.gridX, target.gridY);
-            const destGridX = target.gridX;
-            const destGridY = target.gridY;
-            pr = vfx.addProjectile(pos.x, pos.y, destPos.x, destPos.y, 600, DEFAULT_BULLET.color, () => {
-              const occupant = this._gridOccupation[destGridX]?.[destGridY];
-              if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
-                this.dealDamageImpact(m, occupant);
-              }
-            }, undefined, undefined, 120, m.id);
-            vfx.applyBulletSprite(pr, m.dbId);
-          } else if (boltType) {
-            const cfg = BOLT_PROFILES[boltType];
-            pr = vfx.addProjectile(pos.x, pos.y, extX, extY, cfg.speed, cfg.color, () => {}, undefined, boltType, undefined, m.id);
+        } else {
+          const extX = fx + Math.cos(a) * 2500;
+          const extY = fy + Math.sin(a) * 2500;
+          const pr = vfx.addProjectile(fx, fy, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
+          vfx.applyBulletSprite(pr, m.dbId);
+          if (isCenter) {
             pr.onHit = (hitId: string) => {
               const ht = this._monsters.find(e => e.id === hitId);
               if (ht) this.dealDamageImpact(m, ht);
             };
-          } else if ((m as any).empoweredShot) {
-            // 银狙骑士强化射击：金色子弹 + 流线型拖尾（不追踪，固定弹道）
-            const cfg = BOLT_PROFILES['empowered'];
-            pr = vfx.addProjectile(pos.x, pos.y, extX, extY, cfg.speed, cfg.color, () => {}, undefined, 'empowered', undefined, m.id);
-            pr.onHit = (hitId: string) => {
-              const ht = this._monsters.find(e => e.id === hitId);
-              if (ht) this.dealDamageImpact(m, ht);
-            };
-            vfx.applyBulletSprite(pr, m.dbId);
-          } else {
-            // 发射位置偏移
-            const offset = BULLET_OFFSET[m.dbId] || { dx: 0, dy: 0 };
-            const sx = pos.x + offset.dx;
-            const sy = pos.y + offset.dy;
-            // 角度微小偏移（±5°）
-            const baseAngle = Math.atan2(tPos.y - sy, tPos.x - sx);
-            const spreadAngle = baseAngle + (gameEngine.random() - 0.5) * (Math.PI / 36);
-            const spreadExtX = sx + Math.cos(spreadAngle) * 2500;
-            const spreadExtY = sy + Math.sin(spreadAngle) * 2500;
-            const bulletSpeed = BULLET_SPEED[m.dbId] ?? DEFAULT_BULLET.speed;
-            pr = vfx.addProjectile(sx, sy, spreadExtX, spreadExtY, bulletSpeed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
-            pr.onHit = (hitId: string) => {
-              const ht = this._monsters.find(e => e.id === hitId);
-              if (ht) this.dealDamageImpact(m, ht);
-            };
-            vfx.applyBulletSprite(pr, m.dbId);
           }
         }
-      }
+      });
     } else {
-      // Melee slash particle
-      const angle = Math.atan2(tPos.y - pos.y, tPos.x - pos.x);
-      vfx.spawnParticle((pos.x + tPos.x)/2, (pos.y + tPos.y)/2, HIT.meleeSlash, { angle, length: 24 });
-      this.dealDamageImpact(m, target);
-    }
+      // Standard ranged — 子弹不追踪，延伸直线飞行直到碰撞才销毁
+      // 计算方向向量
+      const dX = tx - fx;
+      const dY = ty - fy;
+      const dirLen = Math.sqrt(dX * dX + dY * dY);
+      const nX = dX / dirLen;
+      const nY = dY / dirLen;
+      const extX = fx + nX * 2500;
+      const extY = fy + nY * 2500;
 
-    return true;
+      if (isPiercing) {
+        const pr = vfx.addProjectile(fx, fy, extX, extY, DEFAULT_BULLET.speed, DEFAULT_BULLET.color, () => {}, undefined, boltType, undefined, m.id);
+        this.setupPiercingProjectile(pr, m.id, (hitId: string) => {
+          const ht = this._monsters.find(e => e.id === hitId);
+          if (ht) this.dealDamageImpact(m, ht);
+        });
+        vfx.applyBulletSprite(pr, m.dbId);
+      } else {
+        const isExplosive = m.data.skill === 'explosive';
+        const isSnowball = m.data.skill === 'snowball';
+
+        if (isSnowball) {
+          vfx.spawnParticle(fx, fy, SKILL.snowballAttack.launch);
+        }
+
+        let pr: Projectile;
+        if (isExplosive) {
+          const cfg = SKILL.explosiveAttack.projectile;
+          const destPos = gridToScreen(target.gridX, target.gridY);
+          const destGridX = target.gridX;
+          const destGridY = target.gridY;
+          pr = vfx.addProjectile(fx, fy, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
+            const occupant = this._gridOccupation[destGridX]?.[destGridY];
+            if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+              this.dealDamageImpact(m, occupant);
+            }
+          }, undefined, undefined, cfg.arcHeight, m.id);
+          if (cfg.size) pr.size = cfg.size;
+          // 使用 tnt.png 贴图
+          const tntW = tntImage.naturalWidth || tntImage.width || 32;
+          const tntH = tntImage.naturalHeight || tntImage.height || 32;
+          pr.imageRect = { img: tntImage, sx: 0, sy: 0, sw: tntW, sh: tntH, dw: cfg.size || 16, dh: (cfg.size || 16) * tntH / tntW };
+        } else if (isSnowball) {
+          const cfg = SKILL.snowballAttack.projectile;
+          const destPos = gridToScreen(target.gridX, target.gridY);
+          const destGridX = target.gridX;
+          const destGridY = target.gridY;
+          pr = vfx.addProjectile(fx, fy, destPos.x, destPos.y, cfg.speed, cfg.color, () => {
+            const occupant = this._gridOccupation[destGridX]?.[destGridY];
+            if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+              const tScr = gridToScreen(occupant.gridX, occupant.gridY);
+              vfx.spawnParticle(tScr.x, tScr.y, HIT.snowballAttack);
+              this.dealDamageImpact(m, occupant);
+            }
+          }, undefined, undefined, cfg.arcHeight, m.id);
+        } else if (m.dbId === 126) {
+          const destPos = gridToScreen(target.gridX, target.gridY);
+          const destGridX = target.gridX;
+          const destGridY = target.gridY;
+          pr = vfx.addProjectile(fx, fy, destPos.x, destPos.y, 600, DEFAULT_BULLET.color, () => {
+            const occupant = this._gridOccupation[destGridX]?.[destGridY];
+            if (occupant && !occupant.isDead && isP1Monster(occupant) !== isP1Monster(m)) {
+              this.dealDamageImpact(m, occupant);
+            }
+          }, undefined, undefined, 120, m.id);
+          vfx.applyBulletSprite(pr, m.dbId);
+        } else if (boltType) {
+          const cfg = BOLT_PROFILES[boltType];
+          pr = vfx.addProjectile(fx, fy, extX, extY, cfg.speed, cfg.color, () => {}, undefined, boltType, undefined, m.id);
+          pr.onHit = (hitId: string) => {
+            const ht = this._monsters.find(e => e.id === hitId);
+            if (ht) this.dealDamageImpact(m, ht);
+          };
+        } else if ((m as any).empoweredShot) {
+          // 银狙骑士强化射击：金色子弹 + 流线型拖尾（不追踪，固定弹道）
+          const cfg = BOLT_PROFILES['empowered'];
+          pr = vfx.addProjectile(fx, fy, extX, extY, cfg.speed, cfg.color, () => {}, undefined, 'empowered', undefined, m.id);
+          pr.onHit = (hitId: string) => {
+            const ht = this._monsters.find(e => e.id === hitId);
+            if (ht) this.dealDamageImpact(m, ht);
+          };
+          vfx.applyBulletSprite(pr, m.dbId);
+        } else {
+          // 角度微小偏移（±5°）
+          const baseAngle = Math.atan2(ty - fy, tx - fx);
+          const spreadAngle = baseAngle + (gameEngine.random() - 0.5) * (Math.PI / 36);
+          const spreadExtX = fx + Math.cos(spreadAngle) * 2500;
+          const spreadExtY = fy + Math.sin(spreadAngle) * 2500;
+          const bulletSpeed = BULLET_SPEED[m.dbId] ?? DEFAULT_BULLET.speed;
+          pr = vfx.addProjectile(fx, fy, spreadExtX, spreadExtY, bulletSpeed, DEFAULT_BULLET.color, () => {}, undefined, undefined, undefined, m.id);
+          pr.onHit = (hitId: string) => {
+            const ht = this._monsters.find(e => e.id === hitId);
+            if (ht) this.dealDamageImpact(m, ht);
+          };
+          vfx.applyBulletSprite(pr, m.dbId);
+        }
+      }
+    }
   }
 
   private dealDamageImpact(attacker: PlacedMonster, target: PlacedMonster): void {
@@ -1428,6 +1515,12 @@ export class BattleSystem {
 
     if (this.isInAttackRange(m, target)) {
       m.state = 'attack';
+      // 刚走位进入射程：立即打出第一炮（接触即交火），保持"走位后立即攻击"的节奏；
+      // 开局即在射程内的远程怪（_justMoved=false）不触发，按攻速冷却等待，避免原地齐射。
+      if ((m as any)._justMoved) {
+        (m as any)._justMoved = false;
+        this.performNormalAttack(m);
+      }
       return; // Don't move if target is already in range
     }
 
@@ -1437,6 +1530,7 @@ export class BattleSystem {
       this._gridOccupation[m.gridX][m.gridY] = null;
       m.gridX = nextStep.x;
       m.gridY = nextStep.y;
+      (m as any)._justMoved = true;
       this._gridOccupation[m.gridX][m.gridY] = m;
       
       // Update target positions for smooth rendering
@@ -1813,7 +1907,7 @@ export class BattleSystem {
       const sPos = this.screenPositions.get(casterId);
       if (!sPos) continue;
       
-      const speed = caster.speed * screenConfig.cellW * 4 * CHARGE_SPEED_FACTOR; // 4x speed charge
+      const speed = caster.speed * screenConfig.cellW * CHARGE_SPEED_MULTIPLIER * CHARGE_SPEED_FACTOR;
       
       if (charge.targetId) {
         const target = this._monsters.find(m => m.id === charge.targetId);
@@ -1835,7 +1929,9 @@ export class BattleSystem {
           if (!leaper || leaper.isDead) continue;
           const lPos = this.screenPositions.get(lepId);
           if (!lPos) continue;
-          if (Math.abs(lPos.x - sPos.x) < 125 && Math.abs(lPos.y - sPos.y) < 140) {
+          // 碰撞判定只看 x 距离（无视高度）：炮弹抛物线飞到峰顶时 y 差很大，
+          // 但仍应在同一行 x 接近时触发空中碰撞
+          if (Math.abs(lPos.x - sPos.x) < 70) {
             // 空中碰撞！双方使用抛物线弹飞
             this._leaps.delete(lepId);
             this._reservedCells.delete(lepId);
@@ -1850,13 +1946,13 @@ export class BattleSystem {
             const reboundDirX = -Math.sign(Math.cos(angle));
             const reboundDirY = -Math.sign(Math.sin(angle));
 
-            // X（被投掷怪兽）反弹：1.5格高，2-3格水平位移
-            const xStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(Math.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
+            // X（被投掷怪兽）反弹：1.5格高，2-3格水平位移（播种随机保证自对弈可复现）
+            const xStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(gameEngine.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
             this.applyKnockback(leaper, reboundDirX, reboundDirY, xStr, COLLISION_REBOUND_X_HEIGHT);
 
-            // 冲锋反弹：1格高，反方向
-            const cStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(Math.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
-            this.applyKnockback(caster, -reboundDirX, -reboundDirY, cStr, COLLISION_REBOUND_CHARGE_HEIGHT);
+            // 冲锋反弹：沿自身行进方向的反方向水平击退（炮弹被顶回 + 冲锋被反震回去）
+            const cStr = COLLISION_REBOUND_STRENGTH_MIN + Math.floor(gameEngine.random() * (COLLISION_REBOUND_STRENGTH_MAX - COLLISION_REBOUND_STRENGTH_MIN + 1));
+            this.applyKnockback(caster, -charge.dir, 0, cStr, COLLISION_REBOUND_CHARGE_HEIGHT);
 
             // Clear caster stun/stealth
             caster.statusEffects = caster.statusEffects.filter(e => e.type !== 'stun' && e.type !== 'stealth');

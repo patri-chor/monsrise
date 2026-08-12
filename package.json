@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test:e2e": "vite-node tests/run_e2e.ts"
+    "test:e2e": "vite-node tests/run_e2e.ts",
+    "bench:greedy": "vite-node --script src/engine/benchmark.ts 10 100 greedy",
+    "bench:search": "vite-node --script src/engine/benchmark.ts 5 10 search 2"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

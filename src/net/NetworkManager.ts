@@ -36,6 +36,7 @@ export class NetworkManager {
   private _url: string = '';
   private _handlers = new Map<string, MessageHandler[]>();
   private _reconnectTimer: any = null;
+  private _reconnectDelay = 3000;
   private _pending: string[] = [];
 
   public connected = false;
@@ -60,6 +61,7 @@ export class NetworkManager {
     this._ws.onopen = () => {
       this.connected = true;
       if (this._reconnectTimer) { clearInterval(this._reconnectTimer); this._reconnectTimer = null; }
+      this._reconnectDelay = 3000; // 连接成功，重置退避间隔
       this._emit('onConnect');
       // 自动设置昵称
       const nick = localStorage.getItem('monsrise_nick') || '玩家';
@@ -71,10 +73,14 @@ export class NetworkManager {
     this._ws.onclose = () => {
       this.connected = false;
       this._emit('onDisconnect');
-      // 自动重连
-      if (!this._reconnectTimer) {
-        this._reconnectTimer = setInterval(() => this._connect(), 3000);
+      // 自动重连（指数退避：3s→4.5s→7s→… 30s 封顶），
+      // 本地无联机服务器时避免每 3 秒密集重连刷屏报错
+      if (this._reconnectTimer) {
+        clearInterval(this._reconnectTimer);
+        this._reconnectTimer = null;
       }
+      this._reconnectTimer = setInterval(() => this._connect(), this._reconnectDelay);
+      this._reconnectDelay = Math.min(30000, Math.round(this._reconnectDelay * 1.5));
     };
     this._ws.onmessage = (ev) => {
       try {
