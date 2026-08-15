@@ -14,7 +14,7 @@ import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
 import { networkManager } from './net/NetworkManager';
 import { computeWeaponPose, getAnimationClip } from './game/animation/AnimationAnimator';
-import { getCutoutTune, AIM_IDLE_WEAPONS, FRAME_SIZES, MUZZLE_TUNE, WEAPON_ROT_LIMIT, GUN_ROT_CENTER_ANCHOR } from './game/animation/AnimTuning';
+import { getCutoutTune, AIM_IDLE_WEAPONS, FRAME_SIZES, MUZZLE_TUNE, WEAPON_ROT_LIMIT, AIM_ROT_CENTER } from './game/animation/AnimTuning';
 import { music } from './game/MusicManager';
 import { preloadAll, loadedImages } from './loader';
 
@@ -190,8 +190,7 @@ class BoardSyncComponent extends Component {
         0,
         isMelee,
         tune,
-        idlePose,
-        GUN_ROT_CENTER_ANCHOR.has(m.dbId)
+        idlePose
       );
 
       const bodyOffsetX = pose.body.offsetX;
@@ -412,16 +411,26 @@ class BoardSyncComponent extends Component {
           // 7. 把所有武器层（主武器 + 第二/三武器…）写入身体 Sprite 内部进行嵌套渲染。
           //    每个武器逻辑一致：贴图统一按 {dbId}-1 / {dbId}-2 / {dbId}-3 … 序号映射，
           //    数量由动画数据 weapons 数组决定；第一个武器在 -1 贴图缺失时回退 {dbId}.png。
-          //    武器"位置 + 贴图"一起绕节点中心旋转瞄准角 targetAngle：
+          //    武器"位置 + 贴图"一起绕瞄准旋转中心旋转瞄准角 targetAngle（中心默认身体中间，
+          //    每怪可经 AnimTuning.AIM_ROT_CENTER 调整）：
           //    这样动画位移（后坐力前后、出拳前后）的方向也跟随武器朝向，而不是沿身体水平 x 轴。
           const baseWeaponKey = String(m.dbId);
           const rotA = (targetAngle * Math.PI) / 180;
           const rotCa = Math.cos(rotA);
           const rotSa = Math.sin(rotA);
+          // 武器整体瞄准旋转中心：默认 = 身体中间（≈节点中心，维持原行为）；
+          // 每怪可经 AnimTuning.AIM_ROT_CENTER 配置偏移（帧单元像素 → 本地 px，与切图微调同换算）。
+          const aimCenter = AIM_ROT_CENTER[m.dbId];
+          const kpx = displayW / fw;
+          const rotCX = (aimCenter?.x ?? 0) * kpx;
+          const rotCY = (aimCenter?.y ?? 0) * kpx;
           const applyRot = (wx: number, wy: number) =>
             noTargetRotate
               ? { x: wx, y: wy }
-              : { x: wx * rotCa - wy * rotSa, y: wx * rotSa + wy * rotCa };
+              : {
+                  x: (wx - rotCX) * rotCa - (wy - rotCY) * rotSa + rotCX,
+                  y: (wx - rotCX) * rotSa + (wy - rotCY) * rotCa + rotCY,
+                };
           sprite.weapons = pose.weapons.map((w, i) => {
             const rp = applyRot(w.x, w.y);
             return {

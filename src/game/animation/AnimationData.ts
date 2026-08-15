@@ -42,12 +42,6 @@ export interface AnimationClip {
     scale: { x: number; y: number };
     /** 身体层变换锚点（asset 像素坐标） */
     anchor: { x: number; y: number };
-    /**
-     * 动画整体旋转中心（asset 像素坐标，与 anchor 同语义）。
-     * 身体 rotation 关键帧旋转时绕该点转；缺省 = 身体几何中心（size/2，即"身体中间"）。
-     * 一般无需配置；个别怪若需绕其他点（如脚底）旋转再填。
-     */
-    rotCenter?: { x: number; y: number };
     tracks: LayerTracks;
   };
   /** 武器层数组（主武器 + 第二/三武器…），数量可变 */

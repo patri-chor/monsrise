@@ -505,10 +505,8 @@ export class BattleSystem {
             e => e.id === (m as any).burstTargetId && !e.isDead && !(e as any).resurrecting
           );
           if (lockedTarget) {
-            const prevTarget = (m as any).currentTargetId;
             (m as any).currentTargetId = (m as any).burstTargetId;
             this.performNormalAttack(m);
-            (m as any).currentTargetId = prevTarget;
             actedThisFrame = true;
             m.state = 'attack';
           }
@@ -573,10 +571,8 @@ export class BattleSystem {
               (m as any).burstTargetId = target.id;
               (m as any).burstAttacksLeft = burstCount;
               (m as any).burstTimer = 0;
-              const prevTarget = (m as any).currentTargetId;
               (m as any).currentTargetId = target.id;
               this.performNormalAttack(m);
-              (m as any).currentTargetId = prevTarget;
               (m as any).burstAttacksLeft--;
               // 首段打出即开始冷却计时：连段时长（count×delay）计入 interval，
               // 使一轮周期 = interval（如钻头 4.2s），连段结束后仅需补足剩余空档。
@@ -1531,7 +1527,13 @@ export class BattleSystem {
       // 开局即在射程内的远程怪（_justMoved=false）不触发，按攻速冷却等待，避免原地齐射。
       if ((m as any)._justMoved) {
         (m as any)._justMoved = false;
-        this.performNormalAttack(m);
+        const fired = this.performNormalAttack(m);
+        if (fired) {
+          // 接触开火本身即一次真实攻击：清零攻速计时器，
+          // 避免携带上一段累积的 ≥interval 计时器在下一帧立即再次开火
+          // （短距离走位后快速两次攻击），连段怪还会直接接一轮连发。
+          this._attackTimers.set(m.id, 0);
+        }
       }
       // 首次接战（从未出过手）免等：预置攻速间隔，下一帧立即触发首轮攻击；
       // 解决低攻速/连段怪首攻等待满一个 interval（如钻头 4.2s）的问题。
