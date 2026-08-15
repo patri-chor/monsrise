@@ -107,6 +107,23 @@ function buildBundleState(
 /** 持久化 BattleAI 实例（按 session 复用：同局跨回合共享同一阵型与 deployedIds） */
 const bundleSessions = new Map<string, any>();
 
+/**
+ * 注入自定义阵型 JSON（遗传算法进化产物）到 bundle 引擎。
+ * formationJson 形如 { name, archetype, team, tree }（tree 为 bundle TreeNode 格式，
+ * 或进化基因的 root，会被 loadCustomFormation 递归转换）。
+ * 用 name 判重：同 session 同 name 不重复注入（避免 pathByRound 被清空导致分支漂移）。
+ */
+function injectCustomFormation(ai: any, fe: any, formationJson: any, hand: any[]): boolean {
+  try {
+    ai.buildTeam(hand);
+    fe.loadCustomFormation(formationJson);
+    return true;
+  } catch (e) {
+    process.stderr.write(`[bridge] 自定义阵型注入失败: ${(e as Error).message}\n`);
+    return false;
+  }
+}
+
 /** ai-bundle 整回合计划：一次生成阵型计划（decide() 逐次消费会因 selectBranch/分支
  *  重随机导致计划漂移，且只消费 placements[0]，故直接用 decideWithFormation 取全量）。
  *  formation 传卡组名时强制加载对应阵型（引擎侧已知 deck→阵型 的精确映射，
@@ -148,6 +165,7 @@ function bundleRoundPlan(
   enemy: { dbId: number; x: number; y: number }[],
   formationName?: string,
   debug = false,
+  formationJson?: any,
 ): { monsterId: number; x: number; y: number }[] {
   if (!BundleAI || hand.length === 0) return [];
   const key = session ?? `anon_${Math.random().toString(36).slice(2)}`;
@@ -160,7 +178,12 @@ function bundleRoundPlan(
   const cur = fe.getSelectedFormation();
   try {
     ai.hand = hand;
-    if (formationName && cur?.name !== formationName) {
+    if (formationJson) {
+      // 自定义阵型（遗传算法进化产物）：直接注入，name 判重
+      if (cur?.name !== formationJson.name) {
+        injectCustomFormation(ai, fe, formationJson, hand);
+      }
+    } else if (formationName && cur?.name !== formationName) {
       const f = FORMATION_LIBRARY.find(fm => fm.name === formationName);
       if (f) {
         ai.buildTeam(hand);
@@ -299,6 +322,7 @@ function handle(req: Record<string, any>): Record<string, any> {
       const budget = Number(req.budget ?? 4);
       const session = req.session ? String(req.session) : undefined;
       const formation = req.formation ? String(req.formation) : undefined;
+      const formationJson = req.formation_json ?? undefined;
       const rawHand = req.hand ?? [];
       const hand = (rawHand as any[]).map(h => {
         const mid = typeof h === 'number' ? h : (h.monsterId ?? h.id);
@@ -307,7 +331,7 @@ function handle(req: Record<string, any>): Record<string, any> {
       });
       const my = (req.my ?? []) as { dbId: number; x: number; y: number }[];
       const enemy = (req.enemy ?? []) as { dbId: number; x: number; y: number }[];
-      return { plan: bundleRoundPlan(session, side, round, budget, hand, my, enemy, formation, req.debug === true) };
+      return { plan: bundleRoundPlan(session, side, round, budget, hand, my, enemy, formation, req.debug === true, formationJson) };
     }
 
     default:
