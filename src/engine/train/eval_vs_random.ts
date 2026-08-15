@@ -265,6 +265,12 @@ function playOne(
   gameEngine.mode = 'ai';
   gameEngine.teams = [evoTeam as TeamSlot[], oppDeck as TeamSlot[]];
   gameEngine.setReplaySeed(seed);
+  // 开局清 vfx（防止上一局残留子弹污染本局，沙盒 vs 网页一致的关键）
+  vfx.particles.length = 0;
+  vfx.backgroundParticles.length = 0;
+  vfx.projectiles.length = 0;
+  vfx.floatingTexts.length = 0;
+  vfx.auraCircles = [];
   const ai = new BundleAI();
   ai.setDifficulty('normal');
   const scores = [0, 0];

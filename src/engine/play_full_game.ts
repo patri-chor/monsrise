@@ -108,6 +108,12 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
   gameEngine.teams = [teamA, teamB];
   gameEngine.selectedTeamIndex = 0;
   gameEngine.setReplaySeed(seed);
+  // 开局清 vfx（防止上一局残留子弹污染，沙盒 vs 网页一致关键）
+  vfx.particles.length = 0;
+  vfx.backgroundParticles.length = 0;
+  vfx.projectiles.length = 0;
+  vfx.floatingTexts.length = 0;
+  vfx.auraCircles = [];
 
   const roundResults: (1 | 2 | 0)[] = [];
 

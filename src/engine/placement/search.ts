@@ -121,6 +121,14 @@ export function simulateRoundBattle(board: PlacedMonster[], round: number, timeo
   const s1 = gameEngine.p1Score;
   const s2 = gameEngine.p2Score;
 
+  // 开局清 vfx：restartGame/startBattle 不清残留，上一局飞行子弹会污染本次模拟
+  // （训练沙盒 vs 网页战斗逐位一致的关键前提）。
+  vfx.particles.length = 0;
+  vfx.backgroundParticles.length = 0;
+  vfx.projectiles.length = 0;
+  vfx.floatingTexts.length = 0;
+  vfx.auraCircles = [];
+
   // 与 play_full_game 完全相同的战斗循环；startBattle 内用 round*1000+456 重置种子，
   // 所有候选在同一随机流下评估 → 结果可直接比较
   battleSystem.startBattle();

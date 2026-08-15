@@ -325,6 +325,13 @@ export function playSpecVsSpec(
   gameEngine.mode = 'ai';
   gameEngine.teams = [teamA as TeamSlot[], teamB as TeamSlot[]];
   gameEngine.setReplaySeed(seed);
+  // 开局清 vfx：restartGame/startBattle 均不清残留，上一局异常退出（超时兜底）的
+  // 飞行子弹会污染本局战斗结果（沙盒 vs 网页逐位一致的关键前提）。
+  vfx.particles.length = 0;
+  vfx.backgroundParticles.length = 0;
+  vfx.projectiles.length = 0;
+  vfx.floatingTexts.length = 0;
+  vfx.auraCircles = [];
   const aiA = new BundleAI();
   const aiB = new BundleAI();
   aiA.setDifficulty('normal');
