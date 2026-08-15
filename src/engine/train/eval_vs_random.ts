@@ -23,8 +23,8 @@ import { registerAllBadges } from '../../game/BadgeSystem';
 import { DB_MONSTERS } from '../../game/Database';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { EvolFormation, EvolNode, FeatureMask } from './evol_gene';
-import { summarizeEvolFormation } from './evol_gene';
-import { buildConditionMap, matchMask, isEmptyMask, emptyMask, evolToBundleFormation } from './evol_gene';
+import { summarizeEvolFormation, formationToEvol, buildConditionMap, evolToBundleFormation } from './evol_gene';
+import { patchBranchSelection } from './arena';
 
 registerAllBadges();
 vfx.particlesEnabled = false;
@@ -63,13 +63,7 @@ function mulberry32(seed: number): () => number {
 }
 
 function reviveNode(raw: any): EvolNode {
-  const cond: FeatureMask = {
-    handHas: raw.condition?.handHas ?? [],
-    handBadgeHas: raw.condition?.handBadgeHas ?? [],
-    handNotHas: raw.condition?.handNotHas ?? [],
-    boardHas: raw.condition?.boardHas ?? [],
-    boardNotHas: raw.condition?.boardNotHas ?? [],
-  };
+  const cond: FeatureMask = { tags: raw.condition?.tags ?? [] };
   return {
     id: raw.id,
     round: raw.round,
@@ -159,20 +153,7 @@ function evolvedRoundPlan(
     if (cur?.name !== f.name) {
       ai.buildTeam(hand);
       quiet(() => fe.loadCustomFormation(evolToBundleFormation(f)));
-      const condMap = buildConditionMap(f.root);
-      fe.selectBranch = (gameState: any, branches: any[]): any => {
-        const handIds: Set<number> = fe.opponentHandIds ?? new Set();
-        const handBadges: Set<number> = fe.opponentHandBadgeIds ?? new Set();
-        const boardIds: Set<number> = new Set((gameState.players.p1.deployed ?? []).map((m: any) => m.monsterId));
-        let chosen: any = null;
-        let mainBranch: any = null;
-        for (const b of branches) {
-          const cond = condMap.get(b.id) ?? emptyMask();
-          if (isEmptyMask(cond)) { if (!mainBranch) mainBranch = b; continue; }
-          if (matchMask(cond, handIds, handBadges, boardIds)) { chosen = b; break; }
-        }
-        return chosen ?? mainBranch ?? branches[0];
-      };
+      patchBranchSelection(fe, buildConditionMap(f.root));
     }
     // 规则随机对手手牌不可见，不 setOpponentHand（识别走场上特征）
   } catch (e) {
@@ -213,7 +194,14 @@ function evolvedRoundPlan(
   return plan;
 }
 
-/** 规则随机对手放置：完全随机站位（random_place 语义，无坦克前/远程后约束） */
+/**
+ * 规则随机对手放置（L1 标准口径）：
+ *   - 决策随机：随机选怪
+ *   - 站位规则：坦克/战士/特殊 在前三列（靠近中线一侧），法师/射手 在后三列（远离中线一侧），
+ *     行 y 0-4 均匀随机。即 selfplay.rule_random_place 语义。
+ *   - 注意：这不是完全随机站位（random_place 是更弱基线，非当前验收口径）。
+ * 返回带坐标的放置列表。
+ */
 function ruleRandomPlace(
   deck: { monsterId: number; badgeIds: number[] }[],
   handIds: number[],
@@ -221,11 +209,14 @@ function ruleRandomPlace(
   side: 1 | 2,
   my: { dbId: number; x: number; y: number }[],
   rng: () => number,
-): { monsterId: number; badgeIds: number[] }[] {
+): { monsterId: number; badgeIds: number[]; x: number; y: number }[] {
   const lo = side === 1 ? 0 : 6;
   const hi = side === 1 ? 4 : 10;
+  // 前三列（靠近中线）/ 后三列（远离中线），与 selfplay.rule_random_place 一致
+  const frontCols = side === 1 ? [2, 3, 4] : [6, 7, 8];
+  const backCols = side === 1 ? [0, 1, 2] : [8, 9, 10];
   const occupied = new Set(my.map(m => m.x * 10 + m.y));
-  const placed: { monsterId: number; badgeIds: number[] }[] = [];
+  const placed: { monsterId: number; badgeIds: number[]; x: number; y: number }[] = [];
   const affordable = deck.filter(s => handIds.includes(s.monsterId) && (DB_COST[s.monsterId] ?? 2) <= budget);
   let curBudget = budget;
   while (affordable.length > 0) {
@@ -233,9 +224,13 @@ function ruleRandomPlace(
     for (let y = 0; y < 5; y++) for (let x = lo; x <= hi; x++) if (!occupied.has(x * 10 + y)) free.push({ x, y });
     if (free.length === 0) break;
     const pick = affordable.splice(Math.floor(rng() * affordable.length), 1)[0];
-    const cell = free[Math.floor(rng() * free.length)];
+    const role = DB_ROLE[pick.monsterId] ?? '战士';
+    // 法师/射手 → 后三列；坦克/战士/特殊 → 前三列（与 selfplay 一致）
+    const cols = (role === '法师' || role === '射手') ? backCols : frontCols;
+    const candidates = free.filter(c => cols.includes(c.x));
+    const cell = (candidates.length > 0 ? candidates : free)[Math.floor(rng() * (candidates.length > 0 ? candidates.length : free.length))];
     occupied.add(cell.x * 10 + cell.y);
-    placed.push({ monsterId: pick.monsterId, badgeIds: pick.badgeIds });
+    placed.push({ monsterId: pick.monsterId, badgeIds: pick.badgeIds, x: cell.x, y: cell.y });
     curBudget -= DB_COST[pick.monsterId] ?? 2;
     // 过滤预算不足的
     for (let i = affordable.length - 1; i >= 0; i--) {
@@ -245,11 +240,16 @@ function ruleRandomPlace(
   return placed;
 }
 
-// 费用表（延迟初始化）
+// 费用/角色表（延迟初始化）
 let DB_COST: Record<number, number> = {};
+let DB_ROLE: Record<number, string> = {};
 function initCost(): void {
   DB_COST = {};
-  for (const m of DB_MONSTERS) DB_COST[m.id] = m.cost;
+  DB_ROLE = {};
+  for (const m of DB_MONSTERS) {
+    DB_COST[m.id] = m.cost;
+    DB_ROLE[m.id] = m.role;
+  }
 }
 
 /** 单局：进化产物 vs 规则随机，返回进化侧 {w,d,l} */
@@ -317,19 +317,12 @@ function playOne(
         evoHand.splice(evoHand.indexOf(p.monsterId), 1);
       }
     }
-    // 放置随机对手（成功后从手牌移除）
+    // 放置随机对手（ruleRandomPlace 已按 role 决定前/后列坐标，直接用其坐标）
     {
-      const occ = new Set(oppMy.map(m => m.x * 10 + m.y));
       for (const p of oppPlan) {
         const slot = oppDeck.find(s => s.monsterId === p.monsterId);
         if (!slot || !oppHand.includes(p.monsterId)) continue;
-        const lo = oppSide === 1 ? 0 : 6, hi = oppSide === 1 ? 4 : 10;
-        const free: { x: number; y: number }[] = [];
-        for (let y = 0; y < 5; y++) for (let x = lo; x <= hi; x++) if (!occ.has(x * 10 + y)) free.push({ x, y });
-        if (free.length === 0) break;
-        const cell = free[Math.floor(rng() * free.length)];
-        if (!gameEngine.placeMonster(slot, cell.x, cell.y, oppSide === 1)) continue;
-        occ.add(cell.x * 10 + cell.y);
+        if (!gameEngine.placeMonster(slot, p.x, p.y, oppSide === 1)) continue;
         oppHand.splice(oppHand.indexOf(p.monsterId), 1);
       }
     }
@@ -374,23 +367,32 @@ function main(): void {
   const jsonPath = ARGV.json ?? 'reports/evolution2_result.json';
   const games = Number(ARGV.games ?? 20);
   const bundlePath = ARGV.bundle ?? 'public/ai-bundle.iife.js';
+  const nativeName = ARGV.native ?? null; // 直接测原生阵型基线（不需 JSON）
 
   const BundleAI = loadBundle(bundlePath);
   if (!BundleAI) { console.error('bundle 未加载'); process.exit(1); }
   initCost();
 
-  const raw = JSON.parse(readFileSync(resolve(jsonPath), 'utf8'));
-  const evolved = reviveFormation(raw.formation);
-  console.log('=== vs 规则随机（随机卡组 + 完全随机站位） ===');
+  let evolved: EvolFormation;
+  if (nativeName) {
+    const src = FORMATION_LIBRARY.find(f => f.name === nativeName);
+    if (!src) { console.error(`阵型不存在: ${nativeName}`); process.exit(1); }
+    evolved = formationToEvol(src);
+  } else {
+    const raw = JSON.parse(readFileSync(resolve(jsonPath), 'utf8'));
+    evolved = reviveFormation(raw.formation);
+  }
+  console.log('=== vs 规则随机（随机卡组 + 前坦克后射手布局） ===');
   console.log(summarizeEvolFormation(evolved));
   console.log('');
 
-  // 7 套卡组
+  // 7 套卡组（随机选，而非顺序轮换）
   const decks = FORMATION_LIBRARY.map(f => f.team.filter(s => s.monsterId > 0));
+  const deckRng = mulberry32(12345); // 独立的卡组随机源
   let w = 0, d = 0, l = 0;
   const t0 = Date.now();
   for (let g = 0; g < games; g++) {
-    const oppDeck = decks[g % decks.length];
+    const oppDeck = decks[Math.floor(deckRng() * decks.length)];
     const evoSide: 1 | 2 = g % 2 === 0 ? 1 : 2;
     const r = playOne(BundleAI, evolved, oppDeck, evoSide, 3000 + g);
     w += r.w; d += r.d; l += r.l;

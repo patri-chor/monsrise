@@ -33,13 +33,7 @@ function loadBundle(bundlePath: string): any {
 
 /** JSON roundtrip：把序列化的树节点转回 EvolNode（补全缺失的 condition 字段） */
 function reviveNode(raw: any): EvolNode {
-  const cond: FeatureMask = {
-    handHas: raw.condition?.handHas ?? [],
-    handBadgeHas: raw.condition?.handBadgeHas ?? [],
-    handNotHas: raw.condition?.handNotHas ?? [],
-    boardHas: raw.condition?.boardHas ?? [],
-    boardNotHas: raw.condition?.boardNotHas ?? [],
-  };
+  const cond: FeatureMask = { tags: raw.condition?.tags ?? [] };
   return {
     id: raw.id,
     round: raw.round,

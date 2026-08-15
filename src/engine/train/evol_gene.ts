@@ -3,70 +3,41 @@
 //
 // 设计原则（用户确认）：
 //   - 基因 = 固定卡组 + 放置树 + 特殊放置器（固定保留）
-//   - 分支触发条件 = 可进化的特征掩码 FeatureMask（识别系统学习化），
-//     不再用 formation_engine.selectBranch 里硬编码的 label 关键词
+//   - 分支触发条件 = 可进化的体系标签 FeatureMask（识别系统学习化）
 //   - 特殊怪兽索敌（矿爆锁祈祷行/铁甲贴队友/咒法安全位…）是已验证算法，
 //     执行时复用 bundle 内部 special/aim calculator，不纳入基因
 //
-// EvolFormation = { team, root: EvolNode }
-//   EvolNode = { id, round, condition: FeatureMask, placements, children }
-//
-// FeatureMask 匹配语义：
-//   - 每个字段列表非空才参与判断；字段间 AND，列表内 OR
-//   - handHas: 手牌含列表任一怪
-//   - handBadgeHas: 手牌含列表任一徽章
-//   - handNotHas: 手牌不含列表所有怪
-//   - boardHas: 场上已部署含列表任一怪
-//   - boardNotHas: 场上不含列表所有怪
-//   - 空 mask（全空）= 无条件匹配 = 主分支兜底
+// FeatureMask = 分支的「体系标签」集合（精确还原原生 selectBranch 语义）：
+//   - 原生 selectBranch 是两阶段分类器：
+//       第一阶段（手牌）：suqing(124/凋零2/中毒25) > prayer(105) > fullrush(无105+冲怪)
+//          suqing 匹配「全冲/三振/dof」标签；prayer 匹配「祷徒/祈祷」；fullrush 匹配「全冲」
+//       第二阶段（场上）：三振王(124) > 钻头(116) > 祷徒(105) > 全冲(无105+107/113/117) > 冲锋(106)
+//   - 因此每个分支的标签归属：
+//       prayer  → 祷徒/祈祷
+//       fullrush→ 全冲（含手牌 suqing 也命中「全冲」标签）
+//       suqing  → 三振/三振王/dof
+//       drill   → 钻头
+//       rush    → 冲锋
+//   - 空 tags（[]）= 主分支兜底（label 不含条件关键词）
 // ============================================================
 
 import type { Formation, FormationTeamSlot } from '../../ai/types';
 
-// ---------- 特征掩码 ----------
+// ---------- 体系标签 ----------
+
+export type ArchetypeTag = 'prayer' | 'fullrush' | 'suqing' | 'drill' | 'rush';
 
 export interface FeatureMask {
-  /** 对手手牌含这些怪之一 */
-  handHas: number[];
-  /** 对手手牌含这些徽章之一 */
-  handBadgeHas: number[];
-  /** 对手手牌不含这些怪（全部满足"不含"） */
-  handNotHas: number[];
-  /** 对手场上已部署含这些怪之一 */
-  boardHas: number[];
-  /** 对手场上不含这些怪（全部满足"无"） */
-  boardNotHas: number[];
+  /** 该分支匹配的体系标签集合；空 = 主分支兜底 */
+  tags: ArchetypeTag[];
 }
 
 export function emptyMask(): FeatureMask {
-  return { handHas: [], handBadgeHas: [], handNotHas: [], boardHas: [], boardNotHas: [] };
+  return { tags: [] };
 }
 
 export function isEmptyMask(m: FeatureMask): boolean {
-  return m.handHas.length === 0
-    && m.handBadgeHas.length === 0
-    && m.handNotHas.length === 0
-    && m.boardHas.length === 0
-    && m.boardNotHas.length === 0;
-}
-
-/**
- * 特征掩码匹配：所有非空字段都满足（AND），字段内 OR。
- * handIds / handBadges：对手手牌（开局可见前 4 张）ID 集合。
- * boardIds：对手场上已部署怪 ID 集合。
- */
-export function matchMask(
-  m: FeatureMask,
-  handIds: Set<number>,
-  handBadges: Set<number>,
-  boardIds: Set<number>,
-): boolean {
-  if (m.handHas.length > 0 && !m.handHas.some(id => handIds.has(id))) return false;
-  if (m.handBadgeHas.length > 0 && !m.handBadgeHas.some(id => handBadges.has(id))) return false;
-  if (m.handNotHas.length > 0 && m.handNotHas.some(id => handIds.has(id))) return false;
-  if (m.boardHas.length > 0 && !m.boardHas.some(id => boardIds.has(id))) return false;
-  if (m.boardNotHas.length > 0 && m.boardNotHas.some(id => boardIds.has(id))) return false;
-  return true;
+  return m.tags.length === 0;
 }
 
 // ---------- 进化树节点 ----------
@@ -80,7 +51,7 @@ export interface EvolPlacement {
 export interface EvolNode {
   id: string;
   round: number;            // 0=根, 1-5=局数
-  condition: FeatureMask;   // 作为分支时的触发条件（根恒空）
+  condition: FeatureMask;   // 作为分支时的触发标签（根恒空）
   placements: EvolPlacement[]; // 本节点落子（有序 = 放置优先级）
   children: EvolNode[];
 }
@@ -99,13 +70,7 @@ export function cloneEvolNode(n: EvolNode): EvolNode {
   return {
     id: n.id,
     round: n.round,
-    condition: {
-      handHas: [...n.condition.handHas],
-      handBadgeHas: [...n.condition.handBadgeHas],
-      handNotHas: [...n.condition.handNotHas],
-      boardHas: [...n.condition.boardHas],
-      boardNotHas: [...n.condition.boardNotHas],
-    },
+    condition: { tags: [...n.condition.tags] },
     placements: n.placements.map(p => ({ monsterId: p.monsterId, x: p.x, y: p.y })),
     children: n.children.map(c => cloneEvolNode(c)),
   };
@@ -127,7 +92,7 @@ export function walkEvolNodes(n: EvolNode, out: EvolNode[] = []): EvolNode[] {
   return out;
 }
 
-/** 节点 id → FeatureMask 映射（供 patch selectBranch 时按 bundle node.id 查条件） */
+/** 节点 id → FeatureMask 映射（供 patch selectBranch 时按 bundle node.id 查标签） */
 export function buildConditionMap(root: EvolNode): Map<string, FeatureMask> {
   const map = new Map<string, FeatureMask>();
   for (const n of walkEvolNodes(root)) {
@@ -136,16 +101,19 @@ export function buildConditionMap(root: EvolNode): Map<string, FeatureMask> {
   return map;
 }
 
-/** 特征掩码 → 可读标签（调试/日志用） */
+/** 特征掩码 → 可读标签（调试/日志用）。必须用中文关键词，因为 bundle 内部
+ *  getRoundPlan 有 isPrayerBranch = label.includes('祷徒') 的判断（祷徒分支跳过变体），
+ *  selectVariant 也有 label 相关分支；用英文 tag 名会破坏这些内部逻辑 → 行为漂移。 */
 export function maskToLabel(m: FeatureMask): string {
   if (isEmptyMask(m)) return '主分支';
-  const parts: string[] = [];
-  if (m.handHas.length) parts.push(`手牌有[${m.handHas.join(',')}]`);
-  if (m.handBadgeHas.length) parts.push(`手牌徽章[${m.handBadgeHas.join(',')}]`);
-  if (m.handNotHas.length) parts.push(`手牌无[${m.handNotHas.join(',')}]`);
-  if (m.boardHas.length) parts.push(`场上有[${m.boardHas.join(',')}]`);
-  if (m.boardNotHas.length) parts.push(`场上无[${m.boardNotHas.join(',')}]`);
-  return parts.join('&');
+  const TAG_LABEL: Record<ArchetypeTag, string> = {
+    prayer: '祷徒',
+    fullrush: '全冲',
+    suqing: '三振/dof',
+    drill: '钻头',
+    rush: '冲锋',
+  };
+  return m.tags.map(t => TAG_LABEL[t]).join('/');
 }
 
 /** 进化树节点 → bundle 可注入的 tree 节点（loadCustomFormation 格式） */
@@ -181,38 +149,24 @@ export function evolToBundleFormation(e: EvolFormation): {
   };
 }
 
-// ---------- 从 FORMATION_LIBRARY 转初始基因（label → FeatureMask 翻译） ----------
+// ---------- 从 FORMATION_LIBRARY 转初始基因（label → 体系标签翻译） ----------
 
 /**
- * 把人工编辑的 label 翻译成初始特征掩码（仅覆盖已知关键词，作为进化起点）。
- * 进化会通过 mutateCondition 探索更精确的掩码。
+ * 把人工编辑的 label 精确翻译成体系标签。
+ * 原生 selectBranch 的体系判定（见文件头注释）：
+ *   祷徒/祈祷 → prayer；全冲 → fullrush；三振/三振王/dof → suqing；
+ *   钻头 → drill；冲锋 → rush。
+ * 注意「全冲」≠「冲锋」：/冲锋/ 不匹配"全冲"，/全冲/ 不匹配"冲锋"。
  */
 export function labelToMask(label: string): FeatureMask {
-  const m = emptyMask();
-  if (!label) return m;
-  // 主分支（局N / 开局 等无条件词）
-  const isCondition = /祷徒|祈祷|钻头|三振|dof|全冲|冲锋|盾|铁甲/.test(label);
-  if (!isCondition) return m;
-
-  // 祷徒系：手牌或场上有祈祷(105)
-  if (/祷徒|祈祷/.test(label)) {
-    m.handHas.push(105);
-    m.boardHas.push(105);
-  }
-  // 钻头反制：场上有钻头(116)
-  if (/钻头/.test(label)) {
-    m.boardHas.push(116);
-  }
-  // 全冲/dof/三振：手牌有三振王(124)或全冲特征怪
-  if (/三振|dof|全冲|冲锋/.test(label)) {
-    m.handHas.push(124, 107, 113, 117, 116);
-    m.boardHas.push(124);
-  }
-  // 盾/铁甲系
-  if (/盾|铁甲/.test(label)) {
-    m.boardHas.push(117, 118);
-  }
-  return m;
+  const tags: ArchetypeTag[] = [];
+  if (!label) return { tags };
+  if (/祷徒|祈祷/.test(label)) tags.push('prayer');
+  if (/全冲/.test(label)) tags.push('fullrush');
+  if (/三振|dof/.test(label)) tags.push('suqing');
+  if (/钻头/.test(label)) tags.push('drill');
+  if (/冲锋/.test(label)) tags.push('rush');
+  return { tags };
 }
 
 /** 从 FormationLibrary 的 Formation 提取进化基因（含 tree 转 EvolNode） */
@@ -237,13 +191,13 @@ export function formationToEvol(f: Formation): EvolFormation {
 
 // ---------- 诊断 ----------
 
-/** 打印进化阵型摘要（含分支条件），人工检查用 */
+/** 打印进化阵型摘要（含分支标签），人工检查用 */
 export function summarizeEvolFormation(e: EvolFormation): string {
   const lines: string[] = [`阵型 ${e.name} (archetype=${e.archetype}) 卡组[${e.team.map(s => s.monsterId).join(',')}]`];
   for (const n of walkEvolNodes(e.root)) {
     if (n.round === 0) continue;
     const ps = n.placements.map(p => `${p.monsterId}@(${p.x},${p.y})`).join(', ');
-    const cond = isEmptyMask(n.condition) ? '' : ` [条件: ${maskToLabel(n.condition)}]`;
+    const cond = isEmptyMask(n.condition) ? '' : ` [标签: ${maskToLabel(n.condition)}]`;
     lines.push(`  R${n.round} ${ps}${cond}`);
   }
   return lines.join('\n');

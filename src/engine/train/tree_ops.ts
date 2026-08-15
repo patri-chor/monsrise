@@ -15,8 +15,10 @@
 
 import { DB_MONSTERS, DB_BADGES } from '../../game/Database';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
-import type { EvolFormation, EvolNode, FeatureMask } from './evol_gene';
-import { cloneEvolFormation, cloneEvolNode, walkEvolNodes, emptyMask, isEmptyMask } from './evol_gene';
+import type { EvolFormation, EvolNode, ArchetypeTag } from './evol_gene';
+import {
+  cloneEvolFormation, cloneEvolNode, walkEvolNodes, emptyMask, isEmptyMask,
+} from './evol_gene';
 
 export const P2_X_MIN = 6;
 export const P2_X_MAX = 10;
@@ -186,45 +188,38 @@ export function mutateBadge(f: EvolFormation, monsterId: number, badgePool: numb
   return out;
 }
 
-// ---------- 特征掩码变异（识别学习化核心） ----------
+// ---------- 体系标签变异（识别学习化核心） ----------
+
+const ALL_TAGS: ArchetypeTag[] = ['prayer', 'fullrush', 'suqing', 'drill', 'rush'];
 
 /**
- * 变异某节点的特征掩码：随机加/删/改一个特征项。
- * 保证变异后仍为空（主分支）或非空（条件分支），不破坏"每层至少一个主分支"由调用方维护。
+ * 变异某节点的体系标签：随机加/删一个标签。
+ * 空标签 = 主分支；非空 = 条件分支（应对某对手体系）。
  */
 export function mutateCondition(
   f: EvolFormation,
   nodeId: string,
-  monsterPool: number[],
-  badgePool: number[],
+  _monsterPool: number[],
+  _badgePool: number[],
   rng: () => number,
 ): EvolFormation | null {
   const node = findNode(f.root, nodeId);
   if (!node) return null;
   const out = cloneEvolFormation(f);
   const target = findNode(out.root, nodeId)!;
-  const m = target.condition;
-  const FIELDS: (keyof FeatureMask)[] = ['handHas', 'handBadgeHas', 'handNotHas', 'boardHas', 'boardNotHas'];
-  const nonEmptyFields = FIELDS.filter(k => m[k].length > 0);
-  const isBadgeField = (k: keyof FeatureMask) => k === 'handBadgeHas';
-
+  const tags = target.condition.tags;
   const roll = rng();
-  if (roll < 0.35 && nonEmptyFields.length > 0) {
-    // 删除：从非空字段里随机删一个元素
-    const field = nonEmptyFields[Math.floor(rng() * nonEmptyFields.length)];
-    const list = m[field];
-    list.splice(Math.floor(rng() * list.length), 1);
+
+  if (roll < 0.40 && tags.length > 0) {
+    // 删除一个标签
+    tags.splice(Math.floor(rng() * tags.length), 1);
   } else {
-    // 增加：随机选一个字段，加入一个随机特征
-    const field = FIELDS[Math.floor(rng() * FIELDS.length)];
-    const pool = isBadgeField(field) ? badgePool : monsterPool;
-    if (!pool.length) return null;
-    const candidates = pool.filter(v => !m[field].includes(v));
+    // 增加一个标签（不重复）
+    const candidates = ALL_TAGS.filter(t => !tags.includes(t));
     if (!candidates.length) return null;
-    m[field].push(candidates[Math.floor(rng() * candidates.length)]);
+    tags.push(candidates[Math.floor(rng() * candidates.length)]);
   }
-  // 去重 + 排序（保持确定性）
-  for (const k of FIELDS) m[k] = [...new Set(m[k])].sort((a, b) => a - b);
+  target.condition.tags = [...new Set(tags)].sort();
   return validateFormation(out) ? null : out;
 }
 
@@ -232,13 +227,13 @@ export function mutateCondition(
 
 /**
  * 新增条件分支：选一个非叶子节点，复制其一个 child 子树作为新分支，
- * 给新分支一个随机非空条件（区别于已有兄弟分支的条件）。
+ * 给新分支一个随机非空标签（区别于已有兄弟分支）。
  * 返回 null 表示无法新增（无合法模板或已满）。
  */
 export function addBranch(
   f: EvolFormation,
-  monsterPool: number[],
-  badgePool: number[],
+  _monsterPool: number[],
+  _badgePool: number[],
   rng: () => number,
 ): EvolFormation | null {
   // 候选：有 children 的节点（可新增兄弟分支给其 children）
@@ -253,19 +248,15 @@ export function addBranch(
   const p = walkEvolNodes(out.root).find(n => n.id === parent.id)!;
   const template = p.children[Math.floor(rng() * p.children.length)];
   const newBranch = cloneEvolNode(template);
-  // 给新分支一个非空条件（随机特征），并重命名 id 避免与 conditionMap 冲突
+  // 给新分支一个随机非空标签，并重命名 id 避免与 conditionMap 冲突
   newBranch.id = `${template.id}_b${Math.floor(rng() * 1e6)}`;
-  newBranch.condition = emptyMask();
-  const field = rng() < 0.5 ? 'handHas' : 'boardHas';
-  const pool = field === 'handHas' ? monsterPool : monsterPool;
-  const v = pool[Math.floor(rng() * pool.length)];
-  newBranch.condition[field].push(v);
+  newBranch.condition = { tags: [ALL_TAGS[Math.floor(rng() * ALL_TAGS.length)]] };
   p.children.push(newBranch);
   return validateFormation(out) ? null : out;
 }
 
 /**
- * 删除一个非主分支（condition 非空的叶子侧分支）。保留主分支（空 condition）。
+ * 删除一个非主分支（condition 非空的分支）。保留主分支（空 condition）。
  */
 export function removeBranch(f: EvolFormation, rng: () => number): EvolFormation | null {
   const out = cloneEvolFormation(f);

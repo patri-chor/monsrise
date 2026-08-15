@@ -30,9 +30,9 @@ import { vfx } from '../../game/VfxManager';
 import { registerAllBadges } from '../../game/BadgeSystem';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { Formation, FormationTeamSlot } from '../../ai/types';
-import type { EvolFormation } from './evol_gene';
+import type { EvolFormation, ArchetypeTag, FeatureMask } from './evol_gene';
 import {
-  evolToBundleFormation, buildConditionMap, matchMask, isEmptyMask, emptyMask, formationToEvol,
+  evolToBundleFormation, buildConditionMap, formationToEvol,
 } from './evol_gene';
 
 registerAllBadges();
@@ -127,10 +127,9 @@ function relocateNear(x: number, y: number, side: 'p1' | 'p2', occupied: Set<num
 // ---------- 分支选择 patch（识别学习化核心） ----------
 
 /**
- * monkey-patch formationEngine.selectBranch：用 FeatureMask 匹配替代
- * 硬编码的 label 关键词匹配。这样"识别系统"成为基因的一部分，可进化。
- * 复用 bundle 的 opponentHandIds / opponentHandBadgeIds（setOpponentHand 设置）。
- * onDecision：可选回调，记录每次分支决策（识别学习数据收集用）。
+ * monkey-patch formationEngine.selectBranch：用体系标签匹配替代 label 关键词，
+ * 精确复刻原生 selectBranch 的两阶段 + 体系优先级语义（见 evol_gene.ts 文件头）。
+ * 这样"识别系统"成为基因的一部分（tags 可进化），且初始种子与原生行为一致。
  */
 export interface BranchDecision {
   round: number;
@@ -141,9 +140,9 @@ export interface BranchDecision {
   branchLabels: string[];
 }
 
-function patchBranchSelection(
+export function patchBranchSelection(
   fe: any,
-  condMap: Map<string, ReturnType<typeof emptyMask>>,
+  condMap: Map<string, FeatureMask>,
   onDecision?: (d: BranchDecision) => void,
 ): void {
   fe.selectBranch = (gameState: any, branches: any[]): any => {
@@ -152,27 +151,69 @@ function patchBranchSelection(
     const boardIds: Set<number> = new Set(
       (gameState.players.p1.deployed ?? []).map((m: any) => m.monsterId),
     );
-    let chosen: any = null;
-    let mainBranch: any = null;
-    for (const b of branches) {
-      const cond = condMap.get(b.id) ?? emptyMask();
-      if (isEmptyMask(cond)) {
-        // 空 mask = 主分支兜底，不参与优先匹配（避免主分支排前抢先命中）
-        if (!mainBranch) mainBranch = b;
-        continue;
+    const tagsOf = (b: any): ArchetypeTag[] => condMap.get(b.id)?.tags ?? [];
+    const hasTag = (b: any, t: ArchetypeTag): boolean => tagsOf(b).includes(t);
+
+    // === 第一阶段：对方手牌识别（原生语义：suqing > prayer > fullrush） ===
+    const handPrayer = handIds.has(105);
+    const handTripleKing = handIds.has(124);
+    const handWither = handBadges.has(2) || handBadges.has(25);
+    const handFullRush = !handPrayer && (
+      handIds.has(107) || handIds.has(113) || handIds.has(117) || handIds.has(116)
+    );
+    let targetType: 'suqing' | 'prayer' | 'fullrush' | null = null;
+    if (handTripleKing || handWither) targetType = 'suqing';
+    else if (handPrayer) targetType = 'prayer';
+    else if (handFullRush) targetType = 'fullrush';
+
+    if (targetType) {
+      for (const b of branches) {
+        // suqing 体系匹配「全冲/三振/dof」标签；prayer 匹配「祷徒/祈祷」；fullrush 匹配「全冲」
+        if (targetType === 'suqing' && (hasTag(b, 'fullrush') || hasTag(b, 'suqing'))) return choose(b);
+        if (targetType === 'prayer' && hasTag(b, 'prayer')) return choose(b);
+        if (targetType === 'fullrush' && hasTag(b, 'fullrush')) return choose(b);
       }
-      if (matchMask(cond, handIds, handBadges, boardIds)) { chosen = b; break; }
+      // targetType 存在但无匹配标签 → 继续用场上特征（原生语义）
     }
-    if (!chosen) chosen = mainBranch ?? branches[0];
-    onDecision?.({
-      round: gameState.round ?? 0,
-      handIds: [...handIds].sort((a, b) => a - b),
-      handBadges: [...handBadges].sort((a, b) => a - b),
-      boardIds: [...boardIds].sort((a, b) => a - b),
-      chosenBranchId: chosen.id,
-      branchLabels: branches.map((b: any) => b.label ?? b.id),
-    });
-    return chosen;
+
+    // === 第二阶段：场上特征识别（原生语义：三振王>钻头>祷徒>全冲>冲锋） ===
+    const opponentDeployed = gameState.players.p1.deployed ?? [];
+    if (opponentDeployed.length === 0) {
+      return choose(fallbackMain(branches, tagsOf));
+    }
+
+    const hasTripleKing = boardIds.has(124);
+    const hasDrill = boardIds.has(116);
+    const hasPrayer = boardIds.has(105);
+    const hasRush = boardIds.has(106);
+    const hasFullRush = !hasPrayer && (boardIds.has(107) || boardIds.has(113) || boardIds.has(117));
+
+    for (const b of branches) {
+      if (hasTripleKing && hasTag(b, 'suqing')) return choose(b);
+      if (hasDrill && hasTag(b, 'drill')) return choose(b);
+      if (hasPrayer && hasTag(b, 'prayer')) return choose(b);
+      if (hasFullRush && hasTag(b, 'fullrush')) return choose(b);
+      if (hasRush && hasTag(b, 'rush')) return choose(b);
+    }
+
+    return choose(fallbackMain(branches, tagsOf));
+
+    function fallbackMain(bs: any[], tg: (b: any) => ArchetypeTag[]): any {
+      // 主分支 = 无标签（原生 isMainBranch：label 不含条件关键词）
+      const main = bs.find(b => tg(b).length === 0);
+      return main ?? bs[0];
+    }
+    function choose(b: any): any {
+      onDecision?.({
+        round: gameState.round ?? 0,
+        handIds: [...handIds].sort((a, b) => a - b),
+        handBadges: [...handBadges].sort((a, b) => a - b),
+        boardIds: [...boardIds].sort((a, b) => a - b),
+        chosenBranchId: b.id,
+        branchLabels: branches.map((x: any) => x.label ?? x.id),
+      });
+      return b;
+    }
   };
 }
 
