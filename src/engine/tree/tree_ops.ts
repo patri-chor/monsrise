@@ -29,6 +29,21 @@ const FOUR_COST_IDS: ReadonlySet<number> = new Set(
   DB_MONSTERS.filter(m => m.cost === 4).map(m => m.id),
 );
 
+/** 特殊怪（special_calculator 索敌，位置信息无效）：冲锋106/咒法107/突突114/钻头116/铁甲117 */
+const SPECIAL_IDS: ReadonlySet<number> = new Set([106, 107, 114, 116, 117]);
+/** 瞄准怪（aim_calculator 索敌）：矿爆113/塞雷118 */
+const AIM_IDS: ReadonlySet<number> = new Set([113, 118]);
+
+/** 是否为特殊/瞄准怪（位置由计算器决定，树内坐标无效，位置搜索跳过） */
+export function isPositionIrrelevant(monsterId: number): boolean {
+  return SPECIAL_IDS.has(monsterId) || AIM_IDS.has(monsterId);
+}
+
+/** 怪兽 role：坦克/战士/特殊 前排，法师/射手 后排 */
+export function roleOf(monsterId: number): string {
+  return DB_MONSTERS.find(m => m.id === monsterId)?.role ?? '战士';
+}
+
 export function costOf(monsterId: number): number {
   return DB_MONSTERS.find(m => m.id === monsterId)?.cost ?? 2;
 }
@@ -164,6 +179,38 @@ function findAncestorByRound(root: EvolNode, descendant: EvolNode, targetRound: 
   return result;
 }
 
+/** 顺序延后：某怪从 fromRound 移到 toRound（沿后代链定位，toRound>fromRound）。 */
+export function moveLater(f: EvolFormation, monsterId: number, fromRound: number, toRound: number): EvolFormation | null {
+  if (toRound <= fromRound || toRound > 5) return null;
+  if (toRound >= 4 && FOUR_COST_IDS.has(monsterId)) return null;
+
+  const fromNodes = walkEvolNodes(f.root).filter(n => n.round === fromRound && n.placements.some(p => p.monsterId === monsterId));
+  if (fromNodes.length === 0) return null;
+
+  for (const fromNode of fromNodes) {
+    // 找 fromNode 子树中 round===toRound 的后代节点
+    const toNode = findDescendantByRound(fromNode, toRound);
+    if (!toNode) continue;
+
+    const out = cloneEvolFormation(f);
+    const src = walkEvolNodes(out.root).find(n => n.id === fromNode.id)!;
+    const dst = walkEvolNodes(out.root).find(n => n.id === toNode.id)!;
+    const idx = src.placements.findIndex(p => p.monsterId === monsterId);
+    const [moved] = src.placements.splice(idx, 1);
+    dst.placements.push(moved);
+    if (validateFormation(out) === null) return out;
+  }
+  return null;
+}
+
+/** 在 node 的子树中找 round===targetRound 的后代节点（第一个匹配） */
+function findDescendantByRound(node: EvolNode, targetRound: number): EvolNode | null {
+  for (const n of walkEvolNodes(node)) {
+    if (n !== node && n.round === targetRound) return n;
+  }
+  return null;
+}
+
 /** 同节点内两 placement 顺序互换（影响放置优先级） */
 export function swapRoundOrder(f: EvolFormation, nodeId: string, i: number, j: number): EvolFormation | null {
   const node = findNode(f.root, nodeId);
@@ -177,9 +224,13 @@ export function swapRoundOrder(f: EvolFormation, nodeId: string, i: number, j: n
   return validateFormation(out) ? null : out;
 }
 
-/** 位置改变：某怪全部放置平移 (dx,dy)，clamp 后仍越界则拒绝 */
+/**
+ * 位置改变：某怪全部放置平移 (dx,dy)，clamp 后仍越界则拒绝。
+ * 注意：特殊/瞄准怪位置由计算器决定，调用方应先用 isPositionIrrelevant 排除。
+ */
 export function shiftPosition(f: EvolFormation, monsterId: number, dx: number, dy: number): EvolFormation | null {
   if (dx === 0 && dy === 0) return null;
+  if (isPositionIrrelevant(monsterId)) return null; // 特殊怪位置无效
   const out = cloneEvolFormation(f);
   let touched = false;
   for (const n of walkEvolNodes(out.root)) {
@@ -191,6 +242,58 @@ export function shiftPosition(f: EvolFormation, monsterId: number, dx: number, d
     }
   }
   if (!touched) return null;
+  return validateFormation(out) ? null : out;
+}
+
+/**
+ * 规则内换格：把普通怪（非特殊/瞄准）的坐标改成指定的 (x,y)。
+ * 约束：x 必须在其 role 对应的合法列（坦克/战士→前排 x6-8，法师/射手→后排 x8-10），
+ * 与 rule_random_place 的前后排规则一致。p2 视角坐标 6-10。
+ */
+export function moveWithinZone(f: EvolFormation, monsterId: number, x: number, y: number): EvolFormation | null {
+  if (isPositionIrrelevant(monsterId)) return null;
+  if (x < P2_X_MIN || x > P2_X_MAX || y < BOARD_Y_MIN || y > BOARD_Y_MAX) return null;
+  const role = roleOf(monsterId);
+  const isBackline = role === '法师' || role === '射手';
+  const validCols = isBackline ? [8, 9, 10] : [6, 7, 8];
+  if (!validCols.includes(x)) return null; // 违反前后排规则
+
+  const out = cloneEvolFormation(f);
+  let touched = false;
+  for (const n of walkEvolNodes(out.root)) {
+    for (const p of n.placements) {
+      if (p.monsterId !== monsterId) continue;
+      p.x = x;
+      p.y = y;
+      touched = true;
+    }
+  }
+  if (!touched) return null;
+  return validateFormation(out) ? null : out;
+}
+
+/**
+ * 替换：把节点 nodeId 里第 idx 只怪（fromMonsterId）换成 toMonsterId。
+ * 费用约束：toMonsterId 是四费时，节点 round 必须 <4（四费仅前三局）。
+ * 替换是"换怪"而非"移动"——保持节点位置、徽章来自卡组 team。
+ */
+export function replaceMonster(f: EvolFormation, nodeId: string, fromMonsterId: number, toMonsterId: number): EvolFormation | null {
+  if (fromMonsterId === toMonsterId) return null;
+  const teamIds = new Set(f.team.map(s => s.monsterId));
+  if (!teamIds.has(fromMonsterId) || !teamIds.has(toMonsterId)) return null;
+
+  const out = cloneEvolFormation(f);
+  const node = walkEvolNodes(out.root).find(n => n.id === nodeId);
+  if (!node) return null;
+  const idx = node.placements.findIndex(p => p.monsterId === fromMonsterId);
+  if (idx < 0) return null;
+  // 四费约束：目标怪是四费时，该节点 round 必须 < 4
+  if (FOUR_COST_IDS.has(toMonsterId) && node.round >= 4) return null;
+
+  node.placements[idx] = {
+    ...node.placements[idx],
+    monsterId: toMonsterId,
+  };
   return validateFormation(out) ? null : out;
 }
 
