@@ -151,7 +151,7 @@ export function evolve2(
 
   const evalFitness = (f: EvolFormation): number => {
     const r = evaluateArena(BundleAI, f, gamesPerTarget);
-    return r.adScore;
+    return r.weakest; // maximin：优先补最弱格
   };
 
   let best: EvolFormation = cloneEvolFormation(pop[0]);

@@ -38,6 +38,8 @@ export type SubArchetype = 'dof' | 'shield' | 'gift';
 export type KeyMonster = 'drill' | 'rush' | 'iron' | 'ninja' | 'tutu' | 'spell' | 'mine';
 
 export interface FeatureMask {
+  /** 先后手约束：1=p1侧(先手) / 2=p2侧(后手) / null=不限（用户洞察：左右主场不对称） */
+  side: 1 | 2 | null;
   /** 主标签约束；null = 不限制主标签 */
   main: MainArchetype | null;
   /** 附加标签约束（需全部命中） */
@@ -47,11 +49,11 @@ export interface FeatureMask {
 }
 
 export function emptyMask(): FeatureMask {
-  return { main: null, subs: [], keys: [] };
+  return { side: null, main: null, subs: [], keys: [] };
 }
 
 export function isEmptyMask(m: FeatureMask): boolean {
-  return m.main === null && m.subs.length === 0 && m.keys.length === 0;
+  return m.side === null && m.main === null && m.subs.length === 0 && m.keys.length === 0;
 }
 
 // ---------- 识别输入与结果 ----------
@@ -124,17 +126,18 @@ export function recognizeArchetype(inp: ArchetypeInput): RecognizedArchetype {
   return { main, subs, keys };
 }
 
-/** 分支 FeatureMask 是否命中识别结果 */
-export function matchMask(mask: FeatureMask, rec: RecognizedArchetype): boolean {
+/** 分支 FeatureMask 是否命中识别结果（mySide = 候选先后手 1/2） */
+export function matchMask(mask: FeatureMask, rec: RecognizedArchetype, mySide: 1 | 2): boolean {
+  if (mask.side !== null && mask.side !== mySide) return false;
   if (mask.main !== null && mask.main !== rec.main) return false;
   if (!mask.subs.every(s => rec.subs.includes(s))) return false;
   if (!mask.keys.every(k => rec.keys.includes(k))) return false;
   return true;
 }
 
-/** 分支特异性（main 非空 + subs 数 + keys 数），用于分支优先级排序 */
+/** 分支特异性（side 非空 + main 非空 + subs 数 + keys 数），用于分支优先级排序 */
 export function maskSpecificity(m: FeatureMask): number {
-  return (m.main !== null ? 1000 : 0) + m.subs.length * 10 + m.keys.length;
+  return (m.side !== null ? 10000 : 0) + (m.main !== null ? 1000 : 0) + m.subs.length * 10 + m.keys.length;
 }
 
 // ---------- 进化树节点 ----------
@@ -163,7 +166,7 @@ export interface EvolFormation {
 // ---------- 转换 ----------
 
 export function cloneMask(m: FeatureMask): FeatureMask {
-  return { main: m.main, subs: [...m.subs], keys: [...m.keys] };
+  return { side: m.side, main: m.main, subs: [...m.subs], keys: [...m.keys] };
 }
 
 /** 深拷贝进化树节点 */
@@ -218,6 +221,7 @@ const KEY_LABEL: Record<KeyMonster, string> = {
 export function maskToLabel(m: FeatureMask): string {
   if (isEmptyMask(m)) return '主分支';
   const parts: string[] = [];
+  if (m.side !== null) parts.push(m.side === 1 ? '先手' : '后手');
   if (m.main) parts.push(MAIN_LABEL[m.main]);
   for (const s of m.subs) parts.push(SUB_LABEL[s]);
   for (const k of m.keys) parts.push(KEY_LABEL[k]);

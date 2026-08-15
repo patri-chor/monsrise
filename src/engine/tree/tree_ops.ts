@@ -120,22 +120,48 @@ export function swapMonsters(f: EvolFormation, m1: number, m2: number): EvolForm
   return validateFormation(out) ? null : out;
 }
 
-/** 顺序提前：某怪从 fromRound 移到 toRound（同祖先链，toRound<fromRound） */
+/** 顺序提前：某怪从 fromRound 移到 toRound（沿祖先链定位，toRound<fromRound）。
+ *  分支树里同一回合有多个节点，不能按回合号 find，必须从"含该怪的节点"沿祖先链向上找。 */
 export function moveEarlier(f: EvolFormation, monsterId: number, fromRound: number, toRound: number): EvolFormation | null {
   if (fromRound <= toRound || toRound < 1) return null;
-  const fromNode = walkEvolNodes(f.root).find(n => n.round === fromRound && n.placements.some(p => p.monsterId === monsterId));
-  const toNode = walkEvolNodes(f.root).find(n => n.round === toRound);
-  if (!fromNode || !toNode) return null;
-  if (!isAncestor(toNode, fromNode)) return null;
   if (toRound >= 4 && FOUR_COST_IDS.has(monsterId)) return null;
 
-  const out = cloneEvolFormation(f);
-  const src = walkEvolNodes(out.root).find(n => n.round === fromRound && n.placements.some(p => p.monsterId === monsterId))!;
-  const dst = walkEvolNodes(out.root).find(n => n.round === toRound)!;
-  const idx = src.placements.findIndex(p => p.monsterId === monsterId);
-  const [moved] = src.placements.splice(idx, 1);
-  dst.placements.push(moved);
-  return validateFormation(out) ? null : out;
+  // 找到所有含该怪且 round===fromRound 的节点
+  const fromNodes = walkEvolNodes(f.root).filter(n => n.round === fromRound && n.placements.some(p => p.monsterId === monsterId));
+  if (fromNodes.length === 0) return null;
+
+  // 对每个 fromNode，沿祖先链向上找 round===toRound 的祖先
+  for (const fromNode of fromNodes) {
+    const toNode = findAncestorByRound(f.root, fromNode, toRound);
+    if (!toNode) continue;
+
+    const out = cloneEvolFormation(f);
+    const src = walkEvolNodes(out.root).find(n => n.id === fromNode.id)!;
+    const dst = walkEvolNodes(out.root).find(n => n.id === toNode.id)!;
+    const idx = src.placements.findIndex(p => p.monsterId === monsterId);
+    const [moved] = src.placements.splice(idx, 1);
+    dst.placements.push(moved);
+    if (validateFormation(out) === null) return out;
+  }
+  return null;
+}
+
+/** 从 root 出发，找 descendant 在祖先链上 round===targetRound 的祖先节点 */
+function findAncestorByRound(root: EvolNode, descendant: EvolNode, targetRound: number): EvolNode | null {
+  // 沿父指针回溯需要 parent 指针；这里用递归：若 ancestor 的子树包含 descendant 且 ancestor.round===targetRound
+  let result: EvolNode | null = null;
+  const dfs = (n: EvolNode): boolean => {
+    if (n === descendant) return true;
+    for (const c of n.children) {
+      if (dfs(c)) {
+        if (result === null && n.round === targetRound) result = n;
+        return true;
+      }
+    }
+    return false;
+  };
+  dfs(root);
+  return result;
 }
 
 /** 同节点内两 placement 顺序互换（影响放置优先级） */
@@ -196,8 +222,8 @@ const ALL_KEYS: KeyMonster[] = ['drill', 'rush', 'iron', 'ninja', 'tutu', 'spell
 
 /**
  * 变异某节点的三层识别标签：随机加/删一个标签项。
- * 空标签 = 主分支；非空 = 条件分支（应对某对手特征）。
- * 注意：主标签互斥，变异时只保留一个。
+ * 空标签 = 主分支；非空 = 条件分支（应对某对手特征或先后手）。
+ * 注意：主标签互斥，变异时只保留一个；side 可加可删。
  */
 export function mutateCondition(
   f: EvolFormation,
@@ -214,22 +240,26 @@ export function mutateCondition(
   const roll = rng();
 
   if (roll < 0.35) {
-    // 删除：随机删一个已有标签项（main/subs/keys）
-    const removable: ('main' | 'sub' | 'key')[] = [];
+    // 删除：随机删一个已有标签项（side/main/subs/keys）
+    const removable: ('side' | 'main' | 'sub' | 'key')[] = [];
+    if (m.side !== null) removable.push('side');
     if (m.main) removable.push('main');
     if (m.subs.length) removable.push('sub');
     if (m.keys.length) removable.push('key');
     if (removable.length === 0) return null;
     const kind = removable[Math.floor(rng() * removable.length)];
-    if (kind === 'main') m.main = null;
+    if (kind === 'side') m.side = null;
+    else if (kind === 'main') m.main = null;
     else if (kind === 'sub') m.subs.splice(Math.floor(rng() * m.subs.length), 1);
     else m.keys.splice(Math.floor(rng() * m.keys.length), 1);
   } else {
     // 增加：随机加一个标签项
-    const kind = rng() < 0.5 ? 'main' : (rng() < 0.5 ? 'sub' : 'key');
-    if (kind === 'main') {
+    const kindRoll = rng();
+    if (kindRoll < 0.25) {
+      m.side = rng() < 0.5 ? 1 : 2;
+    } else if (kindRoll < 0.60) {
       m.main = ALL_MAINS[Math.floor(rng() * ALL_MAINS.length)];
-    } else if (kind === 'sub') {
+    } else if (kindRoll < 0.80) {
       const cand = ALL_SUBS.filter(s => !m.subs.includes(s));
       if (!cand.length) return null;
       m.subs.push(cand[Math.floor(rng() * cand.length)]);
@@ -269,7 +299,7 @@ export function addBranch(
   const newBranch = cloneEvolNode(template);
   // 给新分支一个随机非空标签，并重命名 id 避免与 conditionMap 冲突
   newBranch.id = `${template.id}_b${Math.floor(rng() * 1e6)}`;
-  newBranch.condition = { main: ALL_MAINS[Math.floor(rng() * ALL_MAINS.length)], subs: [], keys: [] };
+  newBranch.condition = { side: null, main: ALL_MAINS[Math.floor(rng() * ALL_MAINS.length)], subs: [], keys: [] };
   p.children.push(newBranch);
   return validateFormation(out) ? null : out;
 }

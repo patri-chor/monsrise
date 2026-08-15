@@ -9,7 +9,7 @@
 // 模拟退火：温度从高到低，前期允许接受更差解（跳出局部最优），
 // 后期退化为纯爬山（精细收敛）。
 //
-// 适应度 = arena 分离测试 adScore（攻击/生存/盾流/dof 四维不败均值）。
+// 适应度 = arena 分离测试 weakest（3靶×先/后手 6 格最弱不败率，maximin 补短板）。
 // 每步用 gamesPerTarget 快评（噪声容忍，用于排序），
 // 最终 best 用更多局数精评。
 //
@@ -126,10 +126,12 @@ export function hillClimb(
   T0 = 0.10,
   Tmin = 0.005,
   alpha = 0.985,
+  evalGamesPerTarget?: number, // 最终精评局数（默认 gamesPerTarget，但建议 >=8 降噪）
 ): HillClimbResult {
   const rng = mulberry32(seed);
   let current = cloneEvolFormation(seedFormation);
-  let currentFit = evaluateArena(BundleAI, current, gamesPerTarget).adScore;
+  // 适应度 = weakest（最弱格不败率），优先补短板
+  let currentFit = evaluateArena(BundleAI, current, gamesPerTarget).weakest;
 
   let best = cloneEvolFormation(current);
   let bestFit = currentFit;
@@ -141,7 +143,7 @@ export function hillClimb(
   for (let step = 0; step < steps; step++) {
     const child = mutate(current, rng);
     if (child) {
-      const childFit = evaluateArena(BundleAI, child, gamesPerTarget).adScore;
+      const childFit = evaluateArena(BundleAI, child, gamesPerTarget).weakest;
       const delta = childFit - currentFit;
       // 退火接受准则：更优必接受，更差以 exp(delta/T) 概率接受
       if (delta >= 0 || rng() < Math.exp(delta / T)) {
@@ -161,8 +163,9 @@ export function hillClimb(
     history.push({ step: step + 1, fitness: currentFit, bestFitness: bestFit, temp: T });
   }
 
-  // 最终精评
-  bestArena = evaluateArena(BundleAI, best, Math.max(gamesPerTarget, 4));
+  // 最终精评（更多局数降噪，验证真实增益）
+  const finalGames = evalGamesPerTarget ?? Math.max(gamesPerTarget, 8);
+  bestArena = evaluateArena(BundleAI, best, finalGames);
   return { best, bestFitness: bestFit, bestArena: bestArena!, steps, accepted, history };
 }
 
@@ -174,6 +177,7 @@ if (process.argv[1] && process.argv[1].endsWith('hill_climb.ts')) {
   const gamesPerTarget = Number(process.argv[4]) || 2;
   const outPath = process.argv[5] || 'reports/hill_climb_result.json';
   const seed = Number(process.argv[6]) || 42;
+  const evalGames = Number(process.argv[7]) || 8; // 最终精评局数
 
   const w = globalThis as any;
   let BundleAI: any = null;
@@ -192,7 +196,7 @@ if (process.argv[1] && process.argv[1].endsWith('hill_climb.ts')) {
   if (!src) { console.error(`种子阵型不存在: ${seedName}`); process.exit(1); }
 
   const t0 = Date.now();
-  const result = hillClimb(BundleAI, formationToEvol(src), steps, gamesPerTarget, seed);
+  const result = hillClimb(BundleAI, formationToEvol(src), steps, gamesPerTarget, seed, 0.10, 0.005, 0.985, evalGames);
   const ms = Date.now() - t0;
   console.log(`\n=== 模拟退火爬山完成（${steps} 步，${(ms / 1000).toFixed(0)}s，接受 ${result.accepted} 次）===`);
   console.log(`最佳分离分：${(result.bestFitness * 100).toFixed(1)}%`);

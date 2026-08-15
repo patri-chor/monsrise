@@ -64,6 +64,7 @@ function mulberry32(seed: number): () => number {
 
 function reviveNode(raw: any): EvolNode {
   const cond: FeatureMask = {
+    side: raw.condition?.side ?? null,
     main: raw.condition?.main ?? null,
     subs: raw.condition?.subs ?? [],
     keys: raw.condition?.keys ?? [],
@@ -157,6 +158,7 @@ function evolvedRoundPlan(
     if (cur?.name !== f.name) {
       ai.buildTeam(hand);
       quiet(() => fe.loadCustomFormation(evolToBundleFormation(f)));
+      (fe as any).variant = 'original'; // 学习/评估固定变体，学固定套路
       patchBranchSelection(fe, buildConditionMap(f.root));
     }
     // 规则随机对手手牌不可见，不 setOpponentHand（识别走场上特征）

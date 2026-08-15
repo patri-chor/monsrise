@@ -2,11 +2,14 @@
 // P2 — 分离测试竞技场（arena）
 // 评估一个进化个体（EvolFormation）在多维靶上的表现，主指标=不败率（胜+平）。
 //
-//   attack   （攻击力）vs 全二永平：能否击杀高生存均衡阵
-//   survival （生存力）vs 全二冲：能否在高爆发下存活
-//   shield   （盾流）  vs 梯子塞雷：能否破盾流体系
-//   dof      （dof）   vs 肃清：能否应对 DOF/凋零速攻
-//   vsAll    对 7 阵型综合（参考）
+//   attack        （攻击力）vs 全二永平：能否击杀高生存均衡阵
+//   survival      （生存力）vs 全二冲：能否在高爆发下存活
+//   comprehensive （综合力）vs 泉水剑：祷徒续航+祭司高伤害强阵
+//   vsAll         对 7 阵型综合（参考，不计入分离分）
+//
+// 每个靶子分先手(side1)/后手(side2) 分开统计（用户洞察：左右主场不对称，
+// 合并统计会掩盖短板）。主指标 adScore = 三维不败率均值；
+// 补短板指标 weakest = 6 格最弱不败率（爬山用 maximin 优先补最弱格）。
 //
 // 执行机制：
 //   - 候选个体（EvolFormation）：通过 loadCustomFormation 注入 bundle，
@@ -17,7 +20,7 @@
 //   - 战斗：真实 BattleSystem，dt=0.04 固定步长，与网页一致。
 //
 // 运行（CLI 自测）：
-//   npx vite-node --script src/engine/train/arena.ts --formation 肃清 --games 4
+//   npx vite-node --script src/engine/tree/arena.ts --formation 肃清 --games 4
 // ============================================================
 
 import '../env';
@@ -154,6 +157,8 @@ export function patchBranchSelection(
       (gameState.players.p1.deployed ?? []).map((m: any) => m.monsterId),
     );
     const maskOf = (b: any): FeatureMask => condMap.get(b.id) ?? emptyMask();
+    // 候选先后手：currentPlayer 即候选侧（buildBundleState 里 currentPlayer=side）
+    const mySide: 1 | 2 = gameState.currentPlayer === 'p1' ? 1 : 2;
 
     // 识别对手三层标签
     const rec = recognizeArchetype({ handIds, handBadges, boardIds });
@@ -168,7 +173,7 @@ export function patchBranchSelection(
         if (!mainBranch) mainBranch = b;
         continue;
       }
-      if (matchMask(mask, rec)) return choose(b);
+      if (matchMask(mask, rec, mySide)) return choose(b);
     }
     return choose(mainBranch ?? branches[0]);
 
@@ -225,6 +230,9 @@ function bundleRoundPlanFor(
         ? evolToBundleFormation(spec.f as EvolFormation)
         : spec.f as unknown as any;
       quiet(() => fe.loadCustomFormation(bundleFmt));
+      // 学习/评估时取消变体随机：固定 variant=original，让树坐标=实际落点，
+      // 否则同一阵型每次评估镜像/平移随机 → 学不到固定套路（用户洞察）。
+      (fe as any).variant = 'original';
       if (spec.kind === 'evol') {
         patchBranchSelection(fe, buildConditionMap((spec.f as EvolFormation).root), onDecision);
       }
@@ -286,7 +294,7 @@ export function playSpecVsSpec(
   aSide: 1 | 2,
   seed: number,
   onDecision?: (d: BranchDecision, outcome: 1 | 0 | -1) => void,
-): { w: number; d: number; l: number; summary: string } {
+): { w: number; d: number; l: number; summary: string; roundScores: number[] } {
   const teamA = teamOf(specA) as TeamSlot[];
   const teamB = teamOf(specB) as TeamSlot[];
 
@@ -379,8 +387,14 @@ export function playSpecVsSpec(
   if (onDecision) {
     for (const d of aDecisions) onDecision(d, outcome);
   }
-  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary };
-  return aWon > aLost ? { w: 1, d: 0, l: 0, summary } : { w: 0, d: 0, l: 1, summary };
+  // 轮级比分（A 视角每轮得分差：+1 胜/0 平/-1 负），聚焦搜索"输的轮"用
+  const roundScores = roundResults.map(r => {
+    if (r === 0) return 0;
+    const aWinRound = (aSide === 1 && r === 1) || (aSide === 2 && r === 2);
+    return aWinRound ? 1 : -1;
+  });
+  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary, roundScores };
+  return aWon > aLost ? { w: 1, d: 0, l: 0, summary, roundScores } : { w: 0, d: 0, l: 1, summary, roundScores };
 }
 
 // ---------- 靶子与评估 ----------
@@ -393,17 +407,26 @@ export interface ArenaScore {
   winRate: number;
 }
 
+/** 分侧战绩：先手(side1=p1)/后手(side2=p2) 分开统计（用户洞察：左右主场不对称） */
+export interface SideScore {
+  first: ArenaScore;   // 候选先手
+  second: ArenaScore;  // 候选后手
+}
+
 export interface ArenaResult {
-  attack: ArenaScore;
-  survival: ArenaScore;
-  shield: ArenaScore;
-  dof: ArenaScore;
+  attack: SideScore;        // 攻击力（vs 全二永平）
+  survival: SideScore;      // 生存力（vs 全二冲）
+  comprehensive: SideScore; // 综合能力（vs 泉水剑）
   vsAll: ArenaScore;
-  adScore: number; // 四维不败率均值 —— 主指标
+  adScore: number;   // 三维不败率均值 —— 主指标
+  weakest: number;   // 6 格（3靶×先/后手）最弱不败率 —— 补短板指标
 }
 
 function emptyScore(): ArenaScore {
   return { win: 0, draw: 0, loss: 0, undefeated: 0, winRate: 0 };
+}
+function emptySide(): SideScore {
+  return { first: emptyScore(), second: emptyScore() };
 }
 function accumulate(s: ArenaScore, r: { w: number; d: number; l: number }): void {
   s.win += r.w; s.draw += r.d; s.loss += r.l;
@@ -413,6 +436,9 @@ function finalize(s: ArenaScore): void {
   if (t === 0) return;
   s.undefeated = (s.win + s.draw) / t;
   s.winRate = s.win / t;
+}
+function sideUndefeated(s: SideScore): number {
+  return Math.min(s.first.undefeated, s.second.undefeated);
 }
 
 function byName(name: string): Formation {
@@ -428,28 +454,29 @@ export function evaluateArena(
   onProgress?: (label: string, i: number, total: number) => void,
 ): ArenaResult {
   const res: ArenaResult = {
-    attack: emptyScore(), survival: emptyScore(), shield: emptyScore(), dof: emptyScore(),
-    vsAll: emptyScore(), adScore: 0,
+    attack: emptySide(), survival: emptySide(), comprehensive: emptySide(),
+    vsAll: emptyScore(), adScore: 0, weakest: 0,
   };
 
-  const targets: { key: keyof ArenaResult; name: string; f: Formation }[] = [
-    { key: 'attack', name: '全二永平', f: byName('全二永平') },
-    { key: 'survival', name: '全二冲', f: byName('全二冲') },
-    { key: 'shield', name: '梯子塞雷', f: byName('梯子塞雷') },
-    { key: 'dof', name: '肃清', f: byName('肃清') },
+  const targets: { key: 'attack' | 'survival' | 'comprehensive'; name: string; f: Formation }[] = [
+    { key: 'attack', name: '全二永平', f: byName('全二永平') },   // 攻击力：能否击杀高生存均衡阵
+    { key: 'survival', name: '全二冲', f: byName('全二冲') },     // 生存力：能否在高爆发下存活
+    { key: 'comprehensive', name: '泉水剑', f: byName('泉水剑') }, // 综合能力：祷徒续航+祭司高伤害强阵
   ];
 
   const specA: SideSpec = { kind: 'evol', f: candidate };
   let g = 0;
   for (const t of targets) {
+    // 先手/后手分开统计：偶数局候选先手(side1)，奇数局候选后手(side2)
     for (let i = 0; i < gamesPerTarget; i++) {
       const aSide: 1 | 2 = i % 2 === 0 ? 1 : 2;
       const r = playSpecVsSpec(BundleAI, specA, { kind: 'native', f: t.f }, aSide, 1000 + g);
-      accumulate(res[t.key], r);
+      accumulate(aSide === 1 ? res[t.key].first : res[t.key].second, r);
       onProgress?.(t.name, i + 1, gamesPerTarget);
       g++;
     }
-    finalize(res[t.key]);
+    finalize(res[t.key].first);
+    finalize(res[t.key].second);
   }
 
   FORMATION_LIBRARY.forEach((f, idx) => {
@@ -458,20 +485,29 @@ export function evaluateArena(
   });
   finalize(res.vsAll);
 
-  res.adScore = (res.attack.undefeated + res.survival.undefeated + res.shield.undefeated + res.dof.undefeated) / 4;
+  // 主指标：三维不败率均值（先/后手合并后的每维均值）
+  const avg = (s: SideScore) => (s.first.undefeated + s.second.undefeated) / 2;
+  res.adScore = (avg(res.attack) + avg(res.survival) + avg(res.comprehensive)) / 3;
+  // 补短板指标：6 格最弱不败率（maximin，爬山用它优先补最弱格）
+  res.weakest = Math.min(
+    res.attack.first.undefeated, res.attack.second.undefeated,
+    res.survival.first.undefeated, res.survival.second.undefeated,
+    res.comprehensive.first.undefeated, res.comprehensive.second.undefeated,
+  );
   return res;
 }
 
 export function formatArenaResult(name: string, r: ArenaResult): string {
   const pct = (v: number) => (v * 100).toFixed(1) + '%';
+  const fmtSide = (label: string, s: SideScore) =>
+    `  ${label}: 先手 ${pct(s.first.undefeated)}(${s.first.win}/${s.first.draw}/${s.first.loss}) | 后手 ${pct(s.second.undefeated)}(${s.second.win}/${s.second.draw}/${s.second.loss})`;
   return [
     `${name} 分离测试:`,
-    `  攻击力(vs全二永平) ${pct(r.attack.undefeated)} 不败 / ${pct(r.attack.winRate)} 纯胜 (${r.attack.win}/${r.attack.draw}/${r.attack.loss})`,
-    `  生存力(vs全二冲)   ${pct(r.survival.undefeated)} 不败 / ${pct(r.survival.winRate)} 纯胜 (${r.survival.win}/${r.survival.draw}/${r.survival.loss})`,
-    `  盾流(vs梯子塞雷)   ${pct(r.shield.undefeated)} 不败 / ${pct(r.shield.winRate)} 纯胜 (${r.shield.win}/${r.shield.draw}/${r.shield.loss})`,
-    `  dof(vs肃清)        ${pct(r.dof.undefeated)} 不败 / ${pct(r.dof.winRate)} 纯胜 (${r.dof.win}/${r.dof.draw}/${r.dof.loss})`,
-    `  综合(vs7阵型)      ${pct(r.vsAll.undefeated)} 不败 (${r.vsAll.win}/${r.vsAll.draw}/${r.vsAll.loss})`,
-    `  ★ 分离分(四维不败均值) ${pct(r.adScore)}`,
+    fmtSide('攻击力(vs全二永平)', r.attack),
+    fmtSide('生存力(vs全二冲)  ', r.survival),
+    fmtSide('综合力(vs泉水剑)  ', r.comprehensive),
+    `  泛化(vs7阵型)      ${pct(r.vsAll.undefeated)} 不败 (${r.vsAll.win}/${r.vsAll.draw}/${r.vsAll.loss})`,
+    `  ★ 分离分(三维不败均值) ${pct(r.adScore)}  最弱格 ${pct(r.weakest)}`,
   ].join('\n');
 }
 
