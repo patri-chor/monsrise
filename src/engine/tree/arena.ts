@@ -230,12 +230,14 @@ function bundleRoundPlanFor(
         ? evolToBundleFormation(spec.f as EvolFormation)
         : spec.f as unknown as any;
       quiet(() => fe.loadCustomFormation(bundleFmt));
-      // 学习/评估时取消变体随机：固定 variant=original，让树坐标=实际落点，
-      // 否则同一阵型每次评估镜像/平移随机 → 学不到固定套路（用户洞察）。
-      (fe as any).variant = 'original';
+      // 变体非对称处理（用户洞察）：
+      //   - evol 侧（候选/我方）：固定 variant=original，树坐标=实际落点，学固定套路
+      //   - native 侧（靶子/对手）：保留变体随机（镜像/平移），对手多样 → 学到的解法才泛化
       if (spec.kind === 'evol') {
+        (fe as any).variant = 'original';
         patchBranchSelection(fe, buildConditionMap((spec.f as EvolFormation).root), onDecision);
       }
+      // native 侧不设 variant，保留 buildTeam 时 selectVariant 随机选的变体
     }
     if (oppHand && oppHand.length > 0) {
       quiet(() => fe.setOpponentHand(oppHand.slice(0, 4)));
