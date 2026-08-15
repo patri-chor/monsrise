@@ -276,6 +276,14 @@ export class BattleSystem {
       // 避免布阵位置原地齐射的"回合开始异常普攻"。
       this._attackTimers.set(m.id, 0);
       (m as any)._justMoved = false;
+      // 每局重置"已出手"计数：首攻免等（performMovementAI）与连段轮次动画重播
+      // 都以它为"是否出过手"的标记，不重置会导致第二局起首攻又等满整个间隔。
+      (m as any).animAttackCount = 0;
+      // 动画状态机（main.ts）同样每局重置：上一局残留的 _lastAnimState/_lastRoundIndex
+      // 会被开局首帧误判为"轮次变化"，触发一次虚假的挥击/施法动画重播。
+      (m as any)._lastAnimState = 'idle';
+      (m as any)._lastRoundIndex = 0;
+      (m as any).weaponAnimTime = 0;
       
       m.skillCdProgress = 0;
       (m as any).skillReady = false;
@@ -508,7 +516,8 @@ export class BattleSystem {
         }
         if ((m as any).burstAttacksLeft === 0) {
           (m as any).burstTargetId = '';
-          this._attackTimers.set(m.id, 0);
+          // 连段结束不再清零：保留连段期间累计的冷却进度，
+          // 继续累加到 interval 触发下一轮（周期 = interval = 设计值）。
         }
       } else if (atkTimer >= interval) {
         // DEBUG-108
@@ -569,6 +578,9 @@ export class BattleSystem {
               this.performNormalAttack(m);
               (m as any).currentTargetId = prevTarget;
               (m as any).burstAttacksLeft--;
+              // 首段打出即开始冷却计时：连段时长（count×delay）计入 interval，
+              // 使一轮周期 = interval（如钻头 4.2s），连段结束后仅需补足剩余空档。
+              this._attackTimers.set(m.id, 0);
               actedThisFrame = true;
               m.state = 'attack';
             }
@@ -1507,7 +1519,7 @@ export class BattleSystem {
       return;
     }
 
-    const target = this.findClosestEnemy(m, true);
+    const target = this.findClosestEnemy(m, false);
     if (!target) {
       m.state = 'idle';
       return;
@@ -1520,6 +1532,14 @@ export class BattleSystem {
       if ((m as any)._justMoved) {
         (m as any)._justMoved = false;
         this.performNormalAttack(m);
+      }
+      // 首次接战（从未出过手）免等：预置攻速间隔，下一帧立即触发首轮攻击；
+      // 解决低攻速/连段怪首攻等待满一个 interval（如钻头 4.2s）的问题。
+      if (!(m as any).animAttackCount) {
+        const bc = (m as any).burstCount || 0;
+        const ivl = bc > 0 ? bc / m.ats : 1 / m.ats;
+        const cur = this._attackTimers.get(m.id) || 0;
+        if (cur < ivl) this._attackTimers.set(m.id, ivl);
       }
       return; // Don't move if target is already in range
     }
@@ -1602,7 +1622,9 @@ export class BattleSystem {
       const current = this._monsters.find(x => x.id === (m as any).currentTargetId);
       if (current && !current.isDead && !(current as any).resurrecting
           && !this._leaps.has(current.id)
-          && !(current as any).deepStealth) {
+          && !(current as any).deepStealth
+          // 网格距离为 0（被顶飞/击退瞬间与自身占据同一逻辑格）：暂不锁定，落定（距离≥1）后再攻击
+          && !(Math.abs(current.gridX - m.gridX) === 0 && Math.abs(current.gridY - m.gridY) === 0)) {
         if (isAttacking) {
           return current; // 技能和普攻释放时不重新索敌更换目标
         } else {
@@ -1620,7 +1642,9 @@ export class BattleSystem {
     const isP1 = isP1Monster(m);
     
     const isFarSniper = m.dbId === 113 || m.dbId === 109;
-    let maxManhattan = -1;
+    // 远狙候选：射程内 X 轴（|dx|）最远优先，X 相同再比较曼哈顿
+    let bestFarDx = -1;
+    let bestFarManhattan = -1;
     let furthestInRange: PlacedMonster | null = null;
     const effectiveRange = m.range + badgeGetRangeBonus(m);
 
@@ -1630,11 +1654,15 @@ export class BattleSystem {
       if (isP1 !== isP1Monster(enemy)) {
         const dx = Math.abs(enemy.gridX - m.gridX);
         const dy = Math.abs(enemy.gridY - m.gridY);
+        // 网格距离为 0：跳过（顶飞瞬间敌人坐标滞后与自身重叠），待落定后再纳入索敌
+        if (dx === 0 && dy === 0) continue;
         const manhattan = dx + dy;
         
         if (isFarSniper) {
-          if (manhattan <= effectiveRange && manhattan > maxManhattan) {
-            maxManhattan = manhattan;
+          if (manhattan <= effectiveRange
+              && (dx > bestFarDx || (dx === bestFarDx && manhattan > bestFarManhattan))) {
+            bestFarDx = dx;
+            bestFarManhattan = manhattan;
             furthestInRange = enemy;
           }
         }

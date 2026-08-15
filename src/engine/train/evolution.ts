@@ -41,6 +41,62 @@ function badgeLimitFor(cost: number): number {
   return cost >= 4 ? 3 : 2;
 }
 
+// ---------- 徽章/怪兽协同先验（用户深度理解的隐性连接，注入到基因生成/变异中） ----------
+const SYN = {
+  SUQING: 101, SANZHEN: 124, SANDAN: 104, SHANJI: 109,
+  PRAYER: 105, APPRENTICE: 103, RUSH: 106, DRILL: 116, IRON: 117, SERI: 118,
+} as const;
+const SYN_BADGE = {
+  WITHER: 2, ELEMENT: 4, POISON: 25, SACRIFICE: 27, RELAY: 35, GIFT: 33,
+  VOODOO: 32, PREVENT: 11, REINFORCE: 28, REACTIVE: 30, FORMATION_DEF: 12, BREAK: 3,
+} as const;
+
+/** 给定怪兽 + 卡组内其它怪兽 + 已有徽章，返回一个强协同的徽章 id（无则 null）。
+ * 只做软引导（非硬编码锁死），保留随机探索空间。 */
+function synergyBadgeFor(monsterId: number, deckIds: Set<number>, existing: number[]): number | null {
+  const has = (m: number) => deckIds.has(m);
+  // 凋零(2) 配元素来源：肃清自带流血、三振王寒冷、散弹燃烧
+  if (monsterId === SYN.SUQING && !existing.includes(SYN_BADGE.WITHER) && (has(SYN.SANZHEN) || has(SYN.SANDAN)))
+    return SYN_BADGE.WITHER;
+  if (monsterId === SYN.SANZHEN && !existing.includes(SYN_BADGE.POISON) && has(SYN.SUQING))
+    return SYN_BADGE.POISON;
+  if (monsterId === SYN.SANDAN && !existing.includes(SYN_BADGE.ELEMENT) && has(SYN.SUQING))
+    return SYN_BADGE.ELEMENT;
+  // 巫毒(32) 吸火力：冲锋/钻头天然前突，配巫毒最大化吸收火力
+  if ((monsterId === SYN.RUSH || monsterId === SYN.DRILL) && !existing.includes(SYN_BADGE.VOODOO))
+    return SYN_BADGE.VOODOO;
+  // 礼物(33)：银狙骑士高攻击，死后给核心 +攻击
+  if (monsterId === SYN.SHANJI && !existing.includes(SYN_BADGE.GIFT))
+    return SYN_BADGE.GIFT;
+  // 接力(35)：散弹献祭给祈祷（相邻对象）
+  if (monsterId === SYN.SANDAN && !existing.includes(SYN_BADGE.RELAY) && has(SYN.PRAYER))
+    return SYN_BADGE.RELAY;
+  // 盾流：塞雷/铁甲配盾徽章（预防/加固/反应装甲）
+  if ((monsterId === SYN.SERI || monsterId === SYN.IRON) && !existing.includes(SYN_BADGE.PREVENT))
+    return SYN_BADGE.PREVENT;
+  if (monsterId === SYN.SERI && !existing.includes(SYN_BADGE.REINFORCE))
+    return SYN_BADGE.REINFORCE;
+  if (monsterId === SYN.IRON && !existing.includes(SYN_BADGE.REACTIVE))
+    return SYN_BADGE.REACTIVE;
+  return null;
+}
+
+/** 生成徽章列表（带协同软先验）：先按概率塞一枚协同徽章，再随机补足。 */
+function genBadges(monsterId: number, deckIds: number[], rng: () => number): number[] {
+  const maxBadges = badgeLimitFor(MONSTER_POOL.find(m => m.id === monsterId)?.cost ?? 2);
+  const n = Math.floor(rng() * (maxBadges + 1));
+  const badgeIds: number[] = [];
+  const deckSet = new Set(deckIds);
+  const synergy = synergyBadgeFor(monsterId, deckSet, badgeIds);
+  if (synergy !== null && n > 0 && rng() < 0.6) badgeIds.push(synergy);
+  while (badgeIds.length < n) {
+    let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
+    while (badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
+    badgeIds.push(bid);
+  }
+  return badgeIds;
+}
+
 function randomGenome(rng: () => number): Genome {
   const pool = [...MONSTER_POOL];
   const slots: TeamSlot[] = [];
@@ -50,20 +106,16 @@ function randomGenome(rng: () => number): Genome {
     const m = pool.splice(idx, 1)[0];
     if (!m) break;
     totalCost += m.cost;
-    const maxBadges = badgeLimitFor(m.cost);
-    const badgeCount = Math.floor(rng() * (maxBadges + 1)); // 0..maxBadges
-    const badgeIds: number[] = [];
-    for (let b = 0; b < badgeCount; b++) {
-      let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-      while (badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-      badgeIds.push(bid);
-    }
-    slots.push({ monsterId: m.id, badgeIds });
+    slots.push({ monsterId: m.id, badgeIds: [] });
   }
   // 若总费用超限，去掉末尾槽位直至不超
   while (totalCost > MAX_TOTAL_COST && slots.length > 0) {
     const removed = slots.pop()!;
     totalCost -= MONSTER_POOL.find(m => m.id === removed.monsterId)?.cost ?? 0;
+  }
+  const deckIds = slots.map(s => s.monsterId);
+  for (const s of slots) {
+    s.badgeIds = genBadges(s.monsterId, deckIds, rng);
   }
   return { slots };
 }
@@ -102,15 +154,8 @@ function crossover(a: Genome, b: Genome, rng: () => number): Genome {
   for (const m of missing) {
     if (out.length >= SLOTS) break;
     if (totalCost + m.cost > MAX_TOTAL_COST) continue;
-    const maxBadges = badgeLimitFor(m.cost);
-    const badgeCount = Math.floor(rng() * (maxBadges + 1));
-    const badgeIds: TeamSlot['badgeIds'] = [];
-    for (let b = 0; b < badgeCount; b++) {
-      let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-      while (badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-      badgeIds.push(bid);
-    }
-    out.push({ monsterId: m.id, badgeIds });
+    out.push({ monsterId: m.id, badgeIds: genBadges(m.id, [...seen, m.id], rng) });
+    seen.add(m.id);
     totalCost += m.cost;
   }
   return { slots: out };
@@ -127,15 +172,8 @@ function mutate(g: Genome, rng: () => number): Genome {
       const candidates = MONSTER_POOL.filter(m => !used.has(m.id));
       if (candidates.length > 0) {
         const m = candidates[Math.floor(rng() * candidates.length)];
-        const maxBadges = badgeLimitFor(m.cost);
-        const badgeCount = Math.floor(rng() * (maxBadges + 1));
-        const badgeIds: TeamSlot['badgeIds'] = [];
-        for (let b = 0; b < badgeCount; b++) {
-          let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-          while (badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-          badgeIds.push(bid);
-        }
-        slots[idx] = { monsterId: m.id, badgeIds };
+        const deckIds = slots.map(s => s.monsterId).filter((_, i) => i !== idx).concat(m.id);
+        slots[idx] = { monsterId: m.id, badgeIds: genBadges(m.id, deckIds, rng) };
       }
     }
   } else {
@@ -147,9 +185,15 @@ function mutate(g: Genome, rng: () => number): Genome {
       if (slot.badgeIds.length >= maxBadges) {
         slot.badgeIds.splice(Math.floor(rng() * slot.badgeIds.length), 1);
       } else {
-        let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-        while (slot.badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
-        slot.badgeIds.push(bid);
+        const deckSet = new Set(slots.map(s => s.monsterId));
+        const synergy = synergyBadgeFor(slot.monsterId, deckSet, slot.badgeIds);
+        if (synergy !== null && rng() < 0.6 && !slot.badgeIds.includes(synergy)) {
+          slot.badgeIds.push(synergy);
+        } else {
+          let bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
+          while (slot.badgeIds.includes(bid)) bid = BADGE_POOL[Math.floor(rng() * BADGE_POOL.length)].id;
+          slot.badgeIds.push(bid);
+        }
       }
     }
   }

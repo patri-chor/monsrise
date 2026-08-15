@@ -4,17 +4,35 @@
 与 TS 训练特征解耦，供 PyTorch 双头网络（策略 π + 价值 v）使用。
 """
 from dataclasses import dataclass, field
+import os
 
 # 怪兽 id 101..126 → 索引 0..25
 MONSTER_OFFSET = 101
 MONSTER_COUNT = 26
 
+# 有效徽章（已实现的，14/15/19/31/34 为未实现空类，与 BadgeSystem.ts / evolution.ts 一致）
+BADGE_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18,
+             20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 35, 36]
+BADGE_COUNT = len(BADGE_IDS)
+BADGE_IDX = {bid: i for i, bid in enumerate(BADGE_IDS)}
+
+# 关联特征维度（无损三件套：徽章 multiset one-hot + 首徽章 one-hot + carry 标志）。
+# 与身份 embedding 解耦：同一怪兽 id 在不同卡组里带不同徽章，必须显式喂给网络。
+MON_FEAT_DIM = 2 * BADGE_COUNT + 1
+
+# 状态特征 = 无损身份 + 几何拓扑（不含语义抽象；A/B 实测语义抽象对核心指标无增益）。
 GRID_W = 11  # 列
 GRID_H = 5   # 行
-GRID_CH = 2 + MONSTER_COUNT  # 我方/敌方 + dbId one-hot = 28
+# 32 基础通道（2 归属 + 26 怪兽 one-hot + 4 拓扑几何） + BADGE_COUNT 徽章落格通道
+GRID_CH = 32 + BADGE_COUNT
 CELL_COUNT = 25              # 己方半区 5x5
-GRID_FLAT = GRID_W * GRID_H * GRID_CH  # 1540
-GLOBAL_DIM = 58  # 5 标量 + 手牌 one-hot 26 + 卡组 one-hot 26 + 比分差 1
+GRID_FLAT = GRID_W * GRID_H * GRID_CH
+# 无损关联三件套开关（A/B 验证用）：MON_ASSOC=0 关闭 → 回到旧维度（纯身份 + 几何）。
+MON_ASSOC_ON = os.environ.get('MON_ASSOC', '1') != '0'
+# 58 基础全局（5 标量 + 手牌 26 + 卡组 26 + 比分差 1）
+#  + 卡组徽章直方图 BADGE_COUNT + 手牌徽章直方图 BADGE_COUNT
+#  + 每怪兽无损关联表 MONSTER_COUNT * MON_FEAT_DIM（徽章集合 + 首徽章 + carry）
+GLOBAL_DIM = 58 + 2 * BADGE_COUNT + (MONSTER_COUNT * MON_FEAT_DIM if MON_ASSOC_ON else 0)
 
 BUDGET_LIMITS = {1: 4, 2: 8, 3: 12, 4: 14, 5: 16}
 
@@ -44,15 +62,15 @@ def xy_to_cell(side: str, x: int, y: int) -> int:
 class State:
     """己方视角放置局面（雾战：敌我半场可见，敌方本轮放置不可见）"""
     side: str                     # 'p1' | 'p2'
-    my: list                      # 己方半场怪 [{dbId,x,y}]
-    enemy: list                   # 敌方半场怪（上回合结束可见）[{dbId,x,y}]
+    my: list                      # 己方半场怪 [{dbId,x,y}]（可含 badgeIds）
+    enemy: list                   # 敌方半场怪（上回合结束可见）[{dbId,x,y}]（可含 badgeIds）
     hand: list                    # 手牌 dbId 列表（卡组未放置）
     round: int
     budget: int                   # 剩余预算
     budget_limit: int
     deck: list                    # 完整卡组 dbId 列表（one-hot 用）
-    score: tuple = (0, 0)         # 当前比分 (p1_score, p2_score)，影响策略（领先保守/落后激进）
-                                  # 默认 (0,0)：旧代码/迁移路径（残局库旧 key 无比分）不传也能跑
+    score: tuple = (0, 0)         # 当前比分 (p1_score, p2_score)
+    deck_badges: dict = field(default_factory=dict)  # dbId -> badgeIds（己方卡组徽章映射）
 
     def legal_monsters(self):
         return [m for m in self.hand if self._cost(m) <= self.budget]
@@ -78,30 +96,92 @@ class State:
 
 # 怪兽基础属性表（由引擎 db 请求填充，见 init_meta）
 COST_BY_ID: dict[int, int] = {}
+ROLE_BY_ID: dict[int, str] = {}
+TYPE_BY_ID: dict[int, str] = {}
 
 
 def init_meta(db: dict) -> None:
     """从引擎 db 请求填充怪兽属性表（进程内单次调用）。"""
-    global COST_BY_ID
+    global COST_BY_ID, ROLE_BY_ID, TYPE_BY_ID
     for m in db['monsters']:
         COST_BY_ID[m['id']] = m['cost']
+        ROLE_BY_ID[m['id']] = m.get('role', '')
+        TYPE_BY_ID[m['id']] = m.get('type', 'melee')
+
+
+def _mon_badge_table(s: State):
+    """每怪兽无损关联特征表 (MONSTER_COUNT, MON_FEAT_DIM)：
+    [0:31] 徽章集合 one-hot；[31:62] 首徽章 one-hot（接力 35 转移首个徽章，顺序有语义）；
+    [62] carry 标志（4 费核心/3 徽章主力，锚定站位）。
+    仅卡组内怪兽非零；同一 id 在不同卡组带不同徽章，必须显式喂给网络（与身份 one-hot 解耦）。"""
+    import numpy as np
+    table = np.zeros((MONSTER_COUNT, MON_FEAT_DIM), dtype=np.float32)
+    for db in s.deck:
+        idx = db_id_to_idx(db)
+        bids = s.deck_badges.get(db, [])
+        for b in bids:
+            bi = BADGE_IDX.get(b)
+            if bi is not None:
+                table[idx, bi] = 1.0
+        if bids:
+            b0 = BADGE_IDX.get(bids[0])
+            if b0 is not None:
+                table[idx, BADGE_COUNT + b0] = 1.0
+        if COST_BY_ID.get(db, 4) == 4:
+            table[idx, MON_FEAT_DIM - 1] = 1.0
+    return table
 
 
 def encode_state(s: State):
-    """返回 (grid_tensor, global_tensor)。grid: (28,5,11) float32；global: (58,)"""
+    """返回 (grid_tensor, global_tensor)。grid: (GRID_CH,5,11) float32；global: (GLOBAL_DIM,)
+    包含 Tier-1 基础物理通道 + Tier-2 拓扑几何高层引导特征 + Tier-3 徽章协同通道。"""
     import numpy as np
     grid = np.zeros((GRID_CH, GRID_H, GRID_W), dtype=np.float32)
     my_team = 1 if s.side == 'p1' else 2
+    badge_ch_base = 32  # 徽章通道起始下标
     for m in s.my:
         idx = db_id_to_idx(m['dbId'])
         y, x = m['y'], m['x']
         grid[0, y, x] = 1.0
         grid[2 + idx, y, x] = 1.0
+        # 徽章协同通道：己方怪优先取自身 badgeIds，缺失时回退卡组映射
+        bids = m.get('badgeIds') or s.deck_badges.get(m['dbId'], [])
+        for b in bids:
+            bi = BADGE_IDX.get(b)
+            if bi is not None:
+                grid[badge_ch_base + bi, y, x] = 1.0
     for m in s.enemy:
         idx = db_id_to_idx(m['dbId'])
         y, x = m['y'], m['x']
         grid[1, y, x] = 1.0
         grid[2 + idx, y, x] = 1.0
+        for b in (m.get('badgeIds') or []):
+            bi = BADGE_IDX.get(b)
+            if bi is not None:
+                grid[badge_ch_base + bi, y, x] = 1.0
+
+    # ---- Tier-2 拓扑几何高层引导特征矩阵计算 (Two-Tier Guided Features) ----
+    my_pos = {(m['x'], m['y']) for m in s.my}
+    en_pos = {(m['x'], m['y']) for m in s.enemy}
+    
+    for y in range(GRID_H):
+        for x in range(GRID_W):
+            # 1. Density_Radius_1 (周围 8 格密度，回答"怪兽周围有几个人")
+            r1_my = sum(1 for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dx != 0 or dy != 0) and (x + dx, y + dy) in my_pos)
+            r1_en = sum(1 for dy in (-1, 0, 1) for dx in (-1, 0, 1) if (dx != 0 or dy != 0) and (x + dx, y + dy) in en_pos)
+            grid[28, y, x] = (r1_my - r1_en) / 8.0
+            
+            # 2. Density_Radius_2 (周围 24 格中距离密度)
+            r2_my = sum(1 for dy in range(-2, 3) for dx in range(-2, 3) if (dx != 0 or dy != 0) and (x + dx, y + dy) in my_pos)
+            grid[29, y, x] = r2_my / 24.0
+            
+            # 3. Adjacency_Degree (正交上下左右 4 格邻接度，引导护盾与接力必相邻)
+            adj_4 = sum(1 for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)) if (x + dx, y + dy) in my_pos)
+            grid[30, y, x] = adj_4 / 4.0
+            
+            # 4. Frontline_Depth (战场相对前线深度梯度)
+            rel_x = x if s.side == 'p1' else 10 - x
+            grid[31, y, x] = rel_x / 10.0
 
     hand_oh = np.zeros(MONSTER_COUNT, dtype=np.float32)
     for m in s.hand:
@@ -109,15 +189,34 @@ def encode_state(s: State):
     deck_oh = np.zeros(MONSTER_COUNT, dtype=np.float32)
     for m in s.deck:
         deck_oh[db_id_to_idx(m)] = 1.0
+    # 卡组 / 手牌徽章直方图（流派的隐性连接画像：卡组携带哪些徽章、当前手牌还有哪些徽章）
+    deck_badge_hist = np.zeros(BADGE_COUNT, dtype=np.float32)
+    for db in s.deck:
+        for b in s.deck_badges.get(db, []):
+            bi = BADGE_IDX.get(b)
+            if bi is not None:
+                deck_badge_hist[bi] += 1.0
+    hand_badge_hist = np.zeros(BADGE_COUNT, dtype=np.float32)
+    for db in s.hand:
+        for b in s.deck_badges.get(db, []):
+            bi = BADGE_IDX.get(b)
+            if bi is not None:
+                hand_badge_hist[bi] += 1.0
     # 比分态势：比分差归一化（先到3胜 → ±3 → ±1），指导保守/激进
     score_diff = float(s.score[0] - s.score[1]) / 3.0 if s.score else 0.0
-    g = np.concatenate([
+    parts = [
         np.array([s.round / 5.0, s.budget / 16.0, s.budget_limit / 16.0,
                  len(s.my) / 16.0, len(s.enemy) / 16.0], dtype=np.float32),
         hand_oh,
         deck_oh,
         np.array([score_diff], dtype=np.float32),
-    ])
+        deck_badge_hist,
+        hand_badge_hist,
+    ]
+    # 无损关联三件套：每怪兽徽章集合 + 首徽章 + carry，展平接入全局特征
+    if MON_ASSOC_ON:
+        parts.append(_mon_badge_table(s).reshape(-1))
+    g = np.concatenate(parts)
     return grid, g
 
 

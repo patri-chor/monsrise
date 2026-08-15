@@ -12,7 +12,7 @@ import math
 
 import numpy as np
 
-from .state import State, db_id_to_idx, idx_to_db_id, cell_to_xy
+from .state import State, db_id_to_idx, idx_to_db_id, cell_to_xy, GRID_H
 from .heuristic import heuristic_prior, script_value
 
 
@@ -34,7 +34,11 @@ class MCTS:
     def __init__(self, net, num_sim: int = 24, c_puct: float = 1.5, device='cpu',
                  cache_cap: int = 50000, prior_lambda: float = 0.7, value_net_weight: float = 0.3,
                  engine=None, deck=None, use_real_sim: bool = False,
-                 dirichlet_alpha: float = 0.0, dirichlet_eps: float = 0.25, exp_lib=None):
+                 dirichlet_alpha: float = 0.0, dirichlet_eps: float = 0.25, exp_lib=None,
+                 self_ratio_by_round: dict = None):
+        """self_ratio_by_round：{round: 该回合"基于自身卡组设计 vs 基于对方卡组调整"比重}。
+        人类经验：前 2-3 回合以自身卡组设计为主（0.8/0.7/0.6），后 2 回合以对方卡组
+        针对性调整为主（0.4/0.3）。可训练优化（train.py --self-ratio 覆盖）。"""
         self.net = net
         self.num_sim = num_sim
         self.c_puct = c_puct
@@ -43,6 +47,10 @@ class MCTS:
         # 冷启动阶段网络乱放，靠启发式把决策拉向"相对合理"（坦克前排/远程后排/相邻协同/四费优先）；
         # 网络学好后可调低 λ 让网络主导（train.py 随训练进度衰减 self.prior_lambda）。
         self.prior_lambda = prior_lambda
+        # 回合级"自身/对方"比重（可训练指标，见 train.py）
+        self.self_ratio_by_round = self_ratio_by_round or {
+            1: 0.8, 2: 0.7, 3: 0.6, 4: 0.4, 5: 0.3,
+        }
         # 叶节点价值混合：v = (1-w)·理性基线 + w·网络价值。
         # 欠训练网络价值"倒挂"（坦克后排分高、前排分低）会带偏搜索，
         # 理性基线（战力+站位结构）保证选中动作在常识上合理；网络学好后再逐步提高 w。
@@ -74,6 +82,10 @@ class MCTS:
             tuple(sorted(s.hand))
         )
 
+    def _self_ratio(self, round_: int) -> float:
+        """本回合"基于自身 vs 基于对方"比重（可训练指标）。"""
+        return self.self_ratio_by_round.get(round_, 0.5)
+
     def _greedy_fill(self, s: State):
         """贪心补齐剩余预算（TS search evaluateCandidate 同思路）：
         反复取启发式权重最大的合法动作，直到无牌可放。返回补齐后的己方列表。"""
@@ -81,20 +93,23 @@ class MCTS:
         hand = list(s.hand)
         budget = s.budget
         while True:
-            ss = State(s.side, my, s.enemy, hand, s.round, budget, s.budget_limit, s.deck)
+            ss = State(s.side, my, s.enemy, hand, s.round, budget, s.budget_limit, s.deck,
+                       deck_badges=s.deck_badges)
             acts = ss.legal_actions()
             if not acts:
                 break
-            h = heuristic_prior(ss)
+            h = heuristic_prior(ss, self._self_ratio(ss.round))
             db_id, (x, y) = max(acts, key=lambda a: h.get(a, 1.0))
             my.append({'dbId': db_id, 'x': x, 'y': y})
             hand.remove(db_id)
             budget -= ss._cost(db_id)
         return my
 
-    def _real_sim_value(self, s: State) -> float:
+    def _real_sim_value(self, s: State, seed: int = 0) -> float:
         """真实回合战斗模拟叶价值：补齐棋盘 → bridge simulate → 组合信号。
-        价值 = 0.85·回合胜负(±1) + 0.15·(2·己方血量占比-1)，clip 到 [-1,1]。"""
+        价值 = 0.85·回合胜负(±1) + 0.15·(2·己方血量占比-1)，clip 到 [-1,1]。
+        seed：同决策所有候选共用同一 seed（确定性比较）；bridge 无 seed 时
+        BattleSystem 默认 round*1000+456（天然共用随机流），传 seed 可加显式确定性。"""
         filled = self._greedy_fill(s)
         my_team = 1 if s.side == 'p1' else 2
         en_team = 2 if s.side == 'p1' else 1
@@ -102,14 +117,14 @@ class MCTS:
         for m in filled:
             board.append({
                 'dbId': m['dbId'], 'x': m['x'], 'y': m['y'], 'team': my_team,
-                'badgeIds': m.get('badgeIds') or self.deck.get(m['dbId'], []),
+                'badgeIds': m.get('badgeIds') or s.deck_badges.get(m['dbId'], []) or self.deck.get(m['dbId'], []),
             })
         for e in s.enemy:
             board.append({
                 'dbId': e['dbId'], 'x': e['x'], 'y': e['y'], 'team': en_team,
-                'badgeIds': e.get('badgeIds') or self.deck.get(e['dbId'], []),
+                'badgeIds': e.get('badgeIds') or [],
             })
-        res = self.engine.simulate(board, round_=s.round)
+        res = self.engine.simulate(board, round_=s.round, seed=seed if seed else None)
         d_self = (res['d1'] - res['d2']) if s.side == 'p1' else (res['d2'] - res['d1'])
         hp_self = res['hpP1'] if s.side == 'p1' else res['hpP2']
         hp_en = res['hpP2'] if s.side == 'p1' else res['hpP1']
@@ -121,14 +136,13 @@ class MCTS:
     def _cached_eval(self, s: State):
         """网络前向 + 启发式先验 + 局面缓存：命中直接返回 (pm, pc, v_blend, heur)，
         未命中评估后入缓存。heuristic_prior 每次展开都重算（CPU 瓶颈），并入缓存复用。
-        默认 v_blend = (1-w)·script_value(s) + w·v_net；
         use_real_sim=True 时 v_blend = 真实战斗模拟（地面真值，不混合网络价值）。"""
         key = self._state_key(s)
         hit = self.cache.get(key)
         if hit is not None:
             return hit
         pm, pc, v = self.net.eval_state(s, self.device)
-        heur = heuristic_prior(s)
+        heur = heuristic_prior(s, self._self_ratio(s.round))
         if self.use_real_sim and self.engine is not None:
             v_blend = self._real_sim_value(s)
         else:
@@ -145,16 +159,18 @@ class MCTS:
         return v_blend
 
     def _expand(self, node: Node) -> float:
-        """扩展叶节点：网络前向设先验与叶价值；返回 v。"""
+        """扩展叶节点：网络前向设先验与叶价值；返回 v（backup 用）。"""
         if not node.s.legal_actions():
             # 预算/手牌用尽（本回合放置完毕）：价值 = 当前棋盘的理性评估
             node.expanded = True
             node.v_leaf = self._leaf_value(node.s)
             return node.v_leaf
         pm, pc, v, heur = self._cached_eval(node.s)
-        node.v_leaf = v
         node.expanded = True
         side = node.s.side
+        # 统计己方各行 (y=0..4) 已有的怪兽数量，彻底解决死锁在 y=0 顶层的雷同 Bug
+        row_counts = [sum(1 for m in node.s.my if m['y'] == y) for y in range(GRID_H)]
+        
         if self.exp_lib is not None:
             self.exp_lib.boost(node.s, heur)
         for (db_id, (x, y)) in node.s.legal_actions():
@@ -163,6 +179,13 @@ class MCTS:
             P = pm[mi] * pc[ci]
             if P <= 0:
                 continue
+                
+            # 同行过载抑制：如果该行 (y) 已经有 2 个或以上怪兽，强行压缩先验，促使怪兽分散在 y=1,2,3,4
+            if row_counts[y] >= 2:
+                P *= 0.15
+            elif row_counts[y] >= 1:
+                P *= 0.50
+                
             # 领域启发式混合：冷启动网络乱放时靠启发式引导先验
             h = heur.get((db_id, (x, y)), 1.0)
             P_clipped = max(1e-8, min(1.0, float(P)))
@@ -180,6 +203,7 @@ class MCTS:
                 budget=node.s.budget - node.s._cost(db_id),
                 budget_limit=node.s.budget_limit,
                 deck=node.s.deck,
+                deck_badges=node.s.deck_badges,
             )
             ns.my.append({'dbId': db_id, 'x': x, 'y': y})
             node.children[(mi, ci)] = Node(ns, parent=node, P=P)
@@ -190,17 +214,20 @@ class MCTS:
             eta = np.random.dirichlet([self.dirichlet_alpha] * n_act)
             for c, e in zip(node.children.values(), eta):
                 c.P = (1.0 - self.dirichlet_eps) * c.P + self.dirichlet_eps * e
-        return v
+        node.v_leaf = self._leaf_value(node.s)
+        return node.v_leaf
 
     def _select(self, node: Node) -> Node:
-        """UCT 选择。"""
+        """UCT 选择（含策略重复动态频次压制以鼓励多流派探索）。"""
         best = None
         best_q = -1e18
         log_n = math.log(max(1, node.N))
         for a, child in node.children.items():
             q = child.W / child.N if child.N > 0 else 0.0
             u = self.c_puct * child.P * math.sqrt(log_n) / (1 + child.N)
-            score = q + u
+            # 重复策略动态频次压制：限制被过度连续使用的死板套路，强迫探索新对位
+            freq_penalty = 0.05 * math.log1p(float(child.N)) / math.log1p(float(self.num_sim))
+            score = q + u - freq_penalty
             if score > best_q:
                 best_q = score
                 best = a

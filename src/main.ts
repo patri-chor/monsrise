@@ -14,7 +14,7 @@ import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
 import { networkManager } from './net/NetworkManager';
 import { computeWeaponPose, getAnimationClip } from './game/animation/AnimationAnimator';
-import { getCutoutTune, AIM_IDLE_WEAPONS, FRAME_SIZES, MUZZLE_TUNE } from './game/animation/AnimTuning';
+import { getCutoutTune, AIM_IDLE_WEAPONS, FRAME_SIZES, MUZZLE_TUNE, WEAPON_ROT_LIMIT, GUN_ROT_CENTER_ANCHOR } from './game/animation/AnimTuning';
 import { music } from './game/MusicManager';
 import { preloadAll, loadedImages } from './loader';
 
@@ -190,7 +190,8 @@ class BoardSyncComponent extends Component {
         0,
         isMelee,
         tune,
-        idlePose
+        idlePose,
+        GUN_ROT_CENTER_ANCHOR.has(m.dbId)
       );
 
       const bodyOffsetX = pose.body.offsetX;
@@ -368,8 +369,9 @@ class BoardSyncComponent extends Component {
         if (hasWeapon) {
           // 武器朝向：
           // - 所有技能动画不需要朝向敌人（左右翻转即可），只播动画自身旋转
+          //   （例外：散弹哥 104 技能是散弹射击，需要跟随瞄准角）
           // - 法杖角色（学徒 102 / 祈祷 103 / 祭祀 105）普攻也不用朝向
-          const noTargetRotate = animState === 'skill' || (animState === 'attack' && (m.dbId === 102 || m.dbId === 103 || m.dbId === 105));
+          const noTargetRotate = (animState === 'skill' && m.dbId !== 104) || (animState === 'attack' && (m.dbId === 102 || m.dbId === 103 || m.dbId === 105));
 
           // 6. 大旋转计算：面对敌人的夹角旋转
           let targetAngle = 0;
@@ -395,6 +397,13 @@ class BoardSyncComponent extends Component {
                   targetAngle = -(globalAngle - 180);
                 } else {
                   targetAngle = globalAngle;
+                }
+
+                // 大型武器（守卫者之剑 112 / 铲土人 115）：动画近似平面运动，
+                // 限制瞄准倾斜角（WEAPON_ROT_LIMIT，度），避免武器大角度倾斜。
+                const rotLimit = WEAPON_ROT_LIMIT[m.dbId];
+                if (rotLimit !== undefined) {
+                  targetAngle = Math.max(-rotLimit, Math.min(rotLimit, targetAngle));
                 }
               }
             }

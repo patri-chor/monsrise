@@ -33,7 +33,7 @@ export const DB_MONSTERS: MonsterData[] = [
     scale: 1, sx: 0, sy: 10, sw: 204, sh: 205, skillCoeff: 1.0, skillDesc: "撕裂：旋转对周围一圈敌人造成 {dmg} 伤害，并附带流血效果。" },
   { id: 102, name: "大祭司哥", cost: 4, type: 'ranged', hp: 2450, atk: 190, ats: 0.59, range: 7, speed: 2.5, skill: 'lightning', skillCd: 7, race: "哥布林", role: "法师", 
     scale: 1, sx: 204, sy: 10, sw: 204, sh: 205, skillCoeff: 2.5, skillDesc: "闪电：对范围内最多 4 个敌人造成 {dmg} 伤害，并有 50% 概率附加 2 秒眩晕。" },
-  { id: 103, name: "学徒哥", cost: 2, type: 'ranged', hp: 1500, atk: 80, ats: 1.05, range: 5, speed: 2.5, skill: 'life_link', skillCd: 4, race: "哥布林", role: "法师", 
+  { id: 103, name: "学徒哥", cost: 2, type: 'ranged', hp: 1500, atk: 80, ats: 1.05, range: 5, speed: 2.5, skill: 'life_link', skillCd: 2, race: "哥布林", role: "法师", 
     scale: 1, sx: 408, sy: 15, sw: 204, sh: 205, skillDesc: "生命链接：将范围内所有友方生命按百分比平均分摊。" },
   { id: 104, name: "散弹哥", cost: 2, type: 'ranged', hp: 1400, atk: 30, ats: 1.18, range: 5, speed: 2.5, skill: 'incendiary', skillCd: 3, race: "哥布林", role: "射手", 
     scale: 1.07, sx: 623, sy: 30, sw: 204, sh: 180, skillCoeff: 3.0, skillDesc: "散弹：普攻散射五颗子弹；技能发射燃烧弹造成 {dmg} 伤害，击退 1 格并施加燃烧。" },

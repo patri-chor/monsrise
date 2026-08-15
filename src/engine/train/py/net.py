@@ -10,6 +10,34 @@ import torch.nn.functional as F
 from .state import GRID_CH, GRID_H, GRID_W, GLOBAL_DIM, MONSTER_COUNT, CELL_COUNT
 
 
+def migrate_state_dict(state_dict):
+    """把旧版 checkpoint 迁移到当前网络维度：
+    - 输入卷积 conv_in.weight / conv1.weight（旧 28 通道）→ GRID_CH（新），
+      旧基础通道（2 归属 + 26 怪兽）权重保留、新拓扑/徽章通道零初始化
+    - global_fc.weight：全局特征 57/58（旧）→ GLOBAL_DIM（新），旧维度权重保留、新徽章直方图零初始化
+    这样历史权重可继续复用，同时新加入的徽章协同通道/直方图从零开始学习。
+    注：历史代码 self.conv1 = self.conv_in 别名会让 state_dict 同时含两条 key，需一并迁移。"""
+    sd = {k: v.clone() for k, v in state_dict.items()}
+    for key in ('conv_in.weight', 'conv1.weight'):
+        w = sd.get(key)
+        if w is not None and w.dim() == 4 and w.shape[1] != GRID_CH:
+            if w.shape[1] < GRID_CH:
+                pad = torch.zeros(w.shape[0], GRID_CH - w.shape[1], w.shape[2], w.shape[3],
+                                  device=w.device, dtype=w.dtype)
+                sd[key] = torch.cat([w, pad], dim=1)
+            else:
+                sd[key] = w[:, :GRID_CH].contiguous()
+    gw = sd.get('global_fc.weight')
+    if gw is not None and gw.dim() == 2 and gw.shape[1] != GLOBAL_DIM:
+        if gw.shape[1] < GLOBAL_DIM:
+            pad = torch.zeros(gw.shape[0], GLOBAL_DIM - gw.shape[1],
+                              device=gw.device, dtype=gw.dtype)
+            sd['global_fc.weight'] = torch.cat([gw, pad], dim=1)
+        else:
+            sd['global_fc.weight'] = gw[:, :GLOBAL_DIM].contiguous()
+    return sd
+
+
 class ResBlock(nn.Module):
     """AlphaZero/NNUE 风格残差块：2 层 3x3 卷积 + BatchNorm + 跨层跳跃连接"""
     def __init__(self, channels: int):
@@ -52,9 +80,9 @@ class SpatialAttention(nn.Module):
 class DualNet(nn.Module):
     """AlphaZero / LCZero 风格特化深度残差+全场空间自注意力网络：
     残差块 (ResBlock) 拟合局部协同 + SpatialAttention 全局关联 + 策略/价值深层解耦。"""
-    def __init__(self, hidden: int = 256, num_res_blocks: int = 2):
+    def __init__(self, in_ch: int = GRID_CH, hidden: int = 256, num_res_blocks: int = 2):
         super().__init__()
-        self.conv_in = nn.Conv2d(GRID_CH, 64, 3, padding=1, bias=False)
+        self.conv_in = nn.Conv2d(in_ch, 64, 3, padding=1, bias=False)
         self.bn_in = nn.BatchNorm2d(64)
         self.res_blocks = nn.ModuleList([ResBlock(64) for _ in range(num_res_blocks)])
         self.attn = SpatialAttention(64)
@@ -139,10 +167,16 @@ class DualNet(nn.Module):
         """局面 embedding 向量（经验库 ANN 检索预留接口）。
         当前启用特征工程向量（state_feat），网络学好后可切换到本接口
         （CNN 融合层 h，L2 归一化，相似局面向量接近）。"""
-        x = F.relu(self.conv1(grid))
-        y = F.relu(self.conv2(x))
-        x = F.relu(y + self.conv3(y))
+        x = F.relu(self.bn_in(self.conv_in(grid)))
+        for block in self.res_blocks:
+            x = block(x)
+        x = self.attn(x)
         x = x.flatten(1)
+        if g.shape[1] < GLOBAL_DIM:
+            pad = torch.zeros(g.shape[0], GLOBAL_DIM - g.shape[1], device=g.device, dtype=g.dtype)
+            g = torch.cat([g, pad], dim=1)
+        elif g.shape[1] > GLOBAL_DIM:
+            g = g[:, :GLOBAL_DIM]
         gg = F.relu(self.global_fc(g))
         h = F.relu(self.fc(torch.cat([x, gg], dim=1)))
         return F.normalize(h, dim=1)

@@ -18,7 +18,7 @@ import type { FormationTree } from '../ai/types';
 import { planRoundPlacementsSearch } from './placement/search';
 import { loadModel, planRoundPlacementsModel } from './train/model_planner';
 
-const BATTLE_DT = 0.1; // 战斗模拟步长（秒）
+const BATTLE_DT = 0.04; // 25 帧/秒，与网页 Director 固定逻辑步长一致
 
 /**
  * 阵型树计划坐标镜像：formation_library 的树以 AI 侧（p2，x 6-10）视角标注坐标，
@@ -32,7 +32,7 @@ function mirrorPlanFor(side: 'p1' | 'p2', plan: { monsterId: number; x: number; 
 // PLANNER: 'greedy'（默认）| 'search' | 'model'
 // SEARCH_SIDE: 'p1' | 'p2' | 'both'（默认 both，即双方都搜索）
 // SEARCH_N: 每个怪兽候选格数（默认 3）
-// SEARCH_TIMEOUT: 单场评估战斗超时秒（默认 120）
+// SEARCH_TIMEOUT: 单场评估战斗超时秒（默认 45，40s 战斗 + 缓冲兜底）
 // SEARCH_ROUNDS: 限定回合范围，如 '1-3'；缺省全部回合
 // MODEL_SIDE: 'p1' | 'p2' | 'both'（模型侧）
 // MODEL_PATH: 模型文件路径（默认 reports/model.json）
@@ -100,7 +100,7 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
   }
 
   const seed = opts.seed ?? 1;
-  const timeoutSec = opts.battleTimeoutSec ?? 120;
+  const timeoutSec = opts.battleTimeoutSec ?? 40;
   const t0 = Date.now();
 
   gameEngine.restartGame();
@@ -134,7 +134,7 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
       : searchEnabledFor('p1', round)
         ? planRoundPlacementsSearch(snapA, baseB, {
             candidateCells: Number(process.env.SEARCH_N) || 3,
-            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 120,
+            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
             side: 'p1',
             treePlan: mirrorPlanFor('p1', planForRound(opts.treeA, round)),
             // 数据侧修正：该回合树计划动作优先（如开局坦克）；搜索照跑保留候选样本
@@ -158,7 +158,7 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
       : searchEnabledFor('p2', round)
         ? planRoundPlacementsSearch(snapB, baseA, {
             candidateCells: Number(process.env.SEARCH_N) || 3,
-            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 120,
+            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
             side: 'p2',
             treePlan: planForRound(opts.treeB, round),
             // 数据侧修正：该回合树计划动作优先（如开局坦克）；搜索照跑保留候选样本

@@ -27,9 +27,16 @@ gameEngine.restartGame();
 const __require = createRequire(import.meta.url);
 let BundleAI: any = null;
 try {
-  const mod = __require('../ai-bundle.iife.js');
-  // bundle 是浏览器 IIFE：顶层 var 不进 module.exports，而是赋值给 window(=globalThis)
-  BundleAI = (globalThis as any).BattleAI ?? mod.BattleAI ?? mod?.default?.BattleAI ?? null;
+  let mod: any = null;
+  try {
+    mod = __require('../../public/ai-bundle.iife.js');
+  } catch (e) {
+    mod = __require('../ai-bundle.iife.js');
+  }
+  BundleAI = (globalThis as any).BattleAI ?? mod.BattleAI ?? mod?.default?.BattleAI ?? mod?.default ?? mod;
+  if (typeof BundleAI !== 'function' && BundleAI?.BattleAI) {
+    BundleAI = BundleAI.BattleAI;
+  }
 } catch (e) {
   process.stderr.write(`[bridge] ai-bundle 加载失败: ${(e as Error).message}\n`);
 }
@@ -152,19 +159,20 @@ function bundleRoundPlan(
   const fe = ai.pipeline.getFormationEngine();
   const cur = fe.getSelectedFormation();
   try {
+    ai.hand = hand;
     if (formationName && cur?.name !== formationName) {
       const f = FORMATION_LIBRARY.find(fm => fm.name === formationName);
       if (f) {
         ai.buildTeam(hand);
-        quiet(() => fe.loadCustomFormation(f as any)); // 强制：卡组对应阵型（坐标已是 p2 视角）
+        fe.loadCustomFormation(f as any);
       } else {
         if (!cur) ai.buildTeam(hand);
       }
     } else if (!cur) {
-      ai.buildTeam(hand); // 未知卡组：退化为内置 matcher
+      ai.buildTeam(hand);
     }
   } catch (e) {
-    process.stderr.write(`[bridge] bundle 阵型加载失败: ${(e as Error).message}\n`);
+    process.stderr.write(`[bridge] bundle 阵型加载失败: ${(e as Error).stack || (e as Error).message}\n`);
     return [];
   }
   const plan: { monsterId: number; x: number; y: number }[] = [];
@@ -177,7 +185,7 @@ function bundleRoundPlan(
     const raw = quiet(() => ai.pipeline.decideWithFormation(hand, round, st));
     placements = raw?.placements ?? [];
   } catch (e) {
-    process.stderr.write(`[bridge] bundle_plan 失败: ${(e as Error).message}\n`);
+    process.stderr.write(`[bridge] bundle_plan 失败: ${(e as Error).stack || (e as Error).message}\n`);
     return [];
   }
   for (const a of placements) {
@@ -249,7 +257,7 @@ function handle(req: Record<string, any>): Record<string, any> {
       // 覆盖战斗随机种子（self-play 多样性）；请求缺省时保持确定性
       if (typeof req.seed === 'number') (battleSystem as any)._overrideSeed = req.seed;
       try {
-        const o = simulateRoundBattle(board, round, Number(req.timeout ?? 120));
+        const o = simulateRoundBattle(board, round, Number(req.timeout ?? 40));
         return {
           d1: o.d1, d2: o.d2,
           hpP1: o.hpP1, hpP2: o.hpP2,
@@ -272,12 +280,15 @@ function handle(req: Record<string, any>): Record<string, any> {
         badges: DB_BADGES.map(b => ({ id: b.id, name: b.name })),
       };
 
-    // 阵型库卡组（self-play 配对用：monsterId + badgeIds）
+    // 阵型库卡组（self-play 配对用：monsterId + badgeIds + 完整阵型树）
+    // tree 为完整 FormationTree（开局/各回合计划/分支应变），Python 端做
+    // 卡组树先验（"先学自身布阵策略"）与 R1-R2 强制树计划（forceTreeRounds）用。
     case 'formations':
       return {
         formations: FORMATION_LIBRARY.map(f => ({
           name: f.name,
           team: f.team.filter(s => s.monsterId > 0).map(s => ({ monsterId: s.monsterId, badgeIds: s.badgeIds })),
+          tree: f.tree ?? null,
         })),
       };
 
@@ -288,7 +299,12 @@ function handle(req: Record<string, any>): Record<string, any> {
       const budget = Number(req.budget ?? 4);
       const session = req.session ? String(req.session) : undefined;
       const formation = req.formation ? String(req.formation) : undefined;
-      const hand = (req.hand ?? []) as { monsterId: number; badgeIds: number[] }[];
+      const rawHand = req.hand ?? [];
+      const hand = (rawHand as any[]).map(h => {
+        const mid = typeof h === 'number' ? h : (h.monsterId ?? h.id);
+        const bids = typeof h === 'object' && h ? (h.badgeIds ?? []) : [];
+        return { monsterId: mid, id: mid, badgeIds: bids };
+      });
       const my = (req.my ?? []) as { dbId: number; x: number; y: number }[];
       const enemy = (req.enemy ?? []) as { dbId: number; x: number; y: number }[];
       return { plan: bundleRoundPlan(session, side, round, budget, hand, my, enemy, formation, req.debug === true) };

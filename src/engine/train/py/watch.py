@@ -15,7 +15,7 @@ import torch
 from .bridge_client import EngineClient
 from .state import (init_meta, State, BUDGET_LIMITS, COST_BY_ID, idx_to_db_id, cell_to_xy)
 from .heuristic import init_mon_meta
-from .net import DualNet
+from .net import DualNet, migrate_state_dict
 from .mcts import MCTS
 from .selfplay import _sample_p
 
@@ -74,7 +74,8 @@ def place_with_q(engine, mcts, side, my, enemy, deck, hand, round_, budget_limit
     deck_keys = list(deck.keys())
     hand = list(hand)
     while True:
-        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys)
+        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys,
+                  deck_badges=deck)
         if not s.legal_actions():
             break
         _pm, _pc, joint, greedy_a, _v, _rq, cands = mcts.search_with_cands(s)
@@ -120,7 +121,7 @@ def main(games: int = 4, num_sim: int = 24, model_path: str = 'reports/rl_model.
 
         net = DualNet()
         ckpt = os.path.join(root, model_path)
-        net.load_state_dict(torch.load(ckpt, map_location='cpu'))
+        net.load_state_dict(migrate_state_dict(torch.load(ckpt, map_location='cpu')))
         net.eval()
         mcts = MCTS(net, num_sim=num_sim, device='cpu', value_net_weight=0.6)
 

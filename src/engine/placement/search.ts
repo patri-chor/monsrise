@@ -16,7 +16,7 @@ import { scorePlacement } from './heuristic';
 import { planRoundPlacements } from './decide';
 import { snapCounts, type CandidateCtx } from '../train/features';
 
-const BATTLE_DT = 0.1; // 与 play_full_game 主流程一致
+const BATTLE_DT = 0.04; // 25 帧/秒，与网页 Director 固定逻辑步长 FIXED_DT 一致（战斗结果可复现）
 
 const ZONE: Record<'p1' | 'p2', { min: number; max: number }> = {
   p1: { min: 0, max: 4 },
@@ -26,7 +26,7 @@ const ZONE: Record<'p1' | 'p2', { min: number; max: number }> = {
 export interface SearchOptions {
   /** 每个怪兽候选格子数（启发式预筛 top-N），默认 3 */
   candidateCells?: number;
-  /** 单场评估战斗超时兜底（秒），默认 120 */
+  /** 单场评估战斗超时兜底（秒），默认 40 */
   battleTimeoutSec?: number;
   /** 己方视角（训练样本胜负标签判定用） */
   side: 'p1' | 'p2';
@@ -244,7 +244,7 @@ export function planRoundPlacementsSearch(
   opts: SearchOptions = { side: 'p1' }, // side 必填，所有真实调用均显式传入；默认值仅作类型占位
 ): Placement[] {
   const N = opts.candidateCells ?? 3;
-  const timeoutSec = opts.battleTimeoutSec ?? 120;
+  const timeoutSec = opts.battleTimeoutSec ?? 45; // 40s 战斗 + 缓冲兜底
   const zone = ZONE[snap.side];
   const myTeam = snap.side === 'p1' ? 1 : 2;
   const round = snap.round;

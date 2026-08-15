@@ -40,8 +40,14 @@ export interface AnimationClip {
     size: { x: number; y: number };
     /** 身体图层缩放（百分比，SVGator 层缩放；武器比例换算需除以它，如救星骑士 18%） */
     scale: { x: number; y: number };
-    /** 身体层变换锚点（asset 像素坐标），也是身体旋转中心 */
+    /** 身体层变换锚点（asset 像素坐标） */
     anchor: { x: number; y: number };
+    /**
+     * 动画整体旋转中心（asset 像素坐标，与 anchor 同语义）。
+     * 身体 rotation 关键帧旋转时绕该点转；缺省 = 身体几何中心（size/2，即"身体中间"）。
+     * 一般无需配置；个别怪若需绕其他点（如脚底）旋转再填。
+     */
+    rotCenter?: { x: number; y: number };
     tracks: LayerTracks;
   };
   /** 武器层数组（主武器 + 第二/三武器…），数量可变 */
@@ -150,7 +156,7 @@ export const ANIMATIONS: Record<string, AnimationClip> = {
     ],
   },
   "103s": {
-    duration: 51,
+    duration: 250,
     body: {
       size: { x: 40, y: 40 },
       scale: { x: 100, y: 100 },
@@ -167,7 +173,7 @@ export const ANIMATIONS: Record<string, AnimationClip> = {
         scale: { x: 8, y: 8 },
         anchor: { x: 168, y: 42 },
         tracks: {
-          positions: [{"t":0,"value":{"x":-7.65,"y":6.24}},{"t":10,"value":{"x":-7.51,"y":-2}},{"t":30,"value":{"x":-7.58,"y":-1.88}},{"t":50,"value":{"x":-7.65,"y":6.24}}],
+          positions: [{"t":0,"value":{"x":-7.65,"y":6.24}},{"t":10,"value":{"x":-7.51,"y":-2}},{"t":30,"value":{"x":-7.58,"y":-1.88}},{"t":245,"value":{"x":-7.58,"y":-1.88}},{"t":250,"value":{"x":-7.65,"y":6.24}}],
           rotations: [{"t":0,"value":-90}],
           opacities: []
         }

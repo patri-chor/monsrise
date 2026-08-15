@@ -422,7 +422,8 @@ class RunUpBadge extends BaseBadge {
   private _state = new Map<string, { lastGx: number; lastGy: number; bonus: number; deducted: boolean }>();
 
   onStartOfBattle(m: PlacedMonster, _ctx?: BadgeContext): void {
-    this._state.set(m.id, { lastGx: m.gridX, lastGy: m.gridY, bonus: 0, deducted: false });
+    m.atk += 7;
+    this._state.set(m.id, { lastGx: m.gridX, lastGy: m.gridY, bonus: 7, deducted: false });
   }
 
   onTick(m: PlacedMonster, _dt: number, ctx?: BadgeContext): void {
@@ -1205,6 +1206,15 @@ class RelayBadge extends BaseBadge {
       n.data.race === m.data.race && 
       !n.badges.some(b => b.id === firstBadge.id)
     );
+    // 按曼哈顿距离升序，取"最近"友方：
+    // range=1 的相邻判定是 3×3（含斜对角），不排序时会按数组顺序取 candidates[0]，
+    // 导致斜对角(距离2)的友方抢在正邻(距离1)之前——如全二永平 冲锋(接力)→献祭 应给祈祷(正上方)
+    // 却给了斜对角学徒。按真实距离排序后祈祷(1) 优先于学徒(2)。
+    candidates.sort((a: PlacedMonster, b: PlacedMonster) => {
+      const da = Math.abs(a.gridX - m.gridX) + Math.abs(a.gridY - m.gridY);
+      const db = Math.abs(b.gridX - m.gridX) + Math.abs(b.gridY - m.gridY);
+      return da - db;
+    });
 
     if (candidates.length > 0) {
       const recipient = candidates[0];

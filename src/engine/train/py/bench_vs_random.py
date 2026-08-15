@@ -15,7 +15,7 @@ from . import heuristic as H
 from .bridge_client import EngineClient
 from .state import init_meta
 from .heuristic import init_mon_meta, load_endgame_lib
-from .net import DualNet
+from .net import DualNet, migrate_state_dict
 from .mcts import MCTS
 from .selfplay import play_vs_random, play_vs_random_policy_only
 from .train import project_root
@@ -42,7 +42,7 @@ def main(games: int = 10, num_sim: int = 48, use_endgame: bool = True, use_model
         if use_model:
             ck = os.path.join(root, 'reports', 'rl_model.pt')
             if os.path.exists(ck):
-                net.load_state_dict(torch.load(ck, map_location=device))
+                net.load_state_dict(migrate_state_dict(torch.load(ck, map_location=device)))
                 print(f'[bench] 模型: {ck}')
             else:
                 print('[bench] 模型: 无（随机初始化网络）')

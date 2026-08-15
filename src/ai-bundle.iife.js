@@ -2345,7 +2345,7 @@ var BattleAI = (() => {
       { monsterId: 117, badgeIds: [8, 3] },
       { monsterId: 107, badgeIds: [20, 1] },
       { monsterId: 113, badgeIds: [3, 20] },
-      { monsterId: 114, badgeIds: [3, 32] },
+      { monsterId: 114, badgeIds: [3, 1] },
       { monsterId: 116, badgeIds: [3, 5] },
       { monsterId: 106, badgeIds: [32, 24] },
       { monsterId: 104, badgeIds: [3, 4] }
@@ -2358,11 +2358,11 @@ var BattleAI = (() => {
       placement: [],
       children: [
         {
-          // 对方祷徒
+          // 对方祷徒（主分支：固定打法）
           id: "n19",
           round: 1,
           label: "\u5BF9\u65B9\u662F\u7977\u5F92",
-          comment: "",
+          comment: "\u7977\u5F92\u6253\u6CD5\uFF1A\u5E1D\u56FD\u4E2D\u7F6E\uFF0C\u8F93\u51FA\u5BF9\u4F4D\u7948\u7977\u884C",
           placement: [
             { monsterId: 110, badgeIds: [23, 30], x: 7, y: 2 },
             { monsterId: 117, badgeIds: [8, 3], x: 6, y: 2 }
@@ -2371,35 +2371,35 @@ var BattleAI = (() => {
             id: "n20",
             round: 2,
             label: "\u5C402",
-            comment: "\u76EE\u6807\u79D2\u6740\u7948\u7977",
+            comment: "\u7A81\u7A81\u8D34\u5E1D\u56FD(7,2)\u53F3\u4FA7\u5403\u94C1\u76FE\uFF0C\u7206\u7834\u5BF9\u4F4D\u7948\u7977\u884C(y3)",
             placement: [
-              { monsterId: 106, badgeIds: [32, 24], x: 6, y: 3 },
-              { monsterId: 113, badgeIds: [3, 20], x: 7, y: 3 }
+              { monsterId: 114, badgeIds: [3, 1], x: 7, y: 3 },
+              { monsterId: 113, badgeIds: [3, 20], x: 6, y: 3 }
             ],
             children: [{
               id: "n21",
               round: 3,
               label: "\u5C403",
-              comment: "\u5492\u6CD5\u9632\u94BB\u5934\uFF0C\u94BB\u5934\u7784\u51C6\u7948\u7977",
+              comment: "\u5492\u6CD5\u540C\u884C\u6253\u7948\u7977\uFF0C\u94BB\u5934\u8D34\u7948\u7977",
               placement: [
-                { monsterId: 116, badgeIds: [3, 5], x: 7, y: 4 },
-                { monsterId: 107, badgeIds: [20, 1], x: 8, y: 3 }
+                { monsterId: 107, badgeIds: [20, 1], x: 8, y: 3 },
+                { monsterId: 116, badgeIds: [3, 5], x: 6, y: 4 }
               ],
               children: [{
                 id: "n22",
                 round: 4,
                 label: "\u5C404",
-                comment: "",
+                comment: "\u51B2\u950B\u538B\u7EBF",
                 placement: [
-                  { monsterId: 114, badgeIds: [3, 32], x: 9, y: 3 }
+                  { monsterId: 106, badgeIds: [32, 24], x: 8, y: 2 }
                 ],
                 children: [{
                   id: "n23",
                   round: 5,
                   label: "\u5C405",
-                  comment: "",
+                  comment: "\u6563\u5F39\u6536\u5C3E",
                   placement: [
-                    { monsterId: 104, badgeIds: [3, 4], x: 7, y: 1 }
+                    { monsterId: 104, badgeIds: [3, 4], x: 8, y: 0 }
                   ],
                   children: []
                 }]
@@ -2432,7 +2432,7 @@ var BattleAI = (() => {
               label: "\u5C403",
               comment: "\u94C1\u7532\u53EF\u540E\u7F6E\u4E3A\u6218\u58EB",
               placement: [
-                { monsterId: 114, badgeIds: [3, 32], x: 9, y: 3 },
+                { monsterId: 114, badgeIds: [3, 1], x: 9, y: 3 },
                 { monsterId: 117, badgeIds: [8, 3], x: 10, y: 1 }
               ],
               children: [{
@@ -2487,7 +2487,7 @@ var BattleAI = (() => {
         id: "n35",
         round: 1,
         label: "\u5C401",
-        comment: "\u6551\u661F\u5F00\u53EF\u4EE5\u6740\u6B7B\u76FE\u7977",
+        comment: "\u53EF\u4EE5\u76FE\u70AE\u5F00\u4E5F\u53EF\u4EE5\u6551\u661F\u5F00\u3002\u6551\u661F\u5F00\u53EF\u4EE5\u6740\u6B7B\u76FE\u7977\uFF0C\u5176\u4ED6\u90FD\u4E0D\u884C\u3002",
         placement: [
           { monsterId: 108, badgeIds: [3, 22, 21], x: 9, y: 1 }
         ],
@@ -2500,35 +2500,68 @@ var BattleAI = (() => {
             { monsterId: 117, badgeIds: [3, 9], x: 6, y: 2 },
             { monsterId: 110, badgeIds: [11, 28], x: 7, y: 2 }
           ],
-          children: [{
-            id: "n37",
-            round: 3,
-            label: "\u5C403",
-            comment: "\u7A81\u7A81\u548C\u5492\u6CD5\u8981\u653E\u5728\u6709\u654C\u4EBA\u7684\u4E00\u884C",
-            placement: [
-              { monsterId: 114, badgeIds: [3, 1], x: 8, y: 2 },
-              { monsterId: 107, badgeIds: [20, 1], x: 9, y: 2 }
-            ],
-            children: [{
-              id: "n38",
-              round: 4,
-              label: "\u5C404",
-              comment: "\u7977\u5F92\u4E0A\u51B2\u950B\uFF0C\u975E\u7977\u5F92\u7528\u5FCD\u7334",
+          children: [
+            {
+              // 对方祷徒：突突+咒法破盾打祈祷
+              id: "n37",
+              round: 3,
+              label: "\u5BF9\u65B9\u662F\u7977\u5F92",
+              comment: "\u8981\u4E3A\u76FE\u70AE\uFF0C\u6551\u661F\u548C\u5492\u6CD5\u7834\u76FE\u3002\u7A81\u7A81\u548C\u5492\u6CD5\u8981\u653E\u5728\u6709\u654C\u4EBA\u7684\u4E00\u884C\u3002",
               placement: [
-                { monsterId: 106, badgeIds: [32, 24], x: 7, y: 3 }
+                { monsterId: 114, badgeIds: [3, 1], x: 8, y: 2 },
+                { monsterId: 107, badgeIds: [20, 1], x: 9, y: 2 }
               ],
               children: [{
-                id: "n39",
-                round: 5,
-                label: "\u5C405",
+                id: "n38",
+                round: 4,
+                label: "\u5C404",
+                comment: "\u5982\u679C\u5BF9\u65B9\u662F\u7977\u5F92\uFF0C\u4E0A\u51B2\u950B\u3002\u5982\u679C\u4E0D\u662F\uFF0C\u6BD4\u5982\u662F\u975E\u7977\u5F92\u7684dof\uFF0C\u6216\u8005\u5C04\u624B\uFF0C\u53EF\u4EE5\u7528\u52A9\u8DD1\u7684\u523A\u5BA2\u53BB\u72D9\u6740\u540E\u6392\u3002",
+                placement: [
+                  { monsterId: 106, badgeIds: [32, 24], x: 7, y: 3 }
+                ],
+                children: [{
+                  id: "n39",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 116, badgeIds: [3, 5], x: 7, y: 0 }
+                  ],
+                  children: []
+                }]
+              }]
+            },
+            {
+              // 对方全冲：冲锋+忍猴先手压制
+              id: "n15",
+              round: 3,
+              label: "\u5BF9\u65B9\u662F\u5168\u51B2",
+              comment: "",
+              placement: [
+                { monsterId: 106, badgeIds: [32, 24], x: 6, y: 1 },
+                { monsterId: 119, badgeIds: [3, 5], x: 10, y: 4 }
+              ],
+              children: [{
+                id: "n16",
+                round: 4,
+                label: "\u5C404",
                 comment: "",
                 placement: [
-                  { monsterId: 116, badgeIds: [3, 5], x: 7, y: 0 }
+                  { monsterId: 116, badgeIds: [3, 5], x: 7, y: 3 }
                 ],
-                children: []
+                children: [{
+                  id: "n17",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 114, badgeIds: [3, 1], x: 8, y: 2 }
+                  ],
+                  children: []
+                }]
               }]
-            }]
-          }]
+            }
+          ]
         }]
       }]
     }
@@ -2765,25 +2798,25 @@ var BattleAI = (() => {
       label: "\u5F00\u5C40",
       comment: "",
       placement: [],
-      children: [{
-        id: "n61",
-        round: 1,
-        label: "\u5C401",
-        comment: "",
-        placement: [
-          { monsterId: 110, badgeIds: [23, 8], x: 7, y: 2 },
-          { monsterId: 116, badgeIds: [3, 5], x: 6, y: 0 }
-        ],
-        children: [
-          {
-            // 主分支：先双射手
+      children: [
+        {
+          // 全冲应对（主分支）
+          id: "n61",
+          round: 1,
+          label: "\u5C401",
+          comment: "\u8FD9\u4E2A\u5C31\u662F\u5168\u51B2\u7684\u5E94\u5BF9",
+          placement: [
+            { monsterId: 110, badgeIds: [23, 8], x: 7, y: 2 },
+            { monsterId: 116, badgeIds: [3, 5], x: 6, y: 0 }
+          ],
+          children: [{
             id: "n62",
             round: 2,
             label: "\u5C402",
-            comment: "\u53CC\u5C04\u624B+\u52A9\u8DD1\u8F93\u51FA",
+            comment: "\u53CC\u5C04\u624B+\u52A9\u8DD1\u8F93\u51FA\uFF0C\u5BF9\u9762\u4E0D\u4E0A\u94BB\u5934\u6740\u540E\u6392\u7684\u8BDD\u6211\u4EEC\u662F\u5360\u4F18\u7684",
             placement: [
               { monsterId: 113, badgeIds: [3, 20], x: 8, y: 2 },
-              { monsterId: 114, badgeIds: [3, 32], x: 7, y: 1 }
+              { monsterId: 114, badgeIds: [3, 32], x: 6, y: 2 }
             ],
             children: [{
               id: "n63",
@@ -2793,68 +2826,101 @@ var BattleAI = (() => {
               placement: [
                 { monsterId: 118, badgeIds: [11, 28, 30], x: 7, y: 3 }
               ],
-              children: [{
-                id: "n64",
-                round: 4,
-                label: "\u5C404",
-                comment: "",
-                placement: [
-                  { monsterId: 107, badgeIds: [20, 1], x: 9, y: 2 }
-                ],
-                children: [{
-                  id: "n65",
-                  round: 5,
-                  label: "\u5C405",
+              children: [
+                {
+                  // 主分支
+                  id: "n64",
+                  round: 4,
+                  label: "\u5C404",
                   comment: "",
                   placement: [
                     { monsterId: 106, badgeIds: [32, 24], x: 6, y: 3 }
                   ],
-                  children: []
-                }]
-              }]
+                  children: [{
+                    id: "n65",
+                    round: 5,
+                    label: "\u5C405",
+                    comment: "",
+                    placement: [
+                      { monsterId: 117, badgeIds: [8, 3], x: 10, y: 1 }
+                    ],
+                    children: []
+                  }]
+                },
+                {
+                  // 对方是 DOF
+                  id: "n45",
+                  round: 4,
+                  label: "\u662Fdof",
+                  comment: "",
+                  placement: [
+                    { monsterId: 117, badgeIds: [8, 3], x: 6, y: 3 }
+                  ],
+                  children: [{
+                    id: "n46",
+                    round: 5,
+                    label: "\u5C405",
+                    comment: "",
+                    placement: [
+                      { monsterId: 107, badgeIds: [20, 1], x: 10, y: 2 }
+                    ],
+                    children: []
+                  }]
+                }
+              ]
             }]
-          },
-          {
-            // 方法二：先塞雷
-            id: "n66",
+          }]
+        },
+        {
+          // 对方祷徒
+          id: "n40",
+          round: 1,
+          label: "\u5BF9\u65B9\u7977\u5F92",
+          comment: "",
+          placement: [
+            { monsterId: 110, badgeIds: [23, 8], x: 7, y: 2 }
+          ],
+          children: [{
+            id: "n41",
             round: 2,
-            label: "\u65B9\u6CD5\u4E8C",
-            comment: "",
+            label: "\u5C402",
+            comment: "\u585E\u96F7\u653E\u5E1D\u56FD\u4E0A\u4E0B\uFF0C\u94C1\u7532\u8FDE\u643A\u8D34\u585E\u96F7\u524D\u9762\uFF08\u94C1\u7532\u653E\u585E\u96F7\u524D\uFF0C\u5B9E\u9645\u7531\u8BA1\u7B97\u5668\u5B9A\u4F4D\uFF09",
             placement: [
-              { monsterId: 118, badgeIds: [11, 28, 30], x: 7, y: 3 }
+              { monsterId: 118, badgeIds: [11, 28, 30], x: 7, y: 3 },
+              { monsterId: 117, badgeIds: [8, 3], x: 6, y: 3 }
             ],
             children: [{
-              id: "n67",
+              id: "n42",
               round: 3,
               label: "\u5C403",
-              comment: "\u94C1\u7532\u76FE\u70AE",
+              comment: "\u77FF\u7206\u5492\u6CD5\u903B\u8F91\u540C\u5168\u4E8C\u51B2",
               placement: [
-                { monsterId: 117, badgeIds: [8, 3], x: 6, y: 3 },
-                { monsterId: 106, badgeIds: [32, 24], x: 8, y: 3 }
+                { monsterId: 113, badgeIds: [3, 20], x: 7, y: 4 },
+                { monsterId: 107, badgeIds: [20, 1], x: 8, y: 3 }
               ],
               children: [{
-                id: "n68",
+                id: "n43",
                 round: 4,
                 label: "\u5C404",
                 comment: "",
                 placement: [
-                  { monsterId: 107, badgeIds: [20, 1], x: 9, y: 2 }
+                  { monsterId: 116, badgeIds: [3, 5], x: 6, y: 4 }
                 ],
                 children: [{
-                  id: "n69",
+                  id: "n44",
                   round: 5,
                   label: "\u5C405",
                   comment: "",
                   placement: [
-                    { monsterId: 113, badgeIds: [3, 20], x: 8, y: 2 }
+                    { monsterId: 114, badgeIds: [3, 32], x: 6, y: 2 }
                   ],
                   children: []
                 }]
               }]
             }]
-          }
-        ]
-      }]
+          }]
+        }
+      ]
     }
   };
   var FORMATION_LIBRARY = [
@@ -2918,12 +2984,6 @@ var BattleAI = (() => {
     if (valid.length === 0) {
       return matches[0].formation;
     }
-    // When all valid formations are tied (e.g. full DB hand), pick purely random
-    const topScore = valid[0].score;
-    const allTied = valid.every((m) => Math.abs(m.score - topScore) < 1e-6);
-    if (allTied) {
-      return valid[Math.floor(Math.random() * valid.length)].formation;
-    }
     const roll = Math.random();
     if (roll < 0.7) {
       return valid[0].formation;
@@ -2952,6 +3012,9 @@ var BattleAI = (() => {
   function getMonsterRole(id) {
     return DB_MONSTERS.find((m) => m.id === id)?.role ?? "";
   }
+  function getMonsterType(id) {
+    return DB_MONSTERS.find((m) => m.id === id)?.type ?? "";
+  }
   function pickBestRow(opponents, defaultY) {
     if (opponents.length === 0) return defaultY;
     const rowCount = /* @__PURE__ */ new Map();
@@ -2971,12 +3034,21 @@ var BattleAI = (() => {
   }
   var SPECIAL_CALCULATORS = {
     // ==========================================================
-    // 冲锋(106)：高优对线铁甲(117) → 其次敌方坦克 → 默认行
+    // 冲锋(106)：带接力(35)时（祷徒阵）优先贴祈祷(105)相邻；
+    // 否则高优对线铁甲(117) → 其次敌方坦克 → 默认行
     // ==========================================================
     106: {
       name: "\u51B2\u950B",
-      computePosition: (_regular, gameState, defaultX, defaultY) => {
+      computePosition: (_regular, gameState, defaultX, defaultY, badgeIds) => {
         const opponents = getOpponentUnits(gameState);
+        const friendlies = getFriendlyUnits(gameState);
+        if (badgeIds.includes(35)) {
+          const prayer = friendlies.find((u) => u.monsterId === 105);
+          if (prayer) {
+            const tryY = prayer.position.y + 1 <= BOARD_HEIGHT - 1 ? prayer.position.y + 1 : prayer.position.y - 1;
+            return { x: prayer.position.x, y: tryY };
+          }
+        }
         const enemyTiejia = opponents.find((u) => u.monsterId === 117);
         if (enemyTiejia) return { x: defaultX, y: enemyTiejia.position.y };
         const enemyTank = opponents.find((u) => getMonsterRole(u.monsterId) === "\u5766\u514B");
@@ -2985,14 +3057,34 @@ var BattleAI = (() => {
       }
     },
     // ==========================================================
-    // 咒法(107)：选敌人最多行 → 挑不会被钻的安全位 → 取最远距离
-    // 安全位：敌方怪兽的 x+6 位置（P2侧），因已放怪位置不能再放钻头
+    // 咒法(107)：攻击一整行（同行即可命中）
+    // 目标优先级：祈祷(105) → 四费核心 → 默认
+    // 安全点 x+6（P2 打 P1：落点 = 目标.x+6，左右加减关系）
+    // 祷徒局优先与祈祷同行：首选祈祷.x+6（同点通常已被矿爆占据，
+    // 对方无法在此放钻头反制）→ 被占则同行找另一只对方怪兽的 x+6 安全位
     // ==========================================================
     107: {
       name: "\u5492\u6CD5",
-      computePosition: (_regular, gameState, defaultX, defaultY) => {
+      computePosition: (regularActions, gameState, defaultX, defaultY, _badgeIds) => {
         const opponents = getOpponentUnits(gameState);
         if (opponents.length === 0) return { x: defaultX, y: defaultY };
+        const prayer = opponents.find((u) => u.monsterId === 105);
+        const fourCost = opponents.find((u) => getMonsterCost(u.monsterId) === 4);
+        const target = prayer ?? fourCost;
+        if (target) {
+          const targetY = target.position.y;
+          const preferX = defaultX >= P2_ZONE_X_START && defaultX <= 10 ? defaultX : target.position.x + 6;
+          const occupied = collectOccupied(regularActions, gameState);
+          if (!occupied.has(`${preferX},${targetY}`)) {
+            return { x: preferX, y: targetY };
+          }
+          const rowUnits = opponents.filter((u) => u.position.y === targetY && u.monsterId !== target.monsterId);
+          const safePositions2 = rowUnits.map((u) => u.position.x + 6).filter((x) => x >= P2_ZONE_X_START && x <= 10);
+          if (safePositions2.length > 0) {
+            return { x: Math.max(...safePositions2), y: targetY };
+          }
+          return { x: preferX, y: targetY };
+        }
         const bestY = pickBestRow(opponents, defaultY);
         const safePositions = opponents.filter((u) => u.position.y === bestY).map((u) => u.position.x + 6).filter((x) => x >= P2_ZONE_X_START && x <= 10);
         if (safePositions.length > 0) {
@@ -3002,23 +3094,68 @@ var BattleAI = (() => {
       }
     },
     // ==========================================================
-    // 突突(114)：扫射一行 → 选敌人最多的行
+    // 突突(114)：按携带徽章区分两种打法
+    //  - 巫毒突突（带巫毒32，如全二冲/坚果救星/梯子塞雷）：
+    //    目标优先级 携带盾徽章(11/28/30)的怪兽 → 其 x+6 同行；
+    //    铁甲(117) → 其 x+5 同行；无则祈祷/四费/默认行
+    //  - 穿透突突（带穿透1，如经典救星）：
+    //    扫射一行 → 祈祷行 → 四费核心行 → 默认敌人最多行
     // ==========================================================
     114: {
       name: "\u7A81\u7A81",
-      computePosition: (_regular, gameState, defaultX, defaultY) => {
+      computePosition: (_regular, gameState, defaultX, defaultY, badgeIds) => {
         const opponents = getOpponentUnits(gameState);
+        if (opponents.length === 0) return { x: defaultX, y: defaultY };
+        const SHIELD_BADGE_IDS = [11, 28, 30];
+        const isVoodoo = badgeIds.includes(32);
+        if (isVoodoo) {
+          const shieldBearer = opponents.find(
+            (u) => u.badgeIds.some((bid) => SHIELD_BADGE_IDS.includes(bid))
+          );
+          if (shieldBearer) {
+            const sx = Math.max(P2_ZONE_X_START, Math.min(10, shieldBearer.position.x + 6));
+            return { x: sx, y: shieldBearer.position.y };
+          }
+          const tiejia = opponents.find((u) => u.monsterId === 117);
+          if (tiejia) {
+            const tx = Math.max(P2_ZONE_X_START, Math.min(10, tiejia.position.x + 5));
+            return { x: tx, y: tiejia.position.y };
+          }
+          const frontNonVoodoo = opponents.filter((u) => !u.badgeIds.includes(32)).sort((a, b) => b.position.x - a.position.x)[0];
+          if (frontNonVoodoo) {
+            return { x: P2_ZONE_X_START, y: frontNonVoodoo.position.y };
+          }
+        }
+        const friendlies = getFriendlyUnits(gameState);
+        const imperial = friendlies.find((u) => u.monsterId === 110);
+        if (imperial) {
+          return { x: imperial.position.x + 1, y: imperial.position.y };
+        }
+        const prayer = opponents.find((u) => u.monsterId === 105);
+        if (prayer) {
+          const tutuY = Math.max(0, prayer.position.y - 1);
+          return { x: defaultX, y: tutuY };
+        }
+        const fourCost = opponents.find((u) => getMonsterCost(u.monsterId) === 4);
+        if (fourCost) return { x: defaultX, y: fourCost.position.y };
         return { x: defaultX, y: pickBestRow(opponents, defaultY) };
       }
     },
     // ==========================================================
-    // 钻头(116)：若有敌方咒法 → 贴咒法 x+6 反制；否则优先4费行
+    // 钻头(116)：祷徒局优先贴祈祷（x+6 同列，y 就近上下左右）
+    // 否则：有敌方咒法 → 贴咒法 x+6 反制；其次4费行
     // ==========================================================
     116: {
       name: "\u94BB\u5934",
-      computePosition: (_regular, gameState, defaultX, defaultY) => {
+      computePosition: (_regular, gameState, defaultX, defaultY, _badgeIds) => {
         const opponents = getOpponentUnits(gameState);
         if (opponents.length === 0) return { x: defaultX, y: defaultY };
+        const prayer = opponents.find((u) => u.monsterId === 105);
+        if (prayer) {
+          const drillX = Math.max(P2_ZONE_X_START, Math.min(10, prayer.position.x + 6));
+          const drillY = Math.min(BOARD_HEIGHT - 1, prayer.position.y + 1);
+          return { x: drillX, y: drillY };
+        }
         const enemySpell = opponents.find((u) => u.monsterId === 107);
         if (enemySpell) {
           const drillX = enemySpell.position.x + 6;
@@ -3037,7 +3174,7 @@ var BattleAI = (() => {
     // ==========================================================
     117: {
       name: "\u94C1\u7532",
-      computePosition: (regularActions, gameState, defaultX, defaultY) => {
+      computePosition: (regularActions, gameState, defaultX, defaultY, _badgeIds) => {
         const DEF_BADGE_IDS = [11, 28, 30];
         const mate = regularActions.find(
           (a) => a.badgeIds.some((bid) => DEF_BADGE_IDS.includes(bid))
@@ -3057,6 +3194,92 @@ var BattleAI = (() => {
   var SPECIAL_IDS = new Set(
     Object.keys(SPECIAL_CALCULATORS).map(Number)
   );
+  var AIM_CALCULATORS = {
+    // ==========================================================
+    // 矿爆(113)：索敌 x+6 —— 优先攻击同行 x+6 列的目标
+    // 因此放到「目标.x+6」同行即可命中目标（如祈祷105）
+    // ==========================================================
+    113: {
+      name: "\u77FF\u7206",
+      computeAimPosition: (gameState, defaultX, defaultY) => {
+        const opponents = getOpponentUnits(gameState);
+        const prayer = opponents.find((u) => u.monsterId === 105);
+        if (prayer) {
+          return { x: prayer.position.x + 6, y: prayer.position.y };
+        }
+        const backline = opponents.find((u) => getMonsterType(u.monsterId) === "ranged");
+        if (backline) {
+          return { x: backline.position.x + 6, y: backline.position.y };
+        }
+        return { x: defaultX, y: defaultY };
+      }
+    },
+    // ==========================================================
+    // 塞雷(118)：盾流核心 — 放帝国之盾(110)的上下，选 x+5 落点
+    // 3×3 范围内敌人更多的一侧（哪侧威胁大贴哪侧挡线）
+    // ==========================================================
+    118: {
+      name: "\u585E\u96F7",
+      computeAimPosition: (gameState, defaultX, defaultY) => {
+        const opponents = getOpponentUnits(gameState);
+        const friendlies = getFriendlyUnits(gameState);
+        const imperial = friendlies.find((u) => u.monsterId === 110);
+        if (!imperial) return { x: defaultX, y: defaultY };
+        const baseX = Math.max(P2_ZONE_X_START, Math.min(10, imperial.position.x));
+        const impY = imperial.position.y;
+        const candidates = [];
+        for (const dy of [1, -1]) {
+          const y = impY + dy;
+          if (y >= 0 && y <= BOARD_HEIGHT - 1) candidates.push({ x: baseX, y });
+        }
+        if (candidates.length === 0) candidates.push({ x: baseX, y: impY });
+        const countEnemies = (x, y) => {
+          const zone = 3 * 3;
+          const cx = x + 5;
+          let count = 0;
+          for (const u of opponents) {
+            const dx = Math.abs(u.position.x - cx);
+            const dy = Math.abs(u.position.y - y);
+            if (dx <= 1 && dy <= 1) count++;
+          }
+          return count;
+        };
+        let best = candidates[0];
+        let bestCount = -1;
+        for (const c of candidates) {
+          const n = countEnemies(c.x, c.y);
+          if (n > bestCount) {
+            bestCount = n;
+            best = c;
+          }
+        }
+        return { x: best.x, y: best.y };
+      }
+    }
+  };
+  var AIM_IDS = new Set(
+    Object.keys(AIM_CALCULATORS).map(Number)
+  );
+  function computeAimPosition(monsterId, gameState, defaultX, defaultY) {
+    const calculator = AIM_CALCULATORS[monsterId];
+    if (!calculator) {
+      return { x: defaultX, y: defaultY };
+    }
+    let pos = { x: defaultX, y: defaultY };
+    try {
+      pos = calculator.computeAimPosition(gameState, defaultX, defaultY);
+    } catch (e) {
+      console.warn(`[AimCalc] \u602A\u517D ${monsterId}(${calculator.name}) computeAimPosition \u5F02\u5E38:`, e);
+    }
+    if (!Number.isFinite(pos.x)) pos = { ...pos, x: defaultX };
+    if (!Number.isFinite(pos.y)) pos = { ...pos, y: defaultY };
+    const clampedX = Math.max(P2_ZONE_X_START, Math.min(10, pos.x));
+    const clampedY = Math.max(0, Math.min(BOARD_HEIGHT - 1, pos.y));
+    const safeX = Number.isFinite(clampedX) ? clampedX : P2_ZONE_X_START;
+    const safeY = Number.isFinite(clampedY) ? clampedY : 2;
+    const occupied = collectOccupied([], gameState);
+    return resolvePosition(safeX, safeY, occupied, defaultX, defaultY);
+  }
   function collectOccupied(regularActions, gameState) {
     const occupied = /* @__PURE__ */ new Set();
     for (const a of regularActions) {
@@ -3097,14 +3320,14 @@ var BattleAI = (() => {
     }
     return { x: defaultX, y: defaultY };
   }
-  function computeSpecialPosition(monsterId, regularActions, gameState, defaultX, defaultY) {
+  function computeSpecialPosition(monsterId, regularActions, gameState, defaultX, defaultY, badgeIds = []) {
     const calculator = SPECIAL_CALCULATORS[monsterId];
     if (!calculator) {
       return { x: defaultX, y: defaultY };
     }
     let pos = { x: defaultX, y: defaultY };
     try {
-      pos = calculator.computePosition(regularActions, gameState, defaultX, defaultY);
+      pos = calculator.computePosition(regularActions, gameState, defaultX, defaultY, badgeIds);
     } catch (e) {
       console.warn(`[SpecialCalc] \u602A\u517D ${monsterId}(${calculator.name}) computePosition \u5F02\u5E38:`, e);
     }
@@ -3123,7 +3346,7 @@ var BattleAI = (() => {
   var FOUR_COST_IDS = new Set(
     Object.values(DB_MONSTERS).filter((m) => m.cost === 4).map((m) => m.id)
   );
-  var FormationEngine = class {
+  var _FormationEngine = class _FormationEngine {
     constructor() {
       this.hand = [];
       this.handIds = /* @__PURE__ */ new Set();
@@ -3134,6 +3357,31 @@ var BattleAI = (() => {
       this.variant = "original";
       /** 已部署的 monsterId 集合（跨局去重） */
       this.deployedIds = /* @__PURE__ */ new Set();
+      /**
+       * 分支选择持久化记录：round → 该深度已选中的节点
+       * 整局复用同一选择，避免每回合从树根重走时把更早选过的分支
+       * 静默改成 children[0]（分支漂移），导致跨分支重复放置/漏放
+       */
+      this.pathByRound = /* @__PURE__ */ new Map();
+      /**
+       * 开局可见的对方手牌（前 N 张）ID 集合
+       * 用于在对手尚未部署时即可识别体系（祷徒/全冲等），避免 50/50 盲选
+       */
+      this.opponentHandIds = /* @__PURE__ */ new Set();
+      /** 对方手牌携带的徽章 ID 集合（凋零2/中毒25 等体系判据） */
+      this.opponentHandBadgeIds = /* @__PURE__ */ new Set();
+    }
+    /**
+     * 设置开局可见的对方手牌（用于体系识别）
+     * @param hand 对方手牌（前 4 张即可）
+     */
+    setOpponentHand(hand) {
+      this.opponentHandIds = new Set(hand.map((c) => c.monsterId));
+      this.opponentHandBadgeIds = new Set(hand.flatMap((c) => c.badgeIds));
+    }
+    /** 获取当前已记录的对方手牌 ID 集合 */
+    getOpponentHandIds() {
+      return this.opponentHandIds;
     }
     // ============================================================
     // 初始化
@@ -3143,6 +3391,7 @@ var BattleAI = (() => {
       this.handIds = new Set(hand.map((c) => c.monsterId));
       this.currentRound = 1;
       this.deployedIds = /* @__PURE__ */ new Set();
+      this.pathByRound.clear();
       const matches = matchAllFormations(hand);
       const formation = weightedSelectFormation(matches);
       const matchResult = matches.find((m) => m.formation.id === formation.id);
@@ -3156,8 +3405,24 @@ var BattleAI = (() => {
      * 随机选择变体
      * 全局镜像 25% + 帝国轴镜像 25% = 镜像 50%
      * 上下移 30% + 左右移 20%
+     * 全二永平：只保留上半部分变体——冲锋反盾炮（铁甲投掷塞雷）后会被撞飞向下半区，
+     * 阵型龟缩核心（祈祷/学徒/帝国）必须保持在上半区（y0-2），
+     * 因此排除 mirror_global（整队翻到下半区）与 shift_down（整体下移）
      */
     selectVariant() {
+      if (this.selectedFormation?.id === "all2prayer") {
+        const roll2 = Math.random();
+        if (roll2 < 0.6) {
+          this.variant = "original";
+        } else if (roll2 < 0.8) {
+          this.variant = "mirror_imperial";
+        } else if (roll2 < 0.9) {
+          this.variant = "shift_up";
+        } else {
+          this.variant = Math.random() < 0.5 ? "shift_left" : "shift_right";
+        }
+        return;
+      }
       const roll = Math.random();
       if (roll < 0.25) {
         this.variant = "mirror_global";
@@ -3226,6 +3491,7 @@ var BattleAI = (() => {
       };
       this.selectedFormation = formation;
       this.currentNode = formation.tree;
+      this.pathByRound.clear();
       return formation;
     }
     // ============================================================
@@ -3246,37 +3512,32 @@ var BattleAI = (() => {
         if (round >= 4 && FOUR_COST_IDS.has(p.monsterId)) return false;
         return true;
       });
-      const regularPlacements = freshPlacements.filter((p) => !SPECIAL_IDS.has(p.monsterId));
+      const regularPlacements = freshPlacements.filter((p) => !SPECIAL_IDS.has(p.monsterId) && !AIM_IDS.has(p.monsterId));
       const specialPlacements = freshPlacements.filter((p) => SPECIAL_IDS.has(p.monsterId));
+      const aimPlacements = freshPlacements.filter((p) => AIM_IDS.has(p.monsterId));
       let regularActions = regularPlacements.map((p) => ({
         monsterId: p.monsterId,
         badgeIds: [...p.badgeIds],
         x: p.x,
         y: p.y
       }));
-      regularActions = this.applyVariant(regularActions);
+      const isPrayerBranch = (this.currentNode?.label ?? "").includes("\u7977\u5F92");
+      if (!isPrayerBranch) {
+        regularActions = this.applyVariant(regularActions);
+      }
       regularActions = regularActions.map((a) => ({
         ...a,
         x: Math.max(P2_ZONE_X_START, Math.min(10, a.x)),
         y: Math.max(0, Math.min(BOARD_HEIGHT - 1, a.y))
       }));
-      regularActions = regularActions.map((a) => {
-        if (a.monsterId === IMPERIAL_ID) {
-          return {
-            ...a,
-            x: Math.max(7, Math.min(9, a.x)),
-            y: Math.max(1, Math.min(3, a.y))
-          };
-        }
-        return a;
-      });
       const specialActions = specialPlacements.map((p) => {
         const pos = computeSpecialPosition(
           p.monsterId,
           regularActions,
           gameState,
           p.x,
-          p.y
+          p.y,
+          p.badgeIds
         );
         return {
           monsterId: p.monsterId,
@@ -3284,12 +3545,17 @@ var BattleAI = (() => {
           ...pos
         };
       });
-      const actions = [...regularActions, ...specialActions];
-      // Only mark the first action as deployed — caller consumes one at a time.
-      // Previously all fresh placements were marked at once, causing subsequent
-      // decide() calls to return null (all filtered as already deployed).
-      if (actions.length > 0) {
-        this.deployedIds.add(actions[0].monsterId);
+      const aimActions = aimPlacements.map((p) => {
+        const pos = computeAimPosition(p.monsterId, gameState, p.x, p.y);
+        return {
+          monsterId: p.monsterId,
+          badgeIds: [...p.badgeIds],
+          ...pos
+        };
+      });
+      const actions = [...regularActions, ...specialActions, ...aimActions];
+      for (const p of freshPlacements) {
+        this.deployedIds.add(p.monsterId);
       }
       if (actions.length > 0) {
         const coordStr = actions.map((a) => `${a.monsterId}@(${a.x},${a.y})`).join(", ");
@@ -3303,6 +3569,11 @@ var BattleAI = (() => {
     }
     /**
      * 沿阵型树查找对应回合的节点，遇到多分支时选择分支
+     *
+     * 分支选择持久化：某深度首次到达时确定分支并存入 pathByRound，
+     * 后续回合复用同一选择，保证整局沿同一分支路径走。
+     * （旧实现每回合从树根重走，非目标回合的多分支层会用
+     *   children.find 静默选第一个分支，导致分支漂移 → 漏放/重放）
      */
     findNodeForRound(round, gameState) {
       if (!this.selectedFormation) return null;
@@ -3310,27 +3581,68 @@ var BattleAI = (() => {
       for (let r = 1; r <= round; r++) {
         const children = node.children;
         if (children.length === 0) return null;
+        const stored = this.pathByRound.get(r);
+        if (stored) {
+          node = stored;
+          continue;
+        }
         let target = children.find((c) => c.round === r);
         if (!target) target = children[0];
-        if (r === round && children.length > 1) {
+        if (children.length > 1) {
           target = this.selectBranch(gameState, children);
         }
+        this.pathByRound.set(r, target);
         node = target;
       }
       return node;
     }
-    /**
-     * 分支选择逻辑
-     * - Round 1（对手尚未部署）：随机选分支
-     * - Round 2+：根据对手已部署单位匹配分支标签
-     * - 无匹配标签：随机选择（而非永远选第一个）
-     */
+    /** 判断分支是否为主分支（label 不含条件关键词，形如"局N"） */
+    isMainBranch(branch) {
+      const label = branch.label ?? "";
+      return !_FormationEngine.CONDITION_KEYWORDS.some((k) => label.includes(k));
+    }
+    /** 无匹配时的兜底：优先主分支，其次第一个分支 */
+    fallbackBranch(branches, reason) {
+      const main = branches.find((b) => this.isMainBranch(b));
+      const picked = main ?? branches[0];
+      console.log(`[Formation] ${reason} \u2192 \u8D70${main ? "\u4E3B\u5206\u652F" : "\u9996\u5206\u652F"}: ${picked.label}`);
+      return picked;
+    }
     selectBranch(gameState, branches) {
+      if (this.opponentHandIds.size > 0) {
+        const handIds = this.opponentHandIds;
+        const handBadges = this.opponentHandBadgeIds;
+        const handHas = (id) => handIds.has(id);
+        const badgeHas = (id) => handBadges.has(id);
+        const handPrayer = handHas(105);
+        const handTripleKing = handHas(124);
+        const handWither = badgeHas(2) || badgeHas(25);
+        const handFullRush = !handPrayer && (handHas(107) || handHas(113) || handHas(117) || handHas(116));
+        let targetType = null;
+        if (handTripleKing || handWither) targetType = "suqing";
+        else if (handPrayer) targetType = "prayer";
+        else if (handFullRush) targetType = "fullrush";
+        if (targetType) {
+          for (const branch of branches) {
+            const label = branch.label;
+            if (targetType === "suqing" && (label.includes("\u5168\u51B2") || label.includes("\u4E09\u632F") || label.includes("dof"))) {
+              console.log(`[Formation] \u624B\u724C\u8BC6\u522B: \u5BF9\u65B9\u4E09\u632F\u738B/\u51CB\u96F6/\u4E2D\u6BD2(\u8083\u6E05\u7CFB) \u2192 ${label}`);
+              return branch;
+            }
+            if (targetType === "prayer" && (label.includes("\u7977\u5F92") || label.includes("\u7948\u7977"))) {
+              console.log(`[Formation] \u624B\u724C\u8BC6\u522B: \u5BF9\u65B9\u7977\u5F92\uFF08\u7948\u7977\uFF09 \u2192 ${label}`);
+              return branch;
+            }
+            if (targetType === "fullrush" && label.includes("\u5168\u51B2")) {
+              console.log(`[Formation] \u624B\u724C\u8BC6\u522B: \u5BF9\u65B9\u5168\u51B2 \u2192 ${label}`);
+              return branch;
+            }
+          }
+        }
+      }
       const opponentDeployed = gameState.players.p1.deployed;
       if (opponentDeployed.length === 0) {
-        const picked2 = branches[Math.floor(Math.random() * branches.length)];
-        console.log(`[Formation] \u5BF9\u624B\u672A\u90E8\u7F72\uFF0C\u968F\u673A\u9009\u62E9\u5206\u652F: ${picked2.label}`);
-        return picked2;
+        return this.fallbackBranch(branches, "\u5BF9\u624B\u672A\u90E8\u7F72\u4E14\u624B\u724C\u65E0\u6CD5\u8BC6\u522B");
       }
       const hasTripleKing = opponentDeployed.some((m) => m.monsterId === 124);
       const hasDrill = opponentDeployed.some((m) => m.monsterId === 116);
@@ -3339,15 +3651,13 @@ var BattleAI = (() => {
       const hasFullRush = !hasPrayer && (opponentDeployed.some((m) => m.monsterId === 107) || opponentDeployed.some((m) => m.monsterId === 113) || opponentDeployed.some((m) => m.monsterId === 117));
       for (const branch of branches) {
         const label = branch.label;
-        if (hasTripleKing && (label.includes("\u4E09\u632F\u738B") || label.includes("\u4E09\u632F"))) return branch;
+        if (hasTripleKing && (label.includes("\u4E09\u632F\u738B") || label.includes("\u4E09\u632F") || label.includes("dof"))) return branch;
         if (hasDrill && label.includes("\u94BB\u5934")) return branch;
         if (hasPrayer && (label.includes("\u7977\u5F92") || label.includes("\u7948\u7977"))) return branch;
         if (hasFullRush && label.includes("\u5168\u51B2")) return branch;
         if (hasRush && label.includes("\u51B2\u950B")) return branch;
       }
-      const picked = branches[Math.floor(Math.random() * branches.length)];
-      console.log(`[Formation] \u65E0\u5339\u914D\u5206\u652F\u6807\u7B7E\uFF0C\u968F\u673A\u9009\u62E9: ${picked.label}`);
-      return picked;
+      return this.fallbackBranch(branches, "\u65E0\u5339\u914D\u5206\u652F\u6807\u7B7E");
     }
     // ============================================================
     // 变体应用（仅作用于普通怪兽，特殊怪兽不参与）
@@ -3454,8 +3764,32 @@ var BattleAI = (() => {
       this.currentRound = 1;
       this.currentNode = null;
       this.deployedIds = /* @__PURE__ */ new Set();
+      this.pathByRound.clear();
+      this.opponentHandIds = /* @__PURE__ */ new Set();
+      this.opponentHandBadgeIds = /* @__PURE__ */ new Set();
     }
   };
+  /**
+   * 分支选择逻辑
+   * - 优先用开局可见的对方手牌识别体系（祷徒/全冲等），对手未部署也能判断
+   * - 手牌无法判断时，根据对手已部署单位匹配分支标签
+   * - 仍无法匹配：选主分支（label 不含条件词，形如"局N"），无主分支才随机
+   */
+  /** 条件分支标签关键词（含这些词的视为条件分支，非主分支） */
+  _FormationEngine.CONDITION_KEYWORDS = [
+    "\u5BF9\u65B9",
+    "\u5982\u679C",
+    "\u4E09\u632F",
+    "\u94BB\u5934",
+    "\u7977\u5F92",
+    "\u7948\u7977",
+    "\u5168\u51B2",
+    "\u51B2\u950B",
+    "\u76FE",
+    "\u94C1\u7532",
+    "dof"
+  ];
+  var FormationEngine = _FormationEngine;
 
   // src/ai/decision_pipeline.ts
   function createDefaultEvaluator() {
@@ -3724,5 +4058,6 @@ var BattleAI = (() => {
   };
   return __toCommonJS(battle_ai_exports);
 })();
-// Override global BattleAI with the actual constructor class (IIFE result is the exports object)
-window.BattleAI = BattleAI.BattleAI;
+if (typeof globalThis !== 'undefined') { globalThis.BattleAI = BattleAI; }
+if (typeof window !== 'undefined') { window.BattleAI = BattleAI; }
+if (typeof module !== 'undefined' && module.exports) { module.exports = { BattleAI }; }

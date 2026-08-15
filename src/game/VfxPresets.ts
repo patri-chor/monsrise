@@ -169,7 +169,7 @@ export const SKILL = {
   },
   /** 矿爆普攻 */
   explosiveAttack: {
-    projectile: { speed: 600, color: '#ff6600', size: 48, arcHeight: 140 } as ProjectilePreset,
+    projectile: { speed: 600, color: '#ff6600', size: 80, arcHeight: 140 } as ProjectilePreset,
   },
   /** 塞雷 - 影子斩击 */
   slash: {

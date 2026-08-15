@@ -8,7 +8,8 @@ import random
 import numpy as np
 
 from .state import (State, encode_state, BUDGET_LIMITS, COST_BY_ID,
-                    idx_to_db_id, cell_to_xy, MONSTER_COUNT, CELL_COUNT,
+                    idx_to_db_id, db_id_to_idx, cell_to_xy, xy_to_cell,
+                    MONSTER_COUNT, CELL_COUNT,
                     canonical_transform, inv_apply_t)
 from .heuristic import MON_META, state_feat, act_feat
 
@@ -28,35 +29,9 @@ def _sample_p(p_dict: dict, temperature: float = 1.0) -> int:
     return random.choices(ks, weights=ws)[0]
 
 
-MAX_ALIVE = 8.0
-
-
-def dense_signal(side: str, res: dict) -> float:
-    """回合级稠密价值信号（双向对称差值，与 MCTS 真实模拟公式同构）：
-    - d_round    本回合胜负 ±1/0（引擎直接判定，最强回合级信号）
-    - hp_diff    敌我总血量差 / 双方总血量（压制敌方 + 保护己方）
-    - alive_diff 敌我存活数差 / 8
-    返回 dense = 0.40·d_round + 0.15·hp_diff + 0.10·alive_diff ∈ [-0.65, 0.65]。
-    价值目标 = 全局胜负 z + 本信号，clip 到 [-1,1]。"""
-    p1 = [u for u in res['survivors'] if u['team'] == 1]
-    p2 = [u for u in res['survivors'] if u['team'] == 2]
-    my = p1 if side == 'p1' else p2
-    en = p2 if side == 'p1' else p1
-    my_hp = sum(max(0.0, u['hp']) for u in my)
-    en_hp = sum(max(0.0, u['hp']) for u in en)
-    tot = my_hp + en_hp
-    hp_diff = (my_hp - en_hp) / tot if tot > 0 else 0.0
-    alive_diff = (len(my) - len(en)) / MAX_ALIVE
-    d1, d2 = res.get('d1', 0), res.get('d2', 0)
-    if side == 'p1':
-        d_round = 1.0 if d1 > d2 else (-1.0 if d1 < d2 else 0.0)
-    else:
-        d_round = 1.0 if d2 > d1 else (-1.0 if d2 < d1 else 0.0)
-    return 0.40 * d_round + 0.15 * hp_diff + 0.10 * alive_diff
-
-
 def mcts_place(engine, mcts, side, my, enemy, deck, hand, round_, budget_limit, greedy=False, temperature=1.0,
-               exp_lib=None, path=None, chain_id=None, source='best', exp_hard=0.85, score=(0, 0)):
+               exp_lib=None, path=None, chain_id=None, source='best', exp_hard=0.85, score=(0, 0),
+               force_tree=None):
     """回合内放置：MCTS 逐步决策直到预算/手牌用尽。返回 (placed, samples)。
     hand：全局未放置手牌（调用方维护；本函数在副本上操作并移除已放置的 dbId）。
     budget_limit 为回合累计上限；剩余预算 = 上限 - 场上已有怪（幸存者）总费用，与引擎一致。
@@ -64,7 +39,10 @@ def mcts_place(engine, mcts, side, my, enemy, deck, hand, round_, budget_limit, 
     exp_lib：在线经验库。greedy 时命中正分候选以 exp_hard 概率直接采用（软采用：
     保留 1-exp_hard 概率走 MCTS 动作，防止经验库锁死局部最优，如"救星卡右上角"）。
     path：传入列表则记录每步决策点（canonical 化 + 特征 + 元数据）供对局结束回传更新经验库。
-    score：当前比分 (p1, p2)，进入状态特征（比分差影响保守/激进策略）。"""
+    score：当前比分 (p1, p2)，进入状态特征（比分差影响保守/激进策略）。
+    force_tree：本回合树计划动作列表 [{monsterId, x, y}]（己方视角坐标）。非 None 时
+    作为强制动作队列：可放置且预算足够则直接采用（先学自身布阵策略），用尽后回退 MCTS。
+    与 TS search.ts forceTreeAction 语义一致（搜索照跑保留样本，提交优先树动作）。"""
     used = sum(COST_BY_ID[m['dbId']] for m in my)
     budget = budget_limit - used
     my_cur = [dict(m) for m in my]
@@ -73,8 +51,10 @@ def mcts_place(engine, mcts, side, my, enemy, deck, hand, round_, budget_limit, 
     samples = []
     deck_keys = list(deck.keys())
     hand = list(hand)
+    force_queue = list(force_tree) if force_tree else []
     while True:
-        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys, score)
+        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys, score,
+                  deck_badges=deck)
         if not s.legal_actions():
             break
         pm, pc, joint, greedy_a, _v, root_q = mcts.search(s)
@@ -86,6 +66,43 @@ def mcts_place(engine, mcts, side, my, enemy, deck, hand, round_, budget_limit, 
             pi_c[k] = p
         grid, g = encode_state(s)
         samples.append((grid, g, pi_m, pi_c, float(root_q)))  # root_q 随样本存储
+        # 强制树计划动作优先（先学自身布阵策略）：可放置则直接采用
+        if force_queue:
+            idx = next((i for i, ta in enumerate(force_queue)
+                        if ta['monsterId'] in hand
+                        and COST_BY_ID.get(ta['monsterId'], 4) <= budget
+                        and not any(m['x'] == ta['x'] and m['y'] == ta['y'] for m in my_cur)), None)
+            if idx is not None:
+                ta = force_queue.pop(idx)
+                db_id, x, y = ta['monsterId'], ta['x'], ta['y']
+                # 训练标签向树动作倾斜（先学自身布阵策略的核心）：
+                # 强制采用树动作时，把该决策点的 π 重设为"树动作 0.9 + 其余均匀 0.1"，
+                # 彻底消除原网络先验的残留偏好（如帝国@1,2 角落），确保正确开局
+                # 在策略分布中占绝对主导。评估/部署（greedy、path=None）不改 π。
+                if not greedy and path is not None:
+                    mi = db_id_to_idx(db_id)
+                    ci = xy_to_cell(side, x, y)
+                    pi_m = np.full(MONSTER_COUNT, 0.1 / MONSTER_COUNT, dtype=np.float32)
+                    pi_m[mi] = 0.9
+                    pi_c = np.full(CELL_COUNT, 0.1 / CELL_COUNT, dtype=np.float32)
+                    pi_c[ci] = 0.9
+                    samples[-1] = (grid, g, pi_m, pi_c, float(root_q))
+                if path is not None:
+                    h, t = canonical_transform(s)
+                    ent = -float(sum(p * np.log(p + 1e-12) for p in pm.values()))
+                    path.append({
+                        'canonical': h,
+                        'act': list(inv_apply_t((db_id, x, y), t)),
+                        'act_feat': list(act_feat(s, db_id, x, y)),
+                        'feat': list(state_feat(s)),
+                        'chain': chain_id, 'chain_pos': len(path), 'chain_len': -1,
+                        'visits': mcts.num_sim, 'entropy': float(ent), 'source': source,
+                    })
+                my_cur.append({'dbId': db_id, 'x': x, 'y': y, 'team': my_team})
+                placed.append({'dbId': db_id, 'x': x, 'y': y, 'team': my_team, 'badgeIds': deck[db_id]})
+                hand.remove(db_id)
+                budget -= COST_BY_ID[db_id]
+                continue
         if greedy and exp_lib is not None:
             hit = exp_lib.lookup(s)
             if hit is not None and random.random() < exp_hard:
@@ -158,11 +175,13 @@ def bundle_place(engine, side, my, enemy, deck, hand, round_, budget_limit, sess
 
 def play_game(engine, mcts_a, mcts_b, deck_a, deck_b, game_seed, on_round=None, temperature=1.0, exp_lib=None,
               update_w: float = 1.0, bundle_a=None, bundle_b=None, temp_final: float = 0.3, temp_rounds: int = 2,
-              sample_w: float = 1.0, exp_source: str = 'best'):
+              sample_w: float = 1.0, exp_source: str = 'best', force_tree_a=None, force_tree_b=None):
     """一场 self-play：A 用 mcts_a、B 用 mcts_b（训练时传同一实例 = 自对弈；
     评估时 B 用历史最佳网络 = 当前 vs 最佳）。返回 (样本A, 样本B, winner(1/2/0), scores)。
     bundle_a/bundle_b：非 None（formation 名）时对应侧用游戏启发式 AI（TS bundle）替代 MCTS，
     提供强对手对抗信号；bundle 侧不产生训练样本（样本只收集网络侧）。
+    force_tree_a/force_tree_b：该侧本回合强制树计划动作列表（己方视角坐标），
+    传 None 不强制；R1-R2 开局先学自身布阵策略用。
     on_round(round_, full, plan_a, plan_b, res, scores)：每回合战斗后回调（查看对局过程用，训练不传）。
     样本 = (grid, g, π_m, π_c, v_target, sample_w)，v_target = clip(全局 z + 回合双向稠密信号, -1, 1)。
     temperature：前 temp_rounds 回合 MCTS 采样温度（探索）；之后用 temp_final（低温度 → 策略尖锐，
@@ -194,7 +213,8 @@ def play_game(engine, mcts_a, mcts_b, deck_a, deck_b, game_seed, on_round=None, 
         else:
             plan_a, sa = mcts_place(engine, mcts_a, 'p1', my_a, en_a, deck_a, hand_a, round_, bl,
                                     temperature=temp, path=path_a, chain_id=chain_a, source=exp_source,
-                                    score=(scores[0], scores[1]))
+                                    score=(scores[0], scores[1]),
+                                    force_tree=force_tree_a.get(round_) if force_tree_a else None)
         for p in plan_a:
             if p['dbId'] in hand_a:
                 hand_a.remove(p['dbId'])
@@ -206,7 +226,8 @@ def play_game(engine, mcts_a, mcts_b, deck_a, deck_b, game_seed, on_round=None, 
         else:
             plan_b, sb = mcts_place(engine, mcts_b, 'p2', my_b, en_b, deck_b, hand_b, round_, bl,
                                     temperature=temp, path=path_b, chain_id=chain_b, source=exp_source,
-                                    score=(scores[0], scores[1]))
+                                    score=(scores[0], scores[1]),
+                                    force_tree=force_tree_b.get(round_) if force_tree_b else None)
         for p in plan_b:
             if p['dbId'] in hand_b:
                 hand_b.remove(p['dbId'])
@@ -238,13 +259,12 @@ def play_game(engine, mcts_a, mcts_b, deck_a, deck_b, game_seed, on_round=None, 
         exp_lib.update_batch(path_b, zb, update_w, source=exp_source)
     samples_a, samples_b = [], []
     for (grid, g, pim, pic, rq, round_, side) in all_samples:
-        res = round_res[round_]
-        dens = dense_signal(side, res)
         z = za if side == 'p1' else zb
-        # Value target：root_q（真实模拟期望回报，0.7权重）+ z（全局结果，0.3权重）+ dense
-        # root_q 来自 use_real_sim=True 的 MCTS Q 均值，是 value head 的"地面真值";
-        # 当 root_q 缺失时（非 real_sim 模式，root_q=v_leaf 近似网络输出）自动退化为原方案。
-        vt = min(1.0, max(-1.0, 0.7 * rq + 0.3 * z + dens))
+        # Value target：纯全局胜负 z（AlphaZero 标准）。不再混入回合级 dense——
+        # dense 的 d_round(0.40) 是"本回合即时胜负"，与当前放置决策的长期胜负仅弱相关，
+        # 且战斗随机性大，等于给价值目标注入高方差噪声，导致价值头学不到干净的区分度
+        #（MSE 卡 0.27、分离度 0.6 封顶）。亦不再混入 root_q 防止循环自证。
+        vt = z
         item = (grid, g, pim, pic, vt, sample_w)
         (samples_a if side == 'p1' else samples_b).append(item)
     return samples_a, samples_b, winner, scores
@@ -292,10 +312,53 @@ def play_vs_random(engine, net, mcts, deck_a, deck_b, game_seed, mcts_side='p1',
     return (1, 0, 0, scores) if scores[0] > scores[1] else (0, 0, 1, scores)
 
 
+def play_vs_bundle(engine, net, mcts, deck_a, deck_b, game_seed, mcts_side='p1', bname=None, exp_lib=None):
+    """MCTS（贪心）vs 手工启发式 AI（bundleai，当前最强基线）。
+    bname：对手卡组名（formation 名，引擎精确映射）。bundle 侧不产生样本。
+    返回 (mcts_wins, mcts_draws, mcts_losses, scores)。"""
+    board = []
+    scores = [0, 0]
+    hand_a, hand_b = list(deck_a.keys()), list(deck_b.keys())
+    session = random.randint(1, 10 ** 6)
+    for round_ in range(1, 6):
+        if max(scores) >= 3:
+            break
+        bl = BUDGET_LIMITS[round_]
+        my_a = [b for b in board if b['team'] == 1]
+        en_a = [b for b in board if b['team'] == 2]
+        my_b = [b for b in board if b['team'] == 2]
+        en_b = [b for b in board if b['team'] == 1]
+        if mcts_side == 'p1':
+            plan_a, _ = mcts_place(engine, mcts, 'p1', my_a, en_a, deck_a, hand_a, round_, bl, greedy=True,
+                                   exp_lib=exp_lib, score=(scores[0], scores[1]))
+            plan_b, _ = bundle_place(engine, 'p2', my_b, en_b, deck_b, hand_b, round_, bl,
+                                     session=session, formation=bname)
+        else:
+            plan_a, _ = bundle_place(engine, 'p1', my_a, en_a, deck_a, hand_a, round_, bl,
+                                     session=session, formation=bname)
+            plan_b, _ = mcts_place(engine, mcts, 'p2', my_b, en_b, deck_b, hand_b, round_, bl, greedy=True,
+                                   exp_lib=exp_lib, score=(scores[0], scores[1]))
+        for p in plan_a:
+            if p['dbId'] in hand_a:
+                hand_a.remove(p['dbId'])
+        for p in plan_b:
+            if p['dbId'] in hand_b:
+                hand_b.remove(p['dbId'])
+        full = board + plan_a + plan_b
+        res = engine.simulate(full, round_=round_, seed=game_seed * 10 + round_)
+        board = res['survivors']
+        scores[0] += res['d1']
+        scores[1] += res['d2']
+    if scores[0] == scores[1]:
+        return 0, 1, 0, scores
+    return (1, 0, 0, scores) if scores[0] > scores[1] else (0, 0, 1, scores)
+
+
 def play_vs_fn(engine, mcts, deck_a, deck_b, game_seed, opp_fn, mcts_side='p1', temperature=1.0,
                temp_final: float = 0.3, temp_rounds: int = 2, path_a=None, chain_a=None,
-               exp_lib=None, exp_source: str = 'pool', sample_w: float = 1.0):
+               exp_lib=None, exp_source: str = 'pool', sample_w: float = 1.0, force_tree=None):
     """训练对局：网络侧（MCTS 温度采样）vs Python 基线对手函数 opp_fn(deck, hand, bl, side, my)。
+    force_tree：{round: [{monsterId,x,y}]}（网络侧己方视角），R1-R2 先学自身布阵强制用。
     网络侧收集训练样本（与 play_game 同构：v_target = clip(胜负 z + 回合稠密信号)）；
     对手侧不产样本（随机/规则随机是弱对手，只提供对抗多样性）。
     经验库按门控默认不收（exp_source='pool' 被 ExperienceLib 拒绝，弱对手经验无价值）。
@@ -318,13 +381,15 @@ def play_vs_fn(engine, mcts, deck_a, deck_b, game_seed, opp_fn, mcts_side='p1', 
         if mcts_side == 'p1':
             plan_a, sa = mcts_place(engine, mcts, 'p1', my_a, en_a, deck_a, hand_a, round_, bl,
                                     temperature=temp, path=path_a, chain_id=chain_a, source=exp_source,
-                                    score=(scores[0], scores[1]))
+                                    score=(scores[0], scores[1]),
+                                    force_tree=force_tree.get(round_) if force_tree else None)
             plan_b = opp_fn(deck_b, hand_b, bl, 'p2', my_b)
         else:
             plan_a = opp_fn(deck_a, hand_a, bl, 'p1', my_a)
             plan_b, sa = mcts_place(engine, mcts, 'p2', my_b, en_b, deck_b, hand_b, round_, bl,
                                     temperature=temp, path=path_a, chain_id=chain_a, source=exp_source,
-                                    score=(scores[0], scores[1]))
+                                    score=(scores[0], scores[1]),
+                                    force_tree=force_tree.get(round_) if force_tree else None)
         for p in plan_a:
             if p['dbId'] in hand_a:
                 hand_a.remove(p['dbId'])
@@ -344,8 +409,10 @@ def play_vs_fn(engine, mcts, deck_a, deck_b, game_seed, opp_fn, mcts_side='p1', 
     za = 1 if winner == 1 else (-1 if winner == 2 else 0)
     samples = []
     for (g_, gg, pim, pic, rq, round_, side) in all_samples:
-        dens = dense_signal(side, round_res[round_])
-        vt = min(1.0, max(-1.0, 0.7 * rq + 0.3 * za + dens))
+        # 修复符号 bug：side='p2' 时价值目标必须是 p2 视角（-za），原代码误用 p1 视角 za，
+        # 导致 mcts_side='p2' 的样本价值标签反向。同时去掉回合级 dense 噪声（同 play_game）。
+        z = za if side == 'p1' else -za
+        vt = z
         samples.append((g_, gg, pim, pic, vt, sample_w))
     if exp_lib is not None and path_a:
         for p in path_a:
@@ -393,7 +460,8 @@ def policy_only_place(net, side, my, enemy, deck, hand, round_, budget_limit, de
     hand = list(hand)
     deck_keys = list(deck.keys())
     while True:
-        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys, score)
+        s = State(side, my_cur, enemy, hand, round_, budget, budget_limit, deck_keys, score,
+                  deck_badges=deck)
         acts = s.legal_actions()
         if not acts:
             break
@@ -500,3 +568,15 @@ def rule_random_place(deck, hand, budget_limit, side, my=()):
         hand.remove(m)
         budget -= COST_BY_ID[m]
     return placed
+
+
+def free_deck(seed: int = None) -> dict:
+    """从 7 套已知阵型中随机选一套作为对手卡组（保留真实徽章）。
+    用于 L1_free 层：规则随机使用任意已知阵型（而非只用与测试方配对的卡组），
+    测"模型对整体对阵的放置能力"。返回 {dbId: badgeIds}。"""
+    import random as _r
+    from .heuristic import FORMATION_DECKS
+    if FORMATION_DECKS is None:
+        return {}
+    rng = _r.Random(seed) if seed is not None else _r
+    return dict(rng.choice(FORMATION_DECKS))

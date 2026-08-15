@@ -76,10 +76,31 @@ def _migrate_entry(key: str, act: tuple) -> tuple:
     return h, inv_apply_t(tuple(act), t)
 
 
+def _json_default(o):
+    """json.dump 兜底：numpy 标量/数组 → Python 原生类型。
+    经验库字段偶发 np.float32/np.int64 等 numpy 类型（特征数组、索引运算产物），
+    直接 dump 会 TypeError 崩掉整个 save（历史多轮训练都在这里失败，经验库从未落盘）。"""
+    if isinstance(o, np.ndarray):
+        return o.tolist()
+    if isinstance(o, np.floating):
+        return float(o)
+    if isinstance(o, np.integer):
+        return int(o)
+    if isinstance(o, np.bool_):
+        return bool(o)
+    raise TypeError(f'Object of type {o.__class__.__name__} is not JSON serializable')
+
+
 class ExperienceLib:
     def __init__(self, lr: float = 0.1, boost_k: float = 2.0, adopt_min: float = 0.0,
                  path: str = None, endgame_path: str = None,
-                 ann_topk: int = 5, ann_thresh: float = 2.2, visits_min: int = 20):
+                 ann_topk: int = 5, ann_thresh: float = 2.2, visits_min: int = 20,
+                 mode: str = 'avoid'):
+        """在线经验库 v2（三层单库）。mode：
+        - 'avoid'（默认，负反馈）：输局决策点负分入库（"这个动作让我输过，避免它"），
+          查询/先验注入时对负分候选压低权重；赢局不入库（避免"记住正确"被弱对手污染）。
+        - 'store'（旧正反馈）：仅赢局正分入库（历史行为，A/B 对照用）。
+        - 'off'：完全禁用在线学习（仅 endgame 静态层）。"""
         self.expert: dict = {}          # canonical_hash -> {act_tuple: entry}
         self.lib = self.expert          # 向后兼容别名（旧代码统计条数用）
         self.endgame: dict = {}         # canonical_hash -> act_tuple（静态专家，只读）
@@ -89,6 +110,7 @@ class ExperienceLib:
         self.ann_topk = ann_topk
         self.ann_thresh = ann_thresh
         self.visits_min = visits_min
+        self.mode = mode
         self.path = path
         self._dirty = True
         self._feat_arr = None
@@ -168,14 +190,19 @@ class ExperienceLib:
             act = inv_apply_t(a, t)
             if self._legal(s, act):
                 return (*act, 3.0)
-        # 2) expert 层：canonical 等价 → 最高分候选
+        # 2) expert 层：canonical 等价 → 最高分候选。
+        #    avoid 模式（负反馈）：负分候选绝不直接采用（只用于压低先验），
+        #    仅当存在正分候选（历史 store 数据残留）且 > adopt_min 时采用。
         cands = self.expert.get(h)
         if cands:
-            act = max(cands, key=lambda k: cands[k]['score'])
-            e = cands[act]
-            a2 = inv_apply_t(act, t)
-            if e['score'] > self.adopt_min and self._legal(s, a2):
-                return (*a2, e['score'])
+            best_act, best_e = None, None
+            for act, e in cands.items():
+                if e['score'] > self.adopt_min and (best_e is None or e['score'] > best_e['score']):
+                    best_act, best_e = act, e
+            if best_act is not None and self.mode != 'off':
+                a2 = inv_apply_t(best_act, t)
+                if self._legal(s, a2):
+                    return (*a2, best_e['score'])
         # 3) ANN：相似局面 → 动作迁移 + 校验；信任度随距离衰减
         f = state_feat(s)
         for e, d in self._index_query(f, self.ann_topk):
@@ -200,10 +227,19 @@ class ExperienceLib:
             k = (act[0], (act[1], act[2]))
             if k in priors:
                 priors[k] *= 1.0 + self.boost_k
-        # expert 层：canonical 等价
+        # expert 层：canonical 等价。avoid 模式（负反馈）下负分候选压低先验
+        # （"这个动作输过，避免它"）；store 模式下正分候选加权。endgame 层不变。
         cands = self.expert.get(h)
         if cands:
             for act, e in cands.items():
+                if self.mode == 'avoid':
+                    # 负反馈：score<0 的候选压低（分越负压得越狠），score>=0 忽略
+                    if e['score'] < 0:
+                        a2 = inv_apply_t(act, t)
+                        k = (a2[0], (a2[1], a2[2]))
+                        if k in priors:
+                            priors[k] *= 1.0 / (1.0 + self.boost_k * abs(e['score']) / (1.0 + abs(e['score'])))
+                    continue
                 if e['score'] <= 0:
                     continue
                 a2 = inv_apply_t(act, t)
@@ -216,25 +252,38 @@ class ExperienceLib:
         hits = self._index_query(f, 1)
         if hits:
             e, d = hits[0]
-            # score<=0 跳过（与 expert canonical 分支一致）：负分候选不注入，
-            # 否则 score=-1 时 1+score=0 除零崩溃，且负权重会把先验乘成负值→NaN
-            if d <= self.ann_thresh and e['score'] > 0:
+            if d <= self.ann_thresh:
                 a3 = self._transfer(e, s)
                 if a3 is not None:
                     k = (a3[0], (a3[1], a3[2]))
                     if k in priors:
                         decay = 1.0 - d / self.ann_thresh
-                        priors[k] *= 1.0 + self.boost_k * decay * e['score'] / (1.0 + e['score'])
+                        if self.mode == 'avoid':
+                            # 负反馈：相似局面输过的候选也压低
+                            if e['score'] < 0:
+                                priors[k] *= 1.0 / (1.0 + self.boost_k * decay * abs(e['score']) / (1.0 + abs(e['score'])))
+                        else:
+                            # store 模式：正分候选加权（score<=0 跳过，防除零/负权重）
+                            if e['score'] > 0:
+                                priors[k] *= 1.0 + self.boost_k * decay * e['score'] / (1.0 + e['score'])
 
-    # ---------- 学习（决策链胜负回传，跨回合时间加权） ----------
+    # ---------- 学习（决策链胜负回传，跨回合时间加权；负反馈模式） ----------
     def update_batch(self, chain, z: float, w: float = 1.0, source: str = 'best') -> None:
         """对局结束回传：chain = 该侧整局决策点记录列表（跨回合），
         z = ±1/0（该侧胜负视角）；w = 对局质量权重（0~1）。
         时间加权：越接近结局的决策点权重越高（直接决定胜负），锚点保底。
-        严格门控：仅接收净胜战局 (z > 0) + 强对手对局 ('bundle'/'best')，彻底杜绝失败/平局漏招污染经验库！"""
-        if not chain or z <= 0:
+        模式门控：
+        - avoid（默认负反馈）：仅接收净负战局 (z < 0) + 强对手对局（'bundle'），
+          负分入库 = "这些动作导致失败，避免它们"。赢局不入库（弱对手的"正确"不可靠）。
+        - store（旧正反馈）：仅接收净胜战局 (z > 0) + 强对手对局，正分入库（A/B 对照）。
+        - off：直接跳过。"""
+        if not chain or self.mode == 'off':
             return
         if source not in ('best', 'bundle', 'pool'):
+            return
+        if self.mode == 'avoid' and z >= 0:
+            return
+        if self.mode == 'store' and z <= 0:
             return
         n = len(chain)
         for i, rec in enumerate(chain):
@@ -327,7 +376,7 @@ class ExperienceLib:
         os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump({'type': 'exp_lib_v2', 'entries': entries, 'endgame': endgame_entries},
-                      f, ensure_ascii=False)
+                      f, ensure_ascii=False, default=_json_default)
 
     def seed_from_endgame_lib(self, path: str) -> int:
         """把专家搜索残局库迁移为 endgame 层（canonical 化，只读）；

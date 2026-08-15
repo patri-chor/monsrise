@@ -41,9 +41,9 @@ for (let i = 2; i < process.argv.length; i++) {
 }
 const DECK = ARGV.deck ?? 'all';
 const N_GAMES = Number(ARGV.games ?? 20);
-const BATTLE_DT = Number(ARGV.dt ?? 0.1);
+const BATTLE_DT = Number(ARGV.dt ?? 0.04); // 默认 25 帧/秒，与网页固定逻辑步长一致
 const RUNS = Number(ARGV.runs ?? 3); // 同 seed 集重复测时次数（取中位数，消除抖动）
-const timeoutSec = 120;
+const timeoutSec = 45; // 40s 战斗 + 缓冲兜底
 
 const ZONE: Record<1 | 2, { min: number; max: number }> = {
   1: { min: 0, max: 4 },

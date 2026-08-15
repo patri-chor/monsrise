@@ -3,3 +3,8 @@ dist/
 .agents/
 .trae/
 *.md
+__pycache__/
+*.pyc
+reports/
+*.pkl
+*.zip

@@ -25,6 +25,7 @@ export class Director {
   private _isRunning: boolean = false;
   private _lastTime: number = 0;
   private _animationFrameId: number = 0;
+  private _accumulator: number = 0;
 
   private constructor() {}
 
@@ -66,7 +67,7 @@ export class Director {
     }
   }
 
-  private loop(timestamp: number): void {
+  public loop(timestamp: number): void {
     if (!this._isRunning) return;
 
     // 全局帧号：供 BoardSyncComponent 做"每帧 battleSystem 只更新一次"的去重
@@ -78,17 +79,27 @@ export class Director {
     if (dt > 0.1) dt = 0.1;
     this._lastTime = timestamp;
 
-    // 倍速：战斗逻辑统一按 timeScale 缩放；elapsedGameTime 供贴图动画同步（见 main.ts）
-    const scaledDt = dt * this.timeScale;
-    this.elapsedGameTime += scaledDt * 1000;
+    // ---- 固定逻辑步长（fixed-step）：战斗逻辑恒按 FIXED_DT 积分，消除显示器帧率
+    // 对战斗结果的影响（60Hz/120Hz/144Hz 下 dt 不同 → 移动/攻击时序分叉 → 同阵容
+    // 胜负翻转）。训练沙盒（search.ts BATTLE_DT）与此保持完全一致。
+    // timeScale 倍速（1x/2x/3x）仍生效：每逻辑步 scaledDt = FIXED_DT * timeScale。
+    this._accumulator += dt;
+    const FIXED_DT = 0.04; // 25 帧/秒
+    const scaledStep = FIXED_DT * this.timeScale;
+    let steps = 0;
+    while (this._accumulator >= FIXED_DT && steps < 8) {
+      // 1. Update logic（rootNode → BoardSyncComponent → battleSystem.update(FIXED_DT*scale)）
+      this.rootNode.updateNode(scaledStep);
+      // 2. Update VFX particles and float texts（战斗逻辑同一步长，保证弹幕/粒子与战斗同步）
+      vfx.update(scaledStep);
+      this.elapsedGameTime += scaledStep * 1000;
+      this._accumulator -= FIXED_DT;
+      steps++;
+    }
+    // 极端掉帧：丢弃积压，避免死亡螺旋
+    if (this._accumulator > FIXED_DT * 4) this._accumulator = 0;
 
-    // 1. Update logic
-    this.rootNode.updateNode(scaledDt);
-
-    // 2. Update VFX particles and float texts
-    vfx.update(scaledDt);
-
-    // 3. Update DOM UI layers (like HP bar translations)
+    // 3. Update DOM UI layers (like HP bar translations) —— UI 仍随渲染帧走，不累积
     uiManager.update();
 
     // 4. Render

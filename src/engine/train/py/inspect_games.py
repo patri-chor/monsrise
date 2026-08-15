@@ -14,7 +14,7 @@ import torch
 from .bridge_client import EngineClient
 from .state import init_meta, BUDGET_LIMITS, COST_BY_ID
 from .heuristic import init_mon_meta
-from .net import DualNet
+from .net import DualNet, migrate_state_dict
 from .mcts import MCTS
 from .selfplay import mcts_place, rule_random_place, random_place, bundle_place
 from .exp_lib import ExperienceLib
@@ -137,13 +137,15 @@ def main(model_path: str = 'reports/rl_model.pt', sp_games: int = 3, vr_games: i
 
         net = DualNet()
         try:
-            net.load_state_dict(torch.load(os.path.join(root, model_path), map_location='cpu'), strict=False)
+            mp = model_path if os.path.isabs(model_path) else os.path.join(root, model_path)
+            net.load_state_dict(migrate_state_dict(torch.load(mp, map_location='cpu')), strict=False)
         except Exception as _e:
             print(f'[inspect] 警告: 加载历史模型权重警告 ({_e})，使用初始网络结构做测试', flush=True)
         net.eval()
         mcts = MCTS(net, num_sim=24, device='cpu', value_net_weight=0.6, prior_lambda=0.1)
         # 训练后检查应反映真实组合强度：网络 + 在线经验库（命中正分候选直接采用）
-        exp_lib = ExperienceLib(path=os.path.join(root, exp_lib_path))
+        exp_p = exp_lib_path if os.path.isabs(exp_lib_path) else os.path.join(root, exp_lib_path)
+        exp_lib = ExperienceLib(path=exp_p)
         n_ent = sum(len(c) for c in exp_lib.lib.values())
 
         emit('# AI 对弈检查')

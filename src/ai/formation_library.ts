@@ -1,7 +1,7 @@
 // ============================================================
 // 阵型库（AI 先验）：7 套卡组 + 阵型分支树（round 0 为根）
 // 说明：坐标为 AI 侧（p2，x 6-10）视角，p1 侧使用时由调用方镜像
-// 来源：从 ai-bundle.iife.js 恢复（原 src/ai/strategy/formation_library.ts）
+// 来源：自动同步自 src/ai/strategy/formation_library.ts（勿手改）
 // ============================================================
 
 import type { Formation } from './types';
@@ -503,7 +503,7 @@ export const FORMATION_LIBRARY: Formation[] = [
         "monsterId": 114,
         "badgeIds": [
           3,
-          32
+          1
         ]
       },
       {
@@ -539,7 +539,7 @@ export const FORMATION_LIBRARY: Formation[] = [
           "id": "n19",
           "round": 1,
           "label": "对方是祷徒",
-          "comment": "",
+          "comment": "祷徒打法：帝国中置，输出对位祈祷行",
           "placement": [
             {
               "monsterId": 110,
@@ -565,15 +565,15 @@ export const FORMATION_LIBRARY: Formation[] = [
               "id": "n20",
               "round": 2,
               "label": "局2",
-              "comment": "目标秒杀祈祷",
+              "comment": "突突贴帝国(7,2)右侧吃铁盾，爆破对位祈祷行(y3)",
               "placement": [
                 {
-                  "monsterId": 106,
+                  "monsterId": 114,
                   "badgeIds": [
-                    32,
-                    24
+                    3,
+                    1
                   ],
-                  "x": 6,
+                  "x": 7,
                   "y": 3
                 },
                 {
@@ -582,7 +582,7 @@ export const FORMATION_LIBRARY: Formation[] = [
                     3,
                     20
                   ],
-                  "x": 7,
+                  "x": 6,
                   "y": 3
                 }
               ],
@@ -591,17 +591,8 @@ export const FORMATION_LIBRARY: Formation[] = [
                   "id": "n21",
                   "round": 3,
                   "label": "局3",
-                  "comment": "咒法防钻头，钻头瞄准祈祷",
+                  "comment": "咒法同行打祈祷，钻头贴祈祷",
                   "placement": [
-                    {
-                      "monsterId": 116,
-                      "badgeIds": [
-                        3,
-                        5
-                      ],
-                      "x": 7,
-                      "y": 4
-                    },
                     {
                       "monsterId": 107,
                       "badgeIds": [
@@ -610,6 +601,15 @@ export const FORMATION_LIBRARY: Formation[] = [
                       ],
                       "x": 8,
                       "y": 3
+                    },
+                    {
+                      "monsterId": 116,
+                      "badgeIds": [
+                        3,
+                        5
+                      ],
+                      "x": 6,
+                      "y": 4
                     }
                   ],
                   "children": [
@@ -617,16 +617,16 @@ export const FORMATION_LIBRARY: Formation[] = [
                       "id": "n22",
                       "round": 4,
                       "label": "局4",
-                      "comment": "",
+                      "comment": "冲锋压线",
                       "placement": [
                         {
-                          "monsterId": 114,
+                          "monsterId": 106,
                           "badgeIds": [
-                            3,
-                            32
+                            32,
+                            24
                           ],
-                          "x": 9,
-                          "y": 3
+                          "x": 8,
+                          "y": 2
                         }
                       ],
                       "children": [
@@ -634,7 +634,7 @@ export const FORMATION_LIBRARY: Formation[] = [
                           "id": "n23",
                           "round": 5,
                           "label": "局5",
-                          "comment": "",
+                          "comment": "散弹收尾",
                           "placement": [
                             {
                               "monsterId": 104,
@@ -642,8 +642,8 @@ export const FORMATION_LIBRARY: Formation[] = [
                                 3,
                                 4
                               ],
-                              "x": 7,
-                              "y": 1
+                              "x": 8,
+                              "y": 0
                             }
                           ],
                           "children": []
@@ -718,7 +718,7 @@ export const FORMATION_LIBRARY: Formation[] = [
                       "monsterId": 114,
                       "badgeIds": [
                         3,
-                        32
+                        1
                       ],
                       "x": 9,
                       "y": 3
@@ -863,7 +863,7 @@ export const FORMATION_LIBRARY: Formation[] = [
           "id": "n35",
           "round": 1,
           "label": "局1",
-          "comment": "救星开可以杀死盾祷",
+          "comment": "可以盾炮开也可以救星开。救星开可以杀死盾祷，其他都不行。",
           "placement": [
             {
               "monsterId": 108,
@@ -906,8 +906,8 @@ export const FORMATION_LIBRARY: Formation[] = [
                 {
                   "id": "n37",
                   "round": 3,
-                  "label": "局3",
-                  "comment": "突突和咒法要放在有敌人的一行",
+                  "label": "对方是祷徒",
+                  "comment": "要为盾炮，救星和咒法破盾。突突和咒法要放在有敌人的一行。",
                   "placement": [
                     {
                       "monsterId": 114,
@@ -933,7 +933,7 @@ export const FORMATION_LIBRARY: Formation[] = [
                       "id": "n38",
                       "round": 4,
                       "label": "局4",
-                      "comment": "祷徒上冲锋，非祷徒用忍猴",
+                      "comment": "如果对方是祷徒，上冲锋。如果不是，比如是非祷徒的dof，或者射手，可以用助跑的刺客去狙杀后排。",
                       "placement": [
                         {
                           "monsterId": 106,
@@ -960,6 +960,71 @@ export const FORMATION_LIBRARY: Formation[] = [
                               ],
                               "x": 7,
                               "y": 0
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n15",
+                  "round": 3,
+                  "label": "对方是全冲",
+                  "comment": "",
+                  "placement": [
+                    {
+                      "monsterId": 106,
+                      "badgeIds": [
+                        32,
+                        24
+                      ],
+                      "x": 6,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 119,
+                      "badgeIds": [
+                        3,
+                        5
+                      ],
+                      "x": 10,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n16",
+                      "round": 4,
+                      "label": "局4",
+                      "comment": "",
+                      "placement": [
+                        {
+                          "monsterId": 116,
+                          "badgeIds": [
+                            3,
+                            5
+                          ],
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n17",
+                          "round": 5,
+                          "label": "局5",
+                          "comment": "",
+                          "placement": [
+                            {
+                              "monsterId": 114,
+                              "badgeIds": [
+                                3,
+                                1
+                              ],
+                              "x": 8,
+                              "y": 2
                             }
                           ],
                           "children": []
@@ -1581,7 +1646,7 @@ export const FORMATION_LIBRARY: Formation[] = [
           "id": "n61",
           "round": 1,
           "label": "局1",
-          "comment": "",
+          "comment": "这个就是全冲的应对",
           "placement": [
             {
               "monsterId": 110,
@@ -1607,7 +1672,7 @@ export const FORMATION_LIBRARY: Formation[] = [
               "id": "n62",
               "round": 2,
               "label": "局2",
-              "comment": "双射手+助跑输出",
+              "comment": "双射手+助跑输出，对面不上钻头杀后排的话我们是占优的",
               "placement": [
                 {
                   "monsterId": 113,
@@ -1624,8 +1689,8 @@ export const FORMATION_LIBRARY: Formation[] = [
                     3,
                     32
                   ],
-                  "x": 7,
-                  "y": 1
+                  "x": 6,
+                  "y": 2
                 }
               ],
               "children": [
@@ -1654,13 +1719,13 @@ export const FORMATION_LIBRARY: Formation[] = [
                       "comment": "",
                       "placement": [
                         {
-                          "monsterId": 107,
+                          "monsterId": 106,
                           "badgeIds": [
-                            20,
-                            1
+                            32,
+                            24
                           ],
-                          "x": 9,
-                          "y": 2
+                          "x": 6,
+                          "y": 3
                         }
                       ],
                       "children": [
@@ -1671,13 +1736,50 @@ export const FORMATION_LIBRARY: Formation[] = [
                           "comment": "",
                           "placement": [
                             {
-                              "monsterId": 106,
+                              "monsterId": 117,
                               "badgeIds": [
-                                32,
-                                24
+                                8,
+                                3
                               ],
-                              "x": 6,
-                              "y": 3
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "n45",
+                      "round": 4,
+                      "label": "是dof",
+                      "comment": "",
+                      "placement": [
+                        {
+                          "monsterId": 117,
+                          "badgeIds": [
+                            8,
+                            3
+                          ],
+                          "x": 6,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n46",
+                          "round": 5,
+                          "label": "局5",
+                          "comment": "",
+                          "placement": [
+                            {
+                              "monsterId": 107,
+                              "badgeIds": [
+                                20,
+                                1
+                              ],
+                              "x": 10,
+                              "y": 2
                             }
                           ],
                           "children": []
@@ -1687,12 +1789,31 @@ export const FORMATION_LIBRARY: Formation[] = [
                   ]
                 }
               ]
-            },
+            }
+          ]
+        },
+        {
+          "id": "n40",
+          "round": 1,
+          "label": "对方祷徒",
+          "comment": "",
+          "placement": [
             {
-              "id": "n66",
+              "monsterId": 110,
+              "badgeIds": [
+                23,
+                8
+              ],
+              "x": 7,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n41",
               "round": 2,
-              "label": "方法二",
-              "comment": "",
+              "label": "局2",
+              "comment": "塞雷放帝国上下，铁甲连携贴塞雷前面（铁甲放塞雷前，实际由计算器定位）",
               "placement": [
                 {
                   "monsterId": 118,
@@ -1703,29 +1824,38 @@ export const FORMATION_LIBRARY: Formation[] = [
                   ],
                   "x": 7,
                   "y": 3
+                },
+                {
+                  "monsterId": 117,
+                  "badgeIds": [
+                    8,
+                    3
+                  ],
+                  "x": 6,
+                  "y": 3
                 }
               ],
               "children": [
                 {
-                  "id": "n67",
+                  "id": "n42",
                   "round": 3,
                   "label": "局3",
-                  "comment": "铁甲盾炮",
+                  "comment": "矿爆咒法逻辑同全二冲",
                   "placement": [
                     {
-                      "monsterId": 117,
+                      "monsterId": 113,
                       "badgeIds": [
-                        8,
-                        3
+                        3,
+                        20
                       ],
-                      "x": 6,
-                      "y": 3
+                      "x": 7,
+                      "y": 4
                     },
                     {
-                      "monsterId": 106,
+                      "monsterId": 107,
                       "badgeIds": [
-                        32,
-                        24
+                        20,
+                        1
                       ],
                       "x": 8,
                       "y": 3
@@ -1733,35 +1863,35 @@ export const FORMATION_LIBRARY: Formation[] = [
                   ],
                   "children": [
                     {
-                      "id": "n68",
+                      "id": "n43",
                       "round": 4,
                       "label": "局4",
                       "comment": "",
                       "placement": [
                         {
-                          "monsterId": 107,
+                          "monsterId": 116,
                           "badgeIds": [
-                            20,
-                            1
+                            3,
+                            5
                           ],
-                          "x": 9,
-                          "y": 2
+                          "x": 6,
+                          "y": 4
                         }
                       ],
                       "children": [
                         {
-                          "id": "n69",
+                          "id": "n44",
                           "round": 5,
                           "label": "局5",
                           "comment": "",
                           "placement": [
                             {
-                              "monsterId": 113,
+                              "monsterId": 114,
                               "badgeIds": [
                                 3,
-                                20
+                                32
                               ],
-                              "x": 8,
+                              "x": 6,
                               "y": 2
                             }
                           ],
@@ -1778,4 +1908,4 @@ export const FORMATION_LIBRARY: Formation[] = [
       ]
     }
   }
-] as Formation[];
+];

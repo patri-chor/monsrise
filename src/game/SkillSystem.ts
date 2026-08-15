@@ -271,7 +271,8 @@ export class RecoverySkill extends BaseSkill {
   readonly name = 'recovery';
 
   public onStartOfBattle(caster: PlacedMonster, battle: any): void {
-    (caster as any).skillAnimationTimeLeft = 0.8;
+    // 开局圣疗动画时长（秒）：稍长让祈祷光效更明显，可在此微调
+    (caster as any).skillAnimationTimeLeft = 1.0;
 
     const adjacentAllies = battle.getAdjacentMonsters(caster.gridX, caster.gridY)
       .filter((ally: PlacedMonster) => isP1Monster(ally) === isP1Monster(caster) && ally.id !== caster.id);

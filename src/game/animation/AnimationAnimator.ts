@@ -183,6 +183,7 @@ export function computeWeaponPose(
   isMelee: boolean,
   charTune?: { x: number; y: number },
   idlePose: 'hold' | 'aim' = 'hold',
+  useAnchorRotCenter?: boolean,
 ): AnimPose {
   let weapons: WeaponPose[] = [];
   let usingCustomClip = false;
@@ -223,9 +224,15 @@ export function computeWeaponPose(
     bodyOffsetX = bPosVal.x * k;
     bodyOffsetY = bPosVal.y * k;
     bodyLocalAngle = bRotVal;
-    // 身体旋转中心 = Lottie body 锚点相对人物中心的偏移（本地 px）
-    bodyRotCX = refX * k;
-    bodyRotCY = refY * k;
+    // 动画整体旋转中心（身体 rotation 旋转时绕该点转，asset 像素坐标）：
+    //  - 枪类（useAnchorRotCenter）沿用原逻辑 = 身体层锚点（保持原旋转中心）；
+    //  - 其余默认 = 身体几何中心（"身体中间"）；
+    //  - 剪辑 body.rotCenter 显式配置时优先于以上两者。
+    const rotCX = clip.body.rotCenter?.x ?? (useAnchorRotCenter ? anchorCX : cellCX);
+    const rotCY = clip.body.rotCenter?.y ?? (useAnchorRotCenter ? anchorCY : cellCY);
+    // 相对人物中心的偏移（本地 px）
+    bodyRotCX = (rotCX - charCX) * k;
+    bodyRotCY = (rotCY - charCY) * k;
     usingCustomClip = true;
   } else if (animState === 'attack' || animState === 'skill') {
     // 兜底动画：尚未制作 JSON 动画剪辑的怪兽（默认按自然尺寸绘制武器）
