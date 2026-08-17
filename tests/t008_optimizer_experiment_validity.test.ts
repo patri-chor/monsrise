@@ -84,6 +84,7 @@ async function runT008ValidityTests() {
 
   const proofResult = await runSequentialTreeOptimizationCycle({
     outputDir: proofDir,
+    frozenCandidatesPath: resolve('tests/fixtures/tree/four_frozen_candidates.jsonl'),
     requestedWorkers: 2,
     maxCandidates: 4,
     gamesPerCellFinal: 5,

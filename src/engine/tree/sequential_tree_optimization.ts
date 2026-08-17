@@ -6,11 +6,11 @@ import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { Formation } from '../../ai/types';
 import type { EvolFormation } from './evol_gene';
 import { formationToEvol } from './evol_gene';
-import { resolveSeedsAndPanel } from './first_four_generation';
 import {
   buildCandidateTask,
   runCandidateOptimizationPool,
   resolveCandidateWorkers,
+  resolveEvaluationPanel,
   type CandidateOptimizationTask,
   type CandidateOptimizationResult,
   type CandidatePoolRunReport,
@@ -110,12 +110,20 @@ export interface QualityDecisionPayload {
 }
 
 export function loadAuthoritativeFrozenCandidates(customPath?: string): any[] {
-  const targetPath = customPath ? resolve(customPath) : resolve('reports/new-formation-generation/first-four-cycle/generated_candidates.jsonl');
-  if (!existsSync(targetPath)) {
-    throw new Error(`Authoritative candidates file not found at: ${targetPath}`);
+  const possiblePaths = [
+    customPath ? resolve(customPath) : null,
+    resolve('tests/fixtures/tree/four_frozen_candidates.jsonl'),
+    resolve('reports/new-formation-generation/first-four-cycle/generated_candidates.jsonl'),
+  ].filter(Boolean) as string[];
+
+  for (const targetPath of possiblePaths) {
+    if (existsSync(targetPath)) {
+      const content = readFileSync(targetPath, 'utf8');
+      return content.trim().split('\n').filter(l => l.trim().length > 0).map(l => JSON.parse(l));
+    }
   }
-  const content = readFileSync(targetPath, 'utf8');
-  return content.trim().split('\n').filter(l => l.trim().length > 0).map(l => JSON.parse(l));
+
+  throw new Error(`Authoritative candidates file not found in any of: ${possiblePaths.join(', ')}`);
 }
 
 export function evaluateFormationOnPanel(
@@ -348,7 +356,6 @@ export async function runParallelIndependentEvaluation(
     };
   }
 
-  // 校验 gamesPerCellFinal
   for (const t of tasks) {
     if (t.gamesPerCellFinal < 3) {
       throw new Error(`[Configuration Error] gamesPerCellFinal (${t.gamesPerCellFinal}) is less than minimum statistically valid threshold (3).`);
@@ -427,7 +434,6 @@ export async function runParallelIndependentEvaluation(
     });
   }
 
-  // 生产环境并发执行
   const pool = options.pool ?? PersistentSimPool.getInstance();
   const simTasks: SimTaskMessage[] = [];
   let simTaskId = 0;
@@ -671,7 +677,7 @@ export async function runSequentialTreeOptimizationCycle(options: {
     rawCandidates = rawCandidates.slice(0, options.maxCandidates);
   }
 
-  const { evaluationPanel } = resolveSeedsAndPanel();
+  const evaluationPanel = resolveEvaluationPanel();
 
   const gamesPerOpp = options.gamesPerOpp ?? 1;
   const gamesPerCellFinal = options.gamesPerCellFinal ?? 5;
@@ -822,7 +828,7 @@ export async function runSequentialTreeOptimizationCycle(options: {
   writeFileSync(join(outputDir, 'quality_decision.json'), JSON.stringify(qualityDecision, null, 2), 'utf8');
 
   // 5. 写入 summary.md
-  let summaryMd = `# Candidate Optimizer Experiment Validity Summary (T008)\n\n`;
+  let summaryMd = `# Candidate Optimizer Experiment Validity Summary (T008/T009)\n\n`;
   summaryMd += `## 1. Quality Decision Overview\n`;
   summaryMd += `- **Decision**: \`${qualityDecision.decision}\`\n`;
   summaryMd += `- **Candidates Processed**: **${evaluations.length}**\n`;

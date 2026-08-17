@@ -4,11 +4,9 @@ import { resolve, join } from 'node:path';
 import os from 'node:os';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { Formation } from '../../ai/types';
-import { resolveSeedsAndPanel } from './first_four_generation';
 import {
   optimizeFormation,
   loadBundle,
-  type OptimizeFormationOptions,
   type BranchInductionOutcome,
 } from './branch_induct';
 import { PersistentSimPool } from './persistent_pool';
@@ -75,6 +73,15 @@ export interface CandidatePoolRunReport {
     baseValidationSeed: number;
     evaluationPanel: string[];
   };
+}
+
+export function resolveEvaluationPanel(): Formation[] {
+  const firstSeven = FORMATION_LIBRARY.slice(0, 7);
+  const goldenMonkey = FORMATION_LIBRARY.find(f => f.name === '壕炸金猴');
+  if (!goldenMonkey) {
+    throw new Error(`[Panel Resolution Error] Eighth opponent named '壕炸金猴' not found in FORMATION_LIBRARY.`);
+  }
+  return [...firstSeven, goldenMonkey];
 }
 
 export function resolveCandidateWorkers(requested?: number, candidateCount: number = 24): {
