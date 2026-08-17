@@ -177,6 +177,7 @@ export class PersistentSimPool {
             candidateIdx: cIdx,
             formationA: cand,
             opponentNameOrId: opp.id ?? opp.name,
+            opponentFormation: opp,
             side,
             seed: seedBase,
             games,
@@ -191,10 +192,10 @@ export class PersistentSimPool {
     const stats: Array<{ win: number; draw: number; loss: number }> = candidates.map(() => ({ win: 0, draw: 0, loss: 0 }));
 
     for (const r of results) {
-      if (r.candidateIdx !== undefined) {
-        stats[r.candidateIdx].win += r.w;
-        stats[r.candidateIdx].draw += r.d;
-        stats[r.candidateIdx].loss += r.l;
+      if (r && r.candidateIdx !== undefined && stats[r.candidateIdx]) {
+        stats[r.candidateIdx].win += r.w ?? 0;
+        stats[r.candidateIdx].draw += r.d ?? 0;
+        stats[r.candidateIdx].loss += r.l ?? 0;
       }
     }
 
@@ -221,6 +222,7 @@ export class PersistentSimPool {
             taskId: taskId++,
             formationA: candidate,
             opponentNameOrId: opp.id ?? opp.name,
+            opponentFormation: opp,
             side,
             seed: seedBase + g,
             games: 1,

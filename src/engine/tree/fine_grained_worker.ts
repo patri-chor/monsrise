@@ -21,7 +21,8 @@ export interface SimTaskMessage {
   candidateFp?: string;
   formationA: EvolFormation | Formation;
   isNativeA?: boolean;
-  opponentNameOrId: string;
+  opponentNameOrId?: string;
+  opponentFormation?: Formation;
   side: 1 | 2;
   seed: number;
   games: number;
@@ -35,6 +36,7 @@ export interface SimResultMessage {
   w: number;
   d: number;
   l: number;
+  error?: string;
   traces?: Array<{
     seed: number;
     side: 1 | 2;
@@ -66,57 +68,71 @@ for (const f of FORMATION_LIBRARY) {
 }
 
 function executeTask(task: SimTaskMessage): SimResultMessage {
-  const opp = oppMap.get(task.opponentNameOrId) ?? FORMATION_LIBRARY.find(f => f.name === task.opponentNameOrId || f.id === task.opponentNameOrId);
-  if (!opp) {
-    throw new Error(`Opponent not found: ${task.opponentNameOrId}`);
-  }
+  try {
+    const opp = task.opponentFormation
+      ?? (task.opponentNameOrId ? (oppMap.get(task.opponentNameOrId) ?? FORMATION_LIBRARY.find(f => f.name === task.opponentNameOrId || f.id === task.opponentNameOrId)) : undefined);
 
-  const specA: SideSpec = task.isNativeA
-    ? { kind: 'native', f: task.formationA as Formation }
-    : { kind: 'evol', f: task.formationA as EvolFormation };
-  const specB: SideSpec = { kind: 'native', f: opp };
-
-  let w = 0, d = 0, l = 0;
-  const traces: SimResultMessage['traces'] = task.collectObservations ? [] : undefined;
-
-  for (let i = 0; i < task.games; i++) {
-    const seed = task.seed + i;
-    const decisions = new Map<number, BranchDecision>();
-
-    const r = playSpecVsSpec(BundleAI, specA, specB, task.side, seed, (dec) => {
-      decisions.set(dec.round, dec);
-    });
-
-    w += r.w;
-    d += r.d;
-    l += r.l;
-
-    if (task.collectObservations && traces) {
-      const obsList: Array<[number, RoundObservation]> = (r.observations ?? []).map(o => [o.round, o]);
-      const decList: Array<[number, BranchDecision]> = Array.from(decisions.entries());
-      traces.push({
-        seed,
-        side: task.side,
-        oppId: opp.id ?? opp.name,
-        roundScores: r.roundScores,
-        observations: obsList,
-        decisions: decList,
-        w: r.w,
-        d: r.d,
-        l: r.l,
-      });
+    if (!opp) {
+      throw new Error(`Opponent not found: ${task.opponentNameOrId ?? 'unknown'}`);
     }
-  }
 
-  return {
-    taskId: task.taskId,
-    candidateIdx: task.candidateIdx,
-    candidateFp: task.candidateFp,
-    w,
-    d,
-    l,
-    traces,
-  };
+    const specA: SideSpec = task.isNativeA
+      ? { kind: 'native', f: task.formationA as Formation }
+      : { kind: 'evol', f: task.formationA as EvolFormation };
+    const specB: SideSpec = { kind: 'native', f: opp };
+
+    let w = 0, d = 0, l = 0;
+    const traces: SimResultMessage['traces'] = task.collectObservations ? [] : undefined;
+
+    for (let i = 0; i < task.games; i++) {
+      const seed = task.seed + i;
+      const decisions = new Map<number, BranchDecision>();
+
+      const r = playSpecVsSpec(BundleAI, specA, specB, task.side, seed, (dec) => {
+        decisions.set(dec.round, dec);
+      });
+
+      w += r.w;
+      d += r.d;
+      l += r.l;
+
+      if (task.collectObservations && traces) {
+        const obsList: Array<[number, RoundObservation]> = (r.observations ?? []).map(o => [o.round, o]);
+        const decList: Array<[number, BranchDecision]> = Array.from(decisions.entries());
+        traces.push({
+          seed,
+          side: task.side,
+          oppId: opp.id ?? opp.name,
+          roundScores: r.roundScores ?? [],
+          observations: obsList,
+          decisions: decList,
+          w: r.w,
+          d: r.d,
+          l: r.l,
+        });
+      }
+    }
+
+    return {
+      taskId: task.taskId,
+      candidateIdx: task.candidateIdx,
+      candidateFp: task.candidateFp,
+      w,
+      d,
+      l,
+      traces,
+    };
+  } catch (err: any) {
+    return {
+      taskId: task.taskId,
+      candidateIdx: task.candidateIdx,
+      candidateFp: task.candidateFp,
+      w: 0,
+      d: 0,
+      l: task.games,
+      error: err?.message || String(err),
+    };
+  }
 }
 
 if (parentPort) {

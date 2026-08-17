@@ -1,0 +1,34 @@
+{
+  "candidateId": "cand_s1_1_2a",
+  "seedIndex": 0,
+  "seedName": "泉水剑",
+  "opponentCount": 8,
+  "gamesPerOpp": 1,
+  "searchSeedBase": 5500,
+  "validationSeedBase": 15500,
+  "durationMs": 35958,
+  "status": "IMPROVED",
+  "improved": true,
+  "forkRound": 1,
+  "maskLabel": "突突",
+  "beforeMetrics": {
+    "win": 0,
+    "draw": 0,
+    "loss": 2,
+    "total": 2,
+    "trainingScore": 0,
+    "pureWinRate": 0,
+    "undefeatedRate": 0
+  },
+  "afterMetrics": {
+    "win": 2,
+    "draw": 0,
+    "loss": 0,
+    "total": 2,
+    "trainingScore": 1,
+    "pureWinRate": 1,
+    "undefeatedRate": 1
+  },
+  "historicalDurationMs": 38000,
+  "measuredSpeedupMultiplier": 1.06
+}

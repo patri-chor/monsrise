@@ -11,6 +11,7 @@ import {
   loadBundle,
   type OptimizeFormationOptions,
 } from './branch_induct';
+import { PersistentSimPool } from './persistent_pool';
 
 export const SEQUENTIAL_TREE_OPT_DIR = resolve('reports/new-formation-generation/sequential-tree-optimization');
 
@@ -161,6 +162,7 @@ export function buildCandidateTask(
 export async function executeCandidateOptimizationDirect(
   task: CandidateOptimizationTask,
   BundleAI?: any,
+  pool?: PersistentSimPool,
 ): Promise<CandidateOptimizationResult> {
   const startedAt = new Date().toISOString();
   const startTime = Date.now();
@@ -171,6 +173,7 @@ export async function executeCandidateOptimizationDirect(
       opponents: task.opponents,
       searchSeedBase: task.searchSeedBase,
       validationSeedBase: task.validationSeedBase,
+      pool: pool ?? PersistentSimPool.getInstance(),
     });
 
     const completedAt = new Date().toISOString();
