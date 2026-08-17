@@ -124,8 +124,8 @@ function findTasksInDir(dir, domain = 'root') {
     const reportFile = files.find(f => f.startsWith(taskId) && f.endsWith('.report.md'));
     if (reportFile) {
       const reportContent = readFileSync(join(dir, reportFile), 'utf8');
-      const isDone = /^STATUS:\s*DONE/im.test(reportContent.slice(0, 200));
-      if (isDone) continue;
+      const isSubmitted = /^STATUS:\s*(DONE|PARTIAL)/im.test(reportContent.slice(0, 200));
+      if (isSubmitted) continue;
     }
 
     const relTaskPath = domain === 'root' ? `TASKS/${file}` : `TASKS/${domain}/${file}`;
