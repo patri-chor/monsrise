@@ -1,0 +1,24 @@
+{
+  "reworkCycleType": "parallel_independent_final_evaluation_rework",
+  "reusedOptimizationResultsHash": "cf63c57f2506202173b03eeef26fa48b2bb45cdaafe503b0423061ccb57d240d",
+  "candidateCount": 24,
+  "concurrencyEvidence": {
+    "requestedEvaluationWorkers": 16,
+    "effectiveEvaluationWorkers": 16,
+    "availableLogicalCpus": 16,
+    "peakActiveEvaluationWorkers": 16,
+    "totalEvaluationDurationMs": 184631
+  },
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "baseFinalEvalSeed": 35000,
+  "gamesPerCellFinal": 1
+}

@@ -129,6 +129,19 @@ export class MatchSimulationCache {
     this.cache.set(key, trace);
     return trace;
   }
+
+  put(
+    candidate: EvolFormation,
+    target: Formation,
+    aSide: 1 | 2,
+    seed: number,
+    trace: MatchTrace,
+  ): void {
+    const treeFp = computeTreeFingerprint(candidate);
+    const oppKey = target.id ?? target.name;
+    const key = `${treeFp}::${oppKey}::${aSide}::${seed}`;
+    this.cache.set(key, trace);
+  }
 }
 
 export interface Sample {
@@ -527,14 +540,12 @@ export async function optimizeFormation(
 
   console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${panelOpponents.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条，SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
 
-  // 1. 批量采集全对局轨迹 (一次性模拟各对手各 side 的 gamesPerOpp 局)
-  const initialTraces: MatchTrace[] = [];
-  for (const opp of panelOpponents) {
-    for (const side of [1, 2] as (1 | 2)[]) {
-      for (let i = 0; i < gamesPerOpp; i++) {
-        const trace = cache.getOrSimulate(BundleAI, candidate, opp, side, searchSeedBase + i);
-        initialTraces.push(trace);
-      }
+  // 1. 批量并发采集全对局轨迹 (一次性通过 Worker Pool 多线程并发执行)
+  const initialTraces = await pool.collectInitialTracesParallel(candidate, panelOpponents, gamesPerOpp, searchSeedBase);
+  for (const tr of initialTraces) {
+    const opp = panelOpponents.find(o => (o.id ?? o.name) === tr.oppId);
+    if (opp) {
+      cache.put(candidate, opp, tr.side, tr.seed, tr);
     }
   }
 
@@ -659,10 +670,15 @@ export async function optimizeFormation(
   const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();
 
-  // 7. 独立验证集评估 (Validation Seed Base)
+  // 7. 独立验证集评估 (Validation Seed Base 并发执行)
   console.log(`\n=== 独立验证集整局对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
-  const beforeVal = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
-  const afterVal = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
+  const [beforeVal, afterVal] = await pool.evalCandidateBatchOnMatchedParallel(
+    [candidate, optimized],
+    bestOverall.split.mask,
+    effectiveOpps,
+    gamesPerOpp,
+    validationSeedBase,
+  );
   console.log(`  [验证集] 优化前 ${formatMatchMetrics(beforeVal)} → 优化后 ${formatMatchMetrics(afterVal)}`);
 
   for (const opp of effectiveOpps) {
