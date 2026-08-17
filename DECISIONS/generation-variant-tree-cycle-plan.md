@@ -57,7 +57,7 @@ Acceptance evidence:
 
 ### Phase C - Candidate-Level Parallel Tree Optimization and Independent Validation
 
-Task: `TASKS/generation/T018-candidate-level-tree-optimization-parallelism.md`, then a production optimization successor after T016, T017, and T018 are accepted.
+Task: `TASKS/generation/T018-candidate-level-tree-optimization-parallelism.md`, then `TASKS/generation/T019-sequential-frozen-candidate-tree-optimization.md` after T016, T017, and T018 are accepted. T019 is one complete implementation-and-production block, not a feasibility follow-up.
 
 Input: root frozen output from T017 only.
 
@@ -95,8 +95,8 @@ Decision branches:
 - [ ] T016 fixed-panel consumer API: OPEN.
 - [ ] T017 sequential per-seed candidate production: OPEN.
 - [ ] T018 candidate-level parallel tree optimization runner: OPEN.
-- [ ] Phase C production optimization successor: blocked until T016, T017, and T018 acceptance.
-- [ ] Phase D quality decision: pending Phase C.
+- [ ] T019 complete candidate-level optimization, independent final evaluation, and quality decision: OPEN.
+- [ ] Phase D quality decision: included in T019 and pending its report.
 
 ## Report Handling
 
