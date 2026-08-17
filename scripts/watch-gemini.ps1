@@ -12,12 +12,27 @@
 # ASCII-only source (PowerShell 5.1 reads BOM-less scripts as ANSI).
 
 $ErrorActionPreference = "Continue"
+
+# ---- single-instance guard via a named mutex (robust vs command-line matching) ----
+try {
+    $mutex = New-Object System.Threading.Mutex($false, "dsh-watch-gemini")
+    if (-not $mutex.WaitOne(0)) {
+        Write-Host "watch-gemini already running; exiting."
+        exit 0
+    }
+} catch {
+    # mutex unavailable (rare) - proceed without the guard
+}
+
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $LogFile = Join-Path $RepoRoot "TASKS\watch.log"
 $PendingFile = Join-Path $RepoRoot "TASKS\pending.json"
 $StateFile = Join-Path $env:TEMP "dsh-git-bus-state.json"
 $IntervalSeconds = 30
 $Remote = "origin"
+$Branch = (& git rev-parse --abbrev-ref HEAD 2>$null).Trim()
+if ($Branch -eq "" -or $Branch -eq "HEAD") { $Branch = "main" }
+$RemoteRef = "$Remote/$Branch"
 
 function Write-Log([string]$msg) {
     $line = "{0} {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $msg
@@ -50,10 +65,11 @@ function Write-State($state) {
     $state | ConvertTo-Json -Depth 4 | Set-Content -Path $StateFile -Encoding UTF8
 }
 
-function Invoke-Git([string]$args) {
+function Invoke-Git([string]$cmd) {
     Push-Location $RepoRoot
     try {
-        $out = & git $args 2>&1
+        $argList = @($cmd -split ' ')
+        $out = & git @argList 2>&1
         return @{ code = $LASTEXITCODE; out = ($out -join "`n") }
     } finally { Pop-Location }
 }
@@ -70,8 +86,8 @@ function Invoke-Check {
     if ($fetch.code -ne 0) { Write-Log "fetch failed: $($fetch.out)"; return }
 
     # files changed on remote vs local under TASKS/
-    $diff = Invoke-Git "diff --name-only HEAD $Remote/HEAD -- TASKS/"
-    if ($diff.code -ne 0) { Write-Log "diff failed"; return }
+    $diff = Invoke-Git "diff --name-only HEAD $RemoteRef -- TASKS/"
+    if ($diff.code -ne 0) { Write-Log "diff failed: $($diff.out)"; return }
 
     $changed = @($diff.out -split "`n" | Where-Object { $_.Trim() -ne "" })
     if ($changed.Count -eq 0) { return }
@@ -87,7 +103,7 @@ function Invoke-Check {
     if (-not (Test-WorkTreeClean)) {
         Write-Log "local worktree dirty, skipping pull this round"
     } else {
-        $pull = Invoke-Git "pull --rebase $Remote HEAD"
+        $pull = Invoke-Git "pull --rebase $Remote $Branch"
         if ($pull.code -ne 0) { Write-Log "pull failed: $($pull.out)" }
     }
 
@@ -99,7 +115,7 @@ function Invoke-Check {
             $entries += @{ file = $f; task = $task; at = $now }
             Write-Log "NEW REPORT: $f"
         }
-        Show-Notification "Gemini 已完成任务" ("新报告: " + ($fresh -join ", "))
+        Show-Notification "Gemini task done" ("New report(s): " + ($fresh -join ", "))
         # append to pending.json (merge with existing)
         $pending = @()
         if (Test-Path $PendingFile) {
