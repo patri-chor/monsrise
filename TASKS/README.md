@@ -51,7 +51,7 @@ You are the GENERATION execution agent. DOMAIN=generation. Before every task: gi
 
 ## Watcher
 
-`scripts/watch-gemini.ps1` fetches remote reports, queues remote snapshots in `TASKS/inbox/`, and writes `TASKS/pending.json`. Pending entries include their domain. It never rebases a dirty main worktree. A closed task is not queued again.
+`scripts/watch-gemini.ps1` watches local `TASKS/tree/` and `TASKS/generation/` report files, then writes domain-qualified records to `TASKS/pending.json`. It does not fetch, merge, push, or use remote snapshots. File-system events enqueue reports immediately; a 60-second local recovery scan only covers missed Windows events. A closed task is not queued again.
 
 ## Decision Agent Rules
 
