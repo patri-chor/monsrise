@@ -28,8 +28,8 @@ import type { Formation } from '../../ai/types';
 import type { EvolFormation, FeatureMask, EvolNode } from './evol_gene';
 import { formationToEvol, recognizeArchetype, maskToLabel, summarizeEvolFormation, matchMask, isEmptyMask, walkEvolNodes } from './evol_gene';
 import { addBranch, replaceMonster, moveWithinZoneAtNode, isPositionIrrelevant, roleOf, getLastValidationError } from './tree_ops';
-import { playSpecVsSpec, type SideSpec } from './arena';
-import { ExperienceBank, replaceKey, moveKey } from './search_experience';
+import { playSpecVsSpec, type SideSpec, type BranchDecision } from './arena';
+import { ExperienceBank, replaceKey, moveKey, computeTreeFingerprint } from './search_experience';
 
 const MONSTER_NAME: Record<number, string> = {
   101: '肃清哥', 102: '大祭司', 103: '学徒', 104: '散弹', 105: '祈祷', 106: '冲锋', 107: '咒法',
@@ -70,45 +70,95 @@ function infoGain(samples: { win: boolean; has: boolean }[]): number {
   return hAll - hSplit;
 }
 
-interface Sample {
+export interface MatchTrace {
+  seed: number;
+  side: 1 | 2;
+  oppId: string;
+  roundScores: number[];
+  decisions: Map<number, BranchDecision>;
+  w: number;
+  d: number;
+  l: number;
+}
+
+export class MatchSimulationCache {
+  private cache = new Map<string, MatchTrace>();
+  public simCount = 0;
+
+  getOrSimulate(
+    BundleAI: any,
+    candidate: EvolFormation,
+    target: Formation,
+    aSide: 1 | 2,
+    seed: number,
+  ): MatchTrace {
+    const treeFp = computeTreeFingerprint(candidate);
+    const oppKey = target.id ?? target.name;
+    const key = `${treeFp}::${oppKey}::${aSide}::${seed}`;
+    const hit = this.cache.get(key);
+    if (hit) return hit;
+
+    this.simCount++;
+    const specA: SideSpec = { kind: 'evol', f: candidate };
+    const specB: SideSpec = { kind: 'native', f: target };
+    const decisions = new Map<number, BranchDecision>();
+
+    const r = playSpecVsSpec(BundleAI, specA, specB, aSide, seed, (d) => {
+      decisions.set(d.round, d);
+    });
+
+    const trace: MatchTrace = {
+      seed,
+      side: aSide,
+      oppId: oppKey,
+      roundScores: r.roundScores,
+      decisions,
+      w: r.w,
+      d: r.d,
+      l: r.l,
+    };
+    this.cache.set(key, trace);
+    return trace;
+  }
+}
+
+export interface Sample {
   win: boolean;
   side: 1 | 2;
   main: string | null;
   subs: string[];
   keys: string[];
+  oppName: string;
+  round: number;
 }
 
-/** 收集某对手某侧的样本：每局记录 (该分是否赢, 对手标签) */
-function collectSamples(
-  BundleAI: any,
-  candidate: EvolFormation,
-  target: any,
-  aSide: 1 | 2,
-  focusRound: number, // 关注的分（1-5）
-  games: number,
-): Sample[] {
-  const specA: SideSpec = { kind: 'evol', f: candidate };
-  const specB: SideSpec = { kind: 'native', f: target };
-  // 对手标签（对手卡组固定，开局即知）
-  const targetIds = target.team.filter((s: any) => s.monsterId > 0).map((s: any) => s.monsterId);
-  const targetBadges = target.team.flatMap((s: any) => s.badgeIds);
-  const rec = recognizeArchetype({ handIds: new Set(targetIds.slice(0, 4)), handBadges: new Set(targetBadges), boardIds: new Set(targetIds) });
+/** 从实际对局轨迹中提取指定回合的样本（严格基于该回合实际观察到的可见特征） */
+export function sampleFromTrace(trace: MatchTrace, focusRound: number, oppName: string): Sample | null {
+  const score = trace.roundScores[focusRound - 1];
+  if (score === undefined) return null; // 对局提前结束（该分未打），不计入样本
 
-  const samples: Sample[] = [];
-  for (let i = 0; i < games; i++) {
-    const r = playSpecVsSpec(BundleAI, specA, specB, aSide, 2000 + i);
-    const score = r.roundScores[focusRound - 1];
-    if (score === undefined) continue; // 对局提前结束（该分未打），不计入样本
-    // 注意：score=0 是平局，平局已"不输"，算作 win（分支归纳目标=让输的分不输）
-    samples.push({
-      win: score >= 0,
-      side: aSide,
-      main: rec.main,
-      subs: rec.subs,
-      keys: rec.keys,
-    });
+  const decision = trace.decisions.get(focusRound);
+  if (!decision) {
+    // 关键：若该回合没有 BranchDecision，不计入样本，坚决不回退到全卡组特征
+    return null;
   }
-  return samples;
+
+  // 严格使用运行时可见特征
+  const rec = recognizeArchetype({
+    handIds: new Set(decision.handIds),
+    handBadges: new Set(decision.handBadges),
+    boardIds: new Set(decision.boardIds),
+  });
+
+  return {
+    win: score >= 0,
+    side: trace.side,
+    main: rec.main,
+    subs: rec.subs,
+    keys: rec.keys,
+    oppName,
+    round: focusRound,
+  };
 }
 
 /** 对所有候选标签算信息增益，返回最优分裂 */
@@ -136,10 +186,7 @@ function bestSplit(samples: Sample[]): { kind: string; value: string; mask: Feat
     candidates.push({ kind: 'key', value: k, has: s => s.keys.includes(k), mask: { side: null, main: null, subs: [], keys: [k as any] } });
   }
 
-  // === 二元组合候选（关键：主标签太粗时，需 main+sub / main+key 细分）===
-  // 例：全二冲(fullrush) vs 经典救星(fullrush+shield) vs 梯子塞雷(fullrush+shield)
-  //     单 main=fullrush 分不开，但 main=fullrush+sub=shield 能区分。
-  // 数量受控：只在样本实际出现的标签内组合，且每类上限少量。
+  // 二元组合候选
   for (const m of mains.slice(0, 3)) {
     for (const sb of subs.slice(0, 3)) {
       candidates.push({
@@ -176,15 +223,32 @@ function bestSplit(samples: Sample[]): { kind: string; value: string; mask: Feat
   return best && best.ig > 0 ? best : null;
 }
 
-/** 判断某对手阵型是否命中 mask。
- *  side 分支（mask.side != null）：条件只看候选侧，与对手标签无关 → 所有对手都命中。
- *  标签分支（mask.side == null）：按对手三层标签匹配。 */
-function oppMatches(opp: Formation, mask: FeatureMask): boolean {
+/** 判断某对手是否静态预匹配 mask（作为快速预筛选） */
+function oppMatchesStatic(opp: Formation, mask: FeatureMask): boolean {
   if (mask.side !== null) return true;
   const ids = opp.team.filter(s => s.monsterId > 0).map(s => s.monsterId);
   const badges = opp.team.flatMap(s => s.badgeIds);
   const rec = recognizeArchetype({ handIds: new Set(ids.slice(0, 4)), handBadges: new Set(badges), boardIds: new Set(ids) });
   return matchMask(mask, rec, 1);
+}
+
+/** 判断对手在实际采样轨迹中是否出现匹配 mask 的决策 */
+function oppMatchesObserved(oppName: string, mask: FeatureMask, allTraces: MatchTrace[]): boolean {
+  if (mask.side !== null) return true;
+  const oppTraces = allTraces.filter(t => t.oppId === oppName);
+  for (const trace of oppTraces) {
+    for (const decision of trace.decisions.values()) {
+      const rec = recognizeArchetype({
+        handIds: new Set(decision.handIds),
+        handBadges: new Set(decision.handBadges),
+        boardIds: new Set(decision.boardIds),
+      });
+      if (matchMask(mask, rec, trace.side)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /** 两个 mask 是否完全相同（用于定位刚建的分支节点） */
@@ -194,7 +258,7 @@ function maskEqual(a: FeatureMask, b: FeatureMask): boolean {
     && a.keys.length === b.keys.length && a.keys.every(k => b.keys.includes(k));
 }
 
-/** 主链 R1..(forkRound-1) 已上场怪集合（这些怪分支子树不能再放，placeMonster 会拒绝重复） */
+/** 主链 R1..(forkRound-1) 已上场怪集合 */
 function preUsedMonsters(f: EvolFormation, forkRound: number): Set<number> {
   const used = new Set<number>();
   let cur: EvolNode | null = f.root;
@@ -205,7 +269,7 @@ function preUsedMonsters(f: EvolFormation, forkRound: number): Set<number> {
   return used;
 }
 
-/** 分支子树内除 (exceptNodeId, exceptMonsterId) 外已占用的怪集合（防跨回合重复） */
+/** 分支子树内除 (exceptNodeId, exceptMonsterId) 外已占用的怪集合 */
 function branchUsedMonsters(branchNodes: EvolNode[], exceptNodeId: string, exceptMonsterId: number): Set<number> {
   const used = new Set<number>();
   for (const n of branchNodes) {
@@ -217,54 +281,54 @@ function branchUsedMonsters(branchNodes: EvolNode[], exceptNodeId: string, excep
   return used;
 }
 
-/** 整局五局三胜结果（分叉跨多回合后，评估须看整局而非单回合） */
-function collectMatch(BundleAI: any, f: EvolFormation, opp: Formation, aSide: 1 | 2, games: number): { win: number; draw: number; loss: number } {
-  const specA: SideSpec = { kind: 'evol', f };
-  const specB: SideSpec = { kind: 'native', f: opp };
-  let win = 0, draw = 0, loss = 0;
-  for (let i = 0; i < games; i++) {
-    const r = playSpecVsSpec(BundleAI, specA, specB, aSide, 2000 + i);
-    win += r.w; draw += r.d; loss += r.l;
-  }
-  return { win, draw, loss };
-}
-
-/** 评估个体：对「命中 mask 的对手」统计整局不败率（胜+平）/总。
- *  side 分支只在对应侧评估；标签分支在先手+后手两侧都评估（避免单侧优化伤害另一侧）。 */
-function evalMatchOnMatched(BundleAI: any, f: EvolFormation, mask: FeatureMask, games: number): { win: number; draw: number; loss: number; undefeated: number } {
+/** 评估个体：对「命中 mask 的对手」统计整局不败率，利用缓存复用 */
+function evalMatchOnMatched(
+  BundleAI: any,
+  f: EvolFormation,
+  mask: FeatureMask,
+  matchedOpps: Formation[],
+  games: number,
+  cache: MatchSimulationCache,
+  seedBase: number,
+): { win: number; draw: number; loss: number; undefeated: number } {
   let win = 0, draw = 0, loss = 0;
   const sides: (1 | 2)[] = mask.side !== null ? [mask.side] : [1, 2];
-  for (const opp of FORMATION_LIBRARY) {
-    if (!oppMatches(opp, mask)) continue;
+  for (const opp of matchedOpps) {
     for (const side of sides) {
-      const m = collectMatch(BundleAI, f, opp, side, games);
-      win += m.win; draw += m.draw; loss += m.loss;
+      for (let i = 0; i < games; i++) {
+        const trace = cache.getOrSimulate(BundleAI, f, opp, side, seedBase + i);
+        win += trace.w;
+        draw += trace.d;
+        loss += trace.l;
+      }
     }
   }
   const total = win + draw + loss;
   return { win, draw, loss, undefeated: total ? (win + draw) / total : 0 };
 }
 
-/**
- * 优化新分支内部：针对命中 mask 的对手，对新分支子树（condition===mask 的根节点
- * 及其全部后代）做单替换穷举 + 位置搜索，选使整局不败率最优的走法。
- * 评估用整局不败率——分叉覆盖多个回合（崩盘起点→第5局），单回合指标会误导。
- *
- * 搜索数量限制（用户定案"往前推一个回合但要限制搜索数量"）：
- *   1. 可用怪池 = 卡组 - 前置主链已上场怪（placeMonster 拒绝重复，放不进的是无效替换）
- *   2. 子树内去重：候选怪不能已在分支子树其他槽（跨回合重复同样被拒）
- *   3. 单替换穷举（不做双替换）
- */
-function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMask, forkRound: number, games: number, exp: ExperienceBank, formationId: string): EvolFormation {
+/** 优化新分支内部走法 */
+function optimizeBranch(
+  BundleAI: any,
+  branched: EvolFormation,
+  mask: FeatureMask,
+  forkRound: number,
+  matchedOpps: Formation[],
+  games: number,
+  exp: ExperienceBank,
+  formationId: string,
+  cache: MatchSimulationCache,
+  searchSeedBase: number,
+): EvolFormation {
   const teamIds = branched.team.filter(s => s.monsterId > 0).map(s => s.monsterId);
   const preUsed = preUsedMonsters(branched, forkRound);
   let current = branched;
-  let curEval = evalMatchOnMatched(BundleAI, current, mask, games);
+  let curEval = evalMatchOnMatched(BundleAI, current, mask, matchedOpps, games, cache, searchSeedBase);
   let skippedByExp = 0, newlyInvalid = 0;
   console.log(`  新分支初始（命中对手整局）：${curEval.win}胜/${curEval.draw}平/${curEval.loss}负 不败率 ${(curEval.undefeated * 100).toFixed(0)}%`);
 
   for (let iter = 0; iter < 10; iter++) {
-    // 定位分支子树：condition===mask 的根节点 + 其全部后代
+    const currentFp = computeTreeFingerprint(current);
     const roots = walkEvolNodes(current.root).filter(n => !isEmptyMask(n.condition) && maskEqual(n.condition, mask));
     const branchNodes: EvolNode[] = [];
     for (const r of roots) branchNodes.push(...walkEvolNodes(r));
@@ -280,14 +344,14 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
     let evaluated = 0;
 
     for (const node of branchNodes) {
-      // P1 单替换穷举（可用怪池 = 卡组 - 前置已用怪 - 子树其他槽已用怪）
+      // P1 单替换穷举
       for (const slot of node.placements) {
         const subtreeUsed = branchUsedMonsters(branchNodes, node.id, slot.monsterId);
         for (const toMid of teamIds) {
           if (toMid === slot.monsterId) continue;
-          if (preUsed.has(toMid)) continue;         // 前置主链已上场，替换后放不进去
-          if (subtreeUsed.has(toMid)) continue;      // 子树内重复
-          const key = replaceKey(formationId, node.id, slot.monsterId, toMid);
+          if (preUsed.has(toMid)) continue;
+          if (subtreeUsed.has(toMid)) continue;
+          const key = replaceKey(formationId, node.id, slot.monsterId, toMid, currentFp);
           if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
           const child = replaceMonster(current, node.id, slot.monsterId, toMid);
           if (!child) {
@@ -297,7 +361,7 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
             continue;
           }
           evaluated++;
-          const e = evalMatchOnMatched(BundleAI, child, mask, games);
+          const e = evalMatchOnMatched(BundleAI, child, mask, matchedOpps, games, cache, searchSeedBase);
           if (e.undefeated > bestRate) {
             bestRate = e.undefeated;
             bestChild = child;
@@ -305,7 +369,7 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
           }
         }
       }
-      // P2 位置搜索（普通怪，规则内换格；特殊怪位置无效跳过）
+      // P2 位置搜索
       for (const slot of node.placements) {
         if (isPositionIrrelevant(slot.monsterId)) continue;
         const role = roleOf(slot.monsterId);
@@ -313,7 +377,7 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
         const cols = isBackline ? [8, 9, 10] : [6, 7, 8];
         for (const x of cols) {
           for (let y = 0; y < 5; y++) {
-            const key = moveKey(formationId, node.id, slot.monsterId, x, y);
+            const key = moveKey(formationId, node.id, slot.monsterId, x, y, currentFp);
             if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
             const child = moveWithinZoneAtNode(current, node.id, slot.monsterId, x, y);
             if (!child) {
@@ -323,7 +387,7 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
               continue;
             }
             evaluated++;
-            const e = evalMatchOnMatched(BundleAI, child, mask, games);
+            const e = evalMatchOnMatched(BundleAI, child, mask, matchedOpps, games, cache, searchSeedBase);
             if (e.undefeated > bestRate) {
               bestRate = e.undefeated;
               bestChild = child;
@@ -337,7 +401,7 @@ function optimizeBranch(BundleAI: any, branched: EvolFormation, mask: FeatureMas
     console.log(`  第${iter + 1}轮：评估 ${evaluated} 个候选（跳过经验库无效 ${skippedByExp} 个），最优 ${(bestRate * 100).toFixed(0)}%`);
     if (bestChild && bestRate > curEval.undefeated) {
       current = bestChild;
-      curEval = evalMatchOnMatched(BundleAI, current, mask, games);
+      curEval = evalMatchOnMatched(BundleAI, current, mask, matchedOpps, games, cache, searchSeedBase);
       console.log(`    [采纳] ${bestDesc} → ${(curEval.undefeated * 100).toFixed(0)}%（${curEval.win}胜/${curEval.draw}平/${curEval.loss}负）`);
     } else {
       console.log(`    [无改进] 最优候选 ${(bestRate * 100).toFixed(0)}% ≤ 当前 ${(curEval.undefeated * 100).toFixed(0)}%，停止。`);
@@ -359,7 +423,6 @@ function main(): void {
   const out = optimizeFormation(BundleAI, src, gamesPerOpp);
   if (!out) return;
 
-  // 保存优化结果（供人工检查 / deploy_evolved 部署验证）
   const outPath = resolve('reports/branch_induct_result.json');
   const json = {
     type: 'branch_induct_result',
@@ -369,44 +432,76 @@ function main(): void {
     maskLabel: out.maskLabel,
     before: out.before,
     after: out.after,
+    searchValidation: out.searchValidation,
     formation: { name: out.optimized.name, archetype: out.optimized.archetype, team: out.optimized.team, tree: out.optimized.root },
   };
   writeFileSync(outPath, JSON.stringify(json, null, 2));
   console.log(`\n优化结果已保存 → ${outPath}`);
 }
 
+export interface OptimizeFormationResult {
+  optimized: EvolFormation;
+  improved: boolean;
+  forkRound: number;
+  mask: FeatureMask;
+  maskLabel: string;
+  before: { win: number; draw: number; loss: number; undefeated: number };
+  after: { win: number; draw: number; loss: number; undefeated: number };
+  searchValidation?: {
+    searchSeedBase: number;
+    validationSeedBase: number;
+    gamesPerOpp: number;
+    searchBefore: { win: number; draw: number; loss: number; undefeated: number };
+    searchAfter: { win: number; draw: number; loss: number; undefeated: number };
+    matchedOpponents: string[];
+    simCount: number;
+  };
+}
+
 /**
- * 自主分支优化（可复用）：分析 → 诊断崩盘 → 建分支 → 优化新分支 → 整局重评。
- * 返回 { optimized, improved, forkRound, mask, maskLabel, before, after }；
- * 若无法分裂或优化后整局不败率未改善，返回 null（调用方保持原阵型）。
+ * 自主分支优化（可复用）：分析 → 诊断崩盘 → 建分支 → 优化新分支 → 独立验证集评估。
  */
 export function optimizeFormation(
   BundleAI: any,
   src: Formation,
   gamesPerOpp: number,
-): { optimized: EvolFormation; improved: boolean; forkRound: number; mask: FeatureMask; maskLabel: string; before: { win: number; draw: number; loss: number; undefeated: number }; after: { win: number; draw: number; loss: number; undefeated: number } } | null {
+  options?: { searchSeedBase?: number; validationSeedBase?: number },
+): OptimizeFormationResult | null {
   const candidate = formationToEvol(src);
+  const searchSeedBase = options?.searchSeedBase ?? 2000;
+  const validationSeedBase = options?.validationSeedBase ?? 9000;
 
-  // 经验库：加载历史无效候选（跨轮回复用）
   const exp = new ExperienceBank();
   exp.load();
+  const cache = new MatchSimulationCache();
 
-  console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${FORMATION_LIBRARY.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条）===`);
+  console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${FORMATION_LIBRARY.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条，SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
 
-  // 多对手收集样本：对每个对手阵型，先手+后手各打 gamesPerOpp 局，记录 (胜负, 对手标签, 侧)。
-  // side 进入特征空间 → 若主场不对称显著，bestSplit 会优先按 side 建分支（先手走法/后手走法）。
+  // 1. 批量采集全对局轨迹 (一次性模拟各对手各 side 的 gamesPerOpp 局)
+  const initialTraces: MatchTrace[] = [];
+  for (const opp of FORMATION_LIBRARY) {
+    for (const side of [1, 2] as (1 | 2)[]) {
+      for (let i = 0; i < gamesPerOpp; i++) {
+        const trace = cache.getOrSimulate(BundleAI, candidate, opp, side, searchSeedBase + i);
+        initialTraces.push(trace);
+      }
+    }
+  }
+
+  // 2. 从缓存轨迹派生 R1-R5 样本，无需重打对局
   let bestOverall: { round: number; split: { kind: string; value: string; mask: FeatureMask; ig: number }; winRate: number } | null = null;
 
   for (let round = 1; round <= 5; round++) {
     const allSamples: Sample[] = [];
-    for (const opp of FORMATION_LIBRARY) {
-      allSamples.push(...collectSamples(BundleAI, candidate, opp, 1, round, gamesPerOpp));
-      allSamples.push(...collectSamples(BundleAI, candidate, opp, 2, round, gamesPerOpp));
+    for (const trace of initialTraces) {
+      const s = sampleFromTrace(trace, round, trace.oppId);
+      if (s) allSamples.push(s);
     }
+    if (allSamples.length === 0) continue;
     const winCount = allSamples.filter(s => s.win).length;
     const winRate = winCount / allSamples.length;
     const split = bestSplit(allSamples);
-    console.log(`R${round}: 胜率 ${(winRate * 100).toFixed(0)}%（${winCount}赢/${allSamples.length - winCount}输）${split ? ` 分裂 ${split.kind}=${split.value} IG=${split.ig.toFixed(3)}` : ''}`);
+    console.log(`R${round}: 胜率 ${(winRate * 100).toFixed(0)}%（${winCount}赢/${allSamples.length - winCount}输，共${allSamples.length}有效决策样本）${split ? ` 分裂 ${split.kind}=${split.value} IG=${split.ig.toFixed(3)}` : ''}`);
     if (split && (!bestOverall || split.ig > bestOverall.split.ig)) {
       bestOverall = { round, split, winRate };
     }
@@ -420,18 +515,23 @@ export function optimizeFormation(
   console.log(`\n=== 最优分裂：R${bestOverall.round} 按 ${bestOverall.split.kind}=${bestOverall.split.value} 建分支 ===`);
   console.log(`分支标签 [${maskToLabel(bestOverall.split.mask)}]，信息增益 ${bestOverall.split.ig.toFixed(3)}`);
 
-  // 诊断：命中 mask 的对手逐回合胜率，定位"崩盘起点"（分叉点应提前到崩盘开始处）
-  const matchedOpps = FORMATION_LIBRARY.filter(o => oppMatches(o, bestOverall.split.mask));
+  // 3. 确定命中 mask 的对手（结合静态预选与实际轨迹确认）
+  const candidateOpps = FORMATION_LIBRARY.filter(o => oppMatchesStatic(o, bestOverall.split.mask));
+  const matchedOpps = candidateOpps.filter(o => oppMatchesObserved(o.id ?? o.name, bestOverall.split.mask, initialTraces) || bestOverall.split.mask.side !== null);
+  const effectiveOpps = matchedOpps.length > 0 ? matchedOpps : candidateOpps;
   const diagSides: (1 | 2)[] = bestOverall.split.mask.side !== null ? [bestOverall.split.mask.side] : [1, 2];
-  console.log(`\n=== 命中「${maskToLabel(bestOverall.split.mask)}」的对手（${matchedOpps.map(o => o.name).join('、')}）逐回合胜率诊断 ===`);
+
+  console.log(`\n=== 命中「${maskToLabel(bestOverall.split.mask)}」的对手（${effectiveOpps.map(o => o.name).join('、')}）逐回合胜率诊断（复用缓存轨迹） ===`);
   const roundRates: { round: number; win: number; total: number; rate: number }[] = [];
   for (let round = 1; round <= 5; round++) {
     let win = 0, total = 0;
-    for (const opp of matchedOpps) {
-      for (const side of diagSides) {
-        const s = collectSamples(BundleAI, candidate, opp, side, round, gamesPerOpp);
-        win += s.filter(x => x.win).length;
-        total += s.length;
+    for (const trace of initialTraces) {
+      if (!effectiveOpps.some(o => (o.id ?? o.name) === trace.oppId)) continue;
+      if (!diagSides.includes(trace.side)) continue;
+      const s = sampleFromTrace(trace, round, trace.oppId);
+      if (s) {
+        if (s.win) win++;
+        total++;
       }
     }
     const rate = total ? win / total : 0;
@@ -439,21 +539,18 @@ export function optimizeFormation(
     console.log(`  R${round}: ${win}/${total} 胜率 ${(rate * 100).toFixed(0)}%`);
   }
 
-  // 崩盘起点 = 第一个胜率跌破阈值的回合；分叉点往前推一个回合（用户定案：
-  // "搜不到确实需要往前推一个回合"——R4 才分叉时卡组怪已被 R1-R3 用光，搜索空间塌缩，
-  // 提前到 R3 让分支从 R3 就换节奏，拥有完整替换空间）
   const CRASH_THRESHOLD = 0.75;
-  const crash = roundRates.find(x => x.rate < CRASH_THRESHOLD);
+  const crash = roundRates.find(x => x.rate < CRASH_THRESHOLD && x.total > 0);
   const rawFork = crash ? crash.round : bestOverall.round;
   const forkRound = Math.max(1, rawFork - 1);
   if (crash) {
     console.log(`\n崩盘起点 R${crash.round}（胜率 ${(crash.rate * 100).toFixed(0)}% < ${(CRASH_THRESHOLD * 100).toFixed(0)}%）`);
-    console.log(`分叉点往前推一个回合：R${rawFork} → R${forkRound}，覆盖 R${forkRound}~R5 整棵子树（避免分支怪池被前置回合用光）。`);
+    console.log(`分叉点往前推一个回合：R${rawFork} → R${forkRound}，覆盖 R${forkRound}~R5 整棵子树。`);
   } else {
     console.log(`\n无跌破阈值回合，分叉点 = IG 最高的 R${forkRound}。`);
   }
 
-  // 建分支：在主链 forkRound 处复制主走法（含后续子树）作模板，根节点打上该标签
+  // 4. 建分支
   const rng = mulberry32(777);
   console.log(`\n[建分支] 在 R${forkRound} 处按标签「${maskToLabel(bestOverall.split.mask)}」复制主链子树作模板`);
   const branched = addBranch(candidate, bestOverall.split.mask, rng, forkRound);
@@ -464,47 +561,72 @@ export function optimizeFormation(
   console.log('[建分支] 分支创建成功，新树结构：');
   console.log(summarizeEvolFormation(branched));
 
-  // 优化新分支内部：只针对命中 mask 的对手，改进整棵分支子树（RforkRound~R5）
-  console.log(`\n=== 优化新分支（R${forkRound}~R5，命中对手，整局不败率） ===`);
-  const optimized = optimizeBranch(BundleAI, branched, bestOverall.split.mask, forkRound, gamesPerOpp, exp, src.id);
+  // 5. 搜索集内优化新分支
+  console.log(`\n=== 优化新分支（R${forkRound}~R5，命中对手，搜索集 Seed=${searchSeedBase}） ===`);
+  const searchBefore = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
+  const optimized = optimizeBranch(
+    BundleAI,
+    branched,
+    bestOverall.split.mask,
+    forkRound,
+    effectiveOpps,
+    gamesPerOpp,
+    exp,
+    src.id,
+    cache,
+    searchSeedBase,
+  );
+  const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();
-  console.log('\n优化后树结构：');
-  console.log(summarizeEvolFormation(optimized));
 
-  // 验证：优化前后重测整局不败率（命中对手，先手+后手都测）
-  console.log(`\n=== 整局不败率对比（优化前 vs 优化后） ===`);
-  const beforeAll = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, gamesPerOpp);
-  const afterAll = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, gamesPerOpp);
-  console.log(`  [命中对手] 优化前 ${beforeAll.win}胜/${beforeAll.draw}平/${beforeAll.loss}负 (${(beforeAll.undefeated * 100).toFixed(0)}%) → 优化后 ${afterAll.win}胜/${afterAll.draw}平/${afterAll.loss}负 (${(afterAll.undefeated * 100).toFixed(0)}%)`);
+  // 6. 独立验证集评估 (Validation Seed Base)
+  console.log(`\n=== 独立验证集整局不败率对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
+  const beforeVal = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
+  const afterVal = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
+  console.log(`  [验证集] 优化前 ${beforeVal.win}胜/${beforeVal.draw}平/${beforeVal.loss}负 (${(beforeVal.undefeated * 100).toFixed(0)}%) → 优化后 ${afterVal.win}胜/${afterVal.draw}平/${afterVal.loss}负 (${(afterVal.undefeated * 100).toFixed(0)}%)`);
 
-  const verifySides: (1 | 2)[] = bestOverall.split.mask.side !== null ? [bestOverall.split.mask.side] : [1, 2];
-  for (const opp of FORMATION_LIBRARY) {
-    if (!oppMatches(opp, bestOverall.split.mask)) continue;
+  for (const opp of effectiveOpps) {
     let bw = 0, bd = 0, bl = 0, aw = 0, ad = 0, al = 0;
-    for (const side of verifySides) {
-      const b = collectMatch(BundleAI, candidate, opp, side, gamesPerOpp);
-      const a = collectMatch(BundleAI, optimized, opp, side, gamesPerOpp);
-      bw += b.win; bd += b.draw; bl += b.loss;
-      aw += a.win; ad += a.draw; al += a.loss;
+    for (const side of diagSides) {
+      for (let i = 0; i < gamesPerOpp; i++) {
+        const tb = cache.getOrSimulate(BundleAI, candidate, opp, side, validationSeedBase + i);
+        const ta = cache.getOrSimulate(BundleAI, optimized, opp, side, validationSeedBase + i);
+        bw += tb.w; bd += tb.d; bl += tb.l;
+        aw += ta.w; ad += ta.d; al += ta.l;
+      }
     }
-    const bU = (bw + bd) / (bw + bd + bl);
-    const aU = (aw + ad) / (aw + ad + al);
+    const bU = (bw + bd + bl) > 0 ? (bw + bd) / (bw + bd + bl) : 0;
+    const aU = (aw + ad + al) > 0 ? (aw + ad) / (aw + ad + al) : 0;
     console.log(`  ${opp.name}: ${bw}胜/${bd}平/${bl}负 (${(bU * 100).toFixed(0)}%) → ${aw}胜/${ad}平/${al}负 (${(aU * 100).toFixed(0)}%) ${aU >= bU ? '↑' : '↓'}`);
   }
 
-  // 整局未改善 → 返回 null（保持原阵型，不采纳无效分支）
-  const improved = afterAll.undefeated > beforeAll.undefeated + 1e-6;
+  // 验收标准：验证样本非空，不败率改善 >= 0.05 (5%) 且 净负场不恶化
+  const totalValMatches = afterVal.win + afterVal.draw + afterVal.loss;
+  const improved = totalValMatches > 0
+    && afterVal.undefeated >= beforeVal.undefeated + 0.05
+    && afterVal.loss <= beforeVal.loss;
+
   if (!improved) {
-    console.log('\n整局不败率未改善，不采纳该分支（保持原阵型）。');
+    console.log('\n独立验证集未达到最低改善门槛（+5% 不败率或负场增加），不采纳该分支（保持原阵型）。');
   }
+
   return {
     optimized: improved ? optimized : candidate,
     improved,
     forkRound,
     mask: bestOverall.split.mask,
     maskLabel: maskToLabel(bestOverall.split.mask),
-    before: beforeAll,
-    after: afterAll,
+    before: beforeVal,
+    after: afterVal,
+    searchValidation: {
+      searchSeedBase,
+      validationSeedBase,
+      gamesPerOpp,
+      searchBefore,
+      searchAfter,
+      matchedOpponents: effectiveOpps.map(o => o.name),
+      simCount: cache.simCount,
+    },
   };
 }
 

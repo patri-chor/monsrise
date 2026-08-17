@@ -21,6 +21,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { EvolNode, EvolFormation } from './evol_gene';
 
 export interface ExperienceEntry {
   key: string;
@@ -30,10 +31,39 @@ export interface ExperienceEntry {
 
 export interface ExperienceFile {
   type: 'search_experience';
+  version?: number;
   entries: ExperienceEntry[];
 }
 
 const defaultPath = () => resolve('reports/search_experience.json');
+
+/** 计算树结构的轻量确定性指纹 (FNV-1a 32-bit hash hex) */
+export function computeTreeFingerprint(rootOrFormation: EvolNode | EvolFormation): string {
+  const root = 'root' in rootOrFormation ? rootOrFormation.root : rootOrFormation;
+  const tokens: string[] = [];
+
+  function walk(node: EvolNode) {
+    const placements = [...node.placements]
+      .sort((a, b) => a.monsterId - b.monsterId || a.x - b.x || a.y - b.y)
+      .map(p => `${p.monsterId}:${p.x},${p.y}`)
+      .join('|');
+    const cond = `${node.condition.side ?? '*'}/${node.condition.main ?? '*'}/${(node.condition.subs ?? []).sort().join(',')}/${(node.condition.keys ?? []).sort().join(',')}`;
+    tokens.push(`${node.id}:r${node.round}[${cond}][${placements}]`);
+    const sortedChildren = [...node.children].sort((a, b) => a.id.localeCompare(b.id));
+    for (const c of sortedChildren) {
+      walk(c);
+    }
+  }
+
+  walk(root);
+  const str = tokens.join(';');
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
 
 export class ExperienceBank {
   private invalid = new Map<string, { reason: string; foundAt: string }>(); // key -> 详情
@@ -43,14 +73,18 @@ export class ExperienceBank {
     this.path = path ?? defaultPath();
   }
 
-  /** 从磁盘加载经验库（不存在则空） */
+  /** 从磁盘加载经验库（不存在或损坏则优雅回退，不崩溃） */
   load(): void {
     this.invalid.clear();
     if (!existsSync(this.path)) return;
     try {
-      const raw = JSON.parse(readFileSync(this.path, 'utf8')) as ExperienceFile;
+      const content = readFileSync(this.path, 'utf8');
+      if (!content.trim()) return;
+      const raw = JSON.parse(content) as ExperienceFile;
+      if (!raw || typeof raw !== 'object') return;
       for (const e of raw.entries ?? []) {
-        this.invalid.set(e.key, { reason: e.reason, foundAt: e.foundAt ?? '' });
+        if (!e || typeof e.key !== 'string') continue;
+        this.invalid.set(e.key, { reason: e.reason ?? '未知原因', foundAt: e.foundAt ?? '' });
       }
     } catch (e) {
       console.warn(`[经验库] 加载失败（忽略，从空开始）: ${(e as Error).message}`);
@@ -62,7 +96,7 @@ export class ExperienceBank {
     const entries: ExperienceEntry[] = [...this.invalid.entries()]
       .map(([key, v]) => ({ key, reason: v.reason, foundAt: v.foundAt }))
       .sort((a, b) => a.key.localeCompare(b.key));
-    const file: ExperienceFile = { type: 'search_experience', entries };
+    const file: ExperienceFile = { type: 'search_experience', version: 2, entries };
     try {
       writeFileSync(this.path, JSON.stringify(file, null, 2));
     } catch (e) {
@@ -93,12 +127,15 @@ export class ExperienceBank {
   }
 }
 
-/** 单替换操作的 key（英文编码，formation 传英文 id） */
-export function replaceKey(formationId: string, nodeId: string, from: number, to: number): string {
-  return `replace:${formationId}:${nodeId}:${from}->${to}`;
+/** 单替换操作的 key（英文编码，formation 传英文 id，可选 treeFp 隔离树结构版本） */
+export function replaceKey(formationId: string, nodeId: string, from: number, to: number, treeFp?: string): string {
+  const base = `replace:${formationId}:${nodeId}:${from}->${to}`;
+  return treeFp ? `${base}@${treeFp}` : base;
 }
 
-/** 位置移动操作的 key（英文编码，formation 传英文 id） */
-export function moveKey(formationId: string, nodeId: string, monsterId: number, x: number, y: number): string {
-  return `move:${formationId}:${nodeId}:${monsterId}->(${x},${y})`;
+/** 位置移动操作的 key（英文编码，formation 传英文 id，可选 treeFp 隔离树结构版本） */
+export function moveKey(formationId: string, nodeId: string, monsterId: number, x: number, y: number, treeFp?: string): string {
+  const base = `move:${formationId}:${nodeId}:${monsterId}->(${x},${y})`;
+  return treeFp ? `${base}@${treeFp}` : base;
 }
+
