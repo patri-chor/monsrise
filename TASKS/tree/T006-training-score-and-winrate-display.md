@@ -3,6 +3,8 @@ DOMAIN: tree
 
 # T006 — Training Score Migration and Winrate Display
 
+> This is the authoritative replacement task for the missing/renumbered tree-domain scoring task. Do not infer work from deleted legacy root-level TASKS files.
+
 ## Objective
 
 Replace the tree optimizer's training/selection metric from draw-equals-win "undefeated rate" to a half-draw score:
@@ -23,6 +25,8 @@ undefeatedRate = (win + draw) / total
 The old `undefeated` metric equates a draw with a win. It hides regression from pure wins to draws and can adopt candidates that have lower competitive value. Example from T005 `all2rush`: baseline `8W/0D/8L` has trainingScore 50.0%; candidate `6W/3D/7L` has trainingScore 46.875%, although old undefeated rate rises from 50.0% to 56.25%.
 
 ## Scope
+
+This task supersedes any missing earlier tree-domain scoring specification. T005 remains a historical smoke result and must be re-evaluated under this metric before any candidate is applied.
 
 Allowed:
 - `src/engine/tree/branch_induct.ts`
