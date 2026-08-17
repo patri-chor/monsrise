@@ -98,12 +98,18 @@ function Test-WorkTreeClean {
 }
 
 function Read-Pending {
-    if (-not (Test-Path $PendingFile)) { return @() }
-    try { return @(Get-Content $PendingFile -Raw | ConvertFrom-Json) } catch { return @() }
+    $items = New-Object System.Collections.ArrayList
+    if (-not (Test-Path $PendingFile)) { return ,$items }
+    try {
+        foreach ($entry in @(Get-Content $PendingFile -Raw | ConvertFrom-Json)) {
+            [void]$items.Add($entry)
+        }
+    } catch {}
+    return ,$items
 }
 
 function Write-Pending($Entries) {
-    @($Entries) | ConvertTo-Json -Depth 6 | Set-Content -Path $PendingFile -Encoding UTF8
+    @($Entries.ToArray()) | ConvertTo-Json -Depth 6 | Set-Content -Path $PendingFile -Encoding UTF8
 }
 
 function Save-RemoteReport([string]$Path, [string]$RemoteCommit) {
@@ -140,10 +146,12 @@ function Invoke-Check {
     if ($remoteCommitResult.code -ne 0) { Write-Log "remote ref unavailable: $($remoteCommitResult.out)"; return }
     $remoteCommit = $remoteCommitResult.out.Trim()
 
-    $diff = Invoke-Git "diff" "--name-only" "HEAD" $RemoteRef "--" "TASKS/"
-    if ($diff.code -ne 0) { Write-Log "diff failed: $($diff.out)"; return }
-    $changed = @($diff.out -split "`n" | Where-Object { $_.Trim() -ne "" })
-    $reports = @($changed | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
+    # Enumerate remote reports rather than only HEAD..origin changes. A report can
+    # reach local HEAD through another sync path before this watcher sees it; it must
+    # still enter pending.json exactly once for review.
+    $tree = Invoke-Git "ls-tree" "-r" "--name-only" $RemoteRef "--" "TASKS/"
+    if ($tree.code -ne 0) { Write-Log "remote task scan failed: $($tree.out)"; return }
+    $reports = @($tree.out -split "`n" | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
 
     $state = Read-State
     $seen = @($state.reported)
@@ -158,7 +166,7 @@ function Invoke-Check {
     foreach ($report in $fresh) {
         $snapshot = Save-RemoteReport $report $remoteCommit
         if ($report -match "^TASKS/(T\d+)\.report\.md$") { $task = $Matches[1] } else { $task = "" }
-        $pending += @{
+        [void]$pending.Add([PSCustomObject]@{
             task = $task
             file = $report
             remoteCommit = $remoteCommit
@@ -166,7 +174,7 @@ function Invoke-Check {
             sync = $syncState
             at = $now
             status = "pending_review"
-        }
+        })
         Write-Log "NEW REPORT: $report (snapshot=$snapshot, sync=$syncState)"
     }
     Write-Pending $pending
