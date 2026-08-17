@@ -1,128 +1,109 @@
-#!/usr/bin/env node
-/**
- * scripts/check-open-tasks.mjs
- * 
- * 智能阶梯降频任务检测器：
- * - 提交 report 后 0~5 分钟：高频期，每 1 分钟检查一次；
- * - 5~30 分钟：中频期，每 5 分钟检查一次；
- * - > 30 分钟：低频期，每 30 分钟检查一次；
- * - 发现新任务并提交 report 后，自动重置回高频期。
- */
-
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const repoRoot = resolve('.');
 const tasksDir = join(repoRoot, 'TASKS');
 
-const domainArg = process.argv.find(a => a.startsWith('--domain='))?.split('=')[1] 
-  || (process.argv.includes('--domain') ? process.argv[process.argv.indexOf('--domain') + 1] : null);
+// 解析 CLI 参数
+const args = process.argv.slice(2);
+const domainArgIndex = args.indexOf('--domain');
+const targetDomain = domainArgIndex !== -1 ? args[domainArgIndex + 1] : null;
+const isMarkReport = args.includes('--report-submitted');
+const isManualForce = args.includes('--force');
 
-const targetDomain = domainArg ? domainArg.trim() : null;
-const statePath = targetDomain 
-  ? join(repoRoot, `.task-poll-state-${targetDomain}.json`)
-  : join(repoRoot, '.task-poll-state.json');
+const stateFile = join(repoRoot, targetDomain ? `.task-poll-state-${targetDomain}.json` : '.task-poll-state.json');
 
-// 读取或初始化状态
 function loadState() {
-  if (existsSync(statePath)) {
+  if (existsSync(stateFile)) {
     try {
-      return JSON.parse(readFileSync(statePath, 'utf8'));
-    } catch {}
+      return JSON.parse(readFileSync(stateFile, 'utf8'));
+    } catch {
+      return { lastCheckTime: 0, lastReportTime: 0 };
+    }
   }
-  return {
-    lastReportTime: Date.now(), // 默认从当前算起
-    lastCheckTime: 0,
-  };
+  return { lastCheckTime: 0, lastReportTime: 0 };
 }
 
-function saveState(state) {
+function saveState(st) {
   try {
-    writeFileSync(statePath, JSON.stringify(state, null, 2));
+    writeFileSync(stateFile, JSON.stringify(st, null, 2), 'utf8');
   } catch {}
 }
 
-const isManualForce = process.argv.includes('--force') || process.argv.includes('-f');
-const isMarkReport = process.argv.includes('--report-submitted');
-
-const state = loadState();
 const now = Date.now();
+const state = loadState();
 
+// 标记刚提交完报告
 if (isMarkReport) {
   state.lastReportTime = now;
+  state.lastCheckTime = now;
   saveState(state);
   console.log(JSON.stringify({ status: 'REPORT_MARKED', domain: targetDomain || 'all', lastReportTime: now }));
   process.exit(0);
 }
 
-// 计算当前应遵循的检查间隔
-const elapsedSinceReportMs = now - (state.lastReportTime || now);
-const elapsedSinceReportMin = elapsedSinceReportMs / 60000;
+// ============================================================
+// 1. 同步远程：无论处于何种退避阶段，每次调起必须先 Fetch 远程！
+// ============================================================
+let remoteUpdated = false;
+if (existsSync(join(repoRoot, '.git'))) {
+  try {
+    const proxyArgs = ['-c', 'http.proxy=http://127.0.0.1:7890'];
+    const branchName = targetDomain ? `agent/${targetDomain}` : 'main';
+    const prevHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    
+    // fetch 远程目标分支
+    execFileSync('git', [...proxyArgs, 'fetch', 'origin', branchName], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'ignore', 'ignore'],
+      timeout: 15000,
+    });
 
-let requiredIntervalMs = 60000; // 默认 1 分钟 (0~5 分钟内)
-let stageName = 'high (1 min)';
+    // 尝试 fast-forward merge
+    try {
+      execFileSync('git', ['merge', '--ff-only', 'FETCH_HEAD'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: ['ignore', 'ignore', 'ignore'],
+        timeout: 5000,
+      });
+    } catch {}
 
-if (elapsedSinceReportMin > 30) {
-  requiredIntervalMs = 30 * 60000; // >30 分钟：30 分钟一次
-  stageName = 'low (30 min)';
-} else if (elapsedSinceReportMin > 5) {
-  requiredIntervalMs = 5 * 60000; // 5~30 分钟：5 分钟一次
-  stageName = 'medium (5 min)';
-}
-
-// 判断是否已达到该阶段的检查时间
-const elapsedSinceLastCheckMs = now - (state.lastCheckTime || 0);
-
-if (!isManualForce && elapsedSinceLastCheckMs < requiredIntervalMs) {
-  const waitRemainingSec = Math.ceil((requiredIntervalMs - elapsedSinceLastCheckMs) / 1000);
-  console.log(JSON.stringify({
-    status: 'NO_TASK',
-    reason: 'BACKOFF_SKIPPED',
-    stage: stageName,
-    waitRemainingSec,
-  }));
-  process.exit(0);
+    const newHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    if (newHead !== prevHead) {
+      remoteUpdated = true;
+      // 远程有新 commit，重置退避计时器回高频模式
+      state.lastReportTime = now;
+    }
+  } catch {
+    // 离线/内网环境允许 fetch 失败，降级为本地任务检查
+  }
 }
 
 // 记录本次实际执行检查的时间
 state.lastCheckTime = now;
 saveState(state);
 
-  // 1. 同步远程（若配置了 git 远程，先 fetch 并尝试 ff-only merge）
-  if (existsSync('.git')) {
-    try {
-      const proxyArgs = ['-c', 'http.proxy=http://127.0.0.1:7890'];
-      const prevHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-      execFileSync('git', [...proxyArgs, 'fetch', 'origin', `agent/${targetDomain || 'main'}`], {
-        encoding: 'utf8',
-        stdio: ['ignore', 'ignore', 'ignore'],
-        timeout: 10000,
-      });
-      // 尝试 fast-forward
-      try {
-        execFileSync('git', ['merge', '--ff-only', 'FETCH_HEAD'], {
-          encoding: 'utf8',
-          stdio: ['ignore', 'ignore', 'ignore'],
-          timeout: 5000,
-        });
-      } catch {}
-      const newHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-      if (newHead !== prevHead) {
-        // 远程有新 commit，立即重置退避计时器回 high 模式
-        state.lastReportTime = Date.now();
-        saveState(state);
-      }
-    } catch {
-      // 离线/内网环境允许 fetch 失败，降级为本地任务检查
-    }
-  }
+// 计算当前应遵循的检查阶段
+const elapsedSinceReportMs = now - (state.lastReportTime || now);
+const elapsedSinceReportMin = elapsedSinceReportMs / 60000;
+let stageName = 'high (1 min)';
+if (elapsedSinceReportMin > 30) {
+  stageName = 'low (30 min)';
+} else if (elapsedSinceReportMin > 5) {
+  stageName = 'medium (5 min)';
+}
 
 if (!existsSync(tasksDir)) {
-  console.log(JSON.stringify({ status: 'NO_TASK', reason: 'TASKS directory not found' }));
+  console.log(JSON.stringify({ status: 'NO_TASK', reason: 'TASKS directory not found', stage: stageName }));
   process.exit(0);
 }
 
-// 2. 扫描 TASKS 目录及指定/所有子域目录 (tree, generation 等)
+// ============================================================
+// 2. 扫描指定/所有域目录 (tree, generation 等)
+// ============================================================
 function findTasksInDir(dir, domain = 'root') {
   if (!existsSync(dir)) return [];
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -160,47 +141,45 @@ function findTasksInDir(dir, domain = 'root') {
       title: content.split('\n').find(l => l.startsWith('# '))?.replace('# ', '').trim() ?? file,
     });
   }
-
-  // 若未指定特定 domain，则递归扫描子目录
-  for (const entry of entries) {
-    if (entry.isDirectory() && domain === 'root' && !targetDomain) {
-      tasks.push(...findTasksInDir(join(dir, entry.name), entry.name));
-    }
-  }
-
   return tasks;
 }
 
 let allOpenTasks = [];
+
 if (targetDomain) {
-  const targetDir = targetDomain === 'root' ? tasksDir : join(tasksDir, targetDomain);
-  allOpenTasks = findTasksInDir(targetDir, targetDomain);
+  const domainDir = join(tasksDir, targetDomain);
+  allOpenTasks = findTasksInDir(domainDir, targetDomain);
 } else {
-  allOpenTasks = findTasksInDir(tasksDir);
+  allOpenTasks.push(...findTasksInDir(tasksDir, 'root'));
+  const domainDirs = ['tree', 'generation'];
+  for (const d of domainDirs) {
+    allOpenTasks.push(...findTasksInDir(join(tasksDir, d), d));
+  }
 }
 
-allOpenTasks.sort((a, b) => a.num - b.num);
-
-const openTask = allOpenTasks.length > 0 ? allOpenTasks[allOpenTasks.length - 1] : null;
-
-if (openTask) {
-  console.log(JSON.stringify({
-    status: 'TASK_FOUND',
-    taskId: openTask.taskId,
-    domain: openTask.domain,
-    taskFile: openTask.file,
-    reportFile: openTask.reportFile,
-    title: openTask.title,
-    stage: stageName,
-  }));
-  process.exit(100);
-} else {
+if (allOpenTasks.length === 0) {
   console.log(JSON.stringify({
     status: 'NO_TASK',
     stage: stageName,
     elapsedSinceReportMin: elapsedSinceReportMin.toFixed(1),
+    remoteUpdated,
   }));
   process.exit(0);
 }
 
+// 按编号升序排序，取最高编号任务（最新 OPEN）
+allOpenTasks.sort((a, b) => a.num - b.num);
+const currentTask = allOpenTasks[allOpenTasks.length - 1];
 
+console.log(JSON.stringify({
+  status: 'TASK_FOUND',
+  taskId: currentTask.taskId,
+  domain: currentTask.domain,
+  taskFile: currentTask.file,
+  reportFile: currentTask.reportFile,
+  title: currentTask.title,
+  stage: stageName,
+  remoteUpdated,
+}));
+
+process.exit(100);
