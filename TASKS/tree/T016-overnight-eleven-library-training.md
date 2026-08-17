@@ -107,26 +107,24 @@ or current weakest-cell trainingScore delta < -0.10
 
 Tier classification must be deterministic, explainable, and use both strength and diversity.
 
-### Tier 1: Stable Strong
+### Tier 1: Current Bundle Baseline
+
+Tier 1 is exactly the frozen snapshot of all 11 current bundle formations. It is the known, trusted baseline and is never replaced, reordered, modified, or mixed with generated candidates by this overnight run.
+
+For each Tier 1 source, report its early-seven holdout and current-panel measurements alongside its descendants, but do not require it to satisfy a new threshold and do not apply any optimized descendant to it.
+
+### Tier 2: Stable Enhanced Candidates
 
 All required:
 
 - legal and no worker errors;
-- robustly improved (>=2/3 held-out passes) or a frozen source baseline with held-out trainingScore >=0.65;
-- median early held-out trainingScore >=0.60;
-- current strong-panel aggregate trainingScore >=0.50;
-- no current-panel generalization warning;
-- candidate has a unique canonical deck/tree fingerprint within Tier 1.
-
-### Tier 2: Viable Diverse
-
-All required:
-
-- legal and no worker errors;
-- median early held-out trainingScore >=0.45;
+- robustly improved (>=2/3 held-out passes);
+- median early held-out trainingScore >=0.50;
 - current strong-panel aggregate trainingScore >=0.35;
-- no loss increase worse than 0.10 median on early holdout;
-- either robustly improved, or provides a non-duplicate mutation vector/source/module route absent from Tier 1.
+- no current-panel generalization warning;
+- unique canonical deck/tree fingerprint relative to Tier 1 and other Tier 2 candidates.
+
+Tier 2 is a reviewable enhancement library, not an automatic replacement for Tier 1.
 
 ### Tier 3: Exploratory Diversity
 
@@ -135,7 +133,7 @@ All required:
 - legal and no worker errors;
 - median early held-out trainingScore >=0.30;
 - did not violate hard generalization safety floor (current aggregate >=0.25);
-- unique mutation vector or behavior/deck/tree fingerprint not already represented by a higher tier.
+- unique mutation vector or behavior/deck/tree fingerprint not already represented by Tier 1 or Tier 2.
 
 Candidates below Tier 3 are rejected but retained in a rejection ledger with reason. Do not silently discard them.
 
@@ -172,7 +170,7 @@ Produce committed, reviewable artifacts:
 - [ ] No disabled component was used.
 - [ ] Strong-panel measurement is separate from training and reports warnings.
 - [ ] Reinforcement pass is restricted to source winners/provisional Tier 1 and is independently validated.
-- [ ] Tier rules are applied deterministically; rejected candidates remain in ledger.
+- [ ] Tier 1 contains exactly the frozen 11 current-bundle sources; Tier 2/Tier 3 rules are applied deterministically and rejected candidates remain in ledger.
 - [ ] No worker errors among tiered candidates; no active library/bundle/apply/deploy changes.
 - [ ] T013 preservation check passes and no unrelated task record is deleted.
 - [ ] T014/T015 focused tests pass; new pipeline tests cover tier boundaries, attempt aggregation, and no-position mutation for calculator units.
