@@ -1,0 +1,57 @@
+{
+  "seedIndex": 3,
+  "seedId": "classicsavior",
+  "seedName": "经典救星",
+  "archetype": "full_rush",
+  "status": "COMPLETED",
+  "startedAt": "2026-08-17T12:33:50.010Z",
+  "completedAt": "2026-08-17T12:33:57.197Z",
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "stats": {
+    "sourceSeedIndex": 3,
+    "sourceSeedName": "经典救星",
+    "sourceSeedId": "classicsavior",
+    "attempts": 20,
+    "generatedCount": 7,
+    "acceptedCount": 7,
+    "duplicateRejections": 10,
+    "structuralRejections": 3,
+    "retainedCount": 6,
+    "rejectedCount": 1,
+    "shortfall": 0,
+    "generatedCandidateIds": [
+      "cand_s4_1_be2",
+      "cand_s4_2_c15",
+      "cand_s4_3_c26",
+      "cand_s4_4_c59",
+      "cand_s4_5_cae",
+      "cand_s4_6_cbf",
+      "cand_s4_7_d25"
+    ],
+    "retainedCandidateIds": [
+      "cand_s4_2_c15",
+      "cand_s4_6_cbf",
+      "cand_s4_1_be2",
+      "cand_s4_3_c26",
+      "cand_s4_4_c59",
+      "cand_s4_7_d25"
+    ]
+  },
+  "effectiveSettings": {
+    "attempts": 20,
+    "maxRetained": 6,
+    "explorationFloor": 0.25,
+    "workers": 16,
+    "coarseGames": 1,
+    "coarseSeedBase": 31000
+  }
+}

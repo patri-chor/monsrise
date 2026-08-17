@@ -1,0 +1,83 @@
+{
+  "cycleType": "sequential_per_seed_cycle",
+  "startedAt": "2026-08-17T12:32:42.097Z",
+  "completedAt": "2026-08-17T12:33:57.205Z",
+  "sourceSeeds": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星"
+  ],
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "effectiveSettings": {
+    "attemptsPerSeed": 20,
+    "maxRetainedPerSeed": 6,
+    "maxTotalCapacity": 24,
+    "explorationFloor": 0.25,
+    "requestedWorkers": 16,
+    "effectiveWorkers": 16,
+    "availableLogicalCpus": 16,
+    "coarseGames": 1,
+    "coarseSeedBase": 1000
+  },
+  "transactions": [
+    {
+      "seedIndex": 0,
+      "seedName": "泉水剑",
+      "status": "COMPLETED",
+      "startedAt": "2026-08-17T12:32:42.100Z",
+      "completedAt": "2026-08-17T12:33:15.382Z",
+      "attempts": 20,
+      "generated": 12,
+      "retained": 6,
+      "shortfall": 0,
+      "seedDirectory": "D:\\develope\\monsrise1\\reports\\new-formation-generation\\sequential-per-seed-cycle\\seed-00-springsword"
+    },
+    {
+      "seedIndex": 1,
+      "seedName": "坚果救星",
+      "status": "COMPLETED",
+      "startedAt": "2026-08-17T12:33:15.423Z",
+      "completedAt": "2026-08-17T12:33:39.736Z",
+      "attempts": 20,
+      "generated": 9,
+      "retained": 6,
+      "shortfall": 0,
+      "seedDirectory": "D:\\develope\\monsrise1\\reports\\new-formation-generation\\sequential-per-seed-cycle\\seed-01-nutsavior"
+    },
+    {
+      "seedIndex": 2,
+      "seedName": "全二冲",
+      "status": "COMPLETED",
+      "startedAt": "2026-08-17T12:33:39.774Z",
+      "completedAt": "2026-08-17T12:33:49.986Z",
+      "attempts": 20,
+      "generated": 9,
+      "retained": 6,
+      "shortfall": 0,
+      "seedDirectory": "D:\\develope\\monsrise1\\reports\\new-formation-generation\\sequential-per-seed-cycle\\seed-02-all2rush"
+    },
+    {
+      "seedIndex": 3,
+      "seedName": "经典救星",
+      "status": "COMPLETED",
+      "startedAt": "2026-08-17T12:33:50.010Z",
+      "completedAt": "2026-08-17T12:33:57.197Z",
+      "attempts": 20,
+      "generated": 7,
+      "retained": 6,
+      "shortfall": 0,
+      "seedDirectory": "D:\\develope\\monsrise1\\reports\\new-formation-generation\\sequential-per-seed-cycle\\seed-03-classicsavior"
+    }
+  ],
+  "totalFrozenCandidates": 24
+}

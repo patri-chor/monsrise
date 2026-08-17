@@ -1,0 +1,59 @@
+{
+  "seedIndex": 2,
+  "seedId": "all2rush",
+  "seedName": "全二冲",
+  "archetype": "full_rush",
+  "status": "COMPLETED",
+  "startedAt": "2026-08-17T12:33:39.774Z",
+  "completedAt": "2026-08-17T12:33:49.986Z",
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "stats": {
+    "sourceSeedIndex": 2,
+    "sourceSeedName": "全二冲",
+    "sourceSeedId": "all2rush",
+    "attempts": 20,
+    "generatedCount": 9,
+    "acceptedCount": 9,
+    "duplicateRejections": 7,
+    "structuralRejections": 4,
+    "retainedCount": 6,
+    "rejectedCount": 3,
+    "shortfall": 0,
+    "generatedCandidateIds": [
+      "cand_s3_1_7fa",
+      "cand_s3_2_81c",
+      "cand_s3_3_83e",
+      "cand_s3_4_84f",
+      "cand_s3_5_860",
+      "cand_s3_6_871",
+      "cand_s3_7_882",
+      "cand_s3_8_893",
+      "cand_s3_9_90a"
+    ],
+    "retainedCandidateIds": [
+      "cand_s3_2_81c",
+      "cand_s3_1_7fa",
+      "cand_s3_3_83e",
+      "cand_s3_8_893",
+      "cand_s3_7_882",
+      "cand_s3_5_860"
+    ]
+  },
+  "effectiveSettings": {
+    "attempts": 20,
+    "maxRetained": 6,
+    "explorationFloor": 0.25,
+    "workers": 16,
+    "coarseGames": 1,
+    "coarseSeedBase": 21000
+  }
+}

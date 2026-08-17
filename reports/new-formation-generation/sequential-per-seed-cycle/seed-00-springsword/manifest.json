@@ -1,0 +1,62 @@
+{
+  "seedIndex": 0,
+  "seedId": "springsword",
+  "seedName": "泉水剑",
+  "archetype": "prayer",
+  "status": "COMPLETED",
+  "startedAt": "2026-08-17T12:32:42.100Z",
+  "completedAt": "2026-08-17T12:33:15.382Z",
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "stats": {
+    "sourceSeedIndex": 0,
+    "sourceSeedName": "泉水剑",
+    "sourceSeedId": "springsword",
+    "attempts": 20,
+    "generatedCount": 12,
+    "acceptedCount": 12,
+    "duplicateRejections": 1,
+    "structuralRejections": 7,
+    "retainedCount": 6,
+    "rejectedCount": 6,
+    "shortfall": 0,
+    "generatedCandidateIds": [
+      "cand_s1_1_2a",
+      "cand_s1_2_3b",
+      "cand_s1_3_6e",
+      "cand_s1_4_7f",
+      "cand_s1_5_a1",
+      "cand_s1_6_b2",
+      "cand_s1_7_e5",
+      "cand_s1_8_f6",
+      "cand_s1_9_107",
+      "cand_s1_10_118",
+      "cand_s1_11_13a",
+      "cand_s1_12_14b"
+    ],
+    "retainedCandidateIds": [
+      "cand_s1_11_13a",
+      "cand_s1_1_2a",
+      "cand_s1_10_118",
+      "cand_s1_4_7f",
+      "cand_s1_8_f6",
+      "cand_s1_7_e5"
+    ]
+  },
+  "effectiveSettings": {
+    "attempts": 20,
+    "maxRetained": 6,
+    "explorationFloor": 0.25,
+    "workers": 16,
+    "coarseGames": 1,
+    "coarseSeedBase": 1000
+  }
+}

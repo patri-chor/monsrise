@@ -1,0 +1,59 @@
+{
+  "seedIndex": 1,
+  "seedId": "nutsavior",
+  "seedName": "坚果救星",
+  "archetype": "half_rush",
+  "status": "COMPLETED",
+  "startedAt": "2026-08-17T12:33:15.423Z",
+  "completedAt": "2026-08-17T12:33:39.736Z",
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "stats": {
+    "sourceSeedIndex": 1,
+    "sourceSeedName": "坚果救星",
+    "sourceSeedId": "nutsavior",
+    "attempts": 20,
+    "generatedCount": 9,
+    "acceptedCount": 9,
+    "duplicateRejections": 1,
+    "structuralRejections": 10,
+    "retainedCount": 6,
+    "rejectedCount": 3,
+    "shortfall": 0,
+    "generatedCandidateIds": [
+      "cand_s2_1_412",
+      "cand_s2_2_423",
+      "cand_s2_3_445",
+      "cand_s2_4_478",
+      "cand_s2_5_49a",
+      "cand_s2_6_4bc",
+      "cand_s2_7_4de",
+      "cand_s2_8_4ef",
+      "cand_s2_9_544"
+    ],
+    "retainedCandidateIds": [
+      "cand_s2_3_445",
+      "cand_s2_4_478",
+      "cand_s2_7_4de",
+      "cand_s2_9_544",
+      "cand_s2_1_412",
+      "cand_s2_8_4ef"
+    ]
+  },
+  "effectiveSettings": {
+    "attempts": 20,
+    "maxRetained": 6,
+    "explorationFloor": 0.25,
+    "workers": 16,
+    "coarseGames": 1,
+    "coarseSeedBase": 11000
+  }
+}

@@ -1,0 +1,2309 @@
+{
+  "retained": [
+    {
+      "candidateId": "cand_s4_2_c15",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 3,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 119,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 110,
+          "badgeIds": [
+            11,
+            28
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 107,
+          "badgeIds": [
+            20,
+            1
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":110,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":113,\"x\":8,\"y\":2},{\"monsterId\":107,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":124,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "107,108,110,113,116,117,119,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 110,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 113,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 107,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 124,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_2_c15",
+        "attack": {
+          "w": 0,
+          "d": 3,
+          "l": 1
+        },
+        "survival": {
+          "w": 2,
+          "d": 1,
+          "l": 1
+        },
+        "comprehensive": {
+          "w": 4,
+          "d": 0,
+          "l": 0
+        },
+        "vsAll": {
+          "w": 8,
+          "d": 0,
+          "l": 8
+        },
+        "adScore": 0.8333333333333334,
+        "weakest": 0.5,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            114,
+            106
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.8333333333333334,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "performance_baseline",
+        "archetype_coverage"
+      ]
+    },
+    {
+      "candidateId": "cand_s4_6_cbf",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 13,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 110,
+          "badgeIds": [
+            11,
+            28
+          ]
+        },
+        {
+          "monsterId": 106,
+          "badgeIds": [
+            32,
+            24
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 119,
+          "badgeIds": [
+            3,
+            5
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":110,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":124,\"x\":8,\"y\":2},{\"monsterId\":113,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "106,108,110,113,116,117,119,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 110,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 124,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 113,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 106,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_6_cbf",
+        "attack": {
+          "w": 2,
+          "d": 0,
+          "l": 2
+        },
+        "survival": {
+          "w": 3,
+          "d": 0,
+          "l": 1
+        },
+        "comprehensive": {
+          "w": 4,
+          "d": 0,
+          "l": 0
+        },
+        "vsAll": {
+          "w": 7,
+          "d": 0,
+          "l": 9
+        },
+        "adScore": 0.75,
+        "weakest": 0.5,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            114,
+            107
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.75,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "exploration_novelty"
+      ]
+    },
+    {
+      "candidateId": "cand_s4_1_be2",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 0,
+      "archPath": "full_rush",
+      "modulePath": "秒杀",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 107,
+          "badgeIds": [
+            20,
+            1
+          ]
+        },
+        {
+          "monsterId": 114,
+          "badgeIds": [
+            32,
+            3
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            5,
+            3
+          ]
+        },
+        {
+          "monsterId": 106,
+          "badgeIds": [
+            32,
+            24
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 119,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 110,
+          "badgeIds": [
+            11,
+            28
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":110,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2},{\"monsterId\":107,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "106,107,108,110,114,116,117,119",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 110,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 114,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 107,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 106,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_1_be2",
+        "attack": {
+          "w": 0,
+          "d": 0,
+          "l": 4
+        },
+        "survival": {
+          "w": 3,
+          "d": 1,
+          "l": 0
+        },
+        "comprehensive": {
+          "w": 3,
+          "d": 0,
+          "l": 1
+        },
+        "vsAll": {
+          "w": 7,
+          "d": 1,
+          "l": 8
+        },
+        "adScore": 0.5833333333333334,
+        "weakest": 0,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [],
+          "removedMonsters": [],
+          "symmetricDifference": 0,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 1,
+          "badgesAdded": 1,
+          "badgesRemoved": 1
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 0,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "秒杀",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.075,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0,
+          "normalizedBadgeDist": 0.25,
+          "normalizedTreeDist": 0,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.5833333333333334,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "direction_coverage"
+      ]
+    },
+    {
+      "candidateId": "cand_s4_3_c26",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 4,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 106,
+          "badgeIds": [
+            32,
+            24
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 114,
+          "badgeIds": [
+            3,
+            1
+          ]
+        },
+        {
+          "monsterId": 119,
+          "badgeIds": [
+            3,
+            5
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":124,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2},{\"monsterId\":113,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "106,108,113,114,116,117,119,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 124,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 114,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 113,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 106,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_3_c26",
+        "attack": {
+          "w": 0,
+          "d": 1,
+          "l": 3
+        },
+        "survival": {
+          "w": 4,
+          "d": 0,
+          "l": 0
+        },
+        "comprehensive": {
+          "w": 2,
+          "d": 0,
+          "l": 2
+        },
+        "vsAll": {
+          "w": 4,
+          "d": 2,
+          "l": 10
+        },
+        "adScore": 0.5833333333333334,
+        "weakest": 0,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            110,
+            107
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.5833333333333334,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "exploration_novelty"
+      ]
+    },
+    {
+      "candidateId": "cand_s4_4_c59",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 7,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 110,
+          "badgeIds": [
+            11,
+            28
+          ]
+        },
+        {
+          "monsterId": 106,
+          "badgeIds": [
+            32,
+            24
+          ]
+        },
+        {
+          "monsterId": 114,
+          "badgeIds": [
+            3,
+            1
+          ]
+        },
+        {
+          "monsterId": 119,
+          "badgeIds": [
+            3,
+            5
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":124,\"x\":6,\"y\":2},{\"monsterId\":110,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2},{\"monsterId\":113,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "106,108,110,113,114,116,119,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 124,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 110,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 114,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 113,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 106,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_4_c59",
+        "attack": {
+          "w": 2,
+          "d": 0,
+          "l": 2
+        },
+        "survival": {
+          "w": 3,
+          "d": 0,
+          "l": 1
+        },
+        "comprehensive": {
+          "w": 2,
+          "d": 0,
+          "l": 2
+        },
+        "vsAll": {
+          "w": 5,
+          "d": 1,
+          "l": 10
+        },
+        "adScore": 0.5833333333333334,
+        "weakest": 0,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            117,
+            107
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.5833333333333334,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "exploration_novelty"
+      ]
+    },
+    {
+      "candidateId": "cand_s4_7_d25",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 19,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 114,
+          "badgeIds": [
+            3,
+            1
+          ]
+        },
+        {
+          "monsterId": 110,
+          "badgeIds": [
+            11,
+            28
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 107,
+          "badgeIds": [
+            20,
+            1
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":110,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2},{\"monsterId\":107,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":113,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":124,\"x\":6,\"y\":1},{\"monsterId\":119,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "107,108,110,113,114,116,117,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 110,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 114,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 107,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 113,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 124,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 119,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_7_d25",
+        "attack": {
+          "w": 0,
+          "d": 1,
+          "l": 3
+        },
+        "survival": {
+          "w": 0,
+          "d": 2,
+          "l": 2
+        },
+        "comprehensive": {
+          "w": 4,
+          "d": 0,
+          "l": 0
+        },
+        "vsAll": {
+          "w": 8,
+          "d": 0,
+          "l": 8
+        },
+        "adScore": 0.5833333333333334,
+        "weakest": 0,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            106,
+            119
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.5833333333333334,
+      "scoreSource": "coarse",
+      "retained": true,
+      "retentionReasons": [
+        "exploration_novelty"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "candidateId": "cand_s4_5_cae",
+      "sourceSeedIndex": 3,
+      "sourceSeedName": "经典救星",
+      "sourceSeedId": "classicsavior",
+      "generationSeed": 3042,
+      "attemptIndex": 12,
+      "archPath": "full_rush",
+      "modulePath": "范围克制祷徒",
+      "coreKey": "all2",
+      "referenceFormation": "经典救星",
+      "team": [
+        {
+          "monsterId": 113,
+          "badgeIds": [
+            20,
+            3
+          ]
+        },
+        {
+          "monsterId": 124,
+          "badgeIds": [
+            10,
+            9
+          ]
+        },
+        {
+          "monsterId": 117,
+          "badgeIds": [
+            3,
+            9
+          ]
+        },
+        {
+          "monsterId": 114,
+          "badgeIds": [
+            3,
+            1
+          ]
+        },
+        {
+          "monsterId": 106,
+          "badgeIds": [
+            32,
+            24
+          ]
+        },
+        {
+          "monsterId": 116,
+          "badgeIds": [
+            3,
+            5
+          ]
+        },
+        {
+          "monsterId": 107,
+          "badgeIds": [
+            20,
+            1
+          ]
+        },
+        {
+          "monsterId": 108,
+          "badgeIds": [
+            3,
+            22,
+            21
+          ]
+        }
+      ],
+      "treeFingerprint": "{\"id\":\"n34\",\"round\":0,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[],\"children\":[{\"id\":\"n35\",\"round\":1,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":108,\"x\":9,\"y\":1}],\"children\":[{\"id\":\"n36\",\"round\":2,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":117,\"x\":6,\"y\":2},{\"monsterId\":113,\"x\":7,\"y\":2}],\"children\":[{\"id\":\"n37\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"prayer\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2},{\"monsterId\":107,\"x\":9,\"y\":2}],\"children\":[{\"id\":\"n38\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n39\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":0}],\"children\":[]}]}]},{\"id\":\"n15\",\"round\":3,\"condition\":{\"side\":null,\"main\":\"fullrush\",\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":106,\"x\":6,\"y\":1},{\"monsterId\":124,\"x\":10,\"y\":4}],\"children\":[{\"id\":\"n16\",\"round\":4,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":116,\"x\":7,\"y\":3}],\"children\":[{\"id\":\"n17\",\"round\":5,\"condition\":{\"side\":null,\"main\":null,\"subs\":[],\"keys\":[]},\"placements\":[{\"monsterId\":114,\"x\":8,\"y\":2}],\"children\":[]}]}]}]}]}]}",
+      "canonicalKey": "106,107,108,113,114,116,117,124",
+      "tree": {
+        "id": "n34",
+        "round": 0,
+        "condition": {
+          "side": null,
+          "main": null,
+          "subs": [],
+          "keys": []
+        },
+        "placements": [],
+        "children": [
+          {
+            "id": "n35",
+            "round": 1,
+            "condition": {
+              "side": null,
+              "main": null,
+              "subs": [],
+              "keys": []
+            },
+            "placements": [
+              {
+                "monsterId": 108,
+                "x": 9,
+                "y": 1
+              }
+            ],
+            "children": [
+              {
+                "id": "n36",
+                "round": 2,
+                "condition": {
+                  "side": null,
+                  "main": null,
+                  "subs": [],
+                  "keys": []
+                },
+                "placements": [
+                  {
+                    "monsterId": 117,
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "monsterId": 113,
+                    "x": 7,
+                    "y": 2
+                  }
+                ],
+                "children": [
+                  {
+                    "id": "n37",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "prayer",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 114,
+                        "x": 8,
+                        "y": 2
+                      },
+                      {
+                        "monsterId": 107,
+                        "x": 9,
+                        "y": 2
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n38",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 106,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n39",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 116,
+                                "x": 7,
+                                "y": 0
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "n15",
+                    "round": 3,
+                    "condition": {
+                      "side": null,
+                      "main": "fullrush",
+                      "subs": [],
+                      "keys": []
+                    },
+                    "placements": [
+                      {
+                        "monsterId": 106,
+                        "x": 6,
+                        "y": 1
+                      },
+                      {
+                        "monsterId": 124,
+                        "x": 10,
+                        "y": 4
+                      }
+                    ],
+                    "children": [
+                      {
+                        "id": "n16",
+                        "round": 4,
+                        "condition": {
+                          "side": null,
+                          "main": null,
+                          "subs": [],
+                          "keys": []
+                        },
+                        "placements": [
+                          {
+                            "monsterId": 116,
+                            "x": 7,
+                            "y": 3
+                          }
+                        ],
+                        "children": [
+                          {
+                            "id": "n17",
+                            "round": 5,
+                            "condition": {
+                              "side": null,
+                              "main": null,
+                              "subs": [],
+                              "keys": []
+                            },
+                            "placements": [
+                              {
+                                "monsterId": 114,
+                                "x": 8,
+                                "y": 2
+                              }
+                            ],
+                            "children": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "validation": {
+        "valid": true,
+        "cost": 18,
+        "size": 8,
+        "hasTactic": true
+      },
+      "coarseEvaluation": {
+        "name": "cand_s4_5_cae",
+        "attack": {
+          "w": 0,
+          "d": 1,
+          "l": 3
+        },
+        "survival": {
+          "w": 2,
+          "d": 0,
+          "l": 2
+        },
+        "comprehensive": {
+          "w": 0,
+          "d": 0,
+          "l": 4
+        },
+        "vsAll": {
+          "w": 4,
+          "d": 2,
+          "l": 10
+        },
+        "adScore": 0.25,
+        "weakest": 0,
+        "seedBase": 31000,
+        "games": 1,
+        "workers": 16
+      },
+      "mutationVector": {
+        "deckMutation": {
+          "addedMonsters": [
+            113,
+            124
+          ],
+          "removedMonsters": [
+            110,
+            119
+          ],
+          "symmetricDifference": 4,
+          "coreChanged": "unknown",
+          "costDelta": 0
+        },
+        "badgeMutation": {
+          "commonMonstersBadgeDiffCount": 0,
+          "badgesAdded": 0,
+          "badgesRemoved": 0
+        },
+        "treeMutation": {
+          "treeFingerprintDiff": true,
+          "placementDiffCount": 4,
+          "nodeCountDiff": 0
+        },
+        "direction": {
+          "archPath": "full_rush",
+          "modulePath": "范围克制祷徒",
+          "coreKey": "all2",
+          "mutationBucket": "light"
+        },
+        "noveltyScore": 0.32,
+        "noveltyDetails": {
+          "normalizedDeckDist": 0.5,
+          "normalizedBadgeDist": 0,
+          "normalizedTreeDist": 0.4,
+          "formula": "0.4 * min(1, symDiff/8) + 0.3 * min(1, (badgesAdded+badgesRemoved)/8) + 0.3 * min(1, placementDiff/10)",
+          "version": "1.0.0"
+        }
+      },
+      "effectiveScore": 0.25,
+      "scoreSource": "coarse",
+      "retained": false,
+      "rejectionReason": "capacity_exhausted_unselected_novelty"
+    }
+  ]
+}
