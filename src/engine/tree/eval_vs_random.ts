@@ -249,7 +249,7 @@ function ruleRandomPlace(
 // 费用/角色表（延迟初始化）
 let DB_COST: Record<number, number> = {};
 let DB_ROLE: Record<number, string> = {};
-function initCost(): void {
+export function initCost(): void {
   DB_COST = {};
   DB_ROLE = {};
   for (const m of DB_MONSTERS) {
@@ -259,7 +259,7 @@ function initCost(): void {
 }
 
 /** 单局：进化产物 vs 规则随机，返回进化侧 {w,d,l} */
-function playOne(
+export function playOne(
   BundleAI: any,
   f: EvolFormation,
   oppDeck: { monsterId: number; badgeIds: number[] }[],
@@ -417,4 +417,7 @@ function main(): void {
   console.log(`耗时 ${(ms / 1000).toFixed(1)}s`);
 }
 
-main();
+// 仅 CLI 直接运行时执行 main（被 import 时不执行）
+if (process.argv[1] && process.argv[1].endsWith('eval_vs_random.ts')) {
+  main();
+}

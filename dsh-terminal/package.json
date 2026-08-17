@@ -1,0 +1,23 @@
+{
+  "name": "dsh-terminal",
+  "version": "0.1.0",
+  "description": "DSH web 本地终端面板：右侧抽屉 + xterm.js + node-pty（Windows ConPTY），可交互执行命令",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "node-pty": "1.1.0",
+    "ws": "8.21.3"
+  },
+  "license": "MIT"
+}

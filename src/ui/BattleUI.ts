@@ -8,10 +8,6 @@ import { director } from '../core/Director';
 import { uiManager } from './UIManager';
 import { networkManager } from '../net/NetworkManager';
 import { vfx } from '../game/VfxManager';
-import { buildSnapshot } from '../engine/placement/snapshot';
-import { loadModelFromUrl, planRoundPlacementsModel } from '../engine/train/model_planner';
-import { planForRound } from '../engine/train/features';
-import { FORMATION_LIBRARY } from '../ai/formation_library';
 
 // 联机等待状态需跨 BattleUI 实例持久化（syncStateWithUI 会重建实例）
 let _globalIsWaiting: boolean = false;
@@ -599,37 +595,9 @@ export class BattleUI {
     };
   }
 
-  /** AI auto-placement: 优先训练模型规划整轮布阵；模型加载失败回退 ai-bundle 规则引擎 */
+  /** AI auto-placement: 使用 ai-bundle 规则引擎规划整轮布阵 */
   private async runAIPlacements(): Promise<void> {
     console.log('[AI] Starting AI placements...');
-
-    const aiHand = gameEngine.teams[1].filter(s => s.monsterId > 0);
-
-    // ---- 优先：训练模型驱动整轮规划（雾战快照：AI 仅见玩家前 4 槽位徽章 + 已布棋盘） ----
-    try {
-      const model = await loadModelFromUrl('model.json');
-      const snap = buildSnapshot(gameEngine, 'p2', aiHand, gameEngine.teams[0]);
-      // 开局坦克先验：匹配 AI 卡组对应的阵型树，R1 强制树计划首动作（与训练/评估一致）
-      const aiIds = aiHand.map(s => s.monsterId).sort((a, b) => a - b).join(',');
-      const fm = FORMATION_LIBRARY.find(f =>
-        f.team.filter(s => s.monsterId > 0).map(s => s.monsterId).sort((a, b) => a - b).join(',') === aiIds,
-      );
-      const treePlan = fm ? planForRound(fm.tree, gameEngine.currentRound) : undefined;
-      const forceTree = fm && gameEngine.currentRound === 1 ? planForRound(fm.tree, 1) : undefined;
-      const plan = planRoundPlacementsModel(snap, model, treePlan, forceTree);
-      console.log(`[AI] Model plan: ${plan.map(p => `${p.monsterId}@${p.x},${p.y}`).join(' ') || '(空)'}`);
-      for (const p of plan) {
-        const slot = gameEngine.teams[1].find(s => s.monsterId === p.monsterId);
-        if (!slot) continue;
-        const placed = gameEngine.placeMonster(slot, p.x, p.y, false);
-        if (!placed) console.warn(`[AI] 模型放置失败: ${p.monsterId}@${p.x},${p.y}`);
-      }
-      console.log(`[AI] Model placements done. P2 monsters: ${gameEngine.boardMonsters.filter(m => m.gridX >= 6).length}`);
-      this.showBattleStartAnnouncement();
-      return;
-    } catch (e) {
-      console.warn('[AI] 模型加载失败，回退规则引擎:', e);
-    }
 
     let ai = (gameEngine as any)._aiInstance as BattleAI;
     if (!ai) {

@@ -2572,6 +2572,9 @@ var BattleAI = (() => {
     archetype: "prayer",
     signatureCards: [110, 103, 105, 116],
     hasFourCost: false,
+    // 全二永平龟缩核心（祈祷/学徒/帝国）必须保持上半区（y0-2），
+    // 排除 mirror_global（整队翻下半区）与 shift_down（整体下移）
+    variants: ["original", "mirror_imperial", "shift_up", "shift_left", "shift_right"],
     team: [
       { monsterId: 110, badgeIds: [23, 8] },
       { monsterId: 105, badgeIds: [8, 17] },
@@ -2923,6 +2926,438 @@ var BattleAI = (() => {
       ]
     }
   };
+  var \u94F2\u571F\u591A\u6838 = {
+    id: "spade_multi",
+    name: "\u94F2\u571F\u591A\u6838",
+    archetype: "prayer",
+    signatureCards: [115, 108, 124, 117],
+    hasFourCost: true,
+    fourCostName: "\u94F2\u571F\u4EBA",
+    team: [
+      { monsterId: 115, badgeIds: [23, 6, 10] },
+      { monsterId: 108, badgeIds: [3, 22, 21] },
+      { monsterId: 106, badgeIds: [32, 24] },
+      { monsterId: 112, badgeIds: [8, 6] },
+      { monsterId: 117, badgeIds: [3, 22] },
+      { monsterId: 110, badgeIds: [11, 28] },
+      { monsterId: 101, badgeIds: [3, 4, 2] },
+      { monsterId: 124, badgeIds: [10, 9] }
+    ],
+    tree: {
+      id: "n18",
+      round: 0,
+      label: "\u5F00\u5C40",
+      comment: "",
+      placement: [],
+      children: [{
+        id: "n19",
+        round: 1,
+        label: "\u5C401",
+        comment: "",
+        placement: [
+          { monsterId: 115, badgeIds: [23, 6, 10], x: 7, y: 2 }
+        ],
+        children: [{
+          id: "n20",
+          round: 2,
+          label: "\u5C402",
+          comment: "",
+          placement: [
+            { monsterId: 108, badgeIds: [3, 22, 21], x: 8, y: 1 }
+          ],
+          children: [
+            {
+              // 主分支
+              id: "n21",
+              round: 3,
+              label: "\u5C403",
+              comment: "",
+              placement: [
+                { monsterId: 101, badgeIds: [3, 4, 2], x: 9, y: 3 }
+              ],
+              children: [{
+                id: "n22",
+                round: 4,
+                label: "\u5C404",
+                comment: "",
+                placement: [
+                  { monsterId: 112, badgeIds: [8, 6], x: 7, y: 1 }
+                ],
+                children: [{
+                  id: "n23",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 106, badgeIds: [32, 24], x: 6, y: 2 }
+                  ],
+                  children: []
+                }]
+              }]
+            },
+            {
+              // 盾炮分支
+              id: "n26",
+              round: 3,
+              label: "\u76FE\u70AE\u6709\u76EE\u6807",
+              comment: "",
+              placement: [
+                { monsterId: 117, badgeIds: [3, 22], x: 6, y: 1 },
+                { monsterId: 110, badgeIds: [11, 28], x: 7, y: 1 }
+              ],
+              children: [{
+                id: "n27",
+                round: 4,
+                label: "\u5C404",
+                comment: "",
+                placement: [
+                  { monsterId: 112, badgeIds: [8, 6], x: 8, y: 2 }
+                ],
+                children: [{
+                  id: "n28",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 124, badgeIds: [10, 9], x: 8, y: 4 }
+                  ],
+                  children: []
+                }]
+              }]
+            }
+          ]
+        }]
+      }]
+    }
+  };
+  var \u793C\u7269\u6551\u661F = {
+    id: "gift_savior",
+    name: "\u793C\u7269\u6551\u661F",
+    archetype: "half_rush",
+    signatureCards: [108, 110, 105, 109],
+    hasFourCost: true,
+    fourCostName: "\u6551\u661F\u9A91\u58EB",
+    // 银狙(礼物33)死亡时礼物给指定目标——依赖相对站位。
+    // mirror_global 全体统一翻转、相对距离不变可保留；mirror_imperial/shift_* 会拆散相对位置 → 排除
+    variants: ["original", "mirror_global"],
+    team: [
+      { monsterId: 110, badgeIds: [23, 16] },
+      { monsterId: 105, badgeIds: [8, 17] },
+      { monsterId: 116, badgeIds: [3, 5] },
+      { monsterId: 119, badgeIds: [32, 24] },
+      { monsterId: 108, badgeIds: [23, 3, 22] },
+      { monsterId: 109, badgeIds: [24, 33] },
+      { monsterId: 104, badgeIds: [3, 4] },
+      { monsterId: 114, badgeIds: [3, 32] }
+    ],
+    tree: {
+      id: "n1",
+      round: 0,
+      label: "\u5F00\u5C40",
+      comment: "",
+      placement: [],
+      children: [
+        {
+          // 主分支
+          id: "n2",
+          round: 1,
+          label: "\u5C401",
+          comment: "",
+          placement: [
+            { monsterId: 110, badgeIds: [23, 16], x: 8, y: 1 },
+            { monsterId: 116, badgeIds: [3, 5], x: 6, y: 1 }
+          ],
+          children: [{
+            id: "n3",
+            round: 2,
+            label: "\u5C402",
+            comment: "",
+            placement: [
+              { monsterId: 108, badgeIds: [23, 3, 22], x: 8, y: 2 }
+            ],
+            children: [{
+              id: "n4",
+              round: 3,
+              label: "\u5C403",
+              comment: "\u94F6\u72D9\u524D\u7F6E\u4E8E(6,3)\uFF1A\u6551\u661F\u5F00\u5C40\u5411\u524D\u8D70\uFF0C\u59CB\u7EC8\u6BD4\u5E1D\u56FD(8,1)\u79BB\u94F6\u72D9\u66F4\u8FD1\uFF0C\u6B7B\u65F6\u793C\u7269\u7ED9\u6551\u661F",
+              placement: [
+                { monsterId: 109, badgeIds: [24, 33], x: 6, y: 3 },
+                { monsterId: 105, badgeIds: [8, 17], x: 9, y: 1 }
+              ],
+              children: [{
+                id: "n5",
+                round: 4,
+                label: "\u5C404",
+                comment: "",
+                placement: [
+                  { monsterId: 104, badgeIds: [3, 4], x: 8, y: 0 }
+                ],
+                children: [{
+                  id: "n6",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 114, badgeIds: [3, 32], x: 9, y: 2 }
+                  ],
+                  children: []
+                }]
+              }]
+            }]
+          }]
+        },
+        {
+          // 对方祷徒
+          id: "n7",
+          round: 1,
+          label: "\u5BF9\u65B9\u7977\u5F92",
+          comment: "\u6551\u661F(8,3)\uFF1A\u540E\u624B vs \u7977\u5F92\u7CFB\uFF08\u5168\u4E8C\u6C38\u5E73\u7B49\uFF09\u65F6\u4E0B\u79FB\u4E00\u683C\uFF0C\u907F\u514D\u5E1D\u56FD(8,1)\u62A2\u5360\u94F6\u72D9\u6B7B\u4EA1\u65F6\u7684\u6700\u8FD1\u53CB\u65B9\u4F4D",
+          placement: [
+            { monsterId: 108, badgeIds: [23, 3, 22], x: 8, y: 3 }
+          ],
+          children: [{
+            id: "n8",
+            round: 2,
+            label: "\u5C402",
+            comment: "\u94F6\u72D9\u524D\u7F6E\u4E8E(6,3)\uFF1A\u6551\u661F\u5F00\u5C40\u5411\u524D\u8D70\uFF0C\u59CB\u7EC8\u6BD4\u5E1D\u56FD(8,1)\u79BB\u94F6\u72D9\u66F4\u8FD1",
+            placement: [
+              { monsterId: 110, badgeIds: [23, 16], x: 8, y: 1 },
+              { monsterId: 109, badgeIds: [24, 33], x: 6, y: 3 }
+            ],
+            children: [{
+              id: "n9",
+              round: 3,
+              label: "\u5C403",
+              comment: "",
+              placement: [
+                { monsterId: 104, badgeIds: [3, 4], x: 8, y: 0 },
+                { monsterId: 119, badgeIds: [32, 24], x: 10, y: 0 }
+              ],
+              children: [{
+                id: "n10",
+                round: 4,
+                label: "\u5C404",
+                comment: "",
+                placement: [
+                  { monsterId: 105, badgeIds: [8, 17], x: 9, y: 1 }
+                ],
+                children: [{
+                  id: "n11",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "",
+                  placement: [
+                    { monsterId: 114, badgeIds: [3, 32], x: 9, y: 2 }
+                  ],
+                  children: []
+                }]
+              }]
+            }]
+          }]
+        }
+      ]
+    }
+  };
+  var \u58D5\u70B8\u91D1\u7334 = {
+    id: "golden_boom",
+    name: "\u58D5\u70B8\u91D1\u7334",
+    archetype: "prayer",
+    signatureCards: [120, 110, 105, 125],
+    hasFourCost: true,
+    fourCostName: "\u91D1\u9762\u7334\u738B",
+    team: [
+      { monsterId: 110, badgeIds: [23, 8] },
+      { monsterId: 105, badgeIds: [8, 17] },
+      { monsterId: 106, badgeIds: [32, 24] },
+      { monsterId: 125, badgeIds: [32, 24] },
+      { monsterId: 120, badgeIds: [3, 22, 21] },
+      { monsterId: 124, badgeIds: [8, 35] },
+      { monsterId: 103, badgeIds: [8, 12] }
+    ],
+    tree: {
+      id: "n1",
+      round: 0,
+      label: "\u5F00\u5C40",
+      comment: "",
+      placement: [],
+      children: [{
+        id: "n2",
+        round: 1,
+        label: "\u5C401",
+        comment: "",
+        placement: [
+          { monsterId: 110, badgeIds: [23, 8], x: 9, y: 2 },
+          { monsterId: 105, badgeIds: [8, 17], x: 10, y: 1 }
+        ],
+        children: [{
+          id: "n3",
+          round: 2,
+          label: "\u5C402",
+          comment: "",
+          placement: [
+            { monsterId: 120, badgeIds: [3, 22, 21], x: 10, y: 2 }
+          ],
+          children: [{
+            id: "n4",
+            round: 3,
+            label: "\u5C403",
+            comment: "\u51B2\u950BR3\u63D0\u524D\u62E6\u622A\u585E\u96F7\u70AE\uFF0C\u6218\u58D5\u524D\u7EBF",
+            placement: [
+              { monsterId: 106, badgeIds: [32, 24], x: 6, y: 3 },
+              { monsterId: 125, badgeIds: [32, 24], x: 6, y: 1 }
+            ],
+            children: [{
+              id: "n5",
+              round: 4,
+              label: "\u5C404",
+              comment: "",
+              placement: [
+                { monsterId: 103, badgeIds: [8, 12], x: 9, y: 1 }
+              ],
+              children: [{
+                id: "n6",
+                round: 5,
+                label: "\u5C405",
+                comment: "",
+                placement: [
+                  { monsterId: 124, badgeIds: [8, 35], x: 10, y: 3 }
+                ],
+                children: []
+              }]
+            }]
+          }]
+        }]
+      }]
+    }
+  };
+  var \u793C\u7269\u4E1B\u6797 = {
+    id: "gift_jungle",
+    name: "\u793C\u7269\u4E1B\u6797",
+    archetype: "prayer",
+    signatureCards: [110, 105, 124, 122],
+    hasFourCost: false,
+    // 礼物体系依赖相对站位（银狙礼物指向），排除 mirror_imperial/shift_*，保留 original + mirror_global
+    variants: ["original", "mirror_global"],
+    team: [
+      { monsterId: 110, badgeIds: [23, 8] },
+      { monsterId: 105, badgeIds: [8, 17] },
+      { monsterId: 106, badgeIds: [32, 24] },
+      { monsterId: 122, badgeIds: [8, 2] },
+      { monsterId: 109, badgeIds: [18, 33] },
+      { monsterId: 124, badgeIds: [25, 12] },
+      { monsterId: 103, badgeIds: [8, 6] },
+      { monsterId: 114, badgeIds: [3, 32] }
+    ],
+    tree: {
+      id: "n1",
+      round: 0,
+      label: "\u5F00\u5C40",
+      comment: "",
+      placement: [],
+      children: [
+        {
+          // 主分支
+          id: "n2",
+          round: 1,
+          label: "\u5C401",
+          comment: "",
+          placement: [
+            { monsterId: 110, badgeIds: [23, 8], x: 7, y: 3 },
+            { monsterId: 124, badgeIds: [25, 12], x: 7, y: 2 }
+          ],
+          children: [{
+            id: "n3",
+            round: 2,
+            label: "\u5C402",
+            comment: "",
+            placement: [
+              { monsterId: 109, badgeIds: [18, 33], x: 6, y: 1 },
+              { monsterId: 122, badgeIds: [8, 2], x: 7, y: 1 }
+            ],
+            children: [{
+              id: "n4",
+              round: 3,
+              label: "\u5C403",
+              comment: "",
+              placement: [
+                { monsterId: 105, badgeIds: [8, 17], x: 8, y: 2 },
+                { monsterId: 103, badgeIds: [8, 6], x: 8, y: 3 }
+              ],
+              children: [{
+                id: "n5",
+                round: 4,
+                label: "\u5C404",
+                comment: "\u51B2\u950B",
+                placement: [
+                  { monsterId: 106, badgeIds: [32, 24], x: 9, y: 2 }
+                ],
+                children: [{
+                  id: "n6",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "\u7A81\u7A81",
+                  placement: [
+                    { monsterId: 114, badgeIds: [3, 32], x: 9, y: 3 }
+                  ],
+                  children: []
+                }]
+              }]
+            }]
+          }]
+        },
+        {
+          // 对方全冲可能救星开
+          id: "n7",
+          round: 1,
+          label: "\u5BF9\u65B9\u5168\u51B2\u53EF\u80FD\u6551\u661F\u5F00",
+          comment: "",
+          placement: [
+            { monsterId: 110, badgeIds: [23, 8], x: 7, y: 3 },
+            { monsterId: 124, badgeIds: [25, 12], x: 7, y: 2 }
+          ],
+          children: [{
+            id: "n8",
+            round: 2,
+            label: "\u5C402",
+            comment: "",
+            placement: [
+              { monsterId: 122, badgeIds: [8, 2], x: 7, y: 1 },
+              { monsterId: 109, badgeIds: [18, 33], x: 6, y: 1 }
+            ],
+            children: [{
+              id: "n9",
+              round: 3,
+              label: "\u5C403",
+              comment: "",
+              placement: [
+                { monsterId: 105, badgeIds: [8, 17], x: 8, y: 2 },
+                { monsterId: 103, badgeIds: [8, 6], x: 8, y: 3 }
+              ],
+              children: [{
+                id: "n10",
+                round: 4,
+                label: "\u5C404",
+                comment: "\u51B2\u950B",
+                placement: [
+                  { monsterId: 106, badgeIds: [32, 24], x: 9, y: 2 }
+                ],
+                children: [{
+                  id: "n11",
+                  round: 5,
+                  label: "\u5C405",
+                  comment: "\u7A81\u7A81",
+                  placement: [
+                    { monsterId: 114, badgeIds: [3, 32], x: 9, y: 3 }
+                  ],
+                  children: []
+                }]
+              }]
+            }]
+          }]
+        }
+      ]
+    }
+  };
   var FORMATION_LIBRARY = [
     \u6CC9\u6C34\u5251,
     \u575A\u679C\u6551\u661F,
@@ -2930,7 +3365,11 @@ var BattleAI = (() => {
     \u7ECF\u5178\u6551\u661F,
     \u5168\u4E8C\u6C38\u5E73,
     \u8083\u6E05,
-    \u68AF\u5B50\u585E\u96F7
+    \u68AF\u5B50\u585E\u96F7,
+    \u94F2\u571F\u591A\u6838,
+    \u793C\u7269\u6551\u661F,
+    \u58D5\u70B8\u91D1\u7334,
+    \u793C\u7269\u4E1B\u6797
   ];
 
   // src/ai/strategy/formation_matcher.ts
@@ -3032,6 +3471,60 @@ var BattleAI = (() => {
     }
     return bestY;
   }
+  function keyMonsterAlign(monsterId) {
+    switch (monsterId) {
+      case 107:
+        return { method: "mirror" };
+      // 咒法
+      case 117:
+        return { method: "sameRow" };
+      // 铁甲
+      case 113:
+        return { method: "face" };
+      // 矿爆
+      case 114:
+        return { method: "face" };
+      // 突突
+      case 119:
+        return { method: "mirror" };
+      // 忍猴（瞬移刺客，镜像对顶拦截）
+      case 116:
+        return { method: "sameRow" };
+      // 钻头（对顶）
+      case 106:
+        return { method: "sameRow" };
+      // 冲锋（对顶）
+      default:
+        return null;
+    }
+  }
+  function alignToKeyMonster(opponents, defaultX, defaultY) {
+    const PRIORITY = [107, 117, 113, 114, 119, 116, 106];
+    for (const mid of PRIORITY) {
+      const target = opponents.find((u) => u.monsterId === mid);
+      if (!target) continue;
+      const align = keyMonsterAlign(mid);
+      if (!align) continue;
+      const ty = target.position.y;
+      const tx = target.position.x;
+      switch (align.method) {
+        case "mirror": {
+          const x = Math.max(P2_ZONE_X_START, Math.min(10, tx + 6));
+          return { x, y: ty };
+        }
+        case "sameRow":
+          return { x: defaultX, y: ty };
+        case "face":
+          return { x: P2_ZONE_X_START, y: ty };
+        case "offset": {
+          const x = Math.max(P2_ZONE_X_START, Math.min(10, tx + 6));
+          const y = Math.max(0, Math.min(BOARD_HEIGHT - 1, ty + (align.dy ?? 0)));
+          return { x, y };
+        }
+      }
+    }
+    return null;
+  }
   var SPECIAL_CALCULATORS = {
     // ==========================================================
     // 冲锋(106)：带接力(35)时（祷徒阵）优先贴祈祷(105)相邻；
@@ -3049,8 +3542,8 @@ var BattleAI = (() => {
             return { x: prayer.position.x, y: tryY };
           }
         }
-        const enemyTiejia = opponents.find((u) => u.monsterId === 117);
-        if (enemyTiejia) return { x: defaultX, y: enemyTiejia.position.y };
+        const keyAlign = alignToKeyMonster(opponents, defaultX, defaultY);
+        if (keyAlign) return keyAlign;
         const enemyTank = opponents.find((u) => getMonsterRole(u.monsterId) === "\u5766\u514B");
         if (enemyTank) return { x: defaultX, y: enemyTank.position.y };
         return { x: defaultX, y: defaultY };
@@ -3156,11 +3649,8 @@ var BattleAI = (() => {
           const drillY = Math.min(BOARD_HEIGHT - 1, prayer.position.y + 1);
           return { x: drillX, y: drillY };
         }
-        const enemySpell = opponents.find((u) => u.monsterId === 107);
-        if (enemySpell) {
-          const drillX = enemySpell.position.x + 6;
-          return { x: Math.max(P2_ZONE_X_START, Math.min(10, drillX)), y: enemySpell.position.y };
-        }
+        const keyAlign = alignToKeyMonster(opponents, defaultX, defaultY);
+        if (keyAlign) return keyAlign;
         const fourCostRows = opponents.filter((u) => getMonsterCost(u.monsterId) === 4).map((u) => u.position.y);
         if (fourCostRows.length > 0) {
           return { x: defaultX, y: fourCostRows[0] };
@@ -3346,6 +3836,15 @@ var BattleAI = (() => {
   var FOUR_COST_IDS = new Set(
     Object.values(DB_MONSTERS).filter((m) => m.cost === 4).map((m) => m.id)
   );
+  var DEFAULT_VARIANTS = [
+    "original",
+    "mirror_global",
+    "mirror_imperial",
+    "shift_up",
+    "shift_down",
+    "shift_left",
+    "shift_right"
+  ];
   var _FormationEngine = class _FormationEngine {
     constructor() {
       this.hand = [];
@@ -3403,36 +3902,18 @@ var BattleAI = (() => {
     }
     /**
      * 随机选择变体
-     * 全局镜像 25% + 帝国轴镜像 25% = 镜像 50%
-     * 上下移 30% + 左右移 20%
-     * 全二永平：只保留上半部分变体——冲锋反盾炮（铁甲投掷塞雷）后会被撞飞向下半区，
-     * 阵型龟缩核心（祈祷/学徒/帝国）必须保持在上半区（y0-2），
-     * 因此排除 mirror_global（整队翻到下半区）与 shift_down（整体下移）
+     * 从该阵型允许的变体列表（formation.variants）中等概率随机选一个。
+     * 缺省（未配置 variants）= 全部 7 种变体（含 original）等概率。
+     *
+     * 设计（用户定案）：变体选项可控制，每个阵型可选开启——
+     *   镜像（mirror_*）有利有弊、随机性更强，让阵型不被针对，胜率可能上升；
+     *   但某些卡组不适合特定变体（如依赖上下区/相对站位的阵型），在 formation_library
+     *   里通过 variants 字段收窄（见 formation_library.ts 里 全二永平/礼物救星/礼物丛林）。
      */
     selectVariant() {
-      if (this.selectedFormation?.id === "all2prayer") {
-        const roll2 = Math.random();
-        if (roll2 < 0.6) {
-          this.variant = "original";
-        } else if (roll2 < 0.8) {
-          this.variant = "mirror_imperial";
-        } else if (roll2 < 0.9) {
-          this.variant = "shift_up";
-        } else {
-          this.variant = Math.random() < 0.5 ? "shift_left" : "shift_right";
-        }
-        return;
-      }
-      const roll = Math.random();
-      if (roll < 0.25) {
-        this.variant = "mirror_global";
-      } else if (roll < 0.5) {
-        this.variant = "mirror_imperial";
-      } else if (roll < 0.8) {
-        this.variant = Math.random() < 0.5 ? "shift_up" : "shift_down";
-      } else {
-        this.variant = Math.random() < 0.5 ? "shift_left" : "shift_right";
-      }
+      const allowed = this.selectedFormation?.variants;
+      const pool = allowed && allowed.length > 0 ? allowed : DEFAULT_VARIANTS;
+      this.variant = pool[Math.floor(Math.random() * pool.length)];
     }
     // ============================================================
     // 自定义阵型加载
@@ -3487,11 +3968,13 @@ var BattleAI = (() => {
         tree: convertNode(json.tree),
         signatureCards,
         hasFourCost: fourCostCards.length > 0,
-        fourCostName: fourCostCards.length > 0 ? DB_MONSTERS.find((m) => m.id === fourCostCards[0])?.name : void 0
+        fourCostName: fourCostCards.length > 0 ? DB_MONSTERS.find((m) => m.id === fourCostCards[0])?.name : void 0,
+        variants: json.variants
       };
       this.selectedFormation = formation;
       this.currentNode = formation.tree;
       this.pathByRound.clear();
+      this.selectVariant();
       return formation;
     }
     // ============================================================
@@ -4058,6 +4541,3 @@ var BattleAI = (() => {
   };
   return __toCommonJS(battle_ai_exports);
 })();
-if (typeof globalThis !== 'undefined') { globalThis.BattleAI = BattleAI; }
-if (typeof window !== 'undefined') { window.BattleAI = BattleAI; }
-if (typeof module !== 'undefined' && module.exports) { module.exports = { BattleAI }; }

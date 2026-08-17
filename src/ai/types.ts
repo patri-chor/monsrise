@@ -30,4 +30,6 @@ export interface Formation {
   fourCostName?: string;
   team: FormationTeamSlot[];
   tree: FormationTree;
+  /** 允许使用的变体列表（缺省 = 全部 7 种变体等概率，含 original） */
+  variants?: string[];
 }

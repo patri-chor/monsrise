@@ -55,6 +55,9 @@ export function getAnimationClip(dbId: number, state: string): AnimClipRef | nul
     if (ANIMATIONS[key]) {
       return { clip: ANIMATIONS[key], key };
     }
+    // 无 {dbId}s 技能剪辑：视为瞬发技能（buff 类如 120强化/121修行/122愤怒/125转化），
+    // 不回落基础剪辑——否则会用基础剪辑时长当施放动画，导致每次施放卡 1.6s+ 普攻
+    return null;
   }
   const key = String(dbId);
   if (ANIMATIONS[key]) {

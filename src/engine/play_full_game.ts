@@ -13,10 +13,9 @@ import { registerAllBadges } from '../game/BadgeSystem';
 import type { MatchResult, Placement } from './types';
 import { buildSnapshot } from './placement/snapshot';
 import { planRoundPlacements } from './placement/decide';
-import { planForRound } from './train/features';
+import { planForRound } from '../ai/formation_tree';
 import type { FormationTree } from '../ai/types';
 import { planRoundPlacementsSearch } from './placement/search';
-import { loadModel, planRoundPlacementsModel } from './train/model_planner';
 
 const BATTLE_DT = 0.04; // 25 帧/秒，与网页 Director 固定逻辑步长一致
 
@@ -29,30 +28,16 @@ function mirrorPlanFor(side: 'p1' | 'p2', plan: { monsterId: number; x: number; 
 }
 
 // 搜索规划器开关（环境变量，运行时惰性读取——允许 benchmark 等调用方在进程内先改写 env 再调用）
-// PLANNER: 'greedy'（默认）| 'search' | 'model'
+// PLANNER: 'greedy'（默认）| 'search'
 // SEARCH_SIDE: 'p1' | 'p2' | 'both'（默认 both，即双方都搜索）
 // SEARCH_N: 每个怪兽候选格数（默认 3）
 // SEARCH_TIMEOUT: 单场评估战斗超时秒（默认 45，40s 战斗 + 缓冲兜底）
 // SEARCH_ROUNDS: 限定回合范围，如 '1-3'；缺省全部回合
-// MODEL_SIDE: 'p1' | 'p2' | 'both'（模型侧）
-// MODEL_PATH: 模型文件路径（默认 reports/model.json）
 function searchEnabledFor(side: 'p1' | 'p2', round: number): boolean {
   if (process.env.PLANNER !== 'search') return false;
   const searchSide = process.env.SEARCH_SIDE ?? 'both';
   if (searchSide !== 'both' && searchSide !== side) return false;
   const roundsRaw = process.env.SEARCH_ROUNDS;
-  if (roundsRaw) {
-    const [a, b] = roundsRaw.split('-').map(Number);
-    return round >= a && round <= (b ?? a);
-  }
-  return true;
-}
-
-function modelEnabledFor(side: 'p1' | 'p2', round: number): boolean {
-  if (process.env.PLANNER !== 'model') return false;
-  const modelSide = process.env.MODEL_SIDE ?? 'both';
-  if (modelSide !== 'both' && modelSide !== side) return false;
-  const roundsRaw = process.env.MODEL_ROUNDS;
   if (roundsRaw) {
     const [a, b] = roundsRaw.split('-').map(Number);
     return round >= a && round <= (b ?? a);
@@ -82,14 +67,10 @@ export interface PlayOptions {
     p2Score: number;
     winner: 1 | 2 | 0;
   }) => void;
-  /** 搜索规划器候选评估钩子（训练器数据收集） */
-  onCandidate?: import('./placement/search').SearchOptions['onCandidate'];
-  /** 搜索每步提交钩子（残局库收集） */
-  onSearchStep?: import('./placement/search').SearchOptions['onSearchStep'];
-  /** 双方阵型分支树（人工先验：开局坦克/按回合展开），供特征编码 */
+  /** 双方阵型分支树（人工先验：开局坦克/按回合展开） */
   treeA?: FormationTree;
   treeB?: FormationTree;
-  /** 强制按树计划执行的回合（如 [1] 开局坦克）；仅 PLANNER=search 时生效（训练数据侧修正） */
+  /** 强制按树计划执行的回合（如 [1] 开局坦克）；仅 PLANNER=search 时生效 */
   forceTreeRounds?: number[];
 }
 
@@ -127,54 +108,28 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
     const snapB = buildSnapshot(gameEngine, 'p2', teamB, teamA);
     const baseA = planRoundPlacements(snapA);
     const baseB = planRoundPlacements(snapB);
-    const planA = modelEnabledFor('p1', round)
-      ? planRoundPlacementsModel(
-          snapA,
-          loadModel(process.env.MODEL_PATH || 'reports/model.json'),
-          mirrorPlanFor('p1', planForRound(opts.treeA, round)),
-          // 游戏设计先验：开局坦克；该回合树动作优先，其余由模型决定
-          (opts.forceTreeRounds ?? []).includes(round)
+    const planA = searchEnabledFor('p1', round)
+      ? planRoundPlacementsSearch(snapA, baseB, {
+          candidateCells: Number(process.env.SEARCH_N) || 3,
+          battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
+          side: 'p1',
+          // 游戏设计先验：开局坦克；该回合树动作优先，其余由搜索决定
+          forceTreeAction: (opts.forceTreeRounds ?? []).includes(round)
             ? mirrorPlanFor('p1', planForRound(opts.treeA, round))
             : undefined,
-        )
-      : searchEnabledFor('p1', round)
-        ? planRoundPlacementsSearch(snapA, baseB, {
-            candidateCells: Number(process.env.SEARCH_N) || 3,
-            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
-            side: 'p1',
-            treePlan: mirrorPlanFor('p1', planForRound(opts.treeA, round)),
-            // 数据侧修正：该回合树计划动作优先（如开局坦克）；搜索照跑保留候选样本
-            forceTreeAction: (opts.forceTreeRounds ?? []).includes(round)
-              ? mirrorPlanFor('p1', planForRound(opts.treeA, round))
-              : undefined,
-            onCandidate: opts.onCandidate,
-            onSearchStep: opts.onSearchStep,
-          })
-        : baseA;
-    const planB = modelEnabledFor('p2', round)
-      ? planRoundPlacementsModel(
-          snapB,
-          loadModel(process.env.MODEL_PATH || 'reports/model.json'),
-          planForRound(opts.treeB, round),
-          // 游戏设计先验：开局坦克；该回合树动作优先，其余由模型决定
-          (opts.forceTreeRounds ?? []).includes(round)
+        })
+      : baseA;
+    const planB = searchEnabledFor('p2', round)
+      ? planRoundPlacementsSearch(snapB, baseA, {
+          candidateCells: Number(process.env.SEARCH_N) || 3,
+          battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
+          side: 'p2',
+          // 游戏设计先验：开局坦克；该回合树动作优先，其余由搜索决定
+          forceTreeAction: (opts.forceTreeRounds ?? []).includes(round)
             ? planForRound(opts.treeB, round)
             : undefined,
-        )
-      : searchEnabledFor('p2', round)
-        ? planRoundPlacementsSearch(snapB, baseA, {
-            candidateCells: Number(process.env.SEARCH_N) || 3,
-            battleTimeoutSec: Number(process.env.SEARCH_TIMEOUT) || 45,
-            side: 'p2',
-            treePlan: planForRound(opts.treeB, round),
-            // 数据侧修正：该回合树计划动作优先（如开局坦克）；搜索照跑保留候选样本
-            forceTreeAction: (opts.forceTreeRounds ?? []).includes(round)
-              ? planForRound(opts.treeB, round)
-              : undefined,
-            onCandidate: opts.onCandidate,
-            onSearchStep: opts.onSearchStep,
-          })
-        : baseB;
+        })
+      : baseB;
     if (process.env.DEBUG_PLANS) {
       const fmt = (p: Placement[]) => p.map(x => `${x.monsterId}@${x.x},${x.y}`).join(' ') || '(无)';
       console.log(`[debug seed=${seed}] R${round} P1预算${gameEngine.p1RemainingBudget} P2预算${gameEngine.p2RemainingBudget}`);

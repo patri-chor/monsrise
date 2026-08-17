@@ -1,0 +1,19 @@
+{
+  "name": "dsh-notify",
+  "version": "0.1.0",
+  "description": "DSH web 插件：模型提问或完成任务时播放提示音",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}

@@ -15,9 +15,9 @@
 
 import { DB_MONSTERS, DB_BADGES } from '../../game/Database';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
-import type { EvolFormation, EvolNode, MainArchetype, SubArchetype, KeyMonster } from './evol_gene';
+import type { EvolFormation, EvolNode, MainArchetype, SubArchetype, KeyMonster, FeatureMask } from './evol_gene';
 import {
-  cloneEvolFormation, cloneEvolNode, walkEvolNodes, emptyMask, isEmptyMask,
+  cloneEvolFormation, cloneEvolNode, walkEvolNodes, isEmptyMask, cloneMask,
 } from './evol_gene';
 
 export const P2_X_MIN = 6;
@@ -78,7 +78,14 @@ export function badgeFeaturePool(): number[] {
 // ---------- 合法性校验 ----------
 
 export function validateEvol(root: EvolNode, teamIds: Set<number>): string | null {
-  for (const n of walkEvolNodes(root)) {
+  // 沿祖先链跨节点去重：placeMonster 拒绝同队重复怪（GameEngine.placeMonster 的
+  // teamMonsters.some 检查），若某怪已在祖先链 R<current 上场，当前节点再放会静默失败，
+  // 导致搜索算法评估无效候选。故必须在此拦截。
+  const walkWithAncestors = (n: EvolNode, ancestors: EvolNode[]): string | null => {
+    const usedIds = new Set<number>();
+    for (const a of ancestors) {
+      for (const p of a.placements) usedIds.add(p.monsterId);
+    }
     for (const p of n.placements) {
       if (!teamIds.has(p.monsterId)) return `怪兽${p.monsterId} 不在卡组`;
       if (p.x < P2_X_MIN || p.x > P2_X_MAX) return `怪兽${p.monsterId} x=${p.x} 越界`;
@@ -86,17 +93,33 @@ export function validateEvol(root: EvolNode, teamIds: Set<number>): string | nul
       if (n.round >= 4 && FOUR_COST_IDS.has(p.monsterId)) return `四费怪${p.monsterId} 在 round=${n.round}`;
       const dup = n.placements.filter(q => q.monsterId === p.monsterId).length;
       if (dup > 1) return `节点 ${n.id} 重复放怪${p.monsterId}`;
+      if (usedIds.has(p.monsterId)) return `节点 ${n.id} 跨回合重复放怪${p.monsterId}（祖先链已上场）`;
+      usedIds.add(p.monsterId);
+      // 同节点坐标碰撞（位置搜索须保证不与其他怪同格）
+      const collide = n.placements.filter(q => q !== p && q.x === p.x && q.y === p.y).length;
+      if (collide > 0) return `节点 ${n.id} 坐标碰撞 (${p.x},${p.y})`;
     }
     // round 单调：child.round = parent.round + 1
     for (const c of n.children) {
       if (c.round !== n.round + 1) return `节点 ${c.id} round=${c.round} 应=${n.round + 1}`;
+      const err = walkWithAncestors(c, [...ancestors, n]);
+      if (err) return err;
     }
-  }
-  return null;
+    return null;
+  };
+  return walkWithAncestors(root, []);
+}
+
+/** 最近一次 validateFormation 的失败原因（供经验库记录具体原因；成功时为 null） */
+let lastValidationError: string | null = null;
+export function getLastValidationError(): string | null {
+  return lastValidationError;
 }
 
 function validateFormation(f: EvolFormation): string | null {
-  return validateEvol(f.root, new Set(f.team.map(s => s.monsterId)));
+  const err = validateEvol(f.root, new Set(f.team.map(s => s.monsterId)));
+  lastValidationError = err;
+  return err;
 }
 
 // ---------- 树遍历工具 ----------
@@ -104,18 +127,6 @@ function validateFormation(f: EvolFormation): string | null {
 function findNode(root: EvolNode, id: string): EvolNode | null {
   for (const n of walkEvolNodes(root)) if (n.id === id) return n;
   return null;
-}
-
-function isAncestor(ancestor: EvolNode, descendant: EvolNode): boolean {
-  return walkEvolNodes(ancestor).some(n => n === descendant);
-}
-
-function collectMonsterNodes(root: EvolNode, monsterId: number): { node: EvolNode; idx: number }[] {
-  const out: { node: EvolNode; idx: number }[] = [];
-  for (const n of walkEvolNodes(root)) {
-    n.placements.forEach((p, idx) => { if (p.monsterId === monsterId) out.push({ node: n, idx }); });
-  }
-  return out;
 }
 
 // ---------- 变异算子 ----------
@@ -273,6 +284,34 @@ export function moveWithinZone(f: EvolFormation, monsterId: number, x: number, y
 }
 
 /**
+ * 规则内换格（按节点精确定位）：只改 nodeId 节点里 monsterId 的坐标，不动其他分支。
+ * 供自主分支闭环优化"新分支内部"用（全局 moveWithinZone 会污染主分支）。
+ */
+export function moveWithinZoneAtNode(
+  f: EvolFormation,
+  nodeId: string,
+  monsterId: number,
+  x: number,
+  y: number,
+): EvolFormation | null {
+  if (isPositionIrrelevant(monsterId)) return null;
+  if (x < P2_X_MIN || x > P2_X_MAX || y < BOARD_Y_MIN || y > BOARD_Y_MAX) return null;
+  const role = roleOf(monsterId);
+  const isBackline = role === '法师' || role === '射手';
+  const validCols = isBackline ? [8, 9, 10] : [6, 7, 8];
+  if (!validCols.includes(x)) return null; // 违反前后排规则
+
+  const out = cloneEvolFormation(f);
+  const node = walkEvolNodes(out.root).find(n => n.id === nodeId);
+  if (!node) return null;
+  const p = node.placements.find(q => q.monsterId === monsterId);
+  if (!p) return null;
+  p.x = x;
+  p.y = y;
+  return validateFormation(out) ? null : out;
+}
+
+/**
  * 替换：把节点 nodeId 里第 idx 只怪（fromMonsterId）换成 toMonsterId。
  * 费用约束：toMonsterId 是四费时，节点 round 必须 <4（四费仅前三局）。
  * 替换是"换怪"而非"移动"——保持节点位置、徽章来自卡组 team。
@@ -377,33 +416,64 @@ export function mutateCondition(
 
 // ---------- 分支骨架进化 ----------
 
+/** 递归重命名整棵子树（保证 conditionMap 里每个节点 id 全局唯一） */
+function renameSubtree(n: EvolNode, newId: string): void {
+  n.id = newId;
+  n.children.forEach((c, i) => renameSubtree(c, `${newId}_${i}`));
+}
+
+/** 主链：从 root 沿「空 condition 分支」走，返回 round===targetRound 的主链节点 */
+function mainChainNode(root: EvolNode, targetRound: number): EvolNode | null {
+  let cur: EvolNode | null = root;
+  while (cur && cur.round < targetRound) {
+    cur = cur.children.find(c => isEmptyMask(c.condition)) ?? cur.children[0] ?? null;
+  }
+  return cur && cur.round === targetRound ? cur : null;
+}
+
 /**
- * 新增条件分支：选一个非叶子节点，复制其一个 child 子树作为新分支，
- * 给新分支一个随机非空标签（区别于已有兄弟分支）。
+ * 新增条件分支：复制主链上某个回合节点作为模板，给新分支一个指定标签（condition）。
+ *
+ * 两种用法：
+ *   - targetRound 指定：在「主链 round===targetRound-1 的节点」下新增一个 round===targetRound
+ *     的分支（模板 = 该父节点的主 child）。用于自主分支闭环（分析出第几局输 → 在该局分叉）。
+ *   - targetRound 省略：随机选父节点（GA 骨架进化的随机算子）。
  * 返回 null 表示无法新增（无合法模板或已满）。
  */
 export function addBranch(
   f: EvolFormation,
-  _monsterPool: number[],
-  _badgePool: number[],
+  condition: FeatureMask,
   rng: () => number,
+  targetRound?: number,
 ): EvolFormation | null {
-  // 候选：有 children 的节点（可新增兄弟分支给其 children）
-  const parents = walkEvolNodes(f.root).filter(n => n.children.length > 0 && n.round < 5);
-  if (parents.length === 0) return null;
-  // 限制分支数上限（防爆炸）
-  const candidates = parents.filter(n => n.children.length < 3);
-  if (candidates.length === 0) return null;
-  const parent = candidates[Math.floor(rng() * candidates.length)];
-
   const out = cloneEvolFormation(f);
-  const p = walkEvolNodes(out.root).find(n => n.id === parent.id)!;
-  const template = p.children[Math.floor(rng() * p.children.length)];
+  let parent: EvolNode;
+  let template: EvolNode;
+
+  if (targetRound !== undefined) {
+    // 主链精准分叉：父节点 = 主链 round===targetRound-1，模板 = 其主 child（round===targetRound）
+    const p = mainChainNode(out.root, targetRound - 1);
+    if (!p) return null;
+    // 分支上限 4：主标签 3 类（祷徒/半冲/全冲）+ 附加/关键怪，仍是有界上限防爆炸
+    if (p.children.length >= 4) return null;
+    const main = p.children.find(c => isEmptyMask(c.condition)) ?? p.children[0];
+    if (!main) return null;
+    parent = p;
+    template = main;
+  } else {
+    // 随机骨架进化：选一个非叶子节点（可新增兄弟分支给其 children）
+    const parents = walkEvolNodes(out.root).filter(n => n.children.length > 0 && n.round < 5 && n.children.length < 3);
+    if (parents.length === 0) return null;
+    const p = parents[Math.floor(rng() * parents.length)];
+    template = p.children[Math.floor(rng() * p.children.length)];
+    parent = p;
+  }
+
   const newBranch = cloneEvolNode(template);
-  // 给新分支一个随机非空标签，并重命名 id 避免与 conditionMap 冲突
-  newBranch.id = `${template.id}_b${Math.floor(rng() * 1e6)}`;
-  newBranch.condition = { side: null, main: ALL_MAINS[Math.floor(rng() * ALL_MAINS.length)], subs: [], keys: [] };
-  p.children.push(newBranch);
+  // 给新分支指定标签，并重命名整棵子树 id 避免与 conditionMap 冲突
+  renameSubtree(newBranch, `${template.id}_b${Math.floor(rng() * 1e6)}`);
+  newBranch.condition = cloneMask(condition);
+  parent.children.push(newBranch);
   return validateFormation(out) ? null : out;
 }
 

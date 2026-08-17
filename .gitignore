@@ -3,6 +3,15 @@ dist/
 .agents/
 .trae/
 *.md
+# 协作协议文件必须入库
+!AGENTS.md
+!DECISIONS/
+!DECISIONS/**
+!TASKS/
+!TASKS/**
+# 但机器本地状态文件不入库
+TASKS/watch.log
+TASKS/pending.json
 __pycache__/
 *.pyc
 reports/

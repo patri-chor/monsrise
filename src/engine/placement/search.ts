@@ -14,7 +14,6 @@ import type { Placement } from '../types';
 import type { BoardSnapshot } from './snapshot';
 import { scorePlacement } from './heuristic';
 import { planRoundPlacements } from './decide';
-import { snapCounts, type CandidateCtx } from '../train/features';
 
 const BATTLE_DT = 0.04; // 25 帧/秒，与网页 Director 固定逻辑步长 FIXED_DT 一致（战斗结果可复现）
 
@@ -28,21 +27,9 @@ export interface SearchOptions {
   candidateCells?: number;
   /** 单场评估战斗超时兜底（秒），默认 40 */
   battleTimeoutSec?: number;
-  /** 己方视角（训练样本胜负标签判定用） */
+  /** 己方视角（胜负判定用） */
   side: 'p1' | 'p2';
-  /** 阵型分支树本回合计划（人工先验特征） */
-  treePlan?: { monsterId: number; x: number; y: number }[];
-  /** 每个候选评估后回调（训练器数据收集钩子） */
-  onCandidate?: (ctx: CandidateCtx) => void;
-  /** 每步提交最优候选后回调（残局库收集钩子） */
-  onSearchStep?: (info: {
-    myMonsters: { dbId: number; x: number; y: number }[];
-    enemyMonsters: { dbId: number; x: number; y: number }[];
-    round: number;
-    budget: number;
-    action: { monsterId: number; x: number; y: number };
-  }) => void;
-  /** 本回合树计划动作优先（训练数据侧修正：开局坦克）；仅 R1 等指定回合传入 */
+  /** 本回合树计划动作优先（开局坦克等）；仅 R1 等指定回合传入 */
   forceTreeAction?: { monsterId: number; x: number; y: number }[];
 }
 
@@ -299,24 +286,8 @@ export function planRoundPlacementsSearch(
     // 2) 评估每个候选：完整回合战斗模拟
     let best: Cand | null = null;
     let bestScore = -Infinity;
-    // 本轮所有候选 ctx 缓存：提交确定后统一回调（带 chosen 标记，供标签加权）
-    const candCtxs: CandidateCtx[] = [];
     for (const cand of candidates) {
       const score = evaluateCandidate(snap, cand, plan, survivors, enemyPlan, myTeam, round, budget, timeoutSec);
-      // 训练器钩子：导出 (候选, 搜索评分) 样本
-      const { rowDensity, adjFriendly } = snapCounts(curSnap, cand.x, cand.y);
-      candCtxs.push({
-        cand: { monsterId: cand.monsterId, badgeIds: cand.badgeIds, x: cand.x, y: cand.y },
-        score,
-        round,
-        budget,
-        side: opts.side,
-        treePlan: opts.treePlan,
-        myCount: curSnap.myMonsters.length,
-        enemyCount: snap.enemyMonsters.length,
-        rowDensity,
-        adjFriendly,
-      });
       const isBetter =
         best === null ||
         score > bestScore ||
@@ -350,28 +321,7 @@ export function planRoundPlacementsSearch(
       }
     }
 
-    // 统一回调：被选中的候选标记 chosen=true（训练器用它做标签加权）
-    if (opts.onCandidate) {
-      for (const cc of candCtxs) {
-        opts.onCandidate({
-          ...cc,
-          chosen:
-            cc.cand.monsterId === chosen.monsterId &&
-            cc.cand.x === chosen.x &&
-            cc.cand.y === chosen.y,
-        });
-      }
-    }
-
-    if (opts.onSearchStep) {
-      opts.onSearchStep({
-        myMonsters: myLight.map(m => ({ dbId: m.dbId, x: m.gridX, y: m.gridY })),
-        enemyMonsters: snap.enemyMonsters.map(m => ({ dbId: m.dbId, x: m.gridX, y: m.gridY })),
-        round,
-        budget,
-        action: { monsterId: chosen.monsterId, x: chosen.x, y: chosen.y },
-      });
-    }
+    // 统一提交选中的候选
     plan.push({ monsterId: chosen.monsterId, badgeIds: chosen.badgeIds, x: chosen.x, y: chosen.y });
     placedIds.add(chosen.monsterId);
     budget -= DB_MONSTERS.find(m => m.id === chosen.monsterId)!.cost;
