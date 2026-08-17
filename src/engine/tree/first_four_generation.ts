@@ -487,8 +487,12 @@ _Generated at ${new Date().toISOString()}_
 }
 
 // CLI 执行入口
+const isDirectScript = Boolean(
+  process.argv[1] &&
+  (process.argv[1].endsWith('first_four_generation.ts') || process.argv[1].endsWith('first_four_generation.js'))
+);
 const isTesting = process.env.IS_TEST || process.env.VITEST;
-if (!isTesting && process.argv[1]?.includes('first_four_generation')) {
+if (isDirectScript && !isTesting) {
   runFirstFourGenerationCycle().then(res => {
     console.log(`\n[First-Four Cycle CLI Done] Generated: ${res.generatedCandidates.length}, Retained: ${res.retainedRecords.length}, Rejected: ${res.rejectedRecords.length}`);
     console.log(`[Optimizer Gate]: ${res.optimizerInterfaceCheck.supported ? 'Supported' : 'Blocked (Missing Interface: ' + res.optimizerInterfaceCheck.missingInterfaceDescription + ')'}`);

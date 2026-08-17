@@ -88,14 +88,34 @@ if (!isManualForce && elapsedSinceLastCheckMs < requiredIntervalMs) {
 state.lastCheckTime = now;
 saveState(state);
 
-// 1. 同步远程
-try {
-  execSync('git -c http.proxy=http://127.0.0.1:7890 pull', { cwd: repoRoot, stdio: 'pipe' });
-} catch (e) {
-  try {
-    execSync('git pull', { cwd: repoRoot, stdio: 'pipe' });
-  } catch {}
-}
+  // 1. 同步远程（若配置了 git 远程，先 fetch 并尝试 ff-only merge）
+  if (existsSync('.git')) {
+    try {
+      const proxyArgs = ['-c', 'http.proxy=http://127.0.0.1:7890'];
+      const prevHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      execFileSync('git', [...proxyArgs, 'fetch', 'origin', `agent/${targetDomain || 'main'}`], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'ignore', 'ignore'],
+        timeout: 10000,
+      });
+      // 尝试 fast-forward
+      try {
+        execFileSync('git', ['merge', '--ff-only', 'FETCH_HEAD'], {
+          encoding: 'utf8',
+          stdio: ['ignore', 'ignore', 'ignore'],
+          timeout: 5000,
+        });
+      } catch {}
+      const newHead = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+      if (newHead !== prevHead) {
+        // 远程有新 commit，立即重置退避计时器回 high 模式
+        state.lastReportTime = Date.now();
+        saveState(state);
+      }
+    } catch {
+      // 离线/内网环境允许 fetch 失败，降级为本地任务检查
+    }
+  }
 
 if (!existsSync(tasksDir)) {
   console.log(JSON.stringify({ status: 'NO_TASK', reason: 'TASKS directory not found' }));

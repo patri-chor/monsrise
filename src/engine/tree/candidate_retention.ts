@@ -598,8 +598,12 @@ function parseCliArg(args: string[], flag: string): string | null {
 }
 
 // CLI 执行入口
+const isDirectScript = Boolean(
+  process.argv[1] &&
+  (process.argv[1].endsWith('candidate_retention.ts') || process.argv[1].endsWith('candidate_retention.js'))
+);
 const isTesting = process.env.IS_TEST || process.env.VITEST;
-if (!isTesting) {
+if (isDirectScript && !isTesting) {
   const args = process.argv.slice(2);
   const inputArg = parseCliArg(args, '--input');
   const outputDirArg = parseCliArg(args, '--output-dir');
