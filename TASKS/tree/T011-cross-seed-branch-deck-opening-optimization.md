@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: IN_PROGRESS
 DOMAIN: tree
 
 # T011 - Cross-Seed Branch, Deck, and Opening Optimization
@@ -9,6 +9,8 @@ DOMAIN: tree
 ## Objective
 
 Evaluate tree optimization fairly across all four generation seeds, expand branch-local search beyond the current deck, and add controlled R1/R2 opening modifications for early-round weak matchups.
+
+This combined task is retained as the eventual full configuration. Do not execute it before the ablation tasks T012-T014 have been accepted.
 
 ## Decision Context
 
