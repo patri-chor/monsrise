@@ -16,7 +16,12 @@ import {
   type CandidatePoolRunReport,
 } from './candidate_optimization_runner';
 import { playSpecVsSpec, type SideSpec } from './arena';
-import { loadBundle, type BranchInductionOutcome } from './branch_induct';
+import {
+  loadBundle,
+  type BranchInductionOutcome,
+  type TargetCellInfo,
+  type SearchOperatorStats,
+} from './branch_induct';
 import { PersistentSimPool } from './persistent_pool';
 import type { SimTaskMessage } from './fine_grained_worker';
 import { calculateMatchMetrics, formatMatchMetrics, type MatchMetrics } from './match_metrics';
@@ -58,6 +63,11 @@ export interface CandidateIndependentEval {
     validationSeedBase: number;
     beforeMetrics?: MatchMetrics;
     afterMetrics?: MatchMetrics;
+    targetPoolDiagnostics?: {
+      targetPoolCount: number;
+      cells: TargetCellInfo[];
+    };
+    searchOperatorStats?: SearchOperatorStats;
     error?: string;
   };
   baselineEval: {
@@ -96,6 +106,7 @@ export interface QualityDecisionPayload {
   decision: 'CONTINUE_VARIANT_PRODUCTION' | 'ALGORITHM_IMPROVEMENT_REQUIRED';
   timestamp: string;
   candidateCount: number;
+  seedDistribution: Record<string, number>;
   breakdown: {
     treeOptimizedCount: number;
     deckOnlyCount: number;
@@ -103,6 +114,13 @@ export interface QualityDecisionPayload {
     qualifyingCandidatesCount: number;
   };
   outcomeCounts: Record<BranchInductionOutcome, number>;
+  searchOperatorAggregate: {
+    totalInDeckCandidates: number;
+    totalExternalCandidates: number;
+    totalRejectedByConstraints: number;
+    totalOpeningCandidates: number;
+    totalAcceptedExternalReplacements: number;
+  };
   qualifyingCandidates: any[];
   failureDiagnosesSummary: Record<string, number>;
   dominantFailureMode?: string;
@@ -112,6 +130,7 @@ export interface QualityDecisionPayload {
 export function loadAuthoritativeFrozenCandidates(customPath?: string): any[] {
   const possiblePaths = [
     customPath ? resolve(customPath) : null,
+    resolve('tests/fixtures/tree/eight_frozen_candidates.jsonl'),
     resolve('tests/fixtures/tree/four_frozen_candidates.jsonl'),
     resolve('reports/new-formation-generation/first-four-cycle/generated_candidates.jsonl'),
   ].filter(Boolean) as string[];
@@ -317,6 +336,8 @@ export async function executeSingleCandidateIndependentEval(
       validationSeedBase: optRes.validationSeedBase,
       beforeMetrics: optRes.beforeMetrics,
       afterMetrics: optRes.afterMetrics,
+      targetPoolDiagnostics: optRes.targetPoolDiagnostics,
+      searchOperatorStats: optRes.searchOperatorStats,
       error: optRes.error,
     },
     baselineEval: baseEval,
@@ -623,6 +644,8 @@ export async function runParallelIndependentEvaluation(
         validationSeedBase: optRes.validationSeedBase,
         beforeMetrics: optRes.beforeMetrics,
         afterMetrics: optRes.afterMetrics,
+        targetPoolDiagnostics: optRes.targetPoolDiagnostics,
+        searchOperatorStats: optRes.searchOperatorStats,
         error: optRes.error,
       },
       baselineEval: baseEval,
@@ -690,10 +713,18 @@ export async function runSequentialTreeOptimizationCycle(options: {
   const baseFinalEvalSeed = options.baseFinalEvalSeed ?? 35000;
   const pool = options.pool ?? PersistentSimPool.getInstance();
 
+  // 统计 Seed 分布
+  const seedDistribution: Record<string, number> = {};
+  for (const c of rawCandidates) {
+    const sKey = `s${(c.sourceSeedIndex ?? 0) + 1}`;
+    seedDistribution[sKey] = (seedDistribution[sKey] ?? 0) + 1;
+  }
+
   const panelManifest = {
-    cycleType: 'sequential_frozen_tree_optimization',
+    cycleType: 'cross_seed_branch_deck_opening_optimization',
     startedAt,
     candidateCount: rawCandidates.length,
+    seedDistribution,
     evaluationPanel: evaluationPanel.map(p => p.name),
     workerConfig: resolveCandidateWorkers(options.requestedWorkers, rawCandidates.length),
     seedConfiguration: {
@@ -760,7 +791,25 @@ export async function runSequentialTreeOptimizationCycle(options: {
     'utf8',
   );
 
-  // 4. 统计并汇总质量决策
+  // 4. 汇总算子统计与质量决策
+  const searchOperatorAggregate = {
+    totalInDeckCandidates: 0,
+    totalExternalCandidates: 0,
+    totalRejectedByConstraints: 0,
+    totalOpeningCandidates: 0,
+    totalAcceptedExternalReplacements: 0,
+  };
+
+  for (const r of poolReport.results) {
+    if (r.searchOperatorStats) {
+      searchOperatorAggregate.totalInDeckCandidates += r.searchOperatorStats.inDeckCandidates;
+      searchOperatorAggregate.totalExternalCandidates += r.searchOperatorStats.externalCandidates;
+      searchOperatorAggregate.totalRejectedByConstraints += r.searchOperatorStats.rejectedByConstraintCandidates;
+      searchOperatorAggregate.totalOpeningCandidates += r.searchOperatorStats.openingCandidates;
+      searchOperatorAggregate.totalAcceptedExternalReplacements += r.searchOperatorStats.acceptedExternalReplacements;
+    }
+  }
+
   const failureDiagnosesCount: Record<string, number> = {
     'deck_weakness (<25% training score)': 0,
     'optimizer_no_informative_split (IG=0)': 0,
@@ -810,6 +859,7 @@ export async function runSequentialTreeOptimizationCycle(options: {
     decision: passesCycleGate ? 'CONTINUE_VARIANT_PRODUCTION' : 'ALGORITHM_IMPROVEMENT_REQUIRED',
     timestamp: new Date().toISOString(),
     candidateCount: evaluations.length,
+    seedDistribution,
     breakdown: {
       treeOptimizedCount,
       deckOnlyCount,
@@ -817,6 +867,7 @@ export async function runSequentialTreeOptimizationCycle(options: {
       qualifyingCandidatesCount: qualifyingCandidates.length,
     },
     outcomeCounts: poolReport.outcomeCounts,
+    searchOperatorAggregate,
     qualifyingCandidates,
     failureDiagnosesSummary: failureDiagnosesCount,
     dominantFailureMode: passesCycleGate ? undefined : dominantFailureEntry?.[0],
@@ -828,18 +879,26 @@ export async function runSequentialTreeOptimizationCycle(options: {
   writeFileSync(join(outputDir, 'quality_decision.json'), JSON.stringify(qualityDecision, null, 2), 'utf8');
 
   // 5. 写入 summary.md
-  let summaryMd = `# Candidate Optimizer Experiment Validity Summary (T008/T009)\n\n`;
-  summaryMd += `## 1. Quality Decision Overview\n`;
+  let summaryMd = `# Cross-Seed Branch, Deck, and Opening Optimization Summary (T011)\n\n`;
+  summaryMd += `## 1. Balanced Seed Distribution & Quality Overview\n`;
   summaryMd += `- **Decision**: \`${qualityDecision.decision}\`\n`;
   summaryMd += `- **Candidates Processed**: **${evaluations.length}**\n`;
+  summaryMd += `- **Seed Distribution**: ${Object.entries(seedDistribution).map(([k, v]) => `\`${k}\`: ${v}`).join(', ')}\n`;
   summaryMd += `- **Final Games Per Cell**: **${gamesPerCellFinal}** (>=3 threshold satisfied)\n`;
   summaryMd += `- **Breakdown**:\n`;
   summaryMd += `  - \`tree_optimized_candidate\`: **${treeOptimizedCount}**\n`;
   summaryMd += `  - \`deck_only_candidate\`: **${deckOnlyCount}**\n`;
   summaryMd += `  - \`archive\`: **${archiveCount}**\n`;
-  summaryMd += `  - **Qualifying Gate Candidates**: **${qualifyingCandidates.length}** (Requires: Training Score >= 60%, Weakest Cell Training Score >= 40%, Medium/Heavy Novelty)\n\n`;
+  summaryMd += `  - **Qualifying Gate Candidates**: **${qualifyingCandidates.length}**\n\n`;
 
-  summaryMd += `## 2. Optimizer Detailed Outcome Distribution\n`;
+  summaryMd += `## 2. Search Operators & Deck Exploration Statistics\n`;
+  summaryMd += `- **In-Deck Replacement Candidates Evaluated**: **${searchOperatorAggregate.totalInDeckCandidates}**\n`;
+  summaryMd += `- **External Deck Candidates Evaluated**: **${searchOperatorAggregate.totalExternalCandidates}**\n`;
+  summaryMd += `- **Candidates Rejected by Constraints (Cost/Deck/Legality)**: **${searchOperatorAggregate.totalRejectedByConstraints}**\n`;
+  summaryMd += `- **Early Opening Mutation Candidates Evaluated**: **${searchOperatorAggregate.totalOpeningCandidates}**\n`;
+  summaryMd += `- **Accepted External Replacements**: **${searchOperatorAggregate.totalAcceptedExternalReplacements}**\n\n`;
+
+  summaryMd += `## 3. Optimizer Detailed Outcome Distribution\n`;
   summaryMd += `| Outcome Category | Count | Interpretation |\n`;
   summaryMd += `|---|---|---|\n`;
   summaryMd += `| \`IMPROVED\` | ${poolReport.outcomeCounts.IMPROVED} | Verified gain >= 5% in training score with no loss increase |\n`;
@@ -866,7 +925,7 @@ export async function runSequentialTreeOptimizationCycle(options: {
     }
   }
 
-  summaryMd += `\n## 3. Worker Safety & Verification Evidence\n`;
+  summaryMd += `\n## 4. Worker Safety Evidence\n`;
   summaryMd += `- **Worker Error Count**: ${poolReport.errorCount} (Expected: 0)\n`;
   summaryMd += `- **Total Duration**: ${(evalReport.totalDurationMs / 1000).toFixed(1)}s\n`;
 

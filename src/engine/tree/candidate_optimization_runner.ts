@@ -8,6 +8,8 @@ import {
   optimizeFormation,
   loadBundle,
   type BranchInductionOutcome,
+  type TargetCellInfo,
+  type SearchOperatorStats,
 } from './branch_induct';
 import { PersistentSimPool } from './persistent_pool';
 import type { MatchMetrics } from './match_metrics';
@@ -51,6 +53,11 @@ export interface CandidateOptimizationResult {
   afterTrainingScore?: number;
   improved: boolean;
   resultTree?: any;
+  targetPoolDiagnostics?: {
+    targetPoolCount: number;
+    cells: TargetCellInfo[];
+  };
+  searchOperatorStats?: SearchOperatorStats;
   error?: string;
 }
 
@@ -201,6 +208,8 @@ export async function executeCandidateOptimizationDirect(
       afterTrainingScore: optRes.after?.trainingScore,
       improved: optRes.improved,
       resultTree: optRes.optimized?.root,
+      targetPoolDiagnostics: optRes.targetPoolDiagnostics,
+      searchOperatorStats: optRes.searchOperatorStats,
     };
   } catch (err: any) {
     const completedAt = new Date().toISOString();

@@ -1,12 +1,11 @@
 // ============================================================
-// 自主分支 —— 决策树归纳（branch induction）
+// 自主分支 —— 决策树归纳与跨种子/卡组/开局联合优化 (T011)
 //
-// 细分状态输出：
-//   - IMPROVED: 验证集通过且训练分提升
-//   - NO_INFORMATIVE_SPLIT: 无有效分裂/信息增益为0
-//   - NO_OBSERVED_TRIGGER_AT_FORK: 拟分叉点无实际观测命中
-//   - BRANCH_SEARCH_NO_TRAINING_GAIN: 搜索空间未找到更高训练分
-//   - VALIDATION_TRAINING_REJECTED: 验证集未达门限或负场增加
+// 核心能力：
+//   1. 目标池驱动的分裂与诊断 (Low-Score Target Cell Pool)
+//   2. 受约束的卡组外怪兽搜索 (Constrained External Deck Search)
+//   3. 早期开局优化算子 (Early Opening Optimization: R1/R2 弱点专项调优)
+//   4. 细分终端状态流转 (Terminal Outcomes)
 // ============================================================
 
 import '../env';
@@ -15,12 +14,34 @@ import { resolve } from 'node:path';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { Formation } from '../../ai/types';
 import type { EvolFormation, FeatureMask, EvolNode } from './evol_gene';
-import { formationToEvol, recognizeArchetype, maskToLabel, summarizeEvolFormation, matchMask, isEmptyMask, walkEvolNodes } from './evol_gene';
-import { addBranch, replaceMonster, moveWithinZoneAtNode, isPositionIrrelevant, roleOf, getLastValidationError } from './tree_ops';
+import {
+  formationToEvol,
+  recognizeArchetype,
+  maskToLabel,
+  summarizeEvolFormation,
+  matchMask,
+  isEmptyMask,
+  walkEvolNodes,
+} from './evol_gene';
+import {
+  addBranch,
+  replaceMonster,
+  moveWithinZoneAtNode,
+  isPositionIrrelevant,
+  roleOf,
+  getLastValidationError,
+} from './tree_ops';
 import { playSpecVsSpec, type SideSpec, type BranchDecision, type RoundObservation } from './arena';
 import { ExperienceBank, replaceKey, moveKey, computeTreeFingerprint } from './search_experience';
 import { calculateMatchMetrics, formatMatchMetrics, type MatchMetrics } from './match_metrics';
 import { PersistentSimPool } from './persistent_pool';
+import {
+  costOf,
+  ARCH_RULES,
+  validateDeck,
+  badgeTemplateFor,
+  type ArchKey,
+} from './deck_ontology';
 
 export type BranchInductionOutcome =
   | 'IMPROVED'
@@ -51,19 +72,33 @@ function entropy(p: number): number {
   return -p * Math.log2(p) - (1 - p) * Math.log2(1 - p);
 }
 
-function infoGain(samples: { win: boolean; has: boolean }[]): number {
+function infoGain(samples: { win: boolean; has: boolean; weight?: number }[]): number {
   const n = samples.length;
   if (n === 0) return 0;
-  const winCount = samples.filter(s => s.win).length;
-  const hAll = entropy(winCount / n);
+  let totalWeight = 0;
+  let winWeight = 0;
+  for (const s of samples) {
+    const w = s.weight ?? 1;
+    totalWeight += w;
+    if (s.win) winWeight += w;
+  }
+  if (totalWeight <= 0) return 0;
+
+  const hAll = entropy(winWeight / totalWeight);
 
   const withFeature = samples.filter(s => s.has);
   const withoutFeature = samples.filter(s => !s.has);
   if (withFeature.length === 0 || withoutFeature.length === 0) return 0;
 
-  const hWith = entropy(withFeature.filter(s => s.win).length / withFeature.length);
-  const hWithout = entropy(withoutFeature.filter(s => s.win).length / withoutFeature.length);
-  const hSplit = (withFeature.length / n) * hWith + (withoutFeature.length / n) * hWithout;
+  const wWith = withFeature.reduce((sum, s) => sum + (s.weight ?? 1), 0);
+  const winWith = withFeature.filter(s => s.win).reduce((sum, s) => sum + (s.weight ?? 1), 0);
+
+  const wWithout = withoutFeature.reduce((sum, s) => sum + (s.weight ?? 1), 0);
+  const winWithout = withoutFeature.filter(s => s.win).reduce((sum, s) => sum + (s.weight ?? 1), 0);
+
+  const hWith = entropy(winWith / wWith);
+  const hWithout = entropy(winWithout / wWithout);
+  const hSplit = (wWith / totalWeight) * hWith + (wWithout / totalWeight) * hWithout;
   return hAll - hSplit;
 }
 
@@ -146,9 +181,10 @@ export interface Sample {
   subs: string[];
   keys: string[];
   oppId: string;
+  weight?: number;
 }
 
-export function sampleFromTrace(trace: MatchTrace, round: number, oppId: string): Sample | null {
+export function sampleFromTrace(trace: MatchTrace, round: number, oppId: string, weight: number = 1): Sample | null {
   if (trace.w === 0 && trace.l === 0) return null;
   const win = trace.w > 0;
   const obs = trace.observations.get(round);
@@ -167,6 +203,7 @@ export function sampleFromTrace(trace: MatchTrace, round: number, oppId: string)
     subs: rec.subs,
     keys: rec.keys,
     oppId,
+    weight,
   };
 }
 
@@ -216,7 +253,7 @@ function bestSplit(samples: Sample[]): { kind: string; value: string; mask: Feat
 
   let best: { kind: string; value: string; mask: FeatureMask; ig: number } | null = null;
   for (const c of candidates) {
-    const ig = infoGain(samples.map(s => ({ win: s.win, has: c.has(s) })));
+    const ig = infoGain(samples.map(s => ({ win: s.win, has: c.has(s), weight: s.weight })));
     if (best === null || ig > best.ig) {
       best = { kind: c.kind, value: c.value, mask: c.mask, ig };
     }
@@ -300,6 +337,24 @@ function evalMatchOnMatched(
   return calculateMatchMetrics(win, draw, loss);
 }
 
+export interface TargetCellInfo {
+  opponentIndex: number;
+  opponentName: string;
+  side: 1 | 2;
+  initialTrainingScore: number;
+  addressed: boolean;
+  addressable: boolean;
+  rejectionReason?: string;
+}
+
+export interface SearchOperatorStats {
+  inDeckCandidates: number;
+  externalCandidates: number;
+  rejectedByConstraintCandidates: number;
+  openingCandidates: number;
+  acceptedExternalReplacements: number;
+}
+
 async function optimizeBranchParallel(
   BundleAI: any,
   branched: EvolFormation,
@@ -312,7 +367,12 @@ async function optimizeBranchParallel(
   cache: MatchSimulationCache,
   searchSeedBase: number,
   pool?: PersistentSimPool,
-): Promise<{ optimized: EvolFormation; hasTrainingGain: boolean }> {
+  isEarlyOpeningWeak: boolean = false,
+): Promise<{
+  optimized: EvolFormation;
+  hasTrainingGain: boolean;
+  stats: SearchOperatorStats;
+}> {
   const teamIds = branched.team.filter(s => s.monsterId > 0).map(s => s.monsterId);
   const preUsed = preUsedMonsters(branched, forkRound);
   let current = branched;
@@ -320,9 +380,31 @@ async function optimizeBranchParallel(
   const initTrainingScore = curEval.trainingScore;
   let skippedByExp = 0, newlyInvalid = 0;
   let hasGain = false;
-  console.log(`  新分支初始（命中对手整局）：${formatMatchMetrics(curEval)}`);
+
+  const stats: SearchOperatorStats = {
+    inDeckCandidates: 0,
+    externalCandidates: 0,
+    rejectedByConstraintCandidates: 0,
+    openingCandidates: 0,
+    acceptedExternalReplacements: 0,
+  };
 
   const activePool = pool ?? PersistentSimPool.getInstance();
+
+  // 获取卡组外部合法候选池
+  const arch: ArchKey = (branched.archetype as ArchKey) || 'prayer';
+  const rawExtPool: number[] = [];
+  const archRule = (ARCH_RULES as any)[arch];
+  if (archRule?.poolPref) {
+    for (const list of Object.values(archRule.poolPref) as number[][]) {
+      for (const id of list) {
+        if (!rawExtPool.includes(id)) rawExtPool.push(id);
+      }
+    }
+  } else {
+    rawExtPool.push(101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126);
+  }
+  const currentTeamSet = new Set(branched.team.map(s => s.monsterId));
 
   for (let iter = 0; iter < 10; iter++) {
     const currentFp = computeTreeFingerprint(current);
@@ -335,16 +417,18 @@ async function optimizeBranchParallel(
       break;
     }
 
-    const candidateQueue: { child: EvolFormation; desc: string; key: string }[] = [];
+    const candidateQueue: { child: EvolFormation; desc: string; key: string; isExternal?: boolean; isOpening?: boolean }[] = [];
 
     for (const node of branchNodes) {
-      // P1 单替换
+      // P1: In-deck 内部单替换
       for (const slot of node.placements) {
         const subtreeUsed = branchUsedMonsters(branchNodes, node.id, slot.monsterId);
         for (const toMid of teamIds) {
           if (toMid === slot.monsterId) continue;
           if (preUsed.has(toMid)) continue;
           if (subtreeUsed.has(toMid)) continue;
+
+          stats.inDeckCandidates++;
           const key = replaceKey(formationId, node.id, slot.monsterId, toMid, currentFp);
           if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
           const child = replaceMonster(current, node.id, slot.monsterId, toMid);
@@ -352,17 +436,66 @@ async function optimizeBranchParallel(
             const reason = getLastValidationError() ?? '结构非法';
             exp.markInvalid(key, reason);
             newlyInvalid++;
+            stats.rejectedByConstraintCandidates++;
             continue;
           }
           candidateQueue.push({
             child,
-            desc: `替换 R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(toMid)}`,
+            desc: `[内卡替换] R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(toMid)}`,
             key,
           });
         }
       }
 
-      // P2 位置
+      // P2: External 外部合法怪兽替换 (Cap <= 8)
+      for (const slot of node.placements) {
+        let externalCountForSlot = 0;
+        const currentSlotCost = costOf(slot.monsterId);
+        const currentTeamCost = current.team.reduce((sum, s) => sum + costOf(s.monsterId), 0);
+
+        for (const extMid of rawExtPool) {
+          if (externalCountForSlot >= 8) break;
+          if (currentTeamSet.has(extMid)) continue; // 排除队伍已有怪兽
+
+          const extCost = costOf(extMid);
+          if (currentTeamCost - currentSlotCost + extCost > 18) {
+            stats.rejectedByConstraintCandidates++;
+            continue; // 费用超标拦截
+          }
+
+          // 构造临时 team 校验合法性
+          const newTeam = current.team.map(s => s.monsterId === slot.monsterId ? { monsterId: extMid, badgeIds: badgeTemplateFor(extMid) } : s);
+          const valErrors = validateDeck(newTeam);
+          if (valErrors.length > 0) {
+            stats.rejectedByConstraintCandidates++;
+            continue;
+          }
+
+          stats.externalCandidates++;
+          externalCountForSlot++;
+
+          const key = replaceKey(formationId, node.id, slot.monsterId, extMid, currentFp);
+          if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
+
+          const child = replaceMonster({ ...current, team: newTeam }, node.id, slot.monsterId, extMid);
+          if (!child) {
+            const reason = getLastValidationError() ?? '外部替换结构非法';
+            exp.markInvalid(key, reason);
+            newlyInvalid++;
+            stats.rejectedByConstraintCandidates++;
+            continue;
+          }
+
+          candidateQueue.push({
+            child,
+            desc: `[外卡替换] R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(extMid)} (费${extCost})`,
+            key,
+            isExternal: true,
+          });
+        }
+      }
+
+      // P3: 位置微调
       for (const slot of node.placements) {
         if (isPositionIrrelevant(slot.monsterId)) continue;
         const role = roleOf(slot.monsterId);
@@ -381,9 +514,33 @@ async function optimizeBranchParallel(
             }
             candidateQueue.push({
               child,
-              desc: `移动 ${nm(slot.monsterId)} → (${x},${y})`,
+              desc: `[站位] ${nm(slot.monsterId)} → (${x},${y})`,
               key,
             });
+          }
+        }
+      }
+
+      // P4: 早期开局专项优化 (Early Opening Operators: 仅当 R1/R2 早期崩盘时激活)
+      if (isEarlyOpeningWeak && (node.round === 1 || node.round === 2)) {
+        for (const slot of node.placements) {
+          stats.openingCandidates++;
+          // 尝试紧凑/拉扯开局站位
+          const altCols = node.round === 1 ? [7, 8, 9] : [6, 8, 10];
+          for (const x of altCols) {
+            for (const y of [1, 2, 3]) {
+              const key = `open_move::${node.id}::${slot.monsterId}::${x},${y}::${currentFp}`;
+              if (exp.isKnownInvalid(key)) continue;
+              const child = moveWithinZoneAtNode(current, node.id, slot.monsterId, x, y);
+              if (child) {
+                candidateQueue.push({
+                  child,
+                  desc: `[开局站位优化 R${node.round}] ${nm(slot.monsterId)} → (${x},${y})`,
+                  key,
+                  isOpening: true,
+                });
+              }
+            }
           }
         }
       }
@@ -406,6 +563,7 @@ async function optimizeBranchParallel(
     let bestScore = curEval.trainingScore;
     let bestDesc = '';
     let bestEval = curEval;
+    let bestIsExternal = false;
 
     for (let i = 0; i < candidateQueue.length; i++) {
       const cand = candidateQueue[i];
@@ -415,6 +573,7 @@ async function optimizeBranchParallel(
         bestChild = cand.child;
         bestDesc = cand.desc;
         bestEval = metric;
+        bestIsExternal = Boolean(cand.isExternal);
       }
     }
 
@@ -423,6 +582,7 @@ async function optimizeBranchParallel(
       current = bestChild;
       curEval = bestEval;
       hasGain = true;
+      if (bestIsExternal) stats.acceptedExternalReplacements++;
       console.log(`    [采纳] ${bestDesc} → ${formatMatchMetrics(curEval)}`);
     } else {
       console.log(`    [无改进] 最优候选训练分 ${(bestScore * 100).toFixed(1)}% ≤ 当前 ${(curEval.trainingScore * 100).toFixed(1)}%，停止。`);
@@ -430,7 +590,7 @@ async function optimizeBranchParallel(
     }
   }
 
-  return { optimized: current, hasTrainingGain: hasGain || curEval.trainingScore > initTrainingScore };
+  return { optimized: current, hasTrainingGain: hasGain || curEval.trainingScore > initTrainingScore, stats };
 }
 
 export interface OptimizeFormationResult {
@@ -442,6 +602,11 @@ export interface OptimizeFormationResult {
   maskLabel: string;
   before: MatchMetrics;
   after: MatchMetrics;
+  targetPoolDiagnostics?: {
+    targetPoolCount: number;
+    cells: TargetCellInfo[];
+  };
+  searchOperatorStats?: SearchOperatorStats;
   searchValidation?: {
     searchSeedBase: number;
     validationSeedBase: number;
@@ -461,6 +626,8 @@ export interface OptimizeFormationOptions {
   searchSeedBase?: number;
   validationSeedBase?: number;
   pool?: PersistentSimPool;
+  targetPoolCap?: number;
+  targetScoreBand?: number;
 }
 
 export async function optimizeFormation(
@@ -477,6 +644,8 @@ export async function optimizeFormation(
   const searchSeedBase = options?.searchSeedBase ?? 2000;
   const validationSeedBase = options?.validationSeedBase ?? 9000;
   const pool = options?.pool ?? PersistentSimPool.getInstance();
+  const targetPoolCap = options?.targetPoolCap ?? 4;
+  const targetScoreBand = options?.targetScoreBand ?? 0.20;
 
   const emptyMetrics = calculateMatchMetrics(0, 0, 0);
 
@@ -484,7 +653,7 @@ export async function optimizeFormation(
   exp.load();
   const cache = new MatchSimulationCache();
 
-  console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${panelOpponents.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条，SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
+  console.log(`=== 分支归纳与跨种子/开局联合优化：${src.name} vs ${panelOpponents.length} 阵型（SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
 
   // 1. 批量并发采集全对局轨迹
   const initialTraces = await pool.collectInitialTracesParallel(candidate, panelOpponents, gamesPerOpp, searchSeedBase);
@@ -495,27 +664,101 @@ export async function optimizeFormation(
     }
   }
 
-  // 2. 派生 R1-R5 样本
+  // 2. 统计各 cell 得分并构建低分目标池 (Low-Score Target Cell Pool)
+  interface CellStat {
+    oppIdx: number;
+    oppName: string;
+    oppId: string;
+    side: 1 | 2;
+    w: number;
+    d: number;
+    l: number;
+    score: number;
+  }
+  const cellStats: CellStat[] = [];
+  for (let oIdx = 0; oIdx < panelOpponents.length; oIdx++) {
+    const opp = panelOpponents[oIdx];
+    const oppKey = opp.id ?? opp.name;
+    for (const side of [1, 2] as (1 | 2)[]) {
+      const traces = initialTraces.filter(t => t.oppId === oppKey && t.side === side);
+      let w = 0, d = 0, l = 0;
+      for (const t of traces) {
+        w += t.w;
+        d += t.d;
+        l += t.l;
+      }
+      const m = calculateMatchMetrics(w, d, l);
+      cellStats.push({
+        oppIdx: oIdx,
+        oppName: opp.name,
+        oppId: oppKey,
+        side,
+        w,
+        d,
+        l,
+        score: m.trainingScore,
+      });
+    }
+  }
+
+  cellStats.sort((a, b) => a.score - b.score);
+  const minScore = cellStats[0]?.score ?? 0;
+  const targetThreshold = Math.min(0.50, minScore + targetScoreBand);
+  const targetCells = cellStats.filter(c => c.score <= targetThreshold).slice(0, targetPoolCap);
+
+  console.log(`\n=== 低分目标格池（共 ${targetCells.length} 格，门限 ${(targetThreshold * 100).toFixed(0)}%）===`);
+  for (const tc of targetCells) {
+    console.log(`  - 目标格: ${tc.oppName} (Side ${tc.side}) 初始训练分 ${(tc.score * 100).toFixed(1)}% (${tc.w}胜/${tc.d}平/${tc.l}负)`);
+  }
+
+  const targetOppKeys = new Set(targetCells.map(c => c.oppId));
+
+  // 3. 派生 R1-R5 样本，给目标池对局赋予更高权重 (weight=3)
   let bestOverall: { round: number; split: { kind: string; value: string; mask: FeatureMask; ig: number }; winRate: number } | null = null;
 
   for (let round = 1; round <= 5; round++) {
     const allSamples: Sample[] = [];
     for (const trace of initialTraces) {
-      const s = sampleFromTrace(trace, round, trace.oppId);
+      const isTarget = targetOppKeys.has(trace.oppId);
+      const weight = isTarget ? 3 : 1;
+      const s = sampleFromTrace(trace, round, trace.oppId, weight);
       if (s) allSamples.push(s);
     }
     if (allSamples.length === 0) continue;
     const winCount = allSamples.filter(s => s.win).length;
     const winRate = winCount / allSamples.length;
     const split = bestSplit(allSamples);
-    console.log(`R${round}: 胜率 ${(winRate * 100).toFixed(0)}%（${winCount}赢/${allSamples.length - winCount}输，共${allSamples.length}有效决策样本）${split ? ` 分裂 ${split.kind}=${split.value} IG=${split.ig.toFixed(3)}` : ''}`);
+    console.log(`R${round}: 胜率 ${(winRate * 100).toFixed(0)}%（有效样本 ${allSamples.length}）${split ? ` 最优分裂 ${split.kind}=${split.value} IG=${split.ig.toFixed(3)}` : ''}`);
     if (split && (!bestOverall || split.ig > bestOverall.split.ig)) {
       bestOverall = { round, split, winRate };
     }
   }
 
+  const createTargetDiagnostics = (outcome: BranchInductionOutcome, matchedOppsList: Formation[] = []): TargetCellInfo[] => {
+    return targetCells.map(tc => {
+      const isMatched = matchedOppsList.some(o => (o.id ?? o.name) === tc.oppId);
+      return {
+        opponentIndex: tc.oppIdx,
+        opponentName: tc.oppName,
+        side: tc.side,
+        initialTrainingScore: tc.score,
+        addressed: outcome === 'IMPROVED' && isMatched,
+        addressable: isMatched,
+        rejectionReason: !isMatched ? 'not_matched_at_fork' : (outcome === 'IMPROVED' ? undefined : outcome),
+      };
+    });
+  };
+
+  const emptySearchStats: SearchOperatorStats = {
+    inDeckCandidates: 0,
+    externalCandidates: 0,
+    rejectedByConstraintCandidates: 0,
+    openingCandidates: 0,
+    acceptedExternalReplacements: 0,
+  };
+
   if (!bestOverall) {
-    console.log('\n无有效分裂（所有分要么全赢要么标签无区分度），无需建分支。');
+    console.log('\n无有效分裂（所有对局标签无区分度），无需建分支。');
     return {
       outcome: 'NO_INFORMATIVE_SPLIT',
       optimized: candidate,
@@ -525,13 +768,18 @@ export async function optimizeFormation(
       maskLabel: '无',
       before: emptyMetrics,
       after: emptyMetrics,
+      targetPoolDiagnostics: {
+        targetPoolCount: targetCells.length,
+        cells: createTargetDiagnostics('NO_INFORMATIVE_SPLIT'),
+      },
+      searchOperatorStats: emptySearchStats,
     };
   }
 
   console.log(`\n=== 最优分裂：R${bestOverall.round} 按 ${bestOverall.split.kind}=${bestOverall.split.value} 建分支 ===`);
   console.log(`分支标签 [${maskToLabel(bestOverall.split.mask)}]，信息增益 ${bestOverall.split.ig.toFixed(3)}`);
 
-  // 3. 诊断崩盘起点定位 forkRound
+  // 4. 定位崩盘起点 forkRound
   const diagSides: (1 | 2)[] = bestOverall.split.mask.side !== null ? [bestOverall.split.mask.side] : [1, 2];
   const roundRates: { round: number; win: number; total: number; rate: number }[] = [];
   for (let round = 1; round <= 5; round++) {
@@ -546,22 +794,16 @@ export async function optimizeFormation(
     }
     const rate = total ? win / total : 0;
     roundRates.push({ round, win, total, rate });
-    console.log(`  R${round}: ${win}/${total} 胜率 ${(rate * 100).toFixed(0)}%`);
   }
 
   const CRASH_THRESHOLD = 0.75;
   const crash = roundRates.find(x => x.rate < CRASH_THRESHOLD && x.total > 0);
   const rawFork = crash ? crash.round : bestOverall.round;
   const forkRound = Math.max(1, rawFork - 1);
-  if (crash) {
-    console.log(`\n崩盘起点 R${crash.round}（胜率 ${(crash.rate * 100).toFixed(0)}% < ${(CRASH_THRESHOLD * 100).toFixed(0)}%）`);
-    console.log(`分叉点往前推一个回合：R${rawFork} → R${forkRound}，覆盖 R${forkRound}~R5 整棵子树。`);
-  } else {
-    console.log(`\n无跌破阈值回合，分叉点 = IG 最高的 R${forkRound}。`);
-  }
+  const isEarlyOpeningWeak = (crash && crash.round <= 2) || bestOverall.round <= 2;
 
-  // 4. 精确在拟分叉 forkRound 与候选侧判断命中对手
-  const effectiveOpps = panelOpponents.filter(o => oppMatchesAtFork(o, bestOverall.split.mask, forkRound, initialTraces));
+  // 5. 命中对手校验
+  const effectiveOpps = panelOpponents.filter(o => oppMatchesAtFork(o, bestOverall!.split.mask, forkRound, initialTraces));
   if (effectiveOpps.length === 0) {
     console.log(`\n[分支拒绝] 在拟分叉回合 R${forkRound} 实际观察中未命中任何对手，放弃建分支。`);
     return {
@@ -573,6 +815,11 @@ export async function optimizeFormation(
       maskLabel: maskToLabel(bestOverall.split.mask),
       before: emptyMetrics,
       after: emptyMetrics,
+      targetPoolDiagnostics: {
+        targetPoolCount: targetCells.length,
+        cells: createTargetDiagnostics('NO_OBSERVED_TRIGGER_AT_FORK', effectiveOpps),
+      },
+      searchOperatorStats: emptySearchStats,
     };
   }
 
@@ -603,12 +850,11 @@ export async function optimizeFormation(
     }
   }
 
-  // 5. 建分支
+  // 6. 建分支
   const rng = mulberry32(777);
-  console.log(`\n[建分支] 在 R${forkRound} 处按标签「${maskToLabel(bestOverall.split.mask)}」复制主链子树作模板`);
+  console.log(`\n[建分支] 在 R${forkRound} 处按标签「${maskToLabel(bestOverall.split.mask)}」复制子树作模板`);
   const branched = addBranch(candidate, bestOverall.split.mask, rng, forkRound);
   if (!branched) {
-    console.log('addBranch 失败（可能分支数已满）。');
     return {
       outcome: 'BRANCH_SEARCH_NO_TRAINING_GAIN',
       optimized: candidate,
@@ -618,15 +864,18 @@ export async function optimizeFormation(
       maskLabel: maskToLabel(bestOverall.split.mask),
       before: emptyMetrics,
       after: emptyMetrics,
+      targetPoolDiagnostics: {
+        targetPoolCount: targetCells.length,
+        cells: createTargetDiagnostics('BRANCH_SEARCH_NO_TRAINING_GAIN', effectiveOpps),
+      },
+      searchOperatorStats: emptySearchStats,
     };
   }
-  console.log('[建分支] 分支创建成功，新树结构：');
-  console.log(summarizeEvolFormation(branched));
 
-  // 6. 搜索集内并发优化新分支
-  console.log(`\n=== 并发优化新分支（R${forkRound}~R5，命中对手，搜索集 Seed=${searchSeedBase}） ===`);
+  // 7. 并发搜索新分支（包含内卡/外卡/开局联合算子）
+  console.log(`\n=== 并发优化新分支（R${forkRound}~R5，开局弱势增强=${isEarlyOpeningWeak}） ===`);
   const searchBefore = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
-  const { optimized, hasTrainingGain } = await optimizeBranchParallel(
+  const { optimized, hasTrainingGain, stats: searchOpStats } = await optimizeBranchParallel(
     BundleAI,
     branched,
     bestOverall.split.mask,
@@ -638,15 +887,12 @@ export async function optimizeFormation(
     cache,
     searchSeedBase,
     pool,
+    isEarlyOpeningWeak,
   );
   const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();
 
-  if (!hasTrainingGain && searchAfter.trainingScore <= searchBefore.trainingScore) {
-    console.log('\n分支搜索未获得训练分增益。');
-  }
-
-  // 7. 独立验证集评估
+  // 8. 独立验证集评估
   console.log(`\n=== 独立验证集整局对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
   const [beforeVal, afterVal] = await pool.evalCandidateBatchOnMatchedParallel(
     [candidate, optimized],
@@ -657,7 +903,6 @@ export async function optimizeFormation(
   );
   console.log(`  [验证集] 优化前 ${formatMatchMetrics(beforeVal)} → 优化后 ${formatMatchMetrics(afterVal)}`);
 
-  // 验收标准：验证样本非空，训练分改善 >= 0.05 (5%) 且 净负场不恶化
   const totalValMatches = afterVal.total;
   const improved = totalValMatches > 0
     && afterVal.trainingScore >= beforeVal.trainingScore + 0.05
@@ -673,6 +918,26 @@ export async function optimizeFormation(
     console.log(`\n独立验证集未达到最低改善门槛（状态: ${outcome}），不采纳该分支（保持原阵型）。`);
   }
 
+  // 诊断目标格处理状态
+  const targetDiagnostics: TargetCellInfo[] = targetCells.map(tc => {
+    const isMatched = effectiveOpps.some(o => (o.id ?? o.name) === tc.oppId);
+    let rejectionReason: string | undefined = undefined;
+    if (!isMatched) {
+      rejectionReason = 'not_matched_at_fork';
+    } else if (!improved) {
+      rejectionReason = outcome;
+    }
+    return {
+      opponentIndex: tc.oppIdx,
+      opponentName: tc.oppName,
+      side: tc.side,
+      initialTrainingScore: tc.score,
+      addressed: improved && isMatched,
+      addressable: isMatched,
+      rejectionReason,
+    };
+  });
+
   return {
     outcome,
     optimized: improved ? optimized : candidate,
@@ -682,6 +947,11 @@ export async function optimizeFormation(
     maskLabel: maskToLabel(bestOverall.split.mask),
     before: beforeVal,
     after: afterVal,
+    targetPoolDiagnostics: {
+      targetPoolCount: targetCells.length,
+      cells: targetDiagnostics,
+    },
+    searchOperatorStats: searchOpStats,
     searchValidation: {
       searchSeedBase,
       validationSeedBase,
