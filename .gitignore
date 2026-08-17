@@ -5,6 +5,8 @@ dist/
 *.md
 # 协作协议文件必须入库
 !AGENTS.md
+!.agents/skills/
+!.agents/skills/**
 !DECISIONS/
 !DECISIONS/**
 !TASKS/
