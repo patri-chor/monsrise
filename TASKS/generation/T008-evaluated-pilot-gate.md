@@ -1,4 +1,4 @@
-STATUS: IN_PROGRESS
+STATUS: DONE
 
 # T008 - Gated Evaluated New-Formation Pilot
 
