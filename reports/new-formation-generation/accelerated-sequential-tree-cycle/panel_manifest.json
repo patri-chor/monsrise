@@ -1,0 +1,32 @@
+{
+  "cycleType": "accelerated_sequential_tree_optimization",
+  "startedAt": "2026-08-17T13:48:27.142Z",
+  "candidateCount": 24,
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "workerConfig": {
+    "requestedWorkers": 16,
+    "effectiveWorkers": 16,
+    "availableLogicalCpus": 16,
+    "candidateCount": 24
+  },
+  "seedConfiguration": {
+    "baseSearchSeed": 5000,
+    "baseValidationSeed": 20000,
+    "baseFinalEvalSeed": 35000,
+    "gamesPerOpp": 1,
+    "gamesPerCellFinal": 1
+  },
+  "acceleration": {
+    "measuredSpeedupMultiplier": 1.04,
+    "benchmarkDurationMs": 36578
+  }
+}

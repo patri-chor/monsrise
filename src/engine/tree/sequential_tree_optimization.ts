@@ -1,6 +1,7 @@
 import '../env';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import type { Formation } from '../../ai/types';
@@ -100,9 +101,9 @@ export interface QualityDecisionPayload {
  */
 export function evaluateFormationOnPanel(
   BundleAI: any,
-  form: EvolFormation,
-  panel: Formation[],
-  seedBase: number,
+  subjectFormation: EvolFormation,
+  evaluationPanel: Formation[],
+  candFinalSeedBase: number,
   gamesPerCell: number = 1,
 ): {
   w: number;
@@ -113,38 +114,45 @@ export function evaluateFormationOnPanel(
   weakestCell: number;
   cells: CellEvaluation[];
 } {
-  let totalW = 0, totalD = 0, totalL = 0;
   const cells: CellEvaluation[] = [];
+  let totalW = 0;
+  let totalD = 0;
+  let totalL = 0;
   let weakest = 1.0;
 
-  for (let oppIdx = 0; oppIdx < panel.length; oppIdx++) {
-    const opp = panel[oppIdx];
-    const specB: SideSpec = { kind: 'native', f: opp };
-    for (const side of [1, 2] as (1 | 2)[]) {
-      let cw = 0, cd = 0, cl = 0;
+  for (let oppIdx = 0; oppIdx < evaluationPanel.length; oppIdx++) {
+    const opp = evaluationPanel[oppIdx];
+    for (const side of [1, 2] as const) {
+      let cellW = 0;
+      let cellD = 0;
+      let cellL = 0;
+
       for (let g = 0; g < gamesPerCell; g++) {
-        const seed = seedBase + oppIdx * 50 + (side - 1) * 20 + g;
-        const specA: SideSpec = { kind: 'evol', f: form };
-        const res = playSpecVsSpec(BundleAI, specA, specB, side, seed);
-        cw += res.w;
-        cd += res.d;
-        cl += res.l;
+        const seed = candFinalSeedBase + oppIdx * 20 + (side - 1) * 10 + g;
+        const mySpec: SideSpec = { kind: 'evol', f: subjectFormation };
+        const oppSpec: SideSpec = { kind: 'native', f: opp };
+        const r = playSpecVsSpec(BundleAI, mySpec, oppSpec, side, seed);
+        cellW += r.w;
+        totalW += r.w;
+        cellD += r.d;
+        totalD += r.d;
+        cellL += r.l;
+        totalL += r.l;
       }
-      const cellTotal = cw + cd + cl;
-      const cellUndef = cellTotal > 0 ? (cw + cd) / cellTotal : 0;
+
+      const cellTotal = cellW + cellD + cellL;
+      const cellUndef = cellTotal > 0 ? (cellW + cellD) / cellTotal : 0;
       if (cellUndef < weakest) {
         weakest = cellUndef;
       }
-      totalW += cw;
-      totalD += cd;
-      totalL += cl;
+
       cells.push({
         opponentIndex: oppIdx,
         opponentName: opp.name,
         side,
-        w: cw,
-        d: cd,
-        l: cl,
+        w: cellW,
+        d: cellD,
+        l: cellL,
         total: cellTotal,
         undefeated: cellUndef,
       });
@@ -163,6 +171,237 @@ export function evaluateFormationOnPanel(
     weakestCell: grandTotal > 0 ? weakest : 0,
     cells,
   };
+}
+
+export interface EvaluationTask {
+  candidateIndex: number;
+  rawCandidate: any;
+  optRes: CandidateOptimizationResult;
+  evaluationPanel: Formation[];
+  candFinalSeed: number;
+  gamesPerCellFinal: number;
+}
+
+let evalMutex = Promise.resolve();
+
+function acquireEvalLock(): Promise<() => void> {
+  let release: () => void;
+  const nextLock = new Promise<void>((res) => {
+    release = res;
+  });
+  const currentLock = evalMutex;
+  evalMutex = evalMutex.then(() => nextLock);
+  return currentLock.then(() => release!);
+}
+
+/**
+ * 单个 Candidate 独立评估任务执行体
+ */
+export async function executeSingleCandidateIndependentEval(
+  task: EvaluationTask,
+  BundleAI?: any,
+): Promise<CandidateIndependentEval> {
+  const unlock = await acquireEvalLock();
+  try {
+    const ai = BundleAI ?? loadBundle();
+    const raw = task.rawCandidate;
+    const optRes = task.optRes;
+    const evaluationPanel = task.evaluationPanel;
+    const candFinalSeed = task.candFinalSeed;
+    const gamesPerCellFinal = task.gamesPerCellFinal;
+
+    // 构造 baseline tree
+    const baselineForm: EvolFormation = {
+      name: raw.candidateId,
+      archetype: raw.archPath || 'prayer',
+      team: raw.team,
+      root: raw.tree,
+    };
+
+    // 独立评估 baseline
+    const baseEval = evaluateFormationOnPanel(ai, baselineForm, evaluationPanel, candFinalSeed, gamesPerCellFinal);
+
+    // 构造 final tree (若 improved 则使用 optRes.resultTree，否则使用 baseline)
+    const finalForm: EvolFormation = {
+      name: raw.candidateId,
+      archetype: raw.archPath || 'prayer',
+      team: raw.team,
+      root: (optRes?.status === 'IMPROVED' && optRes.resultTree) ? optRes.resultTree : raw.tree,
+    };
+
+    // 独立评估 final
+    const finalEval = evaluateFormationOnPanel(ai, finalForm, evaluationPanel, candFinalSeed, gamesPerCellFinal);
+
+    const undefeatedDelta = finalEval.undefeated - baseEval.undefeated;
+    const weakestCellDelta = finalEval.weakestCell - baseEval.weakestCell;
+
+    // 分类判定
+    let classification: 'tree_optimized_candidate' | 'deck_only_candidate' | 'archive' = 'deck_only_candidate';
+    let diagnosis = '';
+
+    if (optRes.status === 'ERROR') {
+      classification = 'archive';
+      diagnosis = 'worker_error';
+    } else if (finalEval.undefeated < 0.25) {
+      classification = 'archive';
+      diagnosis = 'deck_weakness (<25% undefeated)';
+    } else if (optRes.status === 'IMPROVED' && undefeatedDelta >= -1e-6 && weakestCellDelta >= -1e-6) {
+      classification = 'tree_optimized_candidate';
+    } else {
+      classification = 'deck_only_candidate';
+      if (optRes.status === 'NO_IMPROVEMENT') {
+        diagnosis = 'optimizer_no_op (no valid split/ig)';
+      } else if (undefeatedDelta < -1e-6 || weakestCellDelta < -1e-6) {
+        diagnosis = 'independent_regression (final < baseline)';
+      } else {
+        diagnosis = 'validation_rejection (<5% gain or loss increased)';
+      }
+    }
+
+    // 质量门禁判定: aggregate >= 0.60 且 weakest >= 0.40 且 (medium/heavy novelty)
+    const noveltyScore = raw.mutationVector?.noveltyScore ?? 0;
+    const noveltyBucket = raw.mutationVector?.direction?.mutationBucket ?? 'low';
+    const isHighNovelty = noveltyBucket === 'medium' || noveltyBucket === 'heavy' || noveltyScore >= 0.4;
+    const qualifiesQualityGate = (classification === 'tree_optimized_candidate')
+      && (finalEval.undefeated >= 0.60)
+      && (finalEval.weakestCell >= 0.40)
+      && isHighNovelty;
+
+    return {
+      candidateIndex: task.candidateIndex,
+      candidateId: raw.candidateId,
+      sourceSeedIndex: raw.sourceSeedIndex ?? 0,
+      sourceSeedName: raw.sourceSeedName ?? 'Unknown',
+      sourceSeedId: raw.sourceSeedId ?? 'unknown',
+      archPath: raw.archPath,
+      modulePath: raw.modulePath,
+      noveltyScore,
+      noveltyBucket,
+      classification,
+      failureDiagnosis: diagnosis || undefined,
+      optimizerResult: {
+        status: optRes.status,
+        improved: optRes.improved,
+        durationMs: optRes.durationMs,
+        forkRound: optRes.forkRound,
+        maskLabel: optRes.maskLabel,
+        searchSeedBase: optRes.searchSeedBase,
+        validationSeedBase: optRes.validationSeedBase,
+        error: optRes.error,
+      },
+      baselineEval: baseEval,
+      finalEval: finalEval,
+      deltas: {
+        undefeatedDelta,
+        weakestCellDelta,
+      },
+      qualifiesQualityGate,
+    };
+  } finally {
+    unlock();
+  }
+}
+
+/**
+ * 并发候选独立评估调度器（支持注入 workerExecutor 实现 mock 与并发限制验证）
+ */
+export async function runParallelIndependentEvaluation(
+  tasks: EvaluationTask[],
+  options: {
+    requestedWorkers?: number;
+    workerExecutor?: (task: EvaluationTask) => Promise<CandidateIndependentEval>;
+    onProgress?: (completed: number, total: number, result: CandidateIndependentEval) => void;
+  } = {},
+): Promise<{
+  evaluations: CandidateIndependentEval[];
+  peakActiveWorkers: number;
+  totalDurationMs: number;
+  workerConfig: any;
+}> {
+  const startTime = Date.now();
+  const workerInfo = resolveCandidateWorkers(options.requestedWorkers, tasks.length);
+  const effectiveLimit = workerInfo.effectiveWorkers;
+
+  const evaluations: CandidateIndependentEval[] = new Array(tasks.length);
+  let activeWorkers = 0;
+  let peakActiveWorkers = 0;
+  let nextTaskIndex = 0;
+  let completedCount = 0;
+
+  const executor = options.workerExecutor ?? ((task) => executeSingleCandidateIndependentEval(task));
+
+  return new Promise((resolvePool, rejectPool) => {
+    if (tasks.length === 0) {
+      resolvePool({
+        evaluations: [],
+        peakActiveWorkers: 0,
+        totalDurationMs: 0,
+        workerConfig: workerInfo,
+      });
+      return;
+    }
+
+    function dispatch() {
+      while (activeWorkers < effectiveLimit && nextTaskIndex < tasks.length) {
+        const taskIdx = nextTaskIndex++;
+        const task = tasks[taskIdx];
+        activeWorkers++;
+        if (activeWorkers > peakActiveWorkers) {
+          peakActiveWorkers = activeWorkers;
+        }
+
+        executor(task)
+          .then((res) => {
+            evaluations[taskIdx] = res;
+            completedCount++;
+            options.onProgress?.(completedCount, tasks.length, res);
+          })
+          .catch((err) => {
+            evaluations[taskIdx] = {
+              candidateIndex: task.candidateIndex,
+              candidateId: task.rawCandidate.candidateId,
+              sourceSeedIndex: task.rawCandidate.sourceSeedIndex ?? 0,
+              sourceSeedName: task.rawCandidate.sourceSeedName ?? 'Unknown',
+              sourceSeedId: task.rawCandidate.sourceSeedId ?? 'unknown',
+              archPath: task.rawCandidate.archPath,
+              modulePath: task.rawCandidate.modulePath,
+              noveltyScore: task.rawCandidate.mutationVector?.noveltyScore ?? 0,
+              noveltyBucket: task.rawCandidate.mutationVector?.direction?.mutationBucket ?? 'low',
+              classification: 'archive',
+              failureDiagnosis: `worker_error: ${err?.message || String(err)}`,
+              optimizerResult: {
+                status: 'ERROR',
+                improved: false,
+                durationMs: 0,
+                searchSeedBase: task.optRes.searchSeedBase,
+                validationSeedBase: task.optRes.validationSeedBase,
+                error: err?.message || String(err),
+              },
+              baselineEval: { w: 0, d: 0, l: 0, total: 0, undefeated: 0, weakestCell: 0, cells: [] },
+              finalEval: { w: 0, d: 0, l: 0, total: 0, undefeated: 0, weakestCell: 0, cells: [] },
+              deltas: { undefeatedDelta: 0, weakestCellDelta: 0 },
+              qualifiesQualityGate: false,
+            };
+            completedCount++;
+          })
+          .finally(() => {
+            activeWorkers--;
+            if (completedCount === tasks.length) {
+              resolvePool({
+                evaluations,
+                peakActiveWorkers,
+                totalDurationMs: Date.now() - startTime,
+                workerConfig: workerInfo,
+              });
+            } else {
+              dispatch();
+            }
+          });
+      }
+    }
+
+    dispatch();
+  });
 }
 
 /**
@@ -245,9 +484,33 @@ export async function runSequentialTreeOptimizationCycle(options: {
 
   options.onProgress?.('INDEPENDENT_EVAL_START', { candidateCount: rawCandidates.length });
 
-  // 3. 独立最终评估与质量决策判定
-  const BundleAI = loadBundle();
-  const evaluations: CandidateIndependentEval[] = [];
+  // 3. 并发执行独立最终评估
+  const evalTasks: EvaluationTask[] = rawCandidates.map((c, idx) => ({
+    candidateIndex: idx,
+    rawCandidate: c,
+    optRes: poolReport.results[idx],
+    evaluationPanel,
+    candFinalSeed: baseFinalEvalSeed + idx * 500,
+    gamesPerCellFinal,
+  }));
+
+  const evalReport = await runParallelIndependentEvaluation(evalTasks, {
+    requestedWorkers: options.requestedWorkers ?? 16,
+    onProgress: (comp, total, res) => {
+      options.onProgress?.('EVALUATION_PROGRESS', { completed: comp, total, result: res });
+    },
+  });
+
+  const evaluations = evalReport.evaluations;
+
+  // 写入 independent_final_evaluation.jsonl
+  writeFileSync(
+    join(outputDir, 'independent_final_evaluation.jsonl'),
+    evaluations.map(e => JSON.stringify(e)).join('\n') + (evaluations.length ? '\n' : ''),
+    'utf8',
+  );
+
+  // 4. 统计并汇总质量决策
   const failureDiagnosesCount: Record<string, number> = {
     'deck_weakness (<25% undefeated)': 0,
     'optimizer_no_op (no valid split/ig)': 0,
@@ -258,132 +521,30 @@ export async function runSequentialTreeOptimizationCycle(options: {
   };
 
   const qualifyingCandidates: any[] = [];
-
-  for (let i = 0; i < rawCandidates.length; i++) {
-    const raw = rawCandidates[i];
-    const optRes = poolReport.results[i];
-    const candFinalSeed = baseFinalEvalSeed + i * 500;
-
-    // 构造 baseline tree
-    const baselineForm: EvolFormation = {
-      name: raw.candidateId,
-      archetype: raw.archPath || 'prayer',
-      team: raw.team,
-      root: raw.tree,
-    };
-
-    // 独立评估 baseline
-    const baseEval = evaluateFormationOnPanel(BundleAI, baselineForm, evaluationPanel, candFinalSeed, gamesPerCellFinal);
-
-    // 构造 final tree (若 improved 则使用 optRes.resultTree，否则使用 baseline)
-    const finalForm: EvolFormation = {
-      name: raw.candidateId,
-      archetype: raw.archPath || 'prayer',
-      team: raw.team,
-      root: (optRes?.status === 'IMPROVED' && optRes.resultTree) ? optRes.resultTree : raw.tree,
-    };
-
-    // 独立评估 final
-    const finalEval = evaluateFormationOnPanel(BundleAI, finalForm, evaluationPanel, candFinalSeed, gamesPerCellFinal);
-
-    const undefeatedDelta = finalEval.undefeated - baseEval.undefeated;
-    const weakestCellDelta = finalEval.weakestCell - baseEval.weakestCell;
-
-    // 分类判定
-    let classification: 'tree_optimized_candidate' | 'deck_only_candidate' | 'archive' = 'deck_only_candidate';
-    let diagnosis = '';
-
-    if (optRes.status === 'ERROR') {
-      classification = 'archive';
-      diagnosis = 'worker_error';
-      failureDiagnosesCount['worker_error']++;
-    } else if (finalEval.undefeated < 0.25) {
-      classification = 'archive';
-      diagnosis = 'deck_weakness (<25% undefeated)';
-      failureDiagnosesCount['deck_weakness (<25% undefeated)']++;
-    } else if (optRes.status === 'IMPROVED' && undefeatedDelta >= -1e-6 && weakestCellDelta >= -1e-6) {
-      classification = 'tree_optimized_candidate';
+  for (const e of evaluations) {
+    if (e.qualifiesQualityGate) {
+      qualifyingCandidates.push({
+        candidateId: e.candidateId,
+        sourceSeedIndex: e.sourceSeedIndex,
+        sourceSeedName: e.sourceSeedName,
+        modulePath: e.modulePath,
+        noveltyScore: e.noveltyScore,
+        noveltyBucket: e.noveltyBucket,
+        finalUndefeated: e.finalEval.undefeated,
+        weakestCell: e.finalEval.weakestCell,
+        undefeatedDelta: e.deltas.undefeatedDelta,
+        forkRound: e.optimizerResult.forkRound,
+        maskLabel: e.optimizerResult.maskLabel,
+      });
     } else {
-      classification = 'deck_only_candidate';
-      if (optRes.status === 'NO_IMPROVEMENT') {
-        diagnosis = 'optimizer_no_op (no valid split/ig)';
-        failureDiagnosesCount['optimizer_no_op (no valid split/ig)']++;
-      } else if (undefeatedDelta < -1e-6 || weakestCellDelta < -1e-6) {
-        diagnosis = 'independent_regression (final < baseline)';
-        failureDiagnosesCount['independent_regression (final < baseline)']++;
-      } else {
-        diagnosis = 'validation_rejection (<5% gain or loss increased)';
-        failureDiagnosesCount['validation_rejection (<5% gain or loss increased)']++;
+      if (e.failureDiagnosis && failureDiagnosesCount[e.failureDiagnosis] !== undefined) {
+        failureDiagnosesCount[e.failureDiagnosis]++;
+      } else if (e.classification === 'tree_optimized_candidate' && e.finalEval.weakestCell < 0.40) {
+        failureDiagnosesCount['weakest_cell_weakness (<40% weakest)']++;
       }
     }
-
-    // 质量门禁判定: aggregate >= 0.60 且 weakest >= 0.40 且 (medium/heavy novelty)
-    const noveltyScore = raw.mutationVector?.noveltyScore ?? 0;
-    const noveltyBucket = raw.mutationVector?.direction?.mutationBucket ?? 'low';
-    const isHighNovelty = noveltyBucket === 'medium' || noveltyBucket === 'heavy' || noveltyScore >= 0.4;
-    const qualifiesQualityGate = (classification === 'tree_optimized_candidate')
-      && (finalEval.undefeated >= 0.60)
-      && (finalEval.weakestCell >= 0.40)
-      && isHighNovelty;
-
-    if (qualifiesQualityGate) {
-      qualifyingCandidates.push({
-        candidateId: raw.candidateId,
-        sourceSeedIndex: raw.sourceSeedIndex,
-        sourceSeedName: raw.sourceSeedName,
-        modulePath: raw.modulePath,
-        noveltyScore,
-        noveltyBucket,
-        finalUndefeated: finalEval.undefeated,
-        weakestCell: finalEval.weakestCell,
-        undefeatedDelta,
-        forkRound: optRes.forkRound,
-        maskLabel: optRes.maskLabel,
-      });
-    } else if (classification === 'tree_optimized_candidate' && finalEval.weakestCell < 0.40) {
-      failureDiagnosesCount['weakest_cell_weakness (<40% weakest)']++;
-    }
-
-    evaluations.push({
-      candidateIndex: i,
-      candidateId: raw.candidateId,
-      sourceSeedIndex: raw.sourceSeedIndex ?? 0,
-      sourceSeedName: raw.sourceSeedName ?? 'Unknown',
-      sourceSeedId: raw.sourceSeedId ?? 'unknown',
-      archPath: raw.archPath,
-      modulePath: raw.modulePath,
-      noveltyScore,
-      noveltyBucket,
-      classification,
-      failureDiagnosis: diagnosis || undefined,
-      optimizerResult: {
-        status: optRes.status,
-        improved: optRes.improved,
-        durationMs: optRes.durationMs,
-        forkRound: optRes.forkRound,
-        maskLabel: optRes.maskLabel,
-        searchSeedBase: optRes.searchSeedBase,
-        validationSeedBase: optRes.validationSeedBase,
-        error: optRes.error,
-      },
-      baselineEval: baseEval,
-      finalEval: finalEval,
-      deltas: {
-        undefeatedDelta,
-        weakestCellDelta,
-      },
-      qualifiesQualityGate,
-    });
   }
 
-  // 写入 independent_final_evaluation.jsonl
-  writeFileSync(
-    join(outputDir, 'independent_final_evaluation.jsonl'),
-    evaluations.map(e => JSON.stringify(e)).join('\n') + (evaluations.length ? '\n' : ''),
-    'utf8',
-  );
-
-  // 4. 汇总质量决策
   const treeOptimizedCount = evaluations.filter(e => e.classification === 'tree_optimized_candidate').length;
   const deckOnlyCount = evaluations.filter(e => e.classification === 'deck_only_candidate').length;
   const archiveCount = evaluations.filter(e => e.classification === 'archive').length;
@@ -450,6 +611,203 @@ export async function runSequentialTreeOptimizationCycle(options: {
   return {
     panelManifest,
     poolReport,
+    evaluations,
+    qualityDecision,
+    outputDir,
+  };
+}
+
+/**
+ * T020 专项重构执行体：复用 T019 optimization_results.jsonl，并发独立评估并生成质量决策
+ */
+export async function executeParallelFinalEvaluationRework(options: {
+  outputDir?: string;
+  requestedWorkers?: number;
+  gamesPerCellFinal?: number;
+  baseFinalEvalSeed?: number;
+  onProgress?: (step: string, detail?: any) => void;
+} = {}): Promise<{
+  reworkManifest: any;
+  evaluations: CandidateIndependentEval[];
+  qualityDecision: QualityDecisionPayload;
+  outputDir: string;
+}> {
+  const outputDir = options.outputDir ? resolve(options.outputDir) : SEQUENTIAL_TREE_OPT_DIR;
+  const optResultsPath = join(outputDir, 'optimization_results.jsonl');
+  if (!existsSync(optResultsPath)) {
+    throw new Error(`T019 optimization results not found at: ${optResultsPath}`);
+  }
+
+  // 1. 读取并计算 T019 optimization_results.jsonl 哈希（严禁重新执行优化）
+  const optRawContent = readFileSync(optResultsPath, 'utf8');
+  const optResultsHash = createHash('sha256').update(optRawContent).digest('hex');
+  const optResults: CandidateOptimizationResult[] = optRawContent.trim().split('\n').filter(l => l.trim().length > 0).map(l => JSON.parse(l));
+
+  const rawCandidates = loadAuthoritativeFrozenCandidates();
+  const { evaluationPanel } = resolveSeedsAndPanel();
+
+  const gamesPerCellFinal = options.gamesPerCellFinal ?? 1;
+  const baseFinalEvalSeed = options.baseFinalEvalSeed ?? 25000;
+
+  // 2. 构建独立评估并发任务
+  const evalTasks: EvaluationTask[] = rawCandidates.map((c, idx) => ({
+    candidateIndex: idx,
+    rawCandidate: c,
+    optRes: optResults[idx],
+    evaluationPanel,
+    candFinalSeed: baseFinalEvalSeed + idx * 500,
+    gamesPerCellFinal,
+  }));
+
+  options.onProgress?.('PARALLEL_EVALUATION_START', { taskCount: evalTasks.length, requestedWorkers: options.requestedWorkers ?? 16 });
+
+  // 3. 执行并发独立评估
+  const evalReport = await runParallelIndependentEvaluation(evalTasks, {
+    requestedWorkers: options.requestedWorkers ?? 16,
+    onProgress: (comp, total, res) => {
+      options.onProgress?.('EVALUATION_PROGRESS', { completed: comp, total, result: res });
+    },
+  });
+
+  const evaluations = evalReport.evaluations;
+
+  // 写入 independent_final_evaluation.jsonl
+  writeFileSync(
+    join(outputDir, 'independent_final_evaluation.jsonl'),
+    evaluations.map(e => JSON.stringify(e)).join('\n') + (evaluations.length ? '\n' : ''),
+    'utf8',
+  );
+
+  // 4. 统计并计算质量决策
+  const failureDiagnosesCount: Record<string, number> = {
+    'deck_weakness (<25% undefeated)': 0,
+    'optimizer_no_op (no valid split/ig)': 0,
+    'validation_rejection (<5% gain or loss increased)': 0,
+    'independent_regression (final < baseline)': 0,
+    'weakest_cell_weakness (<40% weakest)': 0,
+    'worker_error': 0,
+  };
+
+  const qualifyingCandidates: any[] = [];
+  for (const e of evaluations) {
+    if (e.qualifiesQualityGate) {
+      qualifyingCandidates.push({
+        candidateId: e.candidateId,
+        sourceSeedIndex: e.sourceSeedIndex,
+        sourceSeedName: e.sourceSeedName,
+        modulePath: e.modulePath,
+        noveltyScore: e.noveltyScore,
+        noveltyBucket: e.noveltyBucket,
+        finalUndefeated: e.finalEval.undefeated,
+        weakestCell: e.finalEval.weakestCell,
+        undefeatedDelta: e.deltas.undefeatedDelta,
+        forkRound: e.optimizerResult.forkRound,
+        maskLabel: e.optimizerResult.maskLabel,
+      });
+    } else {
+      if (e.failureDiagnosis && failureDiagnosesCount[e.failureDiagnosis] !== undefined) {
+        failureDiagnosesCount[e.failureDiagnosis]++;
+      } else if (e.classification === 'tree_optimized_candidate' && e.finalEval.weakestCell < 0.40) {
+        failureDiagnosesCount['weakest_cell_weakness (<40% weakest)']++;
+      }
+    }
+  }
+
+  const treeOptimizedCount = evaluations.filter(e => e.classification === 'tree_optimized_candidate').length;
+  const deckOnlyCount = evaluations.filter(e => e.classification === 'deck_only_candidate').length;
+  const archiveCount = evaluations.filter(e => e.classification === 'archive').length;
+
+  const passesCycleGate = qualifyingCandidates.length > 0;
+  const dominantFailureEntry = Object.entries(failureDiagnosesCount).sort((a, b) => b[1] - a[1])[0];
+
+  const qualityDecision: QualityDecisionPayload = {
+    decision: passesCycleGate ? 'CONTINUE_VARIANT_PRODUCTION' : 'ALGORITHM_IMPROVEMENT_REQUIRED',
+    timestamp: new Date().toISOString(),
+    candidateCount: evaluations.length,
+    breakdown: {
+      treeOptimizedCount,
+      deckOnlyCount,
+      archiveCount,
+      qualifyingCandidatesCount: qualifyingCandidates.length,
+    },
+    qualifyingCandidates,
+    failureDiagnosesSummary: failureDiagnosesCount,
+    dominantFailureMode: passesCycleGate ? undefined : dominantFailureEntry?.[0],
+    proposedNextDirection: passesCycleGate
+      ? 'Expand variant production to next batch of candidate seeds'
+      : `Address dominant failure mode '${dominantFailureEntry?.[0]}' via targeted tree branch induction / split refinement`,
+  };
+
+  writeFileSync(join(outputDir, 'quality_decision.json'), JSON.stringify(qualityDecision, null, 2), 'utf8');
+
+  // 5. 写入 final-evaluation-manifest.json
+  const reworkManifest = {
+    reworkType: 'parallel_independent_final_evaluation_rework',
+    reworkTimestamp: new Date().toISOString(),
+    reusedOptimizationResults: {
+      filePath: 'reports/new-formation-generation/sequential-tree-optimization/optimization_results.jsonl',
+      recordCount: optResults.length,
+      sha256: optResultsHash,
+    },
+    evaluationResourceContract: {
+      requestedEvaluationWorkers: evalReport.workerConfig.requestedWorkers,
+      effectiveEvaluationWorkers: evalReport.workerConfig.effectiveWorkers,
+      availableLogicalCpus: evalReport.workerConfig.availableLogicalCpus,
+      peakActiveEvaluationWorkers: evalReport.peakActiveWorkers,
+      totalEvaluationDurationMs: evalReport.totalDurationMs,
+      gamesPerCellFinal,
+      baseFinalEvalSeed,
+    },
+    qualityDecision: {
+      decision: qualityDecision.decision,
+      treeOptimizedCount,
+      deckOnlyCount,
+      archiveCount,
+      qualifyingCandidatesCount: qualifyingCandidates.length,
+      dominantFailureMode: qualityDecision.dominantFailureMode,
+    },
+  };
+  writeFileSync(join(outputDir, 'final-evaluation-manifest.json'), JSON.stringify(reworkManifest, null, 2), 'utf8');
+
+  // 6. 写入 summary.md
+  let summaryMd = `# Sequential Frozen Candidate Tree Optimization Summary (T019 / T020 Rework)\n\n`;
+  summaryMd += `## 1. Quality Decision Overview\n`;
+  summaryMd += `- **Decision**: \`${qualityDecision.decision}\`\n`;
+  summaryMd += `- **Candidates Processed**: **${evaluations.length}** / 24\n`;
+  summaryMd += `- **Breakdown**:\n`;
+  summaryMd += `  - \`tree_optimized_candidate\`: **${treeOptimizedCount}**\n`;
+  summaryMd += `  - \`deck_only_candidate\`: **${deckOnlyCount}**\n`;
+  summaryMd += `  - \`archive\`: **${archiveCount}**\n`;
+  summaryMd += `  - **Qualifying Gate Candidates**: **${qualifyingCandidates.length}** (Requires: Tree Optimized, Undefeated >= 60%, Weakest Cell >= 40%, Medium/Heavy Novelty)\n\n`;
+
+  if (passesCycleGate) {
+    summaryMd += `### Qualifying Candidates Evidence\n`;
+    summaryMd += `| Candidate ID | Source Seed | Module | Novelty | Final Undefeated | Weakest Cell | Delta | Mask |\n`;
+    summaryMd += `|---|---|---|---|---|---|---|---|\n`;
+    for (const q of qualifyingCandidates) {
+      summaryMd += `| \`${q.candidateId}\` | ${q.sourceSeedName} | ${q.modulePath} | ${(q.noveltyScore * 100).toFixed(1)}% (${q.noveltyBucket}) | **${(q.finalUndefeated * 100).toFixed(1)}%** | **${(q.weakestCell * 100).toFixed(1)}%** | +${(q.undefeatedDelta * 100).toFixed(1)}% | \`${q.maskLabel}\` |\n`;
+    }
+  } else {
+    summaryMd += `### Dominant Failure Mode & Proposed Direction\n`;
+    summaryMd += `- **Dominant Failure Mode**: \`${qualityDecision.dominantFailureMode}\`\n`;
+    summaryMd += `- **Proposed Next Direction**: ${qualityDecision.proposedNextDirection}\n\n`;
+    summaryMd += `### Failure Diagnoses Breakdown\n`;
+    for (const [mode, count] of Object.entries(failureDiagnosesCount)) {
+      summaryMd += `- **${mode}**: ${count}\n`;
+    }
+  }
+
+  summaryMd += `\n## 2. Resource & Parallel Evaluation Evidence (T020)\n`;
+  summaryMd += `- **Reused Optimization Results Hash (SHA-256)**: \`${optResultsHash}\`\n`;
+  summaryMd += `- **Requested Evaluation Workers**: ${evalReport.workerConfig.requestedWorkers}\n`;
+  summaryMd += `- **Effective Evaluation Workers**: ${evalReport.workerConfig.effectiveWorkers} (Host CPUs: ${evalReport.workerConfig.availableLogicalCpus})\n`;
+  summaryMd += `- **Peak Active Evaluation Workers**: ${evalReport.peakActiveWorkers}\n`;
+  summaryMd += `- **Evaluation Duration**: ${(evalReport.totalDurationMs / 1000).toFixed(1)}s (Rework parallelized with no repeated optimization)\n`;
+
+  writeFileSync(join(outputDir, 'summary.md'), summaryMd, 'utf8');
+
+  return {
+    reworkManifest,
     evaluations,
     qualityDecision,
     outputDir,

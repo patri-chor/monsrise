@@ -25,7 +25,7 @@ function loadBundle(): any {
   return b?.BattleAI ?? w.BattleAI;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const name = process.argv[2];
   const gamesPerOpp = Number(process.argv[3] || 5);
   const ebGames = Number(process.argv[4] || 12); // vs 早期 bundle 局数
@@ -49,7 +49,7 @@ function main(): void {
 
   let result: any;
   try {
-    result = optimizeFormation(BundleAI, src, gamesPerOpp);
+    result = await optimizeFormation(BundleAI, src, gamesPerOpp);
   } catch (e) {
     console.error(`[优化单阵型] ${src.name} 异常: ${(e as Error).message}`);
     result = null;

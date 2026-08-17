@@ -102,6 +102,8 @@ export function deriveCandidateSeeds(index: number, baseSearchSeed: number = 500
   };
 }
 
+import { evolToBundleFormation, type EvolFormation } from './evol_gene';
+
 /**
  * 构造单个候选优化任务
  */
@@ -119,14 +121,23 @@ export function buildCandidateTask(
   const seeds = deriveCandidateSeeds(
     candidateIndex,
     options.baseSearchSeed ?? 5000,
-    options.baseValidationSeed ?? 15000,
+    options.baseValidationSeed ?? 20000,
   );
+
+  const evolForm: EvolFormation = {
+    name: candidateRecord.candidateId,
+    archetype: candidateRecord.archPath || 'prayer',
+    team: candidateRecord.team,
+    root: candidateRecord.tree,
+  };
+  const bundleDeck = evolToBundleFormation(evolForm);
 
   const deckFormation: Formation = {
     id: candidateRecord.candidateId,
     name: candidateRecord.candidateId,
     archetype: candidateRecord.archPath || 'prayer',
-    team: candidateRecord.team,
+    team: bundleDeck.team,
+    tree: bundleDeck.tree,
   };
 
   return {
@@ -156,7 +167,7 @@ export async function executeCandidateOptimizationDirect(
 
   try {
     const ai = BundleAI ?? loadBundle();
-    const optRes = optimizeFormation(ai, task.deckFormation, task.gamesPerOpp, {
+    const optRes = await optimizeFormation(ai, task.deckFormation, task.gamesPerOpp, {
       opponents: task.opponents,
       searchSeedBase: task.searchSeedBase,
       validationSeedBase: task.validationSeedBase,

@@ -30,6 +30,8 @@ import { formationToEvol, recognizeArchetype, maskToLabel, summarizeEvolFormatio
 import { addBranch, replaceMonster, moveWithinZoneAtNode, isPositionIrrelevant, roleOf, getLastValidationError } from './tree_ops';
 import { playSpecVsSpec, type SideSpec, type BranchDecision, type RoundObservation } from './arena';
 import { ExperienceBank, replaceKey, moveKey, computeTreeFingerprint } from './search_experience';
+import { calculateMatchMetrics, formatMatchMetrics, type MatchMetrics } from './match_metrics';
+import { PersistentSimPool } from './persistent_pool';
 
 const MONSTER_NAME: Record<number, string> = {
   101: '肃清哥', 102: '大祭司', 103: '学徒', 104: '散弹', 105: '祈祷', 106: '冲锋', 107: '咒法',
@@ -287,7 +289,7 @@ function branchUsedMonsters(branchNodes: EvolNode[], exceptNodeId: string, excep
   return used;
 }
 
-/** 评估个体：对「命中 mask 的对手」统计整局不败率，利用缓存复用 */
+/** 评估个体：对「命中 mask 的对手」计算全套指标，利用缓存复用 */
 function evalMatchOnMatched(
   BundleAI: any,
   f: EvolFormation,
@@ -296,7 +298,7 @@ function evalMatchOnMatched(
   games: number,
   cache: MatchSimulationCache,
   seedBase: number,
-): { win: number; draw: number; loss: number; undefeated: number } {
+): MatchMetrics {
   let win = 0, draw = 0, loss = 0;
   const sides: (1 | 2)[] = mask.side !== null ? [mask.side] : [1, 2];
   for (const opp of matchedOpps) {
@@ -309,12 +311,11 @@ function evalMatchOnMatched(
       }
     }
   }
-  const total = win + draw + loss;
-  return { win, draw, loss, undefeated: total ? (win + draw) / total : 0 };
+  return calculateMatchMetrics(win, draw, loss);
 }
 
-/** 优化新分支内部走法 */
-function optimizeBranch(
+/** 优化新分支内部走法（支持细粒度 64-Worker 批次并发） */
+async function optimizeBranchParallel(
   BundleAI: any,
   branched: EvolFormation,
   mask: FeatureMask,
@@ -325,13 +326,16 @@ function optimizeBranch(
   formationId: string,
   cache: MatchSimulationCache,
   searchSeedBase: number,
-): EvolFormation {
+  pool?: PersistentSimPool,
+): Promise<EvolFormation> {
   const teamIds = branched.team.filter(s => s.monsterId > 0).map(s => s.monsterId);
   const preUsed = preUsedMonsters(branched, forkRound);
   let current = branched;
   let curEval = evalMatchOnMatched(BundleAI, current, mask, matchedOpps, games, cache, searchSeedBase);
   let skippedByExp = 0, newlyInvalid = 0;
-  console.log(`  新分支初始（命中对手整局）：${curEval.win}胜/${curEval.draw}平/${curEval.loss}负 不败率 ${(curEval.undefeated * 100).toFixed(0)}%`);
+  console.log(`  新分支初始（命中对手整局）：${formatMatchMetrics(curEval)}`);
+
+  const activePool = pool ?? PersistentSimPool.getInstance();
 
   for (let iter = 0; iter < 10; iter++) {
     const currentFp = computeTreeFingerprint(current);
@@ -344,10 +348,7 @@ function optimizeBranch(
       break;
     }
 
-    let bestChild: EvolFormation | null = null;
-    let bestRate = curEval.undefeated;
-    let bestDesc = '';
-    let evaluated = 0;
+    const candidateQueue: { child: EvolFormation; desc: string; key: string }[] = [];
 
     for (const node of branchNodes) {
       // P1 单替换穷举
@@ -366,16 +367,15 @@ function optimizeBranch(
             newlyInvalid++;
             continue;
           }
-          evaluated++;
-          const e = evalMatchOnMatched(BundleAI, child, mask, matchedOpps, games, cache, searchSeedBase);
-          if (e.undefeated > bestRate) {
-            bestRate = e.undefeated;
-            bestChild = child;
-            bestDesc = `替换 R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(toMid)}`;
-          }
+          candidateQueue.push({
+            child,
+            desc: `替换 R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(toMid)}`,
+            key,
+          });
         }
       }
-      // P2 位置搜索
+
+      // P2 同战区坐标微调
       for (const slot of node.placements) {
         if (isPositionIrrelevant(slot.monsterId)) continue;
         const role = roleOf(slot.monsterId);
@@ -392,33 +392,62 @@ function optimizeBranch(
               newlyInvalid++;
               continue;
             }
-            evaluated++;
-            const e = evalMatchOnMatched(BundleAI, child, mask, matchedOpps, games, cache, searchSeedBase);
-            if (e.undefeated > bestRate) {
-              bestRate = e.undefeated;
-              bestChild = child;
-              bestDesc = `移动 ${nm(slot.monsterId)} → (${x},${y})`;
-            }
+            candidateQueue.push({
+              child,
+              desc: `移动 ${nm(slot.monsterId)} → (${x},${y})`,
+              key,
+            });
           }
         }
       }
     }
 
-    console.log(`  第${iter + 1}轮：评估 ${evaluated} 个候选（跳过经验库无效 ${skippedByExp} 个），最优 ${(bestRate * 100).toFixed(0)}%`);
-    if (bestChild && bestRate > curEval.undefeated) {
+    if (candidateQueue.length === 0) {
+      console.log(`  第${iter + 1}轮：无新的有效变异候选，停止。`);
+      break;
+    }
+
+    // 细粒度批次并发评估（一次性打满所有 Worker）
+    const evalResults = await activePool.evalCandidateBatchOnMatchedParallel(
+      candidateQueue.map(c => c.child),
+      mask,
+      matchedOpps,
+      games,
+      searchSeedBase,
+    );
+
+    let bestChild: EvolFormation | null = null;
+    let bestScore = curEval.trainingScore;
+    let bestDesc = '';
+    let bestEval = curEval;
+
+    for (let i = 0; i < candidateQueue.length; i++) {
+      const cand = candidateQueue[i];
+      const metric = evalResults[i];
+      if (metric.trainingScore > bestScore) {
+        bestScore = metric.trainingScore;
+        bestChild = cand.child;
+        bestDesc = cand.desc;
+        bestEval = metric;
+      }
+    }
+
+    console.log(`  第${iter + 1}轮：并发评估 ${candidateQueue.length} 个候选（跳过经验库无效 ${skippedByExp} 个），最优训练分 ${(bestScore * 100).toFixed(1)}%`);
+    if (bestChild && bestScore > curEval.trainingScore) {
       current = bestChild;
-      curEval = evalMatchOnMatched(BundleAI, current, mask, matchedOpps, games, cache, searchSeedBase);
-      console.log(`    [采纳] ${bestDesc} → ${(curEval.undefeated * 100).toFixed(0)}%（${curEval.win}胜/${curEval.draw}平/${curEval.loss}负）`);
+      curEval = bestEval;
+      console.log(`    [采纳] ${bestDesc} → ${formatMatchMetrics(curEval)}`);
     } else {
-      console.log(`    [无改进] 最优候选 ${(bestRate * 100).toFixed(0)}% ≤ 当前 ${(curEval.undefeated * 100).toFixed(0)}%，停止。`);
+      console.log(`    [无改进] 最优候选训练分 ${(bestScore * 100).toFixed(1)}% ≤ 当前 ${(curEval.trainingScore * 100).toFixed(1)}%，停止。`);
       break;
     }
   }
+
   console.log(`  [经验库] 分支优化累计：跳过历史无效 ${skippedByExp} 个，新增无效 ${newlyInvalid} 个`);
   return current;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const seedName = process.argv[2] || '肃清';
   const gamesPerOpp = Number(process.argv[3] || 4);
 
@@ -426,7 +455,7 @@ function main(): void {
   const src = FORMATION_LIBRARY.find(f => f.name === seedName);
   if (!src) { console.error('阵型不存在'); process.exit(1); }
 
-  const out = optimizeFormation(BundleAI, src, gamesPerOpp);
+  const out = await optimizeFormation(BundleAI, src, gamesPerOpp);
   if (!out) return;
 
   const outPath = resolve('reports/branch_induct_result.json');
@@ -451,14 +480,14 @@ export interface OptimizeFormationResult {
   forkRound: number;
   mask: FeatureMask;
   maskLabel: string;
-  before: { win: number; draw: number; loss: number; undefeated: number };
-  after: { win: number; draw: number; loss: number; undefeated: number };
+  before: MatchMetrics;
+  after: MatchMetrics;
   searchValidation?: {
     searchSeedBase: number;
     validationSeedBase: number;
     gamesPerOpp: number;
-    searchBefore: { win: number; draw: number; loss: number; undefeated: number };
-    searchAfter: { win: number; draw: number; loss: number; undefeated: number };
+    searchBefore: MatchMetrics;
+    searchAfter: MatchMetrics;
     matchedOpponents: string[];
     simCount: number;
     forkRound: number;
@@ -471,17 +500,18 @@ export interface OptimizeFormationOptions {
   opponents?: Formation[];
   searchSeedBase?: number;
   validationSeedBase?: number;
+  pool?: PersistentSimPool;
 }
 
 /**
  * 自主分支优化（可复用）：分析 → 诊断崩盘 → 建分支 → 优化新分支 → 独立验证集评估。
  */
-export function optimizeFormation(
+export async function optimizeFormation(
   BundleAI: any,
   src: Formation,
   gamesPerOpp: number,
   options?: OptimizeFormationOptions,
-): OptimizeFormationResult | null {
+): Promise<OptimizeFormationResult | null> {
   if (options?.opponents !== undefined && options.opponents.length === 0) {
     throw new Error('OptimizeFormationOptions.opponents cannot be empty');
   }
@@ -489,6 +519,7 @@ export function optimizeFormation(
   const candidate = formationToEvol(src);
   const searchSeedBase = options?.searchSeedBase ?? 2000;
   const validationSeedBase = options?.validationSeedBase ?? 9000;
+  const pool = options?.pool ?? PersistentSimPool.getInstance();
 
   const exp = new ExperienceBank();
   exp.load();
@@ -609,10 +640,10 @@ export function optimizeFormation(
   console.log('[建分支] 分支创建成功，新树结构：');
   console.log(summarizeEvolFormation(branched));
 
-  // 6. 搜索集内优化新分支
-  console.log(`\n=== 优化新分支（R${forkRound}~R5，命中对手，搜索集 Seed=${searchSeedBase}） ===`);
+  // 6. 搜索集内并发优化新分支
+  console.log(`\n=== 并发优化新分支（R${forkRound}~R5，命中对手，搜索集 Seed=${searchSeedBase}） ===`);
   const searchBefore = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
-  const optimized = optimizeBranch(
+  const optimized = await optimizeBranchParallel(
     BundleAI,
     branched,
     bestOverall.split.mask,
@@ -623,15 +654,16 @@ export function optimizeFormation(
     src.id,
     cache,
     searchSeedBase,
+    pool,
   );
   const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();
 
   // 7. 独立验证集评估 (Validation Seed Base)
-  console.log(`\n=== 独立验证集整局不败率对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
+  console.log(`\n=== 独立验证集整局对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
   const beforeVal = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
   const afterVal = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
-  console.log(`  [验证集] 优化前 ${beforeVal.win}胜/${beforeVal.draw}平/${beforeVal.loss}负 (${(beforeVal.undefeated * 100).toFixed(0)}%) → 优化后 ${afterVal.win}胜/${afterVal.draw}平/${afterVal.loss}负 (${(afterVal.undefeated * 100).toFixed(0)}%)`);
+  console.log(`  [验证集] 优化前 ${formatMatchMetrics(beforeVal)} → 优化后 ${formatMatchMetrics(afterVal)}`);
 
   for (const opp of effectiveOpps) {
     let bw = 0, bd = 0, bl = 0, aw = 0, ad = 0, al = 0;
@@ -643,19 +675,19 @@ export function optimizeFormation(
         aw += ta.w; ad += ta.d; al += ta.l;
       }
     }
-    const bU = (bw + bd + bl) > 0 ? (bw + bd) / (bw + bd + bl) : 0;
-    const aU = (aw + ad + al) > 0 ? (aw + ad) / (aw + ad + al) : 0;
-    console.log(`  ${opp.name}: ${bw}胜/${bd}平/${bl}负 (${(bU * 100).toFixed(0)}%) → ${aw}胜/${ad}平/${al}负 (${(aU * 100).toFixed(0)}%) ${aU >= bU ? '↑' : '↓'}`);
+    const bM = calculateMatchMetrics(bw, bd, bl);
+    const aM = calculateMatchMetrics(aw, ad, al);
+    console.log(`  ${opp.name}: 训练分 ${(bM.trainingScore * 100).toFixed(1)}% (${bw}W/${bd}D/${bl}L) → ${(aM.trainingScore * 100).toFixed(1)}% (${aw}W/${ad}D/${al}L) ${aM.trainingScore >= bM.trainingScore ? '↑' : '↓'}`);
   }
 
-  // 验收标准：验证样本非空，不败率改善 >= 0.05 (5%) 且 净负场不恶化
-  const totalValMatches = afterVal.win + afterVal.draw + afterVal.loss;
+  // 验收标准：验证样本非空，训练分改善 >= 0.05 (5%) 且 净负场不恶化
+  const totalValMatches = afterVal.total;
   const improved = totalValMatches > 0
-    && afterVal.undefeated >= beforeVal.undefeated + 0.05
+    && afterVal.trainingScore >= beforeVal.trainingScore + 0.05
     && afterVal.loss <= beforeVal.loss;
 
   if (!improved) {
-    console.log('\n独立验证集未达到最低改善门槛（+5% 不败率或负场增加），不采纳该分支（保持原阵型）。');
+    console.log('\n独立验证集未达到最低改善门槛（+5% 训练分或负场增加），不采纳该分支（保持原阵型）。');
   }
 
   return {

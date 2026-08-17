@@ -1,19 +1,14 @@
 // ============================================================
-// 树优化器 —— 模拟退火爬山（替代遗传算法，对树结构搜索更高效）
+// 树优化器 —— 模拟退火爬山（支持细粒度 64-Worker 局部并行搜索）
 //
 // 为什么比 GA 快：GA 每代评估整个种群（N 个体 × 每靶多局），
 // 但真正有用的只是"当前最优 + 一次成功变异"。爬山法每步只评估
-// 1 个变异体（接受则保留、拒绝则回退），同样评估预算下能探索
-// 约 N 倍于 GA 的步数。
+// 1 个或一组变异体（接受则保留、拒绝则回退）。
 //
-// 模拟退火：温度从高到低，前期允许接受更差解（跳出局部最优），
-// 后期退化为纯爬山（精细收敛）。
-//
-// 适应度 = arena 分离测试 weakest（3靶×先/后手 6 格最弱不败率，maximin 补短板）。
-// 每步用 gamesPerTarget 快评（噪声容忍，用于排序），
-// 最终 best 用更多局数精评。
-//
-// 运行：npx vite-node --script src/engine/train/hill_climb.ts [种子阵型] [步数] [每靶局数] [输出路径] [seed]
+// 并行优化（64-Worker / 80% CPU 目标）：
+//   - 支持单步局部并行探索：每步生成一批变异邻域候选（如 8~16 个）
+//   - 所有候选的 3 靶 × 2 侧（6 格最弱测试）全部拆解为原子任务并行下发
+//   - 动态自适应负载，吞吐打满
 // ============================================================
 
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,7 +24,9 @@ import {
   mutateCondition, addBranch, removeBranch,
   monsterFeaturePool, badgeFeaturePool,
 } from './tree_ops';
-import { evaluateArena, formatArenaResult, type ArenaResult } from './arena';
+import { evaluateArena, formatArenaResult, type ArenaResult, type CellResult } from './arena';
+import { PersistentSimPool } from './persistent_pool';
+import type { SimTaskMessage } from './fine_grained_worker';
 
 const BADGE_POOL = DB_BADGES.filter(b => ![14, 15, 19, 31, 34].includes(b.id)).map(b => b.id);
 
@@ -53,7 +50,7 @@ function condNodes(f: EvolFormation): EvolNode[] {
 }
 
 /** 单次随机变异（与 evolution2.mutate 同算子集） */
-function mutate(f: EvolFormation, rng: () => number): EvolFormation | null {
+export function mutate(f: EvolFormation, rng: () => number): EvolFormation | null {
   const ids = teamIds(f);
   const mPool = monsterFeaturePool();
   const bPool = badgeFeaturePool();
@@ -111,12 +108,198 @@ export interface HillClimbResult {
   history: { step: number; fitness: number; bestFitness: number; temp: number }[];
 }
 
+const SEPARATION_TARGET_NAMES = ['全二永平', '全二冲', '泉水剑'];
+
 /**
- * 模拟退火爬山优化放置树（卡组固定）。
- * @param T0 初始温度（相对 adScore 0-1 的尺度）
- * @param Tmin 终止温度
- * @param alpha 降温系数（每步）
+ * 细粒度并行评估一组候选的分离测试（3靶 × 2侧 = 6格）
  */
+export async function evaluateArenaBatchParallel(
+  candidates: EvolFormation[],
+  gamesPerTarget: number,
+  seedBase: number = 5000,
+  pool?: PersistentSimPool,
+): Promise<ArenaResult[]> {
+  const activePool = pool ?? PersistentSimPool.getInstance();
+  const tasks: SimTaskMessage[] = [];
+  let taskId = 0;
+
+  for (let cIdx = 0; cIdx < candidates.length; cIdx++) {
+    const cand = candidates[cIdx];
+    for (let tIdx = 0; tIdx < SEPARATION_TARGET_NAMES.length; tIdx++) {
+      const oppName = SEPARATION_TARGET_NAMES[tIdx];
+      for (const side of [1, 2] as (1 | 2)[]) {
+        tasks.push({
+          taskId: taskId++,
+          candidateIdx: cIdx,
+          formationA: cand,
+          opponentNameOrId: oppName,
+          side,
+          seed: seedBase + cIdx * 100 + tIdx * 10 + side,
+          games: gamesPerTarget,
+        });
+      }
+    }
+  }
+
+  const results = await activePool.dispatchTasks(tasks);
+
+  // 聚合各候选的 6 格结果
+  const arenaResults: ArenaResult[] = candidates.map(() => {
+    return {
+      attackP1: { w: 0, d: 0, l: 0, undefeated: 0 },
+      attackP2: { w: 0, d: 0, l: 0, undefeated: 0 },
+      survivalP1: { w: 0, d: 0, l: 0, undefeated: 0 },
+      survivalP2: { w: 0, d: 0, l: 0, undefeated: 0 },
+      comprehensiveP1: { w: 0, d: 0, l: 0, undefeated: 0 },
+      comprehensiveP2: { w: 0, d: 0, l: 0, undefeated: 0 },
+      attack: { w: 0, d: 0, l: 0, undefeated: 0 },
+      survival: { w: 0, d: 0, l: 0, undefeated: 0 },
+      comprehensive: { w: 0, d: 0, l: 0, undefeated: 0 },
+      adScore: 0,
+      weakest: 0,
+    };
+  });
+
+  const cellMap: Record<string, keyof ArenaResult> = {
+    '全二永平_1': 'attackP1',
+    '全二永平_2': 'attackP2',
+    '全二冲_1': 'survivalP1',
+    '全二冲_2': 'survivalP2',
+    '泉水剑_1': 'comprehensiveP1',
+    '泉水剑_2': 'comprehensiveP2',
+  };
+
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    const r = results[i];
+    const cIdx = t.candidateIdx ?? 0;
+    const key = `${t.opponentNameOrId}_${t.side}`;
+    const field = cellMap[key];
+    if (field) {
+      const tot = r.w + r.d + r.l;
+      const cell: CellResult = {
+        w: r.w,
+        d: r.d,
+        l: r.l,
+        undefeated: tot > 0 ? (r.w + r.d) / tot : 0,
+      };
+      (arenaResults[cIdx] as any)[field] = cell;
+    }
+  }
+
+  for (const ar of arenaResults) {
+    ar.attack = mergeCells(ar.attackP1, ar.attackP2);
+    ar.survival = mergeCells(ar.survivalP1, ar.survivalP2);
+    ar.comprehensive = mergeCells(ar.comprehensiveP1, ar.comprehensiveP2);
+    ar.adScore = (ar.attack.undefeated + ar.survival.undefeated + ar.comprehensive.undefeated) / 3;
+    ar.weakest = Math.min(
+      ar.attackP1.undefeated, ar.attackP2.undefeated,
+      ar.survivalP1.undefeated, ar.survivalP2.undefeated,
+      ar.comprehensiveP1.undefeated, ar.comprehensiveP2.undefeated,
+    );
+  }
+
+  return arenaResults;
+}
+
+function mergeCells(a: CellResult, b: CellResult): CellResult {
+  const w = a.w + b.w, d = a.d + b.d, l = a.l + b.l;
+  const tot = w + d + l;
+  return { w, d, l, undefeated: tot > 0 ? (w + d) / tot : 0 };
+}
+
+/**
+ * 模拟退火爬山优化（支持局部并行多候选采样）
+ */
+export async function hillClimbParallel(
+  BundleAI: any,
+  seedFormation: EvolFormation,
+  steps: number,
+  gamesPerTarget: number,
+  seed: number,
+  options: {
+    parallelVariants?: number; // 每步并行变异体数 (默认 8~16)
+    T0?: number;
+    Tmin?: number;
+    alpha?: number;
+    evalGamesPerTarget?: number;
+    pool?: PersistentSimPool;
+  } = {},
+): Promise<HillClimbResult> {
+  const parallelVariants = options.parallelVariants ?? 8;
+  const T0 = options.T0 ?? 0.10;
+  const Tmin = options.Tmin ?? 0.005;
+  const alpha = options.alpha ?? 0.985;
+  const pool = options.pool ?? PersistentSimPool.getInstance();
+
+  const rng = mulberry32(seed);
+  let current = cloneEvolFormation(seedFormation);
+
+  // 初始评估基线
+  const initArenas = await evaluateArenaBatchParallel([current], gamesPerTarget, 5000, pool);
+  let currentFit = initArenas[0].weakest;
+
+  let best = cloneEvolFormation(current);
+  let bestFit = currentFit;
+  let bestArena: ArenaResult = initArenas[0];
+  let accepted = 0;
+  const history: HillClimbResult['history'] = [];
+  let T = T0;
+
+  for (let step = 0; step < steps; step++) {
+    // 1. 每步并发生成多个候选变异体
+    const candidates: EvolFormation[] = [];
+    for (let v = 0; v < parallelVariants; v++) {
+      const mut = mutate(current, rng);
+      if (mut) candidates.push(mut);
+    }
+
+    if (candidates.length > 0) {
+      // 2. 细粒度并行评测这批变异体的所有 6 格最弱测试
+      const arenas = await evaluateArenaBatchParallel(candidates, gamesPerTarget, 5000 + step * 100, pool);
+
+      // 3. 找出本批最优变异体
+      let stepBestIdx = 0;
+      let stepBestFit = arenas[0].weakest;
+      for (let i = 1; i < arenas.length; i++) {
+        if (arenas[i].weakest > stepBestFit) {
+          stepBestFit = arenas[i].weakest;
+          stepBestIdx = i;
+        }
+      }
+
+      const child = candidates[stepBestIdx];
+      const childFit = stepBestFit;
+      const delta = childFit - currentFit;
+
+      // 退火接受准则
+      if (delta >= 0 || rng() < Math.exp(delta / T)) {
+        current = child;
+        currentFit = childFit;
+        accepted++;
+        if (childFit > bestFit) {
+          bestFit = childFit;
+          best = cloneEvolFormation(child);
+          bestArena = arenas[stepBestIdx];
+        }
+      }
+    }
+
+    T = Math.max(Tmin, T * alpha);
+    if (step % 5 === 0 || step === steps - 1) {
+      console.log(`  [Parallel HillClimb] 步${step + 1}/${steps} 当前最弱 ${(currentFit * 100).toFixed(1)}% 最佳 ${(bestFit * 100).toFixed(1)}% 温度 ${T.toFixed(4)}`);
+    }
+    history.push({ step: step + 1, fitness: currentFit, bestFitness: bestFit, temp: T });
+  }
+
+  // 最终高局数精评
+  const finalGames = options.evalGamesPerTarget ?? Math.max(gamesPerTarget, 8);
+  const finalArenas = await evaluateArenaBatchParallel([best], finalGames, 9999, pool);
+  bestArena = finalArenas[0];
+
+  return { best, bestFitness: bestFit, bestArena, steps, accepted, history };
+}
+
 export function hillClimb(
   BundleAI: any,
   seedFormation: EvolFormation,
@@ -126,11 +309,11 @@ export function hillClimb(
   T0 = 0.10,
   Tmin = 0.005,
   alpha = 0.985,
-  evalGamesPerTarget?: number, // 最终精评局数（默认 gamesPerTarget，但建议 >=8 降噪）
+  evalGamesPerTarget?: number,
 ): HillClimbResult {
+  // 同步 fallback 版本
   const rng = mulberry32(seed);
   let current = cloneEvolFormation(seedFormation);
-  // 适应度 = weakest（最弱格不败率），优先补短板
   let currentFit = evaluateArena(BundleAI, current, gamesPerTarget).weakest;
 
   let best = cloneEvolFormation(current);
@@ -145,7 +328,6 @@ export function hillClimb(
     if (child) {
       const childFit = evaluateArena(BundleAI, child, gamesPerTarget).weakest;
       const delta = childFit - currentFit;
-      // 退火接受准则：更优必接受，更差以 exp(delta/T) 概率接受
       if (delta >= 0 || rng() < Math.exp(delta / T)) {
         current = child;
         currentFit = childFit;
@@ -157,66 +339,10 @@ export function hillClimb(
       }
     }
     T = Math.max(Tmin, T * alpha);
-    if (step % 5 === 0 || step === steps - 1) {
-      console.log(`  步${step + 1}/${steps} 当前 ${(currentFit * 100).toFixed(1)}% 最佳 ${(bestFit * 100).toFixed(1)}% 温度 ${T.toFixed(4)}`);
-    }
     history.push({ step: step + 1, fitness: currentFit, bestFitness: bestFit, temp: T });
   }
 
-  // 最终精评（更多局数降噪，验证真实增益）
   const finalGames = evalGamesPerTarget ?? Math.max(gamesPerTarget, 8);
   bestArena = evaluateArena(BundleAI, best, finalGames);
   return { best, bestFitness: bestFit, bestArena: bestArena!, steps, accepted, history };
-}
-
-// ---------- CLI ----------
-
-if (process.argv[1] && process.argv[1].endsWith('hill_climb.ts')) {
-  const seedName = process.argv[2] || '肃清';
-  const steps = Number(process.argv[3]) || 40;
-  const gamesPerTarget = Number(process.argv[4]) || 2;
-  const outPath = process.argv[5] || 'reports/hill_climb_result.json';
-  const seed = Number(process.argv[6]) || 42;
-  const evalGames = Number(process.argv[7]) || 8; // 最终精评局数
-
-  const w = globalThis as any;
-  let BundleAI: any = null;
-  try {
-    const code = readFileSync(resolve('public/ai-bundle.iife.js'), 'utf8');
-    const factory = new Function('window', 'globalThis', '"use strict";\n' + code + '\n;return BattleAI;');
-    const bundleExports = factory(w, w);
-    BundleAI = bundleExports?.BattleAI ?? w.BattleAI ?? null;
-  } catch (e) {
-    console.error(`[hill_climb] bundle 加载失败: ${(e as Error).message}`);
-    process.exit(1);
-  }
-  if (!BundleAI) { console.error('bundle 未加载'); process.exit(1); }
-
-  const src = FORMATION_LIBRARY.find(f => f.name === seedName);
-  if (!src) { console.error(`种子阵型不存在: ${seedName}`); process.exit(1); }
-
-  const t0 = Date.now();
-  const result = hillClimb(BundleAI, formationToEvol(src), steps, gamesPerTarget, seed, 0.10, 0.005, 0.985, evalGames);
-  const ms = Date.now() - t0;
-  console.log(`\n=== 模拟退火爬山完成（${steps} 步，${(ms / 1000).toFixed(0)}s，接受 ${result.accepted} 次）===`);
-  console.log(`最佳分离分：${(result.bestFitness * 100).toFixed(1)}%`);
-  console.log(summarizeEvolFormation(result.best));
-  console.log(formatArenaResult(result.best.name, result.bestArena));
-  const json = {
-    type: 'hill_climb_result',
-    seedFormation: seedName,
-    bestFitness: result.bestFitness,
-    steps: result.steps,
-    accepted: result.accepted,
-    history: result.history,
-    arena: result.bestArena,
-    formation: {
-      name: result.best.name,
-      archetype: result.best.archetype,
-      team: result.best.team,
-      tree: result.best.root,
-    },
-  };
-  writeFileSync(outPath, JSON.stringify(json, null, 2));
-  console.log(`结果已保存 → ${outPath}`);
 }
