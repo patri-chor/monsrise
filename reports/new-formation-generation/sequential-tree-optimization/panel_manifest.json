@@ -1,0 +1,28 @@
+{
+  "cycleType": "sequential_frozen_tree_optimization",
+  "startedAt": "2026-08-17T13:09:51.231Z",
+  "candidateCount": 24,
+  "evaluationPanel": [
+    "泉水剑",
+    "坚果救星",
+    "全二冲",
+    "经典救星",
+    "全二永平",
+    "肃清",
+    "梯子塞雷",
+    "壕炸金猴"
+  ],
+  "workerConfig": {
+    "requestedWorkers": 16,
+    "effectiveWorkers": 16,
+    "availableLogicalCpus": 16,
+    "candidateCount": 24
+  },
+  "seedConfiguration": {
+    "baseSearchSeed": 5000,
+    "baseValidationSeed": 15000,
+    "baseFinalEvalSeed": 25000,
+    "gamesPerOpp": 1,
+    "gamesPerCellFinal": 1
+  }
+}

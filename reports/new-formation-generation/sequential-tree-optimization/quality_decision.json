@@ -1,0 +1,22 @@
+{
+  "decision": "ALGORITHM_IMPROVEMENT_REQUIRED",
+  "timestamp": "2026-08-17T13:25:55.408Z",
+  "candidateCount": 24,
+  "breakdown": {
+    "treeOptimizedCount": 5,
+    "deckOnlyCount": 17,
+    "archiveCount": 2,
+    "qualifyingCandidatesCount": 0
+  },
+  "qualifyingCandidates": [],
+  "failureDiagnosesSummary": {
+    "deck_weakness (<25% undefeated)": 2,
+    "optimizer_no_op (no valid split/ig)": 17,
+    "validation_rejection (<5% gain or loss increased)": 0,
+    "independent_regression (final < baseline)": 0,
+    "weakest_cell_weakness (<40% weakest)": 5,
+    "worker_error": 0
+  },
+  "dominantFailureMode": "optimizer_no_op (no valid split/ig)",
+  "proposedNextDirection": "Address dominant failure mode 'optimizer_no_op (no valid split/ig)' via targeted tree branch induction / split refinement"
+}
