@@ -94,51 +94,67 @@ if (!existsSync(tasksDir)) {
   process.exit(0);
 }
 
-// 2. 扫描 TASKS 目录
-const files = readdirSync(tasksDir);
-const taskFiles = files.filter(f => /^T\d+.*\.md$/i.test(f) && !f.endsWith('.report.md') && !f.endsWith('.closed.md') && f !== 'T000-template.md');
-
-taskFiles.sort((a, b) => {
-  const numA = parseInt(a.match(/^T(\d+)/i)?.[1] ?? '0', 10);
-  const numB = parseInt(b.match(/^T(\d+)/i)?.[1] ?? '0', 10);
-  return numA - numB;
-});
-
-let openTask = null;
-
-for (let i = taskFiles.length - 1; i >= 0; i--) {
-  const file = taskFiles[i];
-  const fullPath = join(tasksDir, file);
-  const content = readFileSync(fullPath, 'utf8');
+// 2. 扫描 TASKS 根目录及所有子域目录 (tree, generation 等)
+function findTasksInDir(dir, domain = 'root') {
+  if (!existsSync(dir)) return [];
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const tasks = [];
   
-  const firstLine = content.split('\n')[0]?.trim() ?? '';
-  const isOpen = /^STATUS:\s*OPEN/i.test(firstLine) || /^STATUS:\s*OPEN/im.test(content.slice(0, 200));
-  
-  if (!isOpen) continue;
+  const files = entries.filter(e => e.isFile()).map(e => e.name);
+  const taskFiles = files.filter(f => /^T\d+.*\.md$/i.test(f) && !f.endsWith('.report.md') && !f.endsWith('.closed.md') && f !== 'T000-template.md');
 
-  const taskId = file.match(/^(T\d+)/i)?.[1];
-  if (!taskId) continue;
+  for (const file of taskFiles) {
+    const fullPath = join(dir, file);
+    const content = readFileSync(fullPath, 'utf8');
+    const firstLine = content.split('\n')[0]?.trim() ?? '';
+    const isOpen = /^STATUS:\s*OPEN/i.test(firstLine) || /^STATUS:\s*OPEN/im.test(content.slice(0, 200));
+    if (!isOpen) continue;
 
-  const reportFile = files.find(f => f.startsWith(taskId) && f.endsWith('.report.md'));
-  if (reportFile) {
-    const reportContent = readFileSync(join(tasksDir, reportFile), 'utf8');
-    const isDone = /^STATUS:\s*DONE/im.test(reportContent.slice(0, 200));
-    if (isDone) continue;
+    const taskId = file.match(/^(T\d+)/i)?.[1];
+    if (!taskId) continue;
+
+    const reportFile = files.find(f => f.startsWith(taskId) && f.endsWith('.report.md'));
+    if (reportFile) {
+      const reportContent = readFileSync(join(dir, reportFile), 'utf8');
+      const isDone = /^STATUS:\s*DONE/im.test(reportContent.slice(0, 200));
+      if (isDone) continue;
+    }
+
+    const relTaskPath = domain === 'root' ? `TASKS/${file}` : `TASKS/${domain}/${file}`;
+    const relReportPath = domain === 'root' ? `TASKS/${taskId}.report.md` : `TASKS/${domain}/${taskId}.report.md`;
+
+    tasks.push({
+      taskId,
+      num: parseInt(taskId.slice(1), 10),
+      file: relTaskPath,
+      reportFile: relReportPath,
+      domain,
+      title: content.split('\n').find(l => l.startsWith('# '))?.replace('# ', '').trim() ?? file,
+    });
   }
 
-  openTask = {
-    taskId,
-    file: `TASKS/${file}`,
-    title: content.split('\n').find(l => l.startsWith('# '))?.replace('# ', '').trim() ?? file,
-  };
-  break;
+  // 递归检查子目录
+  for (const entry of entries) {
+    if (entry.isDirectory() && domain === 'root') {
+      tasks.push(...findTasksInDir(join(dir, entry.name), entry.name));
+    }
+  }
+
+  return tasks;
 }
+
+const allOpenTasks = findTasksInDir(tasksDir);
+allOpenTasks.sort((a, b) => a.num - b.num);
+
+const openTask = allOpenTasks.length > 0 ? allOpenTasks[allOpenTasks.length - 1] : null;
 
 if (openTask) {
   console.log(JSON.stringify({
     status: 'TASK_FOUND',
     taskId: openTask.taskId,
+    domain: openTask.domain,
     taskFile: openTask.file,
+    reportFile: openTask.reportFile,
     title: openTask.title,
     stage: stageName,
   }));
@@ -151,3 +167,4 @@ if (openTask) {
   }));
   process.exit(0);
 }
+
