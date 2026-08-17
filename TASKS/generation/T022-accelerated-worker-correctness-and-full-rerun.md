@@ -23,9 +23,18 @@ Fix the accelerated optimizer/evaluation worker result contract, prove correctne
 
 ## Performance Evidence
 
-- Re-run a same-candidate before/after benchmark only after correctness is fixed, using identical fixed panel, games, and seeds.
-- Report the measured multiplier honestly. The T021 result was 1.04x, not 10x; do not claim 10x unless the new benchmark demonstrates it.
-- Distinguish inner branch-evaluation speed from end-to-end candidate wall-clock speed.
+The reported acceleration is an **algorithm scheduling change**, not necessarily a faster individual arena simulation: hill-climb and branch candidate evaluations are batched and dispatched to saturate available CPU, reducing total cycle wall-clock time. Therefore a single representative candidate comparison is insufficient.
+
+Measure and report, before/after or against the historical T019 cycle where comparable:
+
+- total wall-clock time for the complete 24-candidate optimization cycle;
+- total wall-clock time for the complete independent final-evaluation phase;
+- candidate throughput and total candidate evaluations;
+- peak active workers and sampled CPU utilization during hill-climb/branch batches;
+- queue depth/batch sizes and worker idle time where available;
+- per-candidate duration distribution, clearly separated from end-to-end cycle speedup.
+
+T021's 1.04x single-candidate measurement must be retained as a narrow representative-candidate observation, not treated as the end-to-end acceleration result. Report the actual full-cycle speedup honestly; do not claim 10x unless the comparable total-cycle evidence supports it.
 
 ## One Authoritative Production Rerun
 

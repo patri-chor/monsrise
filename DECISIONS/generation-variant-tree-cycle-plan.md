@@ -97,8 +97,9 @@ Decision branches:
 - [ ] T018 candidate-level parallel tree optimization runner: OPEN.
 - [x] T019 completed an initial cycle; rejected for serial independent final evaluation, with its quality evidence retained as historical baseline.
 - [ ] T020 parallel-final-evaluation rework: superseded by accelerated rerun T021.
-- [ ] T021 accelerated full variant-to-tree cycle: OPEN; includes benchmark, 24-candidate rerun, parallel final evaluation, and final quality decision.
-- [ ] Phase D quality decision: included in T021 and pending its report.
+- [x] T021 accelerated full variant-to-tree cycle completed a 24-candidate diagnostic rerun; final acceptance blocked by 7 worker errors. Its 1.04x result was only a single-candidate benchmark, not a full-cycle speedup claim.
+- [ ] T022 accelerated worker correctness and full rerun: OPEN; includes worker-contract repair, CPU-saturation/end-to-end throughput measurement, 24-candidate rerun, parallel final evaluation, and final quality decision.
+- [ ] Phase D quality decision: included in T022 and pending its report.
 
 ## Report Handling
 
