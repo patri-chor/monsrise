@@ -29,6 +29,9 @@ export interface CandidateOptimizationTask {
   searchSeedBase: number;
   validationSeedBase: number;
   isolatedOutputDir?: string;
+  enableLowScorePool?: boolean;
+  enableExternalDeckSearch?: boolean;
+  enableOpeningOperators?: boolean;
 }
 
 export interface CandidateOptimizationResult {
@@ -127,6 +130,9 @@ export function buildCandidateTask(
     baseSearchSeed?: number;
     baseValidationSeed?: number;
     isolatedOutputDir?: string;
+    enableLowScorePool?: boolean;
+    enableExternalDeckSearch?: boolean;
+    enableOpeningOperators?: boolean;
   } = {},
 ): CandidateOptimizationTask {
   const seeds = deriveCandidateSeeds(
@@ -163,6 +169,9 @@ export function buildCandidateTask(
     searchSeedBase: seeds.searchSeedBase,
     validationSeedBase: seeds.validationSeedBase,
     isolatedOutputDir: options.isolatedOutputDir,
+    enableLowScorePool: options.enableLowScorePool,
+    enableExternalDeckSearch: options.enableExternalDeckSearch,
+    enableOpeningOperators: options.enableOpeningOperators,
   };
 }
 
@@ -181,6 +190,9 @@ export async function executeCandidateOptimizationDirect(
       searchSeedBase: task.searchSeedBase,
       validationSeedBase: task.validationSeedBase,
       pool: pool ?? PersistentSimPool.getInstance(),
+      enableLowScorePool: task.enableLowScorePool,
+      enableExternalDeckSearch: task.enableExternalDeckSearch,
+      enableOpeningOperators: task.enableOpeningOperators,
     });
 
     const completedAt = new Date().toISOString();

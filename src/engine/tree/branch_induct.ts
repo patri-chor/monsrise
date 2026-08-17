@@ -368,6 +368,8 @@ async function optimizeBranchParallel(
   searchSeedBase: number,
   pool?: PersistentSimPool,
   isEarlyOpeningWeak: boolean = false,
+  enableExternalDeckSearch: boolean = true,
+  enableOpeningOperators: boolean = true,
 ): Promise<{
   optimized: EvolFormation;
   hasTrainingGain: boolean;
@@ -394,15 +396,17 @@ async function optimizeBranchParallel(
   // 获取卡组外部合法候选池
   const arch: ArchKey = (branched.archetype as ArchKey) || 'prayer';
   const rawExtPool: number[] = [];
-  const archRule = (ARCH_RULES as any)[arch];
-  if (archRule?.poolPref) {
-    for (const list of Object.values(archRule.poolPref) as number[][]) {
-      for (const id of list) {
-        if (!rawExtPool.includes(id)) rawExtPool.push(id);
+  if (enableExternalDeckSearch) {
+    const archRule = (ARCH_RULES as any)[arch];
+    if (archRule?.poolPref) {
+      for (const list of Object.values(archRule.poolPref) as number[][]) {
+        for (const id of list) {
+          if (!rawExtPool.includes(id)) rawExtPool.push(id);
+        }
       }
+    } else {
+      rawExtPool.push(101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126);
     }
-  } else {
-    rawExtPool.push(101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126);
   }
   const currentTeamSet = new Set(branched.team.map(s => s.monsterId));
 
@@ -448,50 +452,52 @@ async function optimizeBranchParallel(
       }
 
       // P2: External 外部合法怪兽替换 (Cap <= 8)
-      for (const slot of node.placements) {
-        let externalCountForSlot = 0;
-        const currentSlotCost = costOf(slot.monsterId);
-        const currentTeamCost = current.team.reduce((sum, s) => sum + costOf(s.monsterId), 0);
+      if (enableExternalDeckSearch) {
+        for (const slot of node.placements) {
+          let externalCountForSlot = 0;
+          const currentSlotCost = costOf(slot.monsterId);
+          const currentTeamCost = current.team.reduce((sum, s) => sum + costOf(s.monsterId), 0);
 
-        for (const extMid of rawExtPool) {
-          if (externalCountForSlot >= 8) break;
-          if (currentTeamSet.has(extMid)) continue; // 排除队伍已有怪兽
+          for (const extMid of rawExtPool) {
+            if (externalCountForSlot >= 8) break;
+            if (currentTeamSet.has(extMid)) continue; // 排除队伍已有怪兽
 
-          const extCost = costOf(extMid);
-          if (currentTeamCost - currentSlotCost + extCost > 18) {
-            stats.rejectedByConstraintCandidates++;
-            continue; // 费用超标拦截
+            const extCost = costOf(extMid);
+            if (currentTeamCost - currentSlotCost + extCost > 18) {
+              stats.rejectedByConstraintCandidates++;
+              continue; // 费用超标拦截
+            }
+
+            // 构造临时 team 校验合法性
+            const newTeam = current.team.map(s => s.monsterId === slot.monsterId ? { monsterId: extMid, badgeIds: badgeTemplateFor(extMid) } : s);
+            const valErrors = validateDeck(newTeam);
+            if (valErrors.length > 0) {
+              stats.rejectedByConstraintCandidates++;
+              continue;
+            }
+
+            stats.externalCandidates++;
+            externalCountForSlot++;
+
+            const key = replaceKey(formationId, node.id, slot.monsterId, extMid, currentFp);
+            if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
+
+            const child = replaceMonster({ ...current, team: newTeam }, node.id, slot.monsterId, extMid);
+            if (!child) {
+              const reason = getLastValidationError() ?? '外部替换结构非法';
+              exp.markInvalid(key, reason);
+              newlyInvalid++;
+              stats.rejectedByConstraintCandidates++;
+              continue;
+            }
+
+            candidateQueue.push({
+              child,
+              desc: `[外卡替换] R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(extMid)} (费${extCost})`,
+              key,
+              isExternal: true,
+            });
           }
-
-          // 构造临时 team 校验合法性
-          const newTeam = current.team.map(s => s.monsterId === slot.monsterId ? { monsterId: extMid, badgeIds: badgeTemplateFor(extMid) } : s);
-          const valErrors = validateDeck(newTeam);
-          if (valErrors.length > 0) {
-            stats.rejectedByConstraintCandidates++;
-            continue;
-          }
-
-          stats.externalCandidates++;
-          externalCountForSlot++;
-
-          const key = replaceKey(formationId, node.id, slot.monsterId, extMid, currentFp);
-          if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
-
-          const child = replaceMonster({ ...current, team: newTeam }, node.id, slot.monsterId, extMid);
-          if (!child) {
-            const reason = getLastValidationError() ?? '外部替换结构非法';
-            exp.markInvalid(key, reason);
-            newlyInvalid++;
-            stats.rejectedByConstraintCandidates++;
-            continue;
-          }
-
-          candidateQueue.push({
-            child,
-            desc: `[外卡替换] R${node.round} 节点${node.id}：${nm(slot.monsterId)} → ${nm(extMid)} (费${extCost})`,
-            key,
-            isExternal: true,
-          });
         }
       }
 
@@ -522,7 +528,7 @@ async function optimizeBranchParallel(
       }
 
       // P4: 早期开局专项优化 (Early Opening Operators: 仅当 R1/R2 早期崩盘时激活)
-      if (isEarlyOpeningWeak && (node.round === 1 || node.round === 2)) {
+      if (enableOpeningOperators && isEarlyOpeningWeak && (node.round === 1 || node.round === 2)) {
         for (const slot of node.placements) {
           stats.openingCandidates++;
           // 尝试紧凑/拉扯开局站位
@@ -628,6 +634,9 @@ export interface OptimizeFormationOptions {
   pool?: PersistentSimPool;
   targetPoolCap?: number;
   targetScoreBand?: number;
+  enableLowScorePool?: boolean;
+  enableExternalDeckSearch?: boolean;
+  enableOpeningOperators?: boolean;
 }
 
 export async function optimizeFormation(
@@ -646,6 +655,9 @@ export async function optimizeFormation(
   const pool = options?.pool ?? PersistentSimPool.getInstance();
   const targetPoolCap = options?.targetPoolCap ?? 4;
   const targetScoreBand = options?.targetScoreBand ?? 0.20;
+  const enableLowScorePool = options?.enableLowScorePool ?? true;
+  const enableExternalDeckSearch = options?.enableExternalDeckSearch ?? true;
+  const enableOpeningOperators = options?.enableOpeningOperators ?? true;
 
   const emptyMetrics = calculateMatchMetrics(0, 0, 0);
 
@@ -653,7 +665,7 @@ export async function optimizeFormation(
   exp.load();
   const cache = new MatchSimulationCache();
 
-  console.log(`=== 分支归纳与跨种子/开局联合优化：${src.name} vs ${panelOpponents.length} 阵型（SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
+  console.log(`=== 分支归纳优化：${src.name} vs ${panelOpponents.length} 阵型（LowScorePool=${enableLowScorePool}, ExtDeck=${enableExternalDeckSearch}, Opening=${enableOpeningOperators}）===`);
 
   // 1. 批量并发采集全对局轨迹
   const initialTraces = await pool.collectInitialTracesParallel(candidate, panelOpponents, gamesPerOpp, searchSeedBase);
@@ -664,7 +676,7 @@ export async function optimizeFormation(
     }
   }
 
-  // 2. 统计各 cell 得分并构建低分目标池 (Low-Score Target Cell Pool)
+  // 2. 统计各 cell 得分并构建目标池 (单最弱格 vs 低分目标格池)
   interface CellStat {
     oppIdx: number;
     oppName: string;
@@ -704,23 +716,25 @@ export async function optimizeFormation(
   cellStats.sort((a, b) => a.score - b.score);
   const minScore = cellStats[0]?.score ?? 0;
   const targetThreshold = Math.min(0.50, minScore + targetScoreBand);
-  const targetCells = cellStats.filter(c => c.score <= targetThreshold).slice(0, targetPoolCap);
+  const targetCells = enableLowScorePool
+    ? cellStats.filter(c => c.score <= targetThreshold).slice(0, targetPoolCap)
+    : [cellStats[0]];
 
-  console.log(`\n=== 低分目标格池（共 ${targetCells.length} 格，门限 ${(targetThreshold * 100).toFixed(0)}%）===`);
+  console.log(`\n=== 目标格池（共 ${targetCells.length} 格，LowScorePool=${enableLowScorePool}）===`);
   for (const tc of targetCells) {
     console.log(`  - 目标格: ${tc.oppName} (Side ${tc.side}) 初始训练分 ${(tc.score * 100).toFixed(1)}% (${tc.w}胜/${tc.d}平/${tc.l}负)`);
   }
 
   const targetOppKeys = new Set(targetCells.map(c => c.oppId));
 
-  // 3. 派生 R1-R5 样本，给目标池对局赋予更高权重 (weight=3)
+  // 3. 派生 R1-R5 样本
   let bestOverall: { round: number; split: { kind: string; value: string; mask: FeatureMask; ig: number }; winRate: number } | null = null;
 
   for (let round = 1; round <= 5; round++) {
     const allSamples: Sample[] = [];
     for (const trace of initialTraces) {
       const isTarget = targetOppKeys.has(trace.oppId);
-      const weight = isTarget ? 3 : 1;
+      const weight = enableLowScorePool ? (isTarget ? 3 : 1) : 1;
       const s = sampleFromTrace(trace, round, trace.oppId, weight);
       if (s) allSamples.push(s);
     }
@@ -888,6 +902,8 @@ export async function optimizeFormation(
     searchSeedBase,
     pool,
     isEarlyOpeningWeak,
+    enableExternalDeckSearch,
+    enableOpeningOperators,
   );
   const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();

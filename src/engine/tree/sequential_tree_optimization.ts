@@ -681,6 +681,10 @@ export async function runSequentialTreeOptimizationCycle(options: {
   baseFinalEvalSeed?: number;
   maxCandidates?: number;
   pool?: PersistentSimPool;
+  mode?: 'control' | 'enhanced';
+  enableLowScorePool?: boolean;
+  enableExternalDeckSearch?: boolean;
+  enableOpeningOperators?: boolean;
   onProgress?: (step: string, detail?: any) => void;
 } = {}): Promise<{
   panelManifest: any;
@@ -693,6 +697,11 @@ export async function runSequentialTreeOptimizationCycle(options: {
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir, { recursive: true });
   }
+
+  const isControlMode = options.mode === 'control';
+  const enableLowScorePool = isControlMode ? false : (options.enableLowScorePool ?? true);
+  const enableExternalDeckSearch = isControlMode ? false : (options.enableExternalDeckSearch ?? true);
+  const enableOpeningOperators = isControlMode ? false : (options.enableOpeningOperators ?? true);
 
   const startedAt = new Date().toISOString();
   let rawCandidates = loadAuthoritativeFrozenCandidates(options.frozenCandidatesPath);
@@ -721,12 +730,18 @@ export async function runSequentialTreeOptimizationCycle(options: {
   }
 
   const panelManifest = {
-    cycleType: 'cross_seed_branch_deck_opening_optimization',
+    cycleType: isControlMode ? 'eight_candidate_control_baseline' : 'cross_seed_branch_deck_opening_optimization',
+    mode: isControlMode ? 'control' : 'enhanced',
     startedAt,
     candidateCount: rawCandidates.length,
     seedDistribution,
     evaluationPanel: evaluationPanel.map(p => p.name),
     workerConfig: resolveCandidateWorkers(options.requestedWorkers, rawCandidates.length),
+    ablationConfiguration: {
+      enableLowScorePool,
+      enableExternalDeckSearch,
+      enableOpeningOperators,
+    },
     seedConfiguration: {
       baseSearchSeed,
       baseValidationSeed,
@@ -743,6 +758,9 @@ export async function runSequentialTreeOptimizationCycle(options: {
       gamesPerOpp,
       baseSearchSeed,
       baseValidationSeed,
+      enableLowScorePool,
+      enableExternalDeckSearch,
+      enableOpeningOperators,
     }),
   );
 
