@@ -99,9 +99,11 @@ function Invoke-Check {
     try {
         $state = Read-State
         $seen = @($state.reported)
-        $pending = Read-Pending
+        # Function output is enumerated by PowerShell; re-wrap at the call site
+        # so a one-record queue never degrades to a scalar PSObject.
+        $pending = @(Read-Pending)
         $added = @()
-        foreach ($report in Find-LocalReports) {
+        foreach ($report in @(Find-LocalReports)) {
             $hash = Get-ReportHash $report.file
             if ([string]::IsNullOrWhiteSpace($hash)) { continue }
             $relative = "TASKS/$($report.domain)/$($report.task).report.md"
