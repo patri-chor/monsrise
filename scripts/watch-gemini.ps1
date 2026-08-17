@@ -64,18 +64,28 @@ function Show-Notification([string]$Title, [string]$Body) {
 }
 
 function Read-State {
-    if (-not (Test-Path $StateFile)) { return @{} }
-    try { return (Get-Content $StateFile -Raw | ConvertFrom-Json -AsHashtable) } catch { return @{} }
+    if (-not (Test-Path $StateFile)) { return @{ reported = @() } }
+    try {
+        # Windows PowerShell 5.1 has no ConvertFrom-Json -AsHashtable.
+        $raw = Get-Content $StateFile -Raw | ConvertFrom-Json
+        return @{ reported = @($raw.reported) }
+    } catch {
+        return @{ reported = @() }
+    }
 }
 
 function Write-State($State) {
     $State | ConvertTo-Json -Depth 6 | Set-Content -Path $StateFile -Encoding UTF8
 }
 
-function Invoke-Git([string[]]$Args) {
+function Invoke-Git {
+    param(
+        [Parameter(Mandatory = $true)][string]$Command,
+        [Parameter(ValueFromRemainingArguments = $true)][string[]]$GitArgs
+    )
     Push-Location $RepoRoot
     try {
-        $out = & git @Args 2>&1
+        $out = & git $Command @GitArgs 2>&1
         return @{ code = $LASTEXITCODE; out = ($out -join "`n") }
     } finally {
         Pop-Location
@@ -83,7 +93,7 @@ function Invoke-Git([string[]]$Args) {
 }
 
 function Test-WorkTreeClean {
-    $r = Invoke-Git @("status", "--porcelain")
+    $r = Invoke-Git "status" "--porcelain"
     return $r.code -eq 0 -and $r.out.Trim() -eq ""
 }
 
@@ -97,7 +107,7 @@ function Write-Pending($Entries) {
 }
 
 function Save-RemoteReport([string]$Path, [string]$RemoteCommit) {
-    $blob = Invoke-Git @("show", "$RemoteRef`:$Path")
+    $blob = Invoke-Git "show" "$RemoteRef`:$Path"
     if ($blob.code -ne 0) {
         Write-Log "remote report snapshot failed for ${Path}: $($blob.out)"
         return $null
@@ -113,7 +123,7 @@ function Try-FastForward([string]$RemoteCommit) {
         Write-Log "local worktree dirty; report snapshots queued, fast-forward deferred"
         return "deferred_dirty"
     }
-    $ff = Invoke-Git @("merge", "--ff-only", $RemoteRef)
+    $ff = Invoke-Git "merge" "--ff-only" $RemoteRef
     if ($ff.code -ne 0) {
         Write-Log "fast-forward failed: $($ff.out)"
         return "failed"
@@ -123,14 +133,14 @@ function Try-FastForward([string]$RemoteCommit) {
 }
 
 function Invoke-Check {
-    $fetch = Invoke-Git @("fetch", $Remote, "--prune")
+    $fetch = Invoke-Git "fetch" $Remote "--prune"
     if ($fetch.code -ne 0) { Write-Log "fetch failed: $($fetch.out)"; return }
 
-    $remoteCommitResult = Invoke-Git @("rev-parse", $RemoteRef)
+    $remoteCommitResult = Invoke-Git "rev-parse" $RemoteRef
     if ($remoteCommitResult.code -ne 0) { Write-Log "remote ref unavailable: $($remoteCommitResult.out)"; return }
     $remoteCommit = $remoteCommitResult.out.Trim()
 
-    $diff = Invoke-Git @("diff", "--name-only", "HEAD", $RemoteRef, "--", "TASKS/")
+    $diff = Invoke-Git "diff" "--name-only" "HEAD" $RemoteRef "--" "TASKS/"
     if ($diff.code -ne 0) { Write-Log "diff failed: $($diff.out)"; return }
     $changed = @($diff.out -split "`n" | Where-Object { $_.Trim() -ne "" })
     $reports = @($changed | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
