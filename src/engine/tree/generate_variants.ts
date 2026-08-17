@@ -231,4 +231,6 @@ async function main(): Promise<void> {
   console.log(`\n结果 → reports/halfrush_variants.json`);
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+if (process.argv[1] && process.argv[1].endsWith('generate_variants.ts')) {
+  main().catch(e => { console.error(e); process.exit(1); });
+}
