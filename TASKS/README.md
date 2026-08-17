@@ -51,7 +51,7 @@ You are the GENERATION execution agent. DOMAIN=generation. Before every task: gi
 
 ## Watcher
 
-`scripts/watch-gemini.ps1` watches local `TASKS/tree/` and `TASKS/generation/` report files, then writes domain-qualified records to `TASKS/pending.json`. It does not fetch, merge, push, or use remote snapshots. File-system events enqueue reports immediately; a 60-second local recovery scan only covers missed Windows events. A closed task is not queued again.
+The DSH `dsh-git-bus-goal-controller` host plugin watches local `TASKS/tree/` and `TASKS/generation/` report files, then writes domain-qualified records to `TASKS/pending.json`. It starts with DSH; no PowerShell watcher, Git fetch, merge, push, or remote snapshot is required. File-system events enqueue reports immediately; a 60-second in-host recovery scan only covers missed Windows events. Closed or rejected tasks are not queued again. `scripts/watch-gemini.ps1` is legacy compatibility tooling and must not be run alongside the controller.
 
 ## Decision Agent Rules
 
