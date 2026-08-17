@@ -98,30 +98,31 @@ function Test-WorkTreeClean {
 }
 
 function Read-Pending {
-    $items = New-Object System.Collections.ArrayList
-    if (-not (Test-Path $PendingFile)) { return ,$items }
-    try {
-        foreach ($entry in @(Get-Content $PendingFile -Raw | ConvertFrom-Json)) {
-            [void]$items.Add($entry)
-        }
-    } catch {}
-    return ,$items
+    if (-not (Test-Path $PendingFile)) { return @() }
+    try { return @(Get-Content $PendingFile -Raw | ConvertFrom-Json) } catch { return @() }
 }
 
 function Write-Pending($Entries) {
-    @($Entries.ToArray()) | ConvertTo-Json -Depth 6 | Set-Content -Path $PendingFile -Encoding UTF8
+    $array = [object[]]@($Entries)
+    ConvertTo-Json -InputObject $array -Depth 6 | Set-Content -Path $PendingFile -Encoding UTF8
 }
 
-function Save-RemoteReport([string]$Path, [string]$RemoteCommit) {
+function Save-RemoteReport([string]$Path, [string]$BlobId) {
     $blob = Invoke-Git "show" "$RemoteRef`:$Path"
     if ($blob.code -ne 0) {
         Write-Log "remote report snapshot failed for ${Path}: $($blob.out)"
         return $null
     }
     $name = Split-Path -Leaf $Path
-    $snapshot = Join-Path $InboxDir ("{0}.{1}" -f $RemoteCommit.Substring(0, 12), $name)
+    $snapshot = Join-Path $InboxDir ("{0}.{1}" -f $BlobId.Substring(0, 12), $name)
     Set-Content -Path $snapshot -Value $blob.out -Encoding UTF8
     return $snapshot
+}
+
+function Get-RemoteBlobId([string]$Path) {
+    $r = Invoke-Git "rev-parse" "$RemoteRef`:$Path"
+    if ($r.code -ne 0) { return $null }
+    return $r.out.Trim()
 }
 
 function Try-FastForward([string]$RemoteCommit) {
@@ -151,36 +152,52 @@ function Invoke-Check {
     # still enter pending.json exactly once for review.
     $tree = Invoke-Git "ls-tree" "-r" "--name-only" $RemoteRef "--" "TASKS/"
     if ($tree.code -ne 0) { Write-Log "remote task scan failed: $($tree.out)"; return }
-    $reports = @($tree.out -split "`n" | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
+    $paths = @($tree.out -split "`n" | Where-Object { $_.Trim() -ne "" })
+    $reports = @($paths | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
+    $closedTasks = @($paths | Where-Object { $_ -match "^TASKS/(T\d+)\.closed\.md$" } | ForEach-Object {
+        if ($_ -match "^TASKS/(T\d+)\.closed\.md$") { $Matches[1] }
+    })
+    # A decision-side closed file is authoritative: never requeue an accepted/rejected report.
+    $reports = @($reports | Where-Object {
+        if ($_ -match "^TASKS/(T\d+)\.report\.md$") { $Matches[1] -notin $closedTasks } else { $false }
+    })
 
     $state = Read-State
     $seen = @($state.reported)
-    $fresh = @($reports | Where-Object { "$remoteCommit|$_" -notin $seen })
+    $reportBlobs = @()
+    foreach ($report in $reports) {
+        $blobId = Get-RemoteBlobId $report
+        if ($blobId) {
+            $reportBlobs += [PSCustomObject]@{ path = $report; blobId = $blobId; identity = "$report|$blobId" }
+        }
+    }
+    $fresh = @($reportBlobs | Where-Object { $_.identity -notin $seen })
 
     $syncState = Try-FastForward $remoteCommit
 
     if ($fresh.Count -eq 0) { return }
 
     $now = Get-Date -Format o
-    $pending = Read-Pending
-    foreach ($report in $fresh) {
-        $snapshot = Save-RemoteReport $report $remoteCommit
-        if ($report -match "^TASKS/(T\d+)\.report\.md$") { $task = $Matches[1] } else { $task = "" }
-        [void]$pending.Add([PSCustomObject]@{
+    $pending = @((Read-Pending) | Where-Object { $_.status -eq "pending_review" })
+    foreach ($entry in $fresh) {
+        $snapshot = Save-RemoteReport $entry.path $entry.blobId
+        if ($entry.path -match "^TASKS/(T\d+)\.report\.md$") { $task = $Matches[1] } else { $task = "" }
+        $pending += [PSCustomObject]@{
             task = $task
-            file = $report
+            file = $entry.path
+            reportBlob = $entry.blobId
             remoteCommit = $remoteCommit
             snapshot = $snapshot
             sync = $syncState
             at = $now
             status = "pending_review"
-        })
-        Write-Log "NEW REPORT: $report (snapshot=$snapshot, sync=$syncState)"
+        }
+        Write-Log "NEW REPORT: $($entry.path) (snapshot=$snapshot, sync=$syncState)"
     }
     Write-Pending $pending
-    $state.reported = @($seen + ($fresh | ForEach-Object { "$remoteCommit|$_" }))
+    $state.reported = @($seen + ($fresh | ForEach-Object { $_.identity }))
     Write-State $state
-    Show-Notification "Gemini task ready for review" ("Queued: " + ($fresh -join ", "))
+    Show-Notification "Gemini task ready for review" ("Queued: " + (($fresh | ForEach-Object { $_.path }) -join ", "))
 }
 
 Write-Log "watch-gemini started (interval ${IntervalSeconds}s, branch=$Branch)"
