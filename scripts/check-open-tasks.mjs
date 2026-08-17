@@ -10,7 +10,6 @@
  */
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import { resolve, join } from 'node:path';
 
 const repoRoot = resolve('.');
