@@ -95,8 +95,10 @@ Decision branches:
 - [ ] T016 fixed-panel consumer API: OPEN.
 - [ ] T017 sequential per-seed candidate production: OPEN.
 - [ ] T018 candidate-level parallel tree optimization runner: OPEN.
-- [ ] T019 complete candidate-level optimization, independent final evaluation, and quality decision: OPEN.
-- [ ] Phase D quality decision: included in T019 and pending its report.
+- [x] T019 completed an initial cycle; rejected for serial independent final evaluation, with its quality evidence retained as historical baseline.
+- [ ] T020 parallel-final-evaluation rework: superseded by accelerated rerun T021.
+- [ ] T021 accelerated full variant-to-tree cycle: OPEN; includes benchmark, 24-candidate rerun, parallel final evaluation, and final quality decision.
+- [ ] Phase D quality decision: included in T021 and pending its report.
 
 ## Report Handling
 
