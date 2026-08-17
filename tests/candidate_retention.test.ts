@@ -1,8 +1,8 @@
 process.env.IS_TEST = 'true';
 import '../src/engine/env';
 import * as assertStrict from 'node:assert/strict';
-import { readFileSync, existsSync, writeFileSync, unlinkSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 import { FORMATION_LIBRARY } from '../src/ai/formation_library';
 import {
   analyzeAndRetainCandidates,
@@ -13,7 +13,17 @@ import {
 import { formationToEvol } from '../src/engine/tree/evol_gene';
 
 async function runTests() {
-  console.log('=== 开始执行 T009 候选阵型多样性保留机制专项测试 ===\n');
+  console.log('=== 开始执行 T009/T010 候选阵型多样性保留机制专项测试 ===\n');
+
+  // 生产数据集快照（用于验证测试零污染与 byte-identical）
+  const prodDatasetPath = resolve('reports/new-formation-pilot/candidates.jsonl');
+  const prodDatasetSnapshot = existsSync(prodDatasetPath) ? readFileSync(prodDatasetPath, 'utf8') : null;
+
+  const testTmpDir = resolve('tests/.tmp/retention-test');
+  if (existsSync(testTmpDir)) {
+    rmSync(testTmpDir, { recursive: true, force: true });
+  }
+  mkdirSync(testTmpDir, { recursive: true });
 
   const refSpring = FORMATION_LIBRARY.find(f => f.name === '泉水剑')!;
   const refAll2 = FORMATION_LIBRARY.find(f => f.name === '全二永平')!;
@@ -51,7 +61,7 @@ async function runTests() {
   assertStrict.ok(['light', 'medium', 'heavy'].includes(v1.direction.mutationBucket), 'Bucket 必须在 light/medium/heavy 之一');
   console.log(`  ✓ 变异向量与新颖度 (${v1.noveltyScore}, bucket: ${v1.direction.mutationBucket}) 确定性计算验证通过。\n`);
 
-  // Test 2: 验证最高分 Performance Baseline 必然保留 (T009-2)
+  // Test 2: 验证最高分 Performance Baseline 必然保留并记录 scoreSource (T009-2 / T010)
   console.log('[Test 2] 验证最佳性能候选 (Performance Baseline) 优先保留...');
   const mockCandidates: CandidateAnalysisRecord[] = [
     {
@@ -76,6 +86,7 @@ async function runTests() {
   const topRetained = res2.retained.find(r => r.candidateId === 'top_performer');
   assertStrict.ok(topRetained, '最高分候选必须被保留');
   assertStrict.ok(topRetained.retentionReasons.includes('performance_baseline'), '必须包含 performance_baseline 理由');
+  assertStrict.equal(topRetained.scoreSource, 'refined', 'scoreSource 必须为 refined');
   console.log('  ✓ 最佳性能候选优先保留成功。\n');
 
   // Test 3: 验证流派代表 (Archetype Coverage) 优先于低分探索 (T009-3)
@@ -187,7 +198,7 @@ async function runTests() {
   assertStrict.ok(res5.rejected[0].rejectionReason.includes('duplicate_canonical_key'));
   console.log('  ✓ 重复卡组去重验证通过。\n');
 
-  // Test 6: 验证最多保留 6 个且均有明确理由 (T009-6)
+  // Test 6: 验证容量上限 6 与理由完整性 (T009-6)
   console.log('[Test 6] 验证容量上限 6 与理由完整性...');
   const manyCandidates: CandidateAnalysisRecord[] = Array.from({ length: 12 }, (_, i) => ({
     ...mockCand1,
@@ -218,18 +229,17 @@ async function runTests() {
   }
   console.log('  ✓ 最多保留 6 个且均携带合法 retentionReasons 验证通过。\n');
 
-  // Test 7: 验证输入异常与畸变处理 (T009-7)
-  console.log('[Test 7] 验证异常输入容错...');
+  // Test 7: 验证输入异常与畸变处理 (测试临时目录隔离) (T009-7 / T010)
+  console.log('[Test 7] 验证异常输入容错 (隔离在 testTmpDir)...');
   await assertStrict.rejects(async () => {
-    await analyzeAndRetainCandidates({ inputPath: 'non_existent_file.jsonl' });
+    await analyzeAndRetainCandidates({ inputPath: join(testTmpDir, 'non_existent_file.jsonl') });
   }, /does not exist/, '文件不存在时必须安全抛错');
 
-  const tmpMalformedPath = resolve('reports/new-formation-pilot/malformed_test.jsonl');
+  const tmpMalformedPath = join(testTmpDir, 'malformed_test.jsonl');
   writeFileSync(tmpMalformedPath, '{"broken json\n', 'utf8');
   await assertStrict.rejects(async () => {
     await analyzeAndRetainCandidates({ inputPath: tmpMalformedPath });
   }, /Malformed JSON/, 'JSON 损坏时必须安全抛错');
-  if (existsSync(tmpMalformedPath)) unlinkSync(tmpMalformedPath);
   console.log('  ✓ 异常输入与畸变文件安全退出验证通过。\n');
 
   // Test 8: 验证 FORMATION_LIBRARY 活跃库未受修改 (T009-8)
@@ -238,7 +248,18 @@ async function runTests() {
   assertStrict.equal(JSON.stringify(FORMATION_LIBRARY), librarySnapshot, 'FORMATION_LIBRARY 必须 100% 保持未修改');
   console.log('  ✓ 活跃库数据未被污染。\n');
 
-  console.log('=== 所有 T009 验收测试全部通过 (8/8) ===');
+  // Test 9: T010 核心回归 - 证明生产数据集未被测试套件修改 (byte-identical)
+  console.log('[Test 9] 验证生产数据集 reports/new-formation-pilot/candidates.jsonl 零污染与 byte-identical...');
+  if (prodDatasetSnapshot !== null) {
+    const currentProdDataset = readFileSync(prodDatasetPath, 'utf8');
+    assertStrict.equal(currentProdDataset, prodDatasetSnapshot, '生产数据集在测试套件运行后必须 100% byte-identical');
+  }
+  console.log('  ✓ 生产数据集 byte-identical 零污染验证通过。\n');
+
+  // 清理临时目录
+  rmSync(testTmpDir, { recursive: true, force: true });
+
+  console.log('=== 所有 T009/T010 验收测试全部通过 (9/9) ===');
 }
 
 runTests().catch(e => {

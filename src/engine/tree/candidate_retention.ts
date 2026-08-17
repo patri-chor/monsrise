@@ -348,16 +348,18 @@ export function selectRetainedCandidates(
   }
 
   // Step 1: Performance Baseline
-  if (uniqueCandidates.length > 0 && retainedIdMap.size < maxRetained) {
-    const bestOverall = uniqueCandidates[0];
+  const nonZeroCandidates = uniqueCandidates.filter(c => c.effectiveScore > 0);
+
+  if (nonZeroCandidates.length > 0 && retainedIdMap.size < maxRetained) {
+    const bestOverall = nonZeroCandidates[0];
     retainRecord(bestOverall, 'performance_baseline');
   }
 
   // Step 2: Direction Representatives (Archetype Coverage & Direction Coverage)
-  const archSet = new Set(uniqueCandidates.map(c => c.archPath));
+  const archSet = new Set(nonZeroCandidates.map(c => c.archPath));
   for (const arch of archSet) {
     if (retainedIdMap.size >= maxRetained) break;
-    const candidatesInArch = uniqueCandidates.filter(c => c.archPath === arch);
+    const candidatesInArch = nonZeroCandidates.filter(c => c.archPath === arch);
     const bestInArch = candidatesInArch[0];
     if (bestInArch) {
       retainRecord(bestInArch, 'archetype_coverage');
@@ -369,7 +371,7 @@ export function selectRetainedCandidates(
     const coveredDirections = new Set(
       Array.from(retainedIdMap.values()).map(r => `${r.archPath}::${r.modulePath}`)
     );
-    for (const c of uniqueCandidates) {
+    for (const c of nonZeroCandidates) {
       if (retainedIdMap.size >= maxRetained) break;
       const dirKey = `${c.archPath}::${c.modulePath}`;
       if (!coveredDirections.has(dirKey)) {
@@ -388,7 +390,7 @@ export function selectRetainedCandidates(
     for (const b of allBuckets) {
       if (retainedIdMap.size >= maxRetained) break;
       if (!coveredBuckets.has(b)) {
-        const bestInBucket = uniqueCandidates.find(c => c.mutationVector.direction.mutationBucket === b);
+        const bestInBucket = nonZeroCandidates.find(c => c.mutationVector.direction.mutationBucket === b);
         if (bestInBucket) {
           retainRecord(bestInBucket, 'mutation_bucket_coverage');
           coveredBuckets.add(b);

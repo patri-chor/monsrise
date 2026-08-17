@@ -1,8 +1,8 @@
 process.env.IS_TEST = 'true';
 import '../src/engine/env';
 import * as assertStrict from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 
 async function runTests() {
   const {
@@ -14,7 +14,18 @@ async function runTests() {
   const { buildArenaTasks } = await import('../src/engine/tree/arena_parallel');
   const { FORMATION_LIBRARY } = await import('../src/ai/formation_library');
   const { formationToEvol } = await import('../src/engine/tree/evol_gene');
-  console.log('=== 开始执行 T008 新阵型生成门禁与评估验收测试 ===\n');
+
+  console.log('=== 开始执行 T008/T010 新阵型生成门禁与测试隔离验收测试 ===\n');
+
+  // 生产数据集快照（用于验证测试零污染）
+  const prodDatasetPath = resolve('reports/new-formation-pilot/candidates.jsonl');
+  const prodDatasetSnapshot = existsSync(prodDatasetPath) ? readFileSync(prodDatasetPath, 'utf8') : null;
+
+  const testTmpDir = resolve('tests/.tmp/pilot-test');
+  if (existsSync(testTmpDir)) {
+    rmSync(testTmpDir, { recursive: true, force: true });
+  }
+  mkdirSync(testTmpDir, { recursive: true });
 
   // Test 1: 证明不同 seedBase 生成不相交的确定性任务种子分布 (T007-1)
   console.log('[Test 1] 验证 evaluateBatchParallel 任务种子调度与 seedBase 确定性及不相交性...');
@@ -30,11 +41,9 @@ async function runTests() {
   const seedsCoarse = new Set(tasksCoarse.map(t => t.seed));
   const seedsRefined = new Set(tasksRefined.map(t => t.seed));
 
-  // 验证不相交
   for (const s of seedsCoarse) {
     assertStrict.ok(!seedsRefined.has(s), `Coarse 种子 ${s} 不应出现在 Refined 种子集合中`);
   }
-  // 验证确定性
   const tasksCoarseRepeat = buildArenaTasks(mockCandidates, 2, 1000);
   assertStrict.deepEqual(tasksCoarse.map(t => t.seed), tasksCoarseRepeat.map(t => t.seed), '相同 seedBase 必须生成完全一致的种子序列');
   console.log('  ✓ 任务种子调度完全由 seedBase 确定，且不同 base 产生完全不相交集合。\n');
@@ -55,13 +64,14 @@ async function runTests() {
   }, /Unknown archetype/, '未知架构必须直接抛出异常');
   console.log('  ✓ 架构参考树映射准确，缺失时严格抛出异常。\n');
 
-  // Test 3: T008 核心 - 资源门禁在 T005 活跃时阻断非 dry-run 评估 (T008-1)
+  // Test 3: T008 核心 - 资源门禁在 T005 活跃时阻断非 dry-run 评估 (隔离写入 testTmpDir)
   console.log('[Test 3] 验证门禁在 T005 active 时阻断非 dry-run 评估...');
   const blockedVerdict = checkGenerationResourceGate({ mockTreeTaskStatus: 'IN_PROGRESS' });
   assertStrict.equal(blockedVerdict.allowed, false, 'T005 IN_PROGRESS 时门禁必须为 BLOCKED');
   assertStrict.equal(blockedVerdict.status, 'BLOCKED');
 
   const blockedResult = await runNewFormationPilot({
+    outputDir: testTmpDir,
     dryRun: false,
     targetCount: 6,
     gateCheck: blockedVerdict,
@@ -71,20 +81,20 @@ async function runTests() {
   assertStrict.equal(blockedResult.blocked, true, 'blocked 标志必须为 true');
   assertStrict.equal(blockedResult.candidates.length, 0, '阻断时不应产出评估候选');
 
-  // 验证 diagnostics.json 与 summary.md 记录了阻断状态
-  const summaryFile = resolve('reports/new-formation-pilot/summary.md');
-  const diagFile = resolve('reports/new-formation-pilot/diagnostics.json');
-  assertStrict.ok(existsSync(summaryFile), 'summary.md 必须存在');
-  assertStrict.ok(existsSync(diagFile), 'diagnostics.json 必须存在');
+  const summaryFile = join(testTmpDir, 'summary.md');
+  const diagFile = join(testTmpDir, 'diagnostics.json');
+  assertStrict.ok(existsSync(summaryFile), 'testTmpDir/summary.md 必须存在');
+  assertStrict.ok(existsSync(diagFile), 'testTmpDir/diagnostics.json 必须存在');
 
   const diagData = JSON.parse(readFileSync(diagFile, 'utf8'));
   assertStrict.equal(diagData.status, 'GATE_BLOCKED');
   assertStrict.equal(diagData.gateVerdict.status, 'BLOCKED');
-  console.log('  ✓ 门禁成功在 T005 active 时拦截非 dry-run 评估，无 worker 启动且诊断记录完备。\n');
+  console.log('  ✓ 门禁成功在 T005 active 时拦截非 dry-run 评估，产物隔离写入测试临时目录。\n');
 
-  // Test 4: T008 核心 - 门禁阻断时 dry-run 依然可用 (T008-2)
+  // Test 4: T008 核心 - 门禁阻断时 dry-run 依然可用 (隔离写入 testTmpDir)
   console.log('[Test 4] 验证门禁阻断时 dry-run 依然允许运行...');
   const dryResultWhileBlocked = await runNewFormationPilot({
+    outputDir: testTmpDir,
     dryRun: true,
     targetCount: 6,
     workers: 2,
@@ -96,18 +106,19 @@ async function runTests() {
   assertStrict.equal(dryResultWhileBlocked.terminatedReason, 'TARGET_REACHED');
   assertStrict.equal(dryResultWhileBlocked.gateVerdict.status, 'BLOCKED', '必须如实记录门禁状态');
 
-  const jsonlFile = resolve('reports/new-formation-pilot/candidates.jsonl');
+  const jsonlFile = join(testTmpDir, 'candidates.jsonl');
   const jsonlLines = readFileSync(jsonlFile, 'utf8').trim().split('\n');
   assertStrict.equal(jsonlLines.length, 6, 'JSONL 应包含 6 条 dry-run 记录');
-  console.log('  ✓ 门禁阻断时 dry-run 正常放行，且产物记录完整。\n');
+  console.log('  ✓ 门禁阻断时 dry-run 正常放行，且产物写入测试临时目录。\n');
 
-  // Test 5: T008 核心 - 门禁空闲(IDLE)时允许评估并记录有效参数 (T008-3)
+  // Test 5: T008 核心 - 门禁 IDLE/OPEN 时放行并记录 effectiveOptions
   console.log('[Test 5] 验证门禁 IDLE/OPEN 时放行并记录 effectiveOptions...');
   const openVerdict = checkGenerationResourceGate({ mockTreeTaskStatus: 'DONE' });
   assertStrict.equal(openVerdict.allowed, true, 'T005 DONE 时门禁必须为 OPEN');
   assertStrict.equal(openVerdict.status, 'OPEN');
 
   const dryResultOpen = await runNewFormationPilot({
+    outputDir: testTmpDir,
     dryRun: true,
     targetCount: 3,
     workers: 2,
@@ -141,7 +152,18 @@ async function runTests() {
   assertStrict.equal(JSON.stringify(FORMATION_LIBRARY), librarySnapshot, 'FORMATION_LIBRARY 必须 100% 保持未修改');
   console.log('  ✓ 活跃库数据未被污染。\n');
 
-  console.log('=== 所有 T008 验收测试全部通过 (7/7) ===');
+  // Test 8: T010 核心回归 - 证明生产数据集未被测试套件修改 (byte-identical)
+  console.log('[Test 8] 验证生产数据集 reports/new-formation-pilot/candidates.jsonl 零污染与 byte-identical...');
+  if (prodDatasetSnapshot !== null) {
+    const currentProdDataset = readFileSync(prodDatasetPath, 'utf8');
+    assertStrict.equal(currentProdDataset, prodDatasetSnapshot, '生产数据集在测试运行后必须 100% byte-identical');
+  }
+  console.log('  ✓ 生产数据集 byte-identical 零污染验证通过。\n');
+
+  // 清理测试临时目录
+  rmSync(testTmpDir, { recursive: true, force: true });
+
+  console.log('=== 所有 T008/T010 验收测试全部通过 (8/8) ===');
 }
 
 runTests().catch(e => {

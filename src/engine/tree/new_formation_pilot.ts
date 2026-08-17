@@ -88,6 +88,7 @@ export interface CandidateRecord {
 }
 
 export interface PilotOptions {
+  outputDir?: string;
   dryRun?: boolean;
   targetCount?: number;
   maxAttempts?: number;
@@ -133,6 +134,7 @@ export async function runNewFormationPilot(options: PilotOptions = {}): Promise<
   effectiveOptions?: Record<string, any>;
 }> {
   const startTime = Date.now();
+  const outputDir = options.outputDir ? resolve(options.outputDir) : OUTPUT_DIR;
   const dryRun = options.dryRun ?? false;
   const targetCount = options.targetCount ?? 12;
   const maxAttempts = options.maxAttempts ?? Math.max(100, targetCount * 15);
@@ -157,6 +159,7 @@ export async function runNewFormationPilot(options: PilotOptions = {}): Promise<
   }
 
   const effectiveOptions = {
+    outputDir,
     dryRun,
     targetCount,
     maxAttempts,
@@ -169,15 +172,15 @@ export async function runNewFormationPilot(options: PilotOptions = {}): Promise<
     coarseThreshold,
   };
 
-  if (!existsSync(OUTPUT_DIR)) {
-    mkdirSync(OUTPUT_DIR, { recursive: true });
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true });
   }
 
   // 2. 若非 dry-run 且门禁被阻断，严禁执行后续生成及评估，直接产出诊断并阻断
   if (!dryRun && !gateVerdict.allowed) {
     console.warn(`[Generation Gate Refusal] 门禁阻断：${gateVerdict.reason}`);
 
-    const diagPath = join(OUTPUT_DIR, 'diagnostics.json');
+    const diagPath = join(outputDir, 'diagnostics.json');
     writeFileSync(diagPath, JSON.stringify({
       timestamp: new Date().toISOString(),
       status: 'GATE_BLOCKED',
@@ -186,7 +189,7 @@ export async function runNewFormationPilot(options: PilotOptions = {}): Promise<
       blocked: true,
     }, null, 2), 'utf8');
 
-    const summaryPath = join(OUTPUT_DIR, 'summary.md');
+    const summaryPath = join(outputDir, 'summary.md');
     writeFileSync(summaryPath, `# New Formation Generation Pilot Summary (T008) - BLOCKED
 
 > [!WARNING]
@@ -376,12 +379,12 @@ ${JSON.stringify(effectiveOptions, null, 2)}
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
 
-  // 8. 写入报告产物至 reports/new-formation-pilot/
-  const jsonlPath = join(OUTPUT_DIR, 'candidates.jsonl');
+  // 8. 写入报告产物至 outputDir
+  const jsonlPath = join(outputDir, 'candidates.jsonl');
   const jsonlContent = candidates.map(c => JSON.stringify(c)).join('\n');
   writeFileSync(jsonlPath, jsonlContent, 'utf8');
 
-  const summaryPath = join(OUTPUT_DIR, 'summary.md');
+  const summaryPath = join(outputDir, 'summary.md');
   const summaryMd = `# New Formation Generation Pilot Summary (T008)
 
 ## 1. Resource Gate & Execution Status
@@ -426,7 +429,7 @@ _Generated at ${new Date().toISOString()}_
 `;
   writeFileSync(summaryPath, summaryMd, 'utf8');
 
-  const diagPath = join(OUTPUT_DIR, 'diagnostics.json');
+  const diagPath = join(outputDir, 'diagnostics.json');
   writeFileSync(diagPath, JSON.stringify({
     timestamp: new Date().toISOString(),
     gateVerdict,
