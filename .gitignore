@@ -14,6 +14,9 @@ dist/
 # 但机器本地状态文件不入库
 TASKS/watch.log
 TASKS/pending.json
+TASKS/taskrunner.log
+.taskrunner-activation.json
+.task-poll-state*.json
 __pycache__/
 *.pyc
 reports/
