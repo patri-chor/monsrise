@@ -23,6 +23,8 @@ Within one domain directory:
 
 Every task/report/closed file starts with `STATUS: OPEN | IN_PROGRESS | DONE | REJECTED`.
 
+A bus task identity is always `domain/Txxx`, never `Txxx` alone. Numeric IDs may repeat across domains; queue consumers must match both `domain` and the domain-qualified report path. Legacy root-level `TASKS/Txxx.*` files are historical only and must not enter `pending.json`.
+
 ## Domain Routing Rules
 
 1. An executor receives one immutable `DOMAIN`: either `tree` or `generation`.

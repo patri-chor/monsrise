@@ -99,7 +99,15 @@ function Test-WorkTreeClean {
 
 function Read-Pending {
     if (-not (Test-Path $PendingFile)) { return @() }
-    try { return @(Get-Content $PendingFile -Raw | ConvertFrom-Json) } catch { return @() }
+    try {
+        # Migration guard: legacy root-level records had only Txxx and collide
+        # across domains. Only a domain-qualified path is a valid bus identity.
+        return @(Get-Content $PendingFile -Raw | ConvertFrom-Json | Where-Object {
+            $_.domain -in @('tree', 'generation') -and
+            $_.task -match '^T\d+$' -and
+            $_.file -match ("^TASKS/{0}/{1}.*\.report\.md$" -f $_.domain, $_.task)
+        })
+    } catch { return @() }
 }
 
 function Write-Pending($Entries) {
