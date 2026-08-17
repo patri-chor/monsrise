@@ -28,7 +28,7 @@ import type { Formation } from '../../ai/types';
 import type { EvolFormation, FeatureMask, EvolNode } from './evol_gene';
 import { formationToEvol, recognizeArchetype, maskToLabel, summarizeEvolFormation, matchMask, isEmptyMask, walkEvolNodes } from './evol_gene';
 import { addBranch, replaceMonster, moveWithinZoneAtNode, isPositionIrrelevant, roleOf, getLastValidationError } from './tree_ops';
-import { playSpecVsSpec, type SideSpec, type BranchDecision } from './arena';
+import { playSpecVsSpec, type SideSpec, type BranchDecision, type RoundObservation } from './arena';
 import { ExperienceBank, replaceKey, moveKey, computeTreeFingerprint } from './search_experience';
 
 const MONSTER_NAME: Record<number, string> = {
@@ -62,7 +62,7 @@ function infoGain(samples: { win: boolean; has: boolean }[]): number {
 
   const withFeature = samples.filter(s => s.has);
   const withoutFeature = samples.filter(s => !s.has);
-  if (withFeature.length === 0 || withoutFeature.length === 0) return 0; // 无区分度
+  if (withFeature.length === 0 || withoutFeature.length === 0) return 0;
 
   const hWith = entropy(withFeature.filter(s => s.win).length / withFeature.length);
   const hWithout = entropy(withoutFeature.filter(s => s.win).length / withoutFeature.length);
@@ -75,6 +75,7 @@ export interface MatchTrace {
   side: 1 | 2;
   oppId: string;
   roundScores: number[];
+  observations: Map<number, RoundObservation>;
   decisions: Map<number, BranchDecision>;
   w: number;
   d: number;
@@ -107,11 +108,17 @@ export class MatchSimulationCache {
       decisions.set(d.round, d);
     });
 
+    const observations = new Map<number, RoundObservation>();
+    for (const obs of r.observations ?? []) {
+      observations.set(obs.round, obs);
+    }
+
     const trace: MatchTrace = {
       seed,
       side: aSide,
       oppId: oppKey,
       roundScores: r.roundScores,
+      observations,
       decisions,
       w: r.w,
       d: r.d,
@@ -132,22 +139,22 @@ export interface Sample {
   round: number;
 }
 
-/** 从实际对局轨迹中提取指定回合的样本（严格基于该回合实际观察到的可见特征） */
+/** 从实际对局轨迹中提取指定回合的样本（基于该回合候选侧实际可见对手特征） */
 export function sampleFromTrace(trace: MatchTrace, focusRound: number, oppName: string): Sample | null {
   const score = trace.roundScores[focusRound - 1];
   if (score === undefined) return null; // 对局提前结束（该分未打），不计入样本
 
-  const decision = trace.decisions.get(focusRound);
-  if (!decision) {
-    // 关键：若该回合没有 BranchDecision，不计入样本，坚决不回退到全卡组特征
+  const obs = trace.observations.get(focusRound);
+  if (!obs) {
+    // 关键：若该回合无 observation（如提前结束或无手牌），不计入样本，坚决不回退到全卡组
     return null;
   }
 
   // 严格使用运行时可见特征
   const rec = recognizeArchetype({
-    handIds: new Set(decision.handIds),
-    handBadges: new Set(decision.handBadges),
-    boardIds: new Set(decision.boardIds),
+    handIds: new Set(obs.handIds),
+    handBadges: new Set(obs.handBadges),
+    boardIds: new Set(obs.boardIds),
   });
 
   return {
@@ -223,35 +230,34 @@ function bestSplit(samples: Sample[]): { kind: string; value: string; mask: Feat
   return best && best.ig > 0 ? best : null;
 }
 
-/** 判断某对手是否静态预匹配 mask（作为快速预筛选） */
-function oppMatchesStatic(opp: Formation, mask: FeatureMask): boolean {
-  if (mask.side !== null) return true;
-  const ids = opp.team.filter(s => s.monsterId > 0).map(s => s.monsterId);
-  const badges = opp.team.flatMap(s => s.badgeIds);
-  const rec = recognizeArchetype({ handIds: new Set(ids.slice(0, 4)), handBadges: new Set(badges), boardIds: new Set(ids) });
-  return matchMask(mask, rec, 1);
+/** 单局轨迹在拟分叉回合 forkRound 是否精确匹配 mask */
+export function isTraceMatchedAtFork(trace: MatchTrace, mask: FeatureMask, forkRound: number): boolean {
+  if (mask.side !== null) {
+    return trace.side === mask.side && trace.observations.has(forkRound);
+  }
+  const obs = trace.observations.get(forkRound);
+  if (!obs) return false;
+  const rec = recognizeArchetype({
+    handIds: new Set(obs.handIds),
+    handBadges: new Set(obs.handBadges),
+    boardIds: new Set(obs.boardIds),
+  });
+  return matchMask(mask, rec, trace.side);
 }
 
-/** 判断对手在实际采样轨迹中是否出现匹配 mask 的决策 */
-function oppMatchesObserved(oppName: string, mask: FeatureMask, allTraces: MatchTrace[]): boolean {
-  if (mask.side !== null) return true;
-  const oppTraces = allTraces.filter(t => t.oppId === oppName);
+/** 对手在拟分叉回合 forkRound 是否有至少一次实际观察匹配 mask */
+export function oppMatchesAtFork(opp: Formation, mask: FeatureMask, forkRound: number, allTraces: MatchTrace[]): boolean {
+  const oppKey = opp.id ?? opp.name;
+  const oppTraces = allTraces.filter(t => t.oppId === oppKey);
   for (const trace of oppTraces) {
-    for (const decision of trace.decisions.values()) {
-      const rec = recognizeArchetype({
-        handIds: new Set(decision.handIds),
-        handBadges: new Set(decision.handBadges),
-        boardIds: new Set(decision.boardIds),
-      });
-      if (matchMask(mask, rec, trace.side)) {
-        return true;
-      }
+    if (isTraceMatchedAtFork(trace, mask, forkRound)) {
+      return true;
     }
   }
   return false;
 }
 
-/** 两个 mask 是否完全相同（用于定位刚建的分支节点） */
+/** 两个 mask 是否完全相同 */
 function maskEqual(a: FeatureMask, b: FeatureMask): boolean {
   return a.side === b.side && a.main === b.main
     && a.subs.length === b.subs.length && a.subs.every(s => b.subs.includes(s))
@@ -455,6 +461,9 @@ export interface OptimizeFormationResult {
     searchAfter: { win: number; draw: number; loss: number; undefeated: number };
     matchedOpponents: string[];
     simCount: number;
+    forkRound: number;
+    triggerCoverage: { matched: number; totalObserved: number; coverageRate: number };
+    untriggeredReasons: { prematureEnd: number; noHand: number; maskMismatch: number };
   };
 }
 
@@ -515,18 +524,12 @@ export function optimizeFormation(
   console.log(`\n=== 最优分裂：R${bestOverall.round} 按 ${bestOverall.split.kind}=${bestOverall.split.value} 建分支 ===`);
   console.log(`分支标签 [${maskToLabel(bestOverall.split.mask)}]，信息增益 ${bestOverall.split.ig.toFixed(3)}`);
 
-  // 3. 确定命中 mask 的对手（结合静态预选与实际轨迹确认）
-  const candidateOpps = FORMATION_LIBRARY.filter(o => oppMatchesStatic(o, bestOverall.split.mask));
-  const matchedOpps = candidateOpps.filter(o => oppMatchesObserved(o.id ?? o.name, bestOverall.split.mask, initialTraces) || bestOverall.split.mask.side !== null);
-  const effectiveOpps = matchedOpps.length > 0 ? matchedOpps : candidateOpps;
+  // 3. 诊断崩盘起点定位 forkRound
   const diagSides: (1 | 2)[] = bestOverall.split.mask.side !== null ? [bestOverall.split.mask.side] : [1, 2];
-
-  console.log(`\n=== 命中「${maskToLabel(bestOverall.split.mask)}」的对手（${effectiveOpps.map(o => o.name).join('、')}）逐回合胜率诊断（复用缓存轨迹） ===`);
   const roundRates: { round: number; win: number; total: number; rate: number }[] = [];
   for (let round = 1; round <= 5; round++) {
     let win = 0, total = 0;
     for (const trace of initialTraces) {
-      if (!effectiveOpps.some(o => (o.id ?? o.name) === trace.oppId)) continue;
       if (!diagSides.includes(trace.side)) continue;
       const s = sampleFromTrace(trace, round, trace.oppId);
       if (s) {
@@ -550,7 +553,42 @@ export function optimizeFormation(
     console.log(`\n无跌破阈值回合，分叉点 = IG 最高的 R${forkRound}。`);
   }
 
-  // 4. 建分支
+  // 4. 精确在拟分叉 forkRound 与候选侧判断命中对手（严禁回退到静态全卡组候选）
+  const effectiveOpps = FORMATION_LIBRARY.filter(o => oppMatchesAtFork(o, bestOverall.split.mask, forkRound, initialTraces));
+  if (effectiveOpps.length === 0) {
+    console.log(`\n[分支拒绝] 在拟分叉回合 R${forkRound} 实际观察中未命中任何对手，放弃建分支。`);
+    return null;
+  }
+
+  console.log(`\n=== 命中「${maskToLabel(bestOverall.split.mask)}」的对手（${effectiveOpps.map(o => o.name).join('、')}）===`);
+
+  // 统计触发覆盖率与未触发原因
+  let matchedTracesCount = 0;
+  let totalObservedTraces = 0;
+  const untriggeredReasons = { prematureEnd: 0, noHand: 0, maskMismatch: 0 };
+
+  for (const trace of initialTraces) {
+    if (!effectiveOpps.some(o => (o.id ?? o.name) === trace.oppId)) continue;
+    if (!diagSides.includes(trace.side)) continue;
+
+    if (trace.roundScores[forkRound - 1] === undefined) {
+      untriggeredReasons.prematureEnd++;
+      continue;
+    }
+    const obs = trace.observations.get(forkRound);
+    if (!obs) {
+      untriggeredReasons.noHand++;
+      continue;
+    }
+    totalObservedTraces++;
+    if (isTraceMatchedAtFork(trace, bestOverall.split.mask, forkRound)) {
+      matchedTracesCount++;
+    } else {
+      untriggeredReasons.maskMismatch++;
+    }
+  }
+
+  // 5. 建分支
   const rng = mulberry32(777);
   console.log(`\n[建分支] 在 R${forkRound} 处按标签「${maskToLabel(bestOverall.split.mask)}」复制主链子树作模板`);
   const branched = addBranch(candidate, bestOverall.split.mask, rng, forkRound);
@@ -561,7 +599,7 @@ export function optimizeFormation(
   console.log('[建分支] 分支创建成功，新树结构：');
   console.log(summarizeEvolFormation(branched));
 
-  // 5. 搜索集内优化新分支
+  // 6. 搜索集内优化新分支
   console.log(`\n=== 优化新分支（R${forkRound}~R5，命中对手，搜索集 Seed=${searchSeedBase}） ===`);
   const searchBefore = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   const optimized = optimizeBranch(
@@ -579,7 +617,7 @@ export function optimizeFormation(
   const searchAfter = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, searchSeedBase);
   exp.save();
 
-  // 6. 独立验证集评估 (Validation Seed Base)
+  // 7. 独立验证集评估 (Validation Seed Base)
   console.log(`\n=== 独立验证集整局不败率对比（ValSeed=${validationSeedBase}，优化前 vs 优化后） ===`);
   const beforeVal = evalMatchOnMatched(BundleAI, candidate, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
   const afterVal = evalMatchOnMatched(BundleAI, optimized, bestOverall.split.mask, effectiveOpps, gamesPerOpp, cache, validationSeedBase);
@@ -626,6 +664,13 @@ export function optimizeFormation(
       searchAfter,
       matchedOpponents: effectiveOpps.map(o => o.name),
       simCount: cache.simCount,
+      forkRound,
+      triggerCoverage: {
+        matched: matchedTracesCount,
+        totalObserved: totalObservedTraces,
+        coverageRate: totalObservedTraces > 0 ? matchedTracesCount / totalObservedTraces : 0,
+      },
+      untriggeredReasons,
     },
   };
 }
@@ -639,3 +684,5 @@ function mulberry32(seed: number): () => number {
 if (process.argv[1] && process.argv[1].endsWith('branch_induct.ts')) {
   main();
 }
+
+

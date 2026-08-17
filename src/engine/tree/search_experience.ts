@@ -46,8 +46,9 @@ export function computeTreeFingerprint(rootOrFormation: EvolNode | EvolFormation
     const placements = [...node.placements]
       .sort((a, b) => a.monsterId - b.monsterId || a.x - b.x || a.y - b.y)
       .map(p => `${p.monsterId}:${p.x},${p.y}`)
-      .join('|');
-    const cond = `${node.condition.side ?? '*'}/${node.condition.main ?? '*'}/${(node.condition.subs ?? []).sort().join(',')}/${(node.condition.keys ?? []).sort().join(',')}`;
+    const sortedSubs = node.condition.subs ? [...node.condition.subs].sort().join(',') : '';
+    const sortedKeys = node.condition.keys ? [...node.condition.keys].sort().join(',') : '';
+    const cond = `${node.condition.side ?? '*'}/${node.condition.main ?? '*'}/${sortedSubs}/${sortedKeys}`;
     tokens.push(`${node.id}:r${node.round}[${cond}][${placements}]`);
     const sortedChildren = [...node.children].sort((a, b) => a.id.localeCompare(b.id));
     for (const c of sortedChildren) {

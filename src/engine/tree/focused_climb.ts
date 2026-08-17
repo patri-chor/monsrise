@@ -23,7 +23,7 @@ import type { EvolFormation } from './evol_gene';
 import { cloneEvolFormation, walkEvolNodes, summarizeEvolFormation, formationToEvol } from './evol_gene';
 import { replaceMonster, moveWithinZone, roleOf, isPositionIrrelevant, getLastValidationError } from './tree_ops';
 import { playSpecVsSpec, type SideSpec } from './arena';
-import { ExperienceBank, replaceKey, moveKey } from './search_experience';
+import { ExperienceBank, replaceKey, moveKey, computeTreeFingerprint } from './search_experience';
 
 function loadBundle(): any {
   const w = globalThis as any;
@@ -118,6 +118,7 @@ function main(): void {
     const focusHi = Math.max(...losing);
 
     const slots = focusSlots(current, focusLo, focusHi);
+    const currentFp = computeTreeFingerprint(current);
     console.log(`\n[爬山 第${iterations}轮] 聚焦 R${focusLo}-R${focusHi}（输的分 R${losing.join('/R')} 往前扩1），待搜槽位 ${slots.length} 个，当前总期望 ${curObj.toFixed(2)}`);
 
     let bestChild: EvolFormation | null = null;
@@ -133,7 +134,7 @@ function main(): void {
         if (Date.now() >= deadline) break;
         if (toMid === slot.monsterId) continue;
         if (slot.round >= 4 && FOUR_COST_IDS.has(toMid)) continue;
-        const key = replaceKey(formationId, slot.nodeId, slot.monsterId, toMid);
+        const key = replaceKey(formationId, slot.nodeId, slot.monsterId, toMid, currentFp);
         if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
         const child = replaceMonster(current, slot.nodeId, slot.monsterId, toMid);
         if (!child) {
@@ -163,7 +164,7 @@ function main(): void {
       for (const x of cols) {
         for (let y = 0; y < 5; y++) {
           if (Date.now() >= deadline) break;
-          const key = moveKey(formationId, slot.nodeId, slot.monsterId, x, y);
+          const key = moveKey(formationId, slot.nodeId, slot.monsterId, x, y, currentFp);
           if (exp.isKnownInvalid(key)) { skippedByExp++; continue; }
           const child = moveWithinZone(current, slot.monsterId, x, y);
           if (!child) {

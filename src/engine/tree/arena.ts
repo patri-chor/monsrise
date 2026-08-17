@@ -207,6 +207,24 @@ function teamOf(spec: SideSpec): FormationTeamSlot[] {
  * evol 侧：loadCustomFormation 注入 + patch selectBranch（首次）。
  * native 侧：loadCustomFormation 注入原始 Formation，走 bundle 原生 label 匹配。
  */
+export interface RoundObservation {
+  round: number;
+  side: 1 | 2;
+  handIds: number[];
+  handBadges: number[];
+  boardIds: number[];
+}
+
+export interface PlayResult {
+  w: number;
+  d: number;
+  l: number;
+  summary: string;
+  roundScores: number[];
+  observations: RoundObservation[];
+  decisions: BranchDecision[];
+}
+
 function bundleRoundPlanFor(
   ai: any,
   side: 'p1' | 'p2',
@@ -218,8 +236,22 @@ function bundleRoundPlanFor(
   spec: SideSpec,
   oppHand?: { monsterId: number; badgeIds: number[] }[],
   onDecision?: (d: BranchDecision) => void,
+  onObservation?: (obs: RoundObservation) => void,
 ): { monsterId: number; x: number; y: number }[] {
   if (hand.length === 0) return [];
+  if (onObservation) {
+    const oppHandSlice = (oppHand ?? []).slice(0, 4);
+    const obsHandIds = oppHandSlice.map(h => h.monsterId).sort((a, b) => a - b);
+    const obsHandBadges = oppHandSlice.flatMap(h => h.badgeIds ?? []).sort((a, b) => a - b);
+    const obsBoardIds = enemy.map(m => m.dbId).sort((a, b) => a - b);
+    onObservation({
+      round,
+      side: side === 'p1' ? 1 : 2,
+      handIds: obsHandIds,
+      handBadges: obsHandBadges,
+      boardIds: obsBoardIds,
+    });
+  }
   const fe = ai.pipeline.getFormationEngine();
   const cur = fe.getSelectedFormation();
   const name = spec.f.name;
@@ -287,7 +319,7 @@ const PRIORITY: Record<number, number> = {
 
 /**
  * 单局：A vs B，双方 bundle 引擎真实执行。aSide 决定 A 在哪边。
- * 返回 A 视角 {w,d,l}。
+ * 返回 A 视角 {w,d,l,summary,roundScores,observations,decisions}。
  */
 export function playSpecVsSpec(
   BundleAI: any,
@@ -296,7 +328,7 @@ export function playSpecVsSpec(
   aSide: 1 | 2,
   seed: number,
   onDecision?: (d: BranchDecision, outcome: 1 | 0 | -1) => void,
-): { w: number; d: number; l: number; summary: string; roundScores: number[] } {
+): PlayResult {
   const teamA = teamOf(specA) as TeamSlot[];
   const teamB = teamOf(specB) as TeamSlot[];
 
@@ -317,8 +349,9 @@ export function playSpecVsSpec(
   aiB.setDifficulty('normal');
   const scores = [0, 0];
   const roundResults: (0 | 1 | 2)[] = [];
-  // 收集本局 A 侧分支决策（识别学习样本）
+  // 收集本局 A 侧分支决策与每回合观察
   const aDecisions: BranchDecision[] = [];
+  const aObservations: RoundObservation[] = [];
 
   for (let round = 1; round <= gameEngine.maxRounds; round++) {
     if (gameEngine.isGameOver()) break;
@@ -336,6 +369,7 @@ export function playSpecVsSpec(
         const plan = bundleRoundPlanFor(
           ai, side === 1 ? 'p1' : 'p2', round, budget, team, my, enemy, spec, teamOf(oppSpec),
           isA ? (d) => aDecisions.push(d) : undefined,
+          isA ? (obs) => aObservations.push(obs) : undefined,
         );
         const ordered = [...plan].sort((a, b) => (PRIORITY[a.monsterId] ?? 9) - (PRIORITY[b.monsterId] ?? 9));
         const occupiedNow = new Set(gameEngine.boardMonsters.filter(m => m.team === side).map(m => m.gridX * 10 + m.gridY));
@@ -395,8 +429,10 @@ export function playSpecVsSpec(
     const aWinRound = (aSide === 1 && r === 1) || (aSide === 2 && r === 2);
     return aWinRound ? 1 : -1;
   });
-  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary, roundScores };
-  return aWon > aLost ? { w: 1, d: 0, l: 0, summary, roundScores } : { w: 0, d: 0, l: 1, summary, roundScores };
+  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions };
+  return aWon > aLost
+    ? { w: 1, d: 0, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions }
+    : { w: 0, d: 0, l: 1, summary, roundScores, observations: aObservations, decisions: aDecisions };
 }
 
 // ---------- 靶子与评估 ----------
