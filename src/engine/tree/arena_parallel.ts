@@ -18,8 +18,35 @@ import type { EvolFormation } from './evol_gene';
 const WORKER_SRC = resolve('src/engine/tree/arena_worker.ts');
 const WORKER_OUT = resolve('reports/arena_worker.cjs');
 
-interface Task { aKind: 'evol'; aIndex: number; aFormation: any; b: number; side: 1 | 2; seed: number; games: number }
-interface Result { a: number; b: number; side: 1 | 2; w: number; d: number; l: number }
+export interface Task { aKind: 'evol'; aIndex: number; aFormation: any; b: number; side: 1 | 2; seed: number; games: number }
+export interface Result { a: number; b: number; side: 1 | 2; w: number; d: number; l: number }
+
+export interface ParallelArenaOptions {
+  workerCount?: number;
+  seedBase?: number;
+}
+
+export function buildArenaTasks(
+  candidates: { name: string; f: EvolFormation }[],
+  games: number,
+  seedBase: number = 7000,
+): Task[] {
+  const tasks: Task[] = [];
+  const targetIdx = SEPARATION_TARGETS.map(t => FORMATION_LIBRARY.findIndex(f => f.name === t));
+  candidates.forEach((c, idx) => {
+    const aFormation = JSON.parse(JSON.stringify(c.f)) as any;
+    for (let t = 0; t < targetIdx.length; t++) {
+      const b = targetIdx[t];
+      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 1, seed: seedBase + idx * 200 + t * 20 + 1, games });
+      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 2, seed: seedBase + idx * 200 + t * 20 + 2, games });
+    }
+    for (let b = 0; b < FORMATION_LIBRARY.length; b++) {
+      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 1, seed: seedBase + 100000 + idx * 500 + b * 2 + 1, games: 1 });
+      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 2, seed: seedBase + 100000 + idx * 500 + b * 2 + 2, games: 1 });
+    }
+  });
+  return tasks;
+}
 
 function ensureWorker(): void {
   execSync(
@@ -57,26 +84,18 @@ export interface ParallelArenaResult {
 export async function evaluateBatchParallel(
   candidates: { name: string; f: EvolFormation }[],
   games: number,
-  workerCount?: number,
+  workerCountOrOptions?: number | ParallelArenaOptions,
 ): Promise<ParallelArenaResult[]> {
-  const wc = workerCount && workerCount > 0 ? workerCount : Math.max(1, cpus().length - 1);
+  const options: ParallelArenaOptions = typeof workerCountOrOptions === 'number'
+    ? { workerCount: workerCountOrOptions }
+    : (workerCountOrOptions ?? {});
+  const wc = options.workerCount && options.workerCount > 0 ? options.workerCount : Math.max(1, cpus().length - 1);
+  const seedBase = options.seedBase ?? 7000;
   ensureWorker();
 
   // 生成任务：候选 × (3 靶 × 2 side × games + 全阵型 × 2 side × 1)
-  const tasks: Task[] = [];
+  const tasks: Task[] = buildArenaTasks(candidates, games, seedBase);
   const targetIdx = SEPARATION_TARGETS.map(t => FORMATION_LIBRARY.findIndex(f => f.name === t));
-  candidates.forEach((c, idx) => {
-    const aFormation = JSON.parse(JSON.stringify(c.f)) as any;
-    for (let t = 0; t < targetIdx.length; t++) {
-      const b = targetIdx[t];
-      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 1, seed: 7000 + idx * 100 + b, games });
-      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 2, seed: 8000 + idx * 100 + b, games });
-    }
-    for (let b = 0; b < FORMATION_LIBRARY.length; b++) {
-      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 1, seed: 9000 + idx * 1000 + b, games: 1 });
-      tasks.push({ aKind: 'evol', aIndex: idx, aFormation, b, side: 2, seed: 10000 + idx * 1000 + b, games: 1 });
-    }
-  });
 
   const chunkSize = Math.ceil(tasks.length / wc);
   const chunks: Task[][] = [];

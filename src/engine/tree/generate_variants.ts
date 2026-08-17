@@ -28,24 +28,24 @@ registerAllBadges();
 // ---------- 组装配置 ----------
 
 /** 架构骨架（怪兽固定；半冲=祈祷+帝国，祷徒=学徒+祈祷，全冲=帝国） */
-const ARCH_SKELETON: Record<string, number[]> = {
+export const ARCH_SKELETON: Record<string, number[]> = {
   prayer: [103, 105],
   halfrush: [105, 110],
   fullrush: [110],
 };
-const ARCH_NAME: Record<string, string> = { prayer: '祷徒', halfrush: '半冲', fullrush: '全冲' };
+export const ARCH_NAME: Record<string, string> = { prayer: '祷徒', halfrush: '半冲', fullrush: '全冲' };
 
-const CORE_SHORT: Record<string, string> = {
+export const CORE_SHORT: Record<string, string> = {
   savior: '救星', priest: '祭祀', suqing: '肃清', seri: '塞雷', golden: '金猴', digger: '铲土', all2: '全二',
 };
-const NAME: Record<number, string> = {
+export const MONSTER_NAME: Record<number, string> = {
   101: '肃清', 102: '祭祀', 103: '学徒', 104: '散弹', 105: '祈祷', 106: '冲锋', 107: '咒法',
   108: '救星', 109: '银狙', 110: '帝国', 111: '见习', 112: '大剑', 113: '矿爆', 114: '突突',
   115: '铲土', 116: '钻头', 117: '铁甲', 118: '塞雷', 119: '忍猴', 120: '金猴', 121: '僧猴',
   122: '丛林', 123: '棒球', 124: '三振', 125: '战壕',
 };
 
-function badgesFor(id: number, hasElement: boolean): number[] {
+export function badgesFor(id: number, hasElement: boolean): number[] {
   const tpls = BADGE_TEMPLATES[id];
   if (!tpls || tpls.length === 0) return [];
   if (hasElement) {
@@ -59,13 +59,13 @@ function badgesFor(id: number, hasElement: boolean): number[] {
 }
 
 /** 元素手：自带元素的怪（肃清流血/三振寒冷/散弹燃烧） */
-const ELEMENT_IDS = [101, 104, 124];
-function hasElementHand(ids: number[]): boolean {
+export const ELEMENT_IDS = [101, 104, 124];
+export function hasElementHand(ids: number[]): boolean {
   return ids.some(id => ELEMENT_IDS.includes(id));
 }
 
 /** 输出位候选：2 费怪中带「输出/爆发」标签，排除战术怪、架构必带（组合怪由组合模块提供） */
-function outputCandidates(arch: string): number[] {
+export function outputCandidates(arch: string): number[] {
   const all2 = [104, 106, 107, 109, 110, 111, 112, 113, 114, 116, 117, 119, 121, 122, 123, 124, 125];
   const skeleton = ARCH_SKELETON[arch] ?? [];
   return all2.filter(id =>
@@ -76,7 +76,7 @@ function outputCandidates(arch: string): number[] {
 }
 
 /** 生存位候选：带「生存」标签的 2 费怪，排除战术/架构/核心 */
-function survivalCandidates(arch: string): number[] {
+export function survivalCandidates(arch: string): number[] {
   const all2 = [104, 106, 107, 109, 110, 111, 112, 113, 114, 116, 117, 119, 121, 122, 123, 124, 125];
   const skeleton = ARCH_SKELETON[arch] ?? [];
   return all2.filter(id =>
@@ -88,12 +88,15 @@ function survivalCandidates(arch: string): number[] {
 
 // ---------- 组装 ----------
 
-interface Deck {
+export interface Deck {
   label: string;
   team: { monsterId: number; badgeIds: number[] }[];
+  cost: number;
+  valid: boolean;
+  reason?: string;
 }
 
-function assemble(arch: string, core: CoreKey, outputPair: number[], comboIds: number[] = []): Deck {
+export function assemble(arch: string, core: CoreKey, outputPair: number[], comboIds: number[] = []): Deck {
   const ids: number[] = [];
 
   // 1) 架构骨架（用户 MD：祷徒=学徒+祈祷、半冲=祈祷+帝国、全冲=帝国）
@@ -116,15 +119,24 @@ function assemble(arch: string, core: CoreKey, outputPair: number[], comboIds: n
     ids.push(id);
   }
 
+  const totalCost = ids.reduce((s, x) => s + costOf(x), 0);
+  const hasTac = ids.some(id => TACTIC_IDS.includes(id));
+  const valid = totalCost <= 18 && ids.length <= 8 && hasTac && ids.length >= 6;
+  let reason = '';
+  if (totalCost > 18) reason = `Cost ${totalCost} > 18`;
+  else if (ids.length > 8) reason = `Size ${ids.length} > 8`;
+  else if (!hasTac) reason = 'Missing tactic monster';
+  else if (ids.length < 6) reason = `Size ${ids.length} < 6`;
+
   // 7) 徽章（感知元素手：有元素手→凋零变体，否则→通用变体避开凋零）
   const hasEl = hasElementHand(ids);
   const team = ids.map(id => ({ monsterId: id, badgeIds: badgesFor(id, hasEl) }));
 
   // label：组合件里去重、去掉骨架/输出位已有的怪，只标新增组合怪
   const comboOnly = comboIds.filter(id => !ARCH_SKELETON[arch]?.includes(id) && !outputPair.includes(id));
-  const comboLabel = comboOnly.length ? '+' + comboOnly.map(id => NAME[id]).join('') : '';
-  const label = `${ARCH_NAME[arch]}+${CORE_SHORT[core]}+${outputPair.map(id => NAME[id]).join('')}${comboLabel}`;
-  return { label, team };
+  const comboLabel = comboOnly.length ? '+' + comboOnly.map(id => MONSTER_NAME[id]).join('') : '';
+  const label = `${ARCH_NAME[arch] ?? arch}+${CORE_SHORT[core] ?? core}+${outputPair.map(id => MONSTER_NAME[id]).join('')}${comboLabel}`;
+  return { label, team, cost: totalCost, valid, reason };
 }
 
 // ---------- 主流程 ----------
