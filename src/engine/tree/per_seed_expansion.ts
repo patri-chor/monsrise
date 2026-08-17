@@ -22,6 +22,8 @@ import {
 import { COMBO_MODULES } from './flow_library';
 import { resolveSeedsAndPanel } from './first_four_generation';
 
+import os from 'node:os';
+
 export const EXPANSION_OUTPUT_DIR = resolve('reports/new-formation-generation/per-seed-expansion');
 
 export interface ExpansionOptions {
@@ -33,6 +35,23 @@ export interface ExpansionOptions {
   coarseSeedBase?: number;
   explorationFloor?: number;
   maxRetainedPerSeed?: number;
+}
+
+/**
+ * 计算有效 worker 数量
+ */
+export function resolveEffectiveWorkers(requestedWorkers?: number, availableCpus: number = os.cpus()?.length || 1): {
+  requestedWorkers: number;
+  effectiveWorkers: number;
+  availableLogicalCpus: number;
+} {
+  const req = requestedWorkers ?? 16;
+  const effective = Math.max(1, Math.min(req, availableCpus));
+  return {
+    requestedWorkers: req,
+    effectiveWorkers: effective,
+    availableLogicalCpus: availableCpus,
+  };
 }
 
 export interface ExpandedCandidateRecord {
@@ -248,7 +267,8 @@ export async function runPerSeedExpansion(options: ExpansionOptions = {}): Promi
   const outputDir = options.outputDir ? resolve(options.outputDir) : EXPANSION_OUTPUT_DIR;
   const baseSeed = options.baseSeed ?? 42;
   const attemptsPerSeed = Math.min(20, Math.max(1, options.attemptsPerSeed ?? 20));
-  const workers = Math.min(2, Math.max(1, options.workers ?? 2));
+  const workerInfo = resolveEffectiveWorkers(options.workers);
+  const workers = workerInfo.effectiveWorkers;
   const coarseGames = options.coarseGames ?? 1;
   const coarseSeedBase = options.coarseSeedBase ?? 1000;
   const explorationFloor = options.explorationFloor ?? 0.25;
@@ -283,7 +303,9 @@ export async function runPerSeedExpansion(options: ExpansionOptions = {}): Promi
       maxRetainedPerSeed,
       maxTotalCapacity: sourceSeeds.length * maxRetainedPerSeed,
       explorationFloor,
-      workers,
+      requestedWorkers: workerInfo.requestedWorkers,
+      effectiveWorkers: workerInfo.effectiveWorkers,
+      availableLogicalCpus: workerInfo.availableLogicalCpus,
       coarseGames,
       coarseSeedBase,
     },
@@ -415,18 +437,23 @@ export async function runPerSeedExpansion(options: ExpansionOptions = {}): Promi
   writeFileSync(join(outputDir, 'frozen_candidates.jsonl'), frozenJsonlContent, 'utf8');
 
   // 写入 summary.md
-  const summaryMd = `# Per-Seed Variant Expansion Summary (T013)
+  const summaryMd = `# Per-Seed Variant Expansion Summary (T013 / T014)
 
 ## 1. Source Seeds & Evaluation Panel Resolution
 - **Source Seeds**: ${sourceSeeds.map(s => `\`${s.name}\``).join(', ')} (${sourceSeeds.length} total)
 - **Evaluation Panel**: ${evaluationPanel.map(o => `\`${o.name}\``).join(', ')} (${evaluationPanel.length} total)
 
-## 2. Multi-Seed Mutation Statistics (Attempts <= ${attemptsPerSeed}/seed)
+## 2. Worker Concurrency Settings (T014)
+- **Requested Workers**: ${workerInfo.requestedWorkers}
+- **Effective Workers**: ${workerInfo.effectiveWorkers}
+- **Available Logical CPUs**: ${workerInfo.availableLogicalCpus}
+
+## 3. Multi-Seed Mutation Statistics (Attempts <= ${attemptsPerSeed}/seed)
 | Source Seed | Attempts | Generated | Accepted | Dup Rejections | Struct Rejections | Retained | Shortfall |
 |---|---|---|---|---|---|---|---|
 ${seedStats.map(s => `| \`${s.sourceSeedName}\` | ${s.attempts} | ${s.generatedCount} | ${s.acceptedCount} | ${s.duplicateRejections} | ${s.structuralRejections} | **${s.retainedCount}** | ${s.shortfall} |`).join('\n')}
 
-## 3. Frozen Candidates Pool
+## 4. Frozen Candidates Pool
 - **Total Frozen**: **${frozenCandidates.length}** / ${sourceSeeds.length * maxRetainedPerSeed}
 - **Destination**: \`${join(outputDir, 'frozen_candidates.jsonl')}\`
 
