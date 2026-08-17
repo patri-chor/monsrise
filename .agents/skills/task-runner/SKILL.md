@@ -2,25 +2,25 @@
 name: task-runner
 description: >-
   Automated adaptive task polling, execution, and delivery runner for the repository.
-  Use this skill when the user asks to start or configure task polling, check for open tasks,
+  Use this skill when the user asks to start or configure task polling, check for open tasks locally,
   or automatically execute tasks and submit reports into their respective domain directories.
 ---
 
 # Adaptive Task Polling & Submission Runner (自适应阶梯轮询与任务提交流水线)
 
-本技能提供从**任务探测、自适应退避轮询、自主执行验证**到**报告精准归档与 Git 提交**的完整流水线机制。
+本技能提供从**本地任务探测、自适应退避轮询、自主执行验证**到**报告精准归档与 Git 提交**的完整流水线机制。
 
 ---
 
 ## 1. 核心架构与目录对应规范 (Directory & Domain Routing)
 
-根据双域 Git 总线规范，任务与报告必须严格在同一目录下匹配，禁止错位或跨域提交：
+所有的 task 文件均在本地 `TASKS/` 目录中组织。根据双域 Git 总线规范，任务与报告必须严格在同一目录下匹配，禁止错位或跨域提交：
 
-| 领域 (Domain) | 任务路径 (Task Path) | 对应报告路径 (Target Report Path) | 执行分支 (Branch) |
+| 领域 (Domain) | 任务路径 (Task Path) | 对应报告路径 (Target Report Path) | 领域参数 (CLI Flag) |
 |---|---|---|---|
-| **通用 / 集成 (Root)** | `TASKS/Txxx-*.md` | `TASKS/Txxx.report.md` | `main` |
-| **决策树优化 (`tree`)** | `TASKS/tree/Txxx-*.md` | `TASKS/tree/Txxx.report.md` | `agent/tree` (或指令分支) |
-| **新阵型生成 (`generation`)** | `TASKS/generation/Txxx-*.md` | `TASKS/generation/Txxx.report.md` | `agent/generation` (或指令分支) |
+| **全库 / 通用** | `TASKS/Txxx-*.md` 等 | `TASKS/Txxx.report.md` | (默认，无参数) |
+| **决策树优化 (`tree`)** | `TASKS/tree/Txxx-*.md` | `TASKS/tree/Txxx.report.md` | `--domain=tree` |
+| **新阵型生成 (`generation`)** | `TASKS/generation/Txxx-*.md` | `TASKS/generation/Txxx.report.md` | `--domain=generation` |
 
 > [!IMPORTANT]
 > **报告目录对齐原则**：
@@ -28,9 +28,9 @@ description: >-
 
 ---
 
-## 2. 阶梯退避轮询机制 (Adaptive Backoff)
+## 2. 本地零开销阶梯退避轮询 (Zero-Token Local Adaptive Backoff)
 
-为杜绝模型 Token 在轮询过程中的无谓消耗，系统采用**脚本驱动 + 零 Token 判断**：
+任务由本地驱动，无需在轮询时频繁拉取远程 Git，极大提升探测速度与稳定性。
 
 ### 降频阶梯：
 1. **高频冲刺期 (0 ~ 5 分钟)**：每 **1 分钟** 检查一次（提交 report 后自动进入此阶段并执行 5 次）；
@@ -42,7 +42,7 @@ description: >-
 ```json
 {
   "CronExpression": "* * * * *",
-  "Prompt": "阶梯自适应任务检测：\n执行命令：`node scripts/check-open-tasks.mjs`。\n- 若返回包含 `NO_TASK`（退出码 0），直接停止，不进行任何分析与操作；\n- 若返回包含 `TASK_FOUND`（退出码 100），读取指定的 taskFile 与 reportFile，严格按验收标准执行实现、运行测试，生成报告（首行 STATUS: DONE），执行 `node scripts/check-open-tasks.mjs --report-submitted`，并 git commit 与 git push。",
+  "Prompt": "阶梯自适应任务检测：\n执行命令：`node scripts/check-open-tasks.mjs`（或指定 domain，如 `node scripts/check-open-tasks.mjs --domain=tree`）。\n- 若返回包含 `NO_TASK`（退出码 0），直接停止，不进行任何分析与操作；\n- 若返回包含 `TASK_FOUND`（退出码 100），读取指定的 taskFile 与 reportFile，严格按验收标准执行实现、运行测试，生成报告（首行 STATUS: DONE），执行 `node scripts/check-open-tasks.mjs --report-submitted`，并 git commit 与 git push。",
   "IsDaemon": true
 }
 ```
@@ -68,8 +68,8 @@ description: >-
 
 当收到 `TASK_FOUND` 唤醒时，按以下标准化流程执行：
 
-### Step 1: 读取任务与静默规划
-- 直接读取 `taskFile`；
+### Step 1: 本地读取任务与静默规划
+- 直接读取本地 `taskFile`；
 - **不要向用户展示计划**，由 Agent 自行总结需求与验收标准。
 
 ### Step 2: 编写代码与本地验证
@@ -93,6 +93,8 @@ description: >-
 报告写入后，立即运行：
 ```bash
 node scripts/check-open-tasks.mjs --report-submitted
+# 或指定 domain:
+node scripts/check-open-tasks.mjs --domain=tree --report-submitted
 ```
 重置回 1 分钟高频冲刺期，准备接收下一阶段任务。
 
@@ -111,6 +113,8 @@ git -c http.proxy=http://127.0.0.1:7890 push
 - **强制即时检查（跳过退避等待）**：
   ```bash
   node scripts/check-open-tasks.mjs --force
+  # 或指定 domain:
+  node scripts/check-open-tasks.mjs --domain=tree --force
   ```
 - **手动标记 Report 提交时间**：
   ```bash

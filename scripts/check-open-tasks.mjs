@@ -11,11 +11,17 @@
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { execSync } from 'node:child_process';
 
 const repoRoot = resolve('.');
 const tasksDir = join(repoRoot, 'TASKS');
-const statePath = join(repoRoot, '.task-poll-state.json');
+
+const domainArg = process.argv.find(a => a.startsWith('--domain='))?.split('=')[1] 
+  || (process.argv.includes('--domain') ? process.argv[process.argv.indexOf('--domain') + 1] : null);
+
+const targetDomain = domainArg ? domainArg.trim() : null;
+const statePath = targetDomain 
+  ? join(repoRoot, `.task-poll-state-${targetDomain}.json`)
+  : join(repoRoot, '.task-poll-state.json');
 
 // 读取或初始化状态
 function loadState() {
@@ -45,7 +51,7 @@ const now = Date.now();
 if (isMarkReport) {
   state.lastReportTime = now;
   saveState(state);
-  console.log(JSON.stringify({ status: 'REPORT_MARKED', lastReportTime: now }));
+  console.log(JSON.stringify({ status: 'REPORT_MARKED', domain: targetDomain || 'all', lastReportTime: now }));
   process.exit(0);
 }
 
@@ -84,9 +90,11 @@ saveState(state);
 
 // 1. 同步远程
 try {
-  execSync('git pull', { cwd: repoRoot, stdio: 'pipe' });
+  execSync('git -c http.proxy=http://127.0.0.1:7890 pull', { cwd: repoRoot, stdio: 'pipe' });
 } catch (e) {
-  // 失败时不阻断
+  try {
+    execSync('git pull', { cwd: repoRoot, stdio: 'pipe' });
+  } catch {}
 }
 
 if (!existsSync(tasksDir)) {
@@ -94,7 +102,7 @@ if (!existsSync(tasksDir)) {
   process.exit(0);
 }
 
-// 2. 扫描 TASKS 根目录及所有子域目录 (tree, generation 等)
+// 2. 扫描 TASKS 目录及指定/所有子域目录 (tree, generation 等)
 function findTasksInDir(dir, domain = 'root') {
   if (!existsSync(dir)) return [];
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -133,9 +141,9 @@ function findTasksInDir(dir, domain = 'root') {
     });
   }
 
-  // 递归检查子目录
+  // 若未指定特定 domain，则递归扫描子目录
   for (const entry of entries) {
-    if (entry.isDirectory() && domain === 'root') {
+    if (entry.isDirectory() && domain === 'root' && !targetDomain) {
       tasks.push(...findTasksInDir(join(dir, entry.name), entry.name));
     }
   }
@@ -143,7 +151,14 @@ function findTasksInDir(dir, domain = 'root') {
   return tasks;
 }
 
-const allOpenTasks = findTasksInDir(tasksDir);
+let allOpenTasks = [];
+if (targetDomain) {
+  const targetDir = targetDomain === 'root' ? tasksDir : join(tasksDir, targetDomain);
+  allOpenTasks = findTasksInDir(targetDir, targetDomain);
+} else {
+  allOpenTasks = findTasksInDir(tasksDir);
+}
+
 allOpenTasks.sort((a, b) => a.num - b.num);
 
 const openTask = allOpenTasks.length > 0 ? allOpenTasks[allOpenTasks.length - 1] : null;
@@ -167,4 +182,5 @@ if (openTask) {
   }));
   process.exit(0);
 }
+
 
