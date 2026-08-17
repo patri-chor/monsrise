@@ -39,7 +39,7 @@ const MONSTER_NAME: Record<number, string> = {
 };
 const nm = (id: number) => MONSTER_NAME[id] ?? String(id);
 
-function loadBundle(): any {
+export function loadBundle(): any {
   const w = globalThis as any;
   const code = readFileSync(resolve('public/ai-bundle.iife.js'), 'utf8');
   const factory = new Function('window', 'globalThis', '"use strict";\n' + code + '\n;return BattleAI;');
@@ -467,6 +467,12 @@ export interface OptimizeFormationResult {
   };
 }
 
+export interface OptimizeFormationOptions {
+  opponents?: Formation[];
+  searchSeedBase?: number;
+  validationSeedBase?: number;
+}
+
 /**
  * 自主分支优化（可复用）：分析 → 诊断崩盘 → 建分支 → 优化新分支 → 独立验证集评估。
  */
@@ -474,8 +480,12 @@ export function optimizeFormation(
   BundleAI: any,
   src: Formation,
   gamesPerOpp: number,
-  options?: { searchSeedBase?: number; validationSeedBase?: number },
+  options?: OptimizeFormationOptions,
 ): OptimizeFormationResult | null {
+  if (options?.opponents !== undefined && options.opponents.length === 0) {
+    throw new Error('OptimizeFormationOptions.opponents cannot be empty');
+  }
+  const panelOpponents = options?.opponents ?? FORMATION_LIBRARY;
   const candidate = formationToEvol(src);
   const searchSeedBase = options?.searchSeedBase ?? 2000;
   const validationSeedBase = options?.validationSeedBase ?? 9000;
@@ -484,11 +494,11 @@ export function optimizeFormation(
   exp.load();
   const cache = new MatchSimulationCache();
 
-  console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${FORMATION_LIBRARY.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条，SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
+  console.log(`=== 分支归纳分析：${src.name} 先手+后手 vs 全部 ${panelOpponents.length} 阵型（每对手每侧${gamesPerOpp}局，经验库 ${exp.size} 条，SearchSeed=${searchSeedBase}, ValSeed=${validationSeedBase}）===`);
 
   // 1. 批量采集全对局轨迹 (一次性模拟各对手各 side 的 gamesPerOpp 局)
   const initialTraces: MatchTrace[] = [];
-  for (const opp of FORMATION_LIBRARY) {
+  for (const opp of panelOpponents) {
     for (const side of [1, 2] as (1 | 2)[]) {
       for (let i = 0; i < gamesPerOpp; i++) {
         const trace = cache.getOrSimulate(BundleAI, candidate, opp, side, searchSeedBase + i);
@@ -554,7 +564,7 @@ export function optimizeFormation(
   }
 
   // 4. 精确在拟分叉 forkRound 与候选侧判断命中对手（严禁回退到静态全卡组候选）
-  const effectiveOpps = FORMATION_LIBRARY.filter(o => oppMatchesAtFork(o, bestOverall.split.mask, forkRound, initialTraces));
+  const effectiveOpps = panelOpponents.filter(o => oppMatchesAtFork(o, bestOverall.split.mask, forkRound, initialTraces));
   if (effectiveOpps.length === 0) {
     console.log(`\n[分支拒绝] 在拟分叉回合 R${forkRound} 实际观察中未命中任何对手，放弃建分支。`);
     return null;

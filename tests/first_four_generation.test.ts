@@ -65,12 +65,11 @@ async function runTests() {
     assertStrict.equal(genRes1.stats.attempts, genRes1.stats.accepted + genRes1.stats.duplicateRejections + genRes1.stats.structuralRejections);
     console.log(`  ✓ ${s1.name} 独立变异通过 (attempts: ${genRes1.stats.attempts}, accepted: ${genRes1.stats.accepted})\n`);
 
-    // Test 3: 验证优化器固定面板接口检测机制 (T011-3 / T012)
-    console.log('[Test 3] 验证树优化器固定面板接口检测与缺失判定...');
+    // Test 3: 验证优化器固定面板接口检测机制 (T011 / T016)
+    console.log('[Test 3] 验证树优化器固定面板接口检测...');
     const ifaceCheck = checkTreeOptimizerPanelInterface();
-    assertStrict.equal(ifaceCheck.supported, false, '现有公开接口未支持 fixed opponents 参数时必须判定为 false');
-    assertStrict.ok(ifaceCheck.missingInterfaceDescription.includes('opponents?: Formation[]'), '必须准确指出缺失的签名');
-    console.log(`  ✓ 优化器接口缺失检测准确: ${ifaceCheck.missingInterfaceDescription}\n`);
+    assertStrict.equal(ifaceCheck.supported, true, '公开接口已支持 fixed opponents 参数时必须判定为 true');
+    console.log(`  ✓ 优化器接口检测通过: ${ifaceCheck.reason}\n`);
 
     // Test 4: 验证端到端流水线完全限定在 testTmpDir 输出 (T012 核心隔离)
     console.log('[Test 4] 验证流水线在测试临时目录 tests/.tmp/first-four-generation/ 的完全隔离运行...');

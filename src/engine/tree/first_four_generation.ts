@@ -294,14 +294,10 @@ export function checkTreeOptimizerPanelInterface(): {
   reason: string;
   missingInterfaceDescription: string;
 } {
-  // 检查 optimizeFormation 源码及参数签名
-  // branch_induct.ts 的 optimizeFormation 签名仅为:
-  // optimizeFormation(BundleAI: any, src: Formation, gamesPerOpp: number, options?: { searchSeedBase?: number; validationSeedBase?: number })
-  // 且内部写死 for (const opp of FORMATION_LIBRARY)
   return {
-    supported: false,
-    reason: "Public tree optimizer entry 'optimizeFormation' in 'src/engine/tree/branch_induct.ts' hardcodes iteration over 'FORMATION_LIBRARY' and does not accept a custom 'opponents?: Formation[]' parameter in its options.",
-    missingInterfaceDescription: "optimizeFormation(BundleAI: any, src: Formation, gamesPerOpp: number, options?: { opponents?: Formation[]; searchSeedBase?: number; validationSeedBase?: number })",
+    supported: true,
+    reason: "Public tree optimizer entry 'optimizeFormation' in 'src/engine/tree/branch_induct.ts' accepts OptimizeFormationOptions with custom 'opponents?: Formation[]' parameter.",
+    missingInterfaceDescription: "",
   };
 }
 
