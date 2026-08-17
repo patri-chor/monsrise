@@ -1,51 +1,59 @@
-# TASKS — DeepSeek ↔ Gemini 协同总线（git 黑板协议）
+# TASKS — Dual-Domain Decision Bus
 
-本目录是 **DeepSeek V4 Pro（决策方，运行于本地 DSH）与 Gemini（执行方，运行于 Google Antigravity）** 之间的任务交换协议。双方通过 GitHub 仓库 `patri-chor/monsrise` 同步，互不直连。
+This repository uses two independent decision/execution lanes. A task path, domain, executor prompt, and Git branch must agree. Do not select work by the largest task number across the whole repository.
 
-## 文件协议
+## Domains
 
-每个任务一个编号 `Txxx`（T001, T002, …）：
+| Domain | Task directory | Decision owner | Execution branch | Purpose |
+|---|---|---|---|---|
+| `tree` | `TASKS/tree/` | Tree decision agent | `agent/tree` | Optimize decision trees for existing formations |
+| `generation` | `TASKS/generation/` | Generation decision agent | `agent/generation` | Generate and evaluate new formation candidates |
 
-| 文件 | 谁写 | 内容 |
+Shared integration into `main`, `FORMATION_LIBRARY`, bundle artifacts, matrix reports, or cycle state requires a separate integration task after both domain owners approve it.
+
+## File Protocol
+
+Within one domain directory:
+
+| File | Writer | Purpose |
 |---|---|---|
-| `Txxx.md` | DeepSeek（决策方） | **任务规格**：目标、验收标准、方案约束、涉及文件、优先级、STATUS |
-| `Txxx.report.md` | Gemini（执行方） | **实现报告**：完成内容、改动文件清单、测试结果、遗留问题、偏离说明 |
-| `Txxx.closed.md` | DeepSeek（决策方） | **验收结论**：通过/打回、遗留转新任务、经验 |
+| `Txxx-*.md` | That domain's decision agent | Task specification |
+| `Txxx.report.md` | That domain's Antigravity executor | Implementation report |
+| `Txxx.closed.md` | That domain's decision agent | Acceptance decision |
 
-每份文件**首行必须有** `STATUS: OPEN | IN_PROGRESS | DONE | REJECTED`。
+Every task/report/closed file starts with `STATUS: OPEN | IN_PROGRESS | DONE | REJECTED`.
 
-## 工作流（一个循环）
+## Domain Routing Rules
 
-```
-1. DeepSeek:  分析 → 写 Txxx.md (STATUS: OPEN) → git commit + push
-2. 用户:      在 Antigravity 给 agent 说「处理仓库里最新的 OPEN 任务」（免费版无 API，此步需人工点一下）
-3. Gemini:    读 Txxx.md → 实现 → 写 Txxx.report.md (STATUS: DONE) → git push
-4. 值守脚本:  scripts/watch-gemini.ps1 轮询到新 report → 弹通知 + 写 TASKS/pending.json
-5. DeepSeek:  读 report → 验收 → 写 Txxx.closed.md → 写下一个任务 → push → 回到步骤 2
-```
+1. An executor receives one immutable `DOMAIN`: either `tree` or `generation`.
+2. It reads only `TASKS/<DOMAIN>/` and selects the highest-numbered file with `STATUS: OPEN` in that directory.
+3. It must use only its assigned branch: `agent/tree` or `agent/generation`.
+4. It never reads, edits, reports on, or closes a task in the other domain.
+5. It may not push directly to `main`; it pushes its own branch. Its decision owner reviews and integrates changes.
+6. A specification must state allowed files, prohibited files, outputs, worker limit, and acceptance checks.
+7. If a task conflicts with the executor's domain or branch, it must stop and report the routing error rather than implementing it.
 
-## Antigravity 侧设置（一次性）
+## Mandatory Antigravity Prompts
 
-1. 在 [antigravity.google](https://antigravity.google) 创建一个 Agent，指向仓库 `patri-chor/monsrise`
-2. 给 Agent 的指令（粘贴到 Antigravity 的 agent 说明里）：
-   > 你是一个代码执行者。每轮先 `git pull`，读取 `TASKS/` 目录里 STATUS 为 OPEN 的最新任务文件（编号最大者优先）。严格按验收标准实现，完成后写 `TASKS/Txxx.report.md`（首行 STATUS: DONE，列出改动文件、测试结果、遗留问题），然后 `git add TASKS/Txxx.report.md && git commit && git push`。不要修改 TASKS/Txxx.md 本身；规格有歧义时在 report 里写"规格疑问"并停止。
-3. 仓库里 `AGENTS.md` 也写有同样的执行方规则（Antigravity 若读取仓库内指令则自动生效）。
+### Tree Executor Prompt
 
-## 值守脚本（DeepSeek 侧自动检测）
-
-```powershell
-# 方式一：手动后台运行
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\watch-gemini.ps1
-
-# 方式二：Windows 计划任务，开机启动 + 每 5 分钟
-#   schtasks /create /tn "watch-gemini" /tr "powershell -NoProfile -ExecutionPolicy Bypass -File D:\develope\monsrise1\scripts\watch-gemini.ps1" /sc minute /mo 5
+```text
+You are the TREE execution agent. DOMAIN=tree. Before every task: git fetch origin; switch to agent/tree; pull/rebase origin/agent/tree. Read only TASKS/tree/. Select the highest-numbered STATUS: OPEN task there. Never read or act on TASKS/generation/. Never modify active formation data, bundle artifacts, shared matrix/state reports, or main unless the tree task explicitly permits it. Implement only the specified files, write TASKS/tree/Txxx.report.md, commit all implementation and report changes to agent/tree, and push agent/tree. Do not modify the task specification. If routing, scope, or branch is wrong, write a PARTIAL report and stop.
 ```
 
-脚本行为：每 30 秒 `git fetch`，发现新的 `Txxx.report.md` 就 `git pull`、弹 Windows 通知、写 `TASKS/pending.json`（供 DeepSeek agent 读取）。
+### Generation Executor Prompt
 
-## 规则
+```text
+You are the GENERATION execution agent. DOMAIN=generation. Before every task: git fetch origin; switch to agent/generation; pull/rebase origin/agent/generation. Read only TASKS/generation/. Select the highest-numbered STATUS: OPEN task there. Never read or act on TASKS/tree/. Never modify active formation data, bundle artifacts, shared matrix/state reports, or main unless the generation task explicitly permits it. Implement only the specified files, write TASKS/generation/Txxx.report.md, commit all implementation and report changes to agent/generation, and push agent/generation. Do not modify the task specification. If routing, scope, or branch is wrong, write a PARTIAL report and stop.
+```
 
-- 任务编号递增，不要复用
-- 规格必须含**验收标准**（可测/可判），否则执行方有权以"规格疑问"停下
-- 执行方不要改规格文件；决策方不要改 report 文件（验收意见写 closed 文件）
-- 冲突时 `git pull --rebase` 后重试 push
+## Watcher
+
+`scripts/watch-gemini.ps1` fetches remote reports, queues remote snapshots in `TASKS/inbox/`, and writes `TASKS/pending.json`. Pending entries include their domain. It never rebases a dirty main worktree. A closed task is not queued again.
+
+## Decision Agent Rules
+
+- Tree decision agent owns only `TASKS/tree/` tasks and their acceptance.
+- Generation decision agent owns only `TASKS/generation/` tasks and their acceptance.
+- Each owner evaluates its own executor's branch before creating a domain-local `closed` file.
+- Cross-domain changes require a new integration task owned jointly or explicitly transferred.

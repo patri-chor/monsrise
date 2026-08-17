@@ -1,40 +1,42 @@
-# 代码探索约定（CodeGraph）
+# Code Exploration Convention (CodeGraph)
 
-本仓库已初始化 CodeGraph 代码知识图谱（`.codegraph/` 目录存在）。所有代码探索**固定优先使用 `mcp__codegraph__codegraph_explore` 工具**，不要漂移回 grep/read 扫描式探索。
+This repository has a CodeGraph index (`.codegraph/`). Code exploration must use `mcp__codegraph__codegraph_explore` first; do not drift to scan-first grep/read exploration.
 
-## 多会话协作协议（决策/落地分工）
+## Local Multi-Session Protocol
 
-本工作区可能同时运行两个独立会话：**决策会话**（出方案）与**落地会话**（实现）。双方通过 `DECISIONS/` 目录的**文件黑板**互通（详见 `DECISIONS/README.md`）：
+The workspace may have separate decision and implementation sessions. They exchange local specifications through `DECISIONS/` (see `DECISIONS/README.md`).
 
-- 你收到 `DECISIONS/Txxx.md` → 这是别人交给你的任务规格，按规格实现，完成后写 `Txxx.report.md`
-- 你发出方案时 → 写成 `DECISIONS/Txxx.md`（含方案权衡与验收标准），让另一会话接手
-- 每个任务文件首行必须有 `STATUS: OPEN | IN_PROGRESS | DONE | REJECTED`
-- 落地时发现规格歧义 → 在 report 里写"规格疑问"，不要擅自假设
+- A `DECISIONS/Txxx.md` file is an implementation specification; implement it and write `Txxx.report.md`.
+- A decision session writes `DECISIONS/Txxx.md` with tradeoffs and measurable acceptance criteria.
+- Every task file starts with `STATUS: OPEN | IN_PROGRESS | DONE | REJECTED`.
+- Record ambiguous requirements as report questions. Do not guess.
 
-## 跨 Harness 协作协议（DeepSeek ↔ Gemini via GitHub）
+## Cross-Harness Protocol: Dual-Domain Git Bus
 
-本仓库通过 git 总线与 Google Antigravity 的 Gemini agent 协作，完整协议见 `TASKS/README.md`。角色判定：
+The Git bus between DSH and Antigravity is defined by `TASKS/README.md`. First identify the immutable `DOMAIN`; never choose the globally newest OPEN task.
 
-- **你是决策方**（本机 DSH / DeepSeek）：
-  1. 验收前先 `git pull`；检查 `TASKS/pending.json` 和 `TASKS/*.report.md`
-  2. 验收 → 写 `TASKS/Txxx.closed.md`（结论/遗留转新任务）→ 写下一个 `TASKS/Txxx.md` → `git add TASKS/ && git commit && git push`
-  3. 完成后提示用户去 Antigravity 让 Gemini 接手新任务
-- **你是执行方**（Antigravity / Gemini，若它读取本仓库指令）：
-  1. 先 `git pull`，读 `TASKS/` 中 STATUS: OPEN 的最新任务
-  2. 按验收标准实现，写 `TASKS/Txxx.report.md`（首行 STATUS: DONE，列改动文件/测试/遗留）
-  3. `git push`；规格歧义时在 report 写"规格疑问"并停下
-- 机器状态：`TASKS/pending.json` 由 `scripts/watch-gemini.ps1` 值守脚本生成（不入库），是"Gemini 完成"的提醒来源
+| DOMAIN | Task directory | Decision owner | Executor branch | Responsibility |
+|---|---|---|---|---|
+| `tree` | `TASKS/tree/` | tree decision agent | `agent/tree` | Existing-formation decision-tree optimization |
+| `generation` | `TASKS/generation/` | generation decision agent | `agent/generation` | New-formation generation and candidate datasets |
 
-## 硬性规则
+- A decision agent creates, accepts, and closes only tasks in its own domain. It reviews matching-domain records in `TASKS/pending.json` and `TASKS/inbox/`.
+- An executor must start with either `DOMAIN=tree` or `DOMAIN=generation`. It reads only `TASKS/<DOMAIN>/`, chooses the highest numbered `STATUS: OPEN` task there, and commits/pushes only `agent/<DOMAIN>`.
+- An executor must not read, modify, report on, or close another domain's tasks, and may not push directly to `main`.
+- If task path, `Domain` metadata, or current branch disagree, write a `PARTIAL` report explaining the routing error and stop. Do not guess or cross domains.
+- Active formation data, bundle artifacts, shared matrix/state reports, and cross-domain changes require a separate integration task after both domain owners approve it.
+- `scripts/watch-gemini.ps1` writes local `TASKS/pending.json` records containing `domain`, report blob, and snapshot path. A dirty main worktree only receives a remote snapshot; it is never automatically rebased.
 
-1. **架构/实现类问题**（"X 是怎么工作的"、"Y 系统如何实现"、"Z 在哪"、"改 X 会影响什么"）→ **第一步必须调用 `mcp__codegraph__codegraph_explore`**，它会一次返回相关文件的完整源码、调用链（callers/callees）、依赖关系和改动影响范围（blast radius）。
-2. **改动前影响分析** → 先 `mcp__codegraph__codegraph_explore` 查目标符号，再决定改什么。
-3. **codegraph_explore 已返回的源码视为已读取**（与 Read 等价，按行号标注、逐字节一致）→ **禁止**对同一文件重复 read/grep。
-4. 仅当 codegraph **明确无结果**（空结果、或该语言/目录未被索引）时，才回退到 `grep` / `glob` / `read`。
-5. 精确小目标查找（已知文件名、已知符号、看单文件细节）可直接用 read/grep，但"找代码在哪 / 怎么串起来的"一律先 codegraph。
+## Hard Rules
 
-## 使用建议
+1. For architecture or implementation questions, first call `mcp__codegraph__codegraph_explore`; it returns relevant source, call paths, dependencies, and blast radius.
+2. Before changing code, inspect target symbols with CodeGraph and assess impact.
+3. Treat source returned by `codegraph_explore` as already read; do not read/grep those same files again.
+4. Fall back to `grep`, `glob`, or `read` only when CodeGraph has no result or the area is unindexed.
+5. For a known file or exact symbol, direct `read`/`grep` is allowed; use CodeGraph first when locating or understanding architecture.
 
-- 查询要**具体**：直接给符号名、文件名或一句话任务（如 `"AuthService loginUser session-manager"`），比宽泛的自然语言更准。
-- 一次查询聚焦一个主题，避免一次拉取过多文件把上下文撑爆。
-- 不要因为 codegraph 偶尔没命中就放弃：换更精确的符号名再试一次，仍无结果再回退传统搜索。
+## Usage Notes
+
+- Use specific CodeGraph queries with symbols, paths, or narrow questions.
+- Keep each query focused to avoid exhausting context.
+- If a query misses, refine it once before falling back to traditional tools.

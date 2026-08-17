@@ -2,7 +2,8 @@ STATUS: IN_PROGRESS
 
 # T005 — Existing Formation Tree Decision Cycle
 
-> Owner: DeepSeek decision/execution track. This is a fresh post-T004 cycle for existing formations.
+> Domain: `tree` | Decision owner: tree decision agent | Executor branch: `agent/tree`
+> This is a fresh post-T004 cycle for existing formations.
 
 ## Objective
 

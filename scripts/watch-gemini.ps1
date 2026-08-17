@@ -153,13 +153,14 @@ function Invoke-Check {
     $tree = Invoke-Git "ls-tree" "-r" "--name-only" $RemoteRef "--" "TASKS/"
     if ($tree.code -ne 0) { Write-Log "remote task scan failed: $($tree.out)"; return }
     $paths = @($tree.out -split "`n" | Where-Object { $_.Trim() -ne "" })
-    $reports = @($paths | Where-Object { $_ -match "^TASKS/T\d+\.report\.md$" })
-    $closedTasks = @($paths | Where-Object { $_ -match "^TASKS/(T\d+)\.closed\.md$" } | ForEach-Object {
-        if ($_ -match "^TASKS/(T\d+)\.closed\.md$") { $Matches[1] }
+    # Only domain-routed reports participate in automatic review.
+    $reports = @($paths | Where-Object { $_ -match "^TASKS/(tree|generation)/T\d+.*\.report\.md$" })
+    $closedIds = @($paths | Where-Object { $_ -match "^TASKS/(tree|generation)/(T\d+)\.closed\.md$" } | ForEach-Object {
+        if ($_ -match "^TASKS/(tree|generation)/(T\d+)\.closed\.md$") { "$($Matches[1])/$($Matches[2])" }
     })
-    # A decision-side closed file is authoritative: never requeue an accepted/rejected report.
+    # A domain-local closed file is authoritative: never requeue an accepted/rejected report.
     $reports = @($reports | Where-Object {
-        if ($_ -match "^TASKS/(T\d+)\.report\.md$") { $Matches[1] -notin $closedTasks } else { $false }
+        if ($_ -match "^TASKS/(tree|generation)/(T\d+).*\.report\.md$") { "$($Matches[1])/$($Matches[2])" -notin $closedIds } else { $false }
     })
 
     $state = Read-State
@@ -181,8 +182,15 @@ function Invoke-Check {
     $pending = @((Read-Pending) | Where-Object { $_.status -eq "pending_review" })
     foreach ($entry in $fresh) {
         $snapshot = Save-RemoteReport $entry.path $entry.blobId
-        if ($entry.path -match "^TASKS/(T\d+)\.report\.md$") { $task = $Matches[1] } else { $task = "" }
+        if ($entry.path -match "^TASKS/(tree|generation)/(T\d+).*\.report\.md$") {
+            $domain = $Matches[1]
+            $task = $Matches[2]
+        } else {
+            $domain = ""
+            $task = ""
+        }
         $pending += [PSCustomObject]@{
+            domain = $domain
             task = $task
             file = $entry.path
             reportBlob = $entry.blobId

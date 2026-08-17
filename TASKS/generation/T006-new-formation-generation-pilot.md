@@ -2,7 +2,8 @@ STATUS: OPEN
 
 # T006 — New Formation Generation Pilot
 
-> Owner: Antigravity/new-window execution track. This supersedes the paused T002 pilot scope; do not reopen T002.
+> Domain: `generation` | Decision owner: generation decision agent | Executor branch: `agent/generation`
+> This supersedes the paused T002 pilot scope; do not reopen T002.
 
 ## Objective
 
