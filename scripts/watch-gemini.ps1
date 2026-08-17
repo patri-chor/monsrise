@@ -15,7 +15,10 @@ $ErrorActionPreference = "Continue"
 
 # ---- single-instance guard via a named mutex (robust vs command-line matching) ----
 try {
-    $mutex = New-Object System.Threading.Mutex($false, "dsh-watch-gemini")
+    # Global\ namespace: cross-session (scheduled-task instances vs interactive
+    # session instances share one lock). Non-admin creation is allowed; on
+    # failure we proceed without the guard.
+    $mutex = New-Object System.Threading.Mutex($false, "Global\dsh-watch-gemini")
     if (-not $mutex.WaitOne(0)) {
         Write-Host "watch-gemini already running; exiting."
         exit 0
