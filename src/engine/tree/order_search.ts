@@ -23,6 +23,34 @@ export interface BundleFamily {
   heldOutVariant: any;
 }
 
+const MONSTER_SHORT_NAMES: Record<number, string> = {
+  101: '坚果',
+  102: '大祭司',
+  103: '学徒',
+  104: '散弹',
+  105: '祈祷',
+  106: '冲锋',
+  107: '咒法',
+  108: '救星',
+  109: '银狙',
+  110: '帝国',
+  111: '见习',
+  112: '守卫',
+  113: '矿爆',
+  114: '突突',
+  115: '铲土人',
+  116: '钻头',
+  117: '铁甲',
+  118: '塞雷',
+  119: '忍猴',
+  120: '金猴',
+  125: '战壕',
+};
+
+export function getMonsterDisplayName(monsterId: number): string {
+  return MONSTER_SHORT_NAMES[monsterId] ?? `怪兽${monsterId}`;
+}
+
 export function validateTreePlacements(formation: EvolFormation): boolean {
   // 检查每条从根到叶的路径
   function checkPath(node: EvolNode, seenMonsters: Set<number>, accumulatedCost: number): boolean {
