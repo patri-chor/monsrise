@@ -34,6 +34,18 @@ export function calculateMatchMetrics(win: number, draw: number, loss: number): 
   };
 }
 
+export function createEmptyMatchMetrics(): MatchMetrics {
+  return {
+    win: 0,
+    draw: 0,
+    loss: 0,
+    total: 0,
+    trainingScore: 0,
+    pureWinRate: 0,
+    undefeatedRate: 0,
+  };
+}
+
 export function formatMatchMetrics(m: MatchMetrics): string {
   const scorePct = (m.trainingScore * 100).toFixed(1);
   const undPct = (m.undefeatedRate * 100).toFixed(1);

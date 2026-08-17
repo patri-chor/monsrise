@@ -227,15 +227,16 @@ export class PersistentSimPool {
       const cand = candidates[cIdx];
       for (const opp of matchedOpps) {
         for (const side of sides) {
-          tasks.push({
-            taskId: taskId++,
-            candidateIdx: cIdx,
-            formationA: cand,
-            opponentNameOrId: opp.id ?? opp.name,
-            side,
-            seed: seedBase,
-            games,
-          });
+            tasks.push({
+              taskId: taskId++,
+              candidateIdx: cIdx,
+              formationA: cand,
+              opponentNameOrId: opp.id ?? opp.name,
+              opponentFormation: opp,
+              side,
+              seed: seedBase,
+              games,
+            });
         }
       }
     }

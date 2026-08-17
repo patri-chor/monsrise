@@ -18,6 +18,7 @@ export interface SimTaskMessage {
   formationA: EvolFormation | Formation;
   isNativeA?: boolean;
   opponentNameOrId: string;
+  opponentFormation?: Formation;
   side: 1 | 2;
   seed: number;
   games: number;
@@ -61,7 +62,9 @@ for (const f of FORMATION_LIBRARY) {
 }
 
 function executeTask(task: SimTaskMessage): SimResultMessage {
-  const opp = oppMap.get(task.opponentNameOrId) ?? FORMATION_LIBRARY.find(f => f.name === task.opponentNameOrId || f.id === task.opponentNameOrId);
+  const opp = task.opponentFormation
+    ?? oppMap.get(task.opponentNameOrId)
+    ?? FORMATION_LIBRARY.find(f => f.name === task.opponentNameOrId || f.id === task.opponentNameOrId);
   if (!opp) {
     throw new Error(`Opponent not found: ${task.opponentNameOrId}`);
   }
