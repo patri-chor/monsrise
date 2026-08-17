@@ -55,11 +55,13 @@ Acceptance evidence:
 - canonical eight-panel identity is auditable;
 - no changes to optimizer split/search/validation algorithm or active formation data.
 
-### Phase C - Candidate Tree Optimization and Independent Validation
+### Phase C - Candidate-Level Parallel Tree Optimization and Independent Validation
 
-Task: successor to T015, published only after both Phase A and B are accepted.
+Task: `TASKS/generation/T018-candidate-level-tree-optimization-parallelism.md`, then a production optimization successor after T016, T017, and T018 are accepted.
 
 Input: root frozen output from T017 only.
+
+Concurrency model: each frozen candidate is an independent optimizer process. The parent schedules at most `min(16, logical CPUs, candidate count)` candidate processes at once. Individual `optimizeFormation` calls remain deterministic and single-process; its branch search, cache, and decision logic are not parallelized or changed.
 
 For every frozen candidate:
 
@@ -92,7 +94,8 @@ Decision branches:
 - [x] T015 audited the old pool and correctly stopped because fixed-panel API was missing.
 - [ ] T016 fixed-panel consumer API: OPEN.
 - [ ] T017 sequential per-seed candidate production: OPEN.
-- [ ] Phase C successor task: blocked until T016 and T017 acceptance.
+- [ ] T018 candidate-level parallel tree optimization runner: OPEN.
+- [ ] Phase C production optimization successor: blocked until T016, T017, and T018 acceptance.
 - [ ] Phase D quality decision: pending Phase C.
 
 ## Report Handling
