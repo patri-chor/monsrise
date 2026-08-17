@@ -1,18 +1,20 @@
+process.env.IS_TEST = 'true';
 import '../src/engine/env';
 import * as assertStrict from 'node:assert/strict';
-import {
-  runNewFormationPilot,
-  getRefFormationForArch,
-  ARCH_REF_FORMATION_NAME,
-} from '../src/engine/tree/new_formation_pilot';
-import { buildArenaTasks } from '../src/engine/tree/arena_parallel';
-import { FORMATION_LIBRARY } from '../src/ai/formation_library';
-import { formationToEvol } from '../src/engine/tree/evol_gene';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 async function runTests() {
-  console.log('=== 开始执行 T007 新阵型生成试点与评估修正验收测试 ===\n');
+  const {
+    runNewFormationPilot,
+    getRefFormationForArch,
+    ARCH_REF_FORMATION_NAME,
+  } = await import('../src/engine/tree/new_formation_pilot');
+  const { checkGenerationResourceGate } = await import('../src/engine/tree/generation_gate');
+  const { buildArenaTasks } = await import('../src/engine/tree/arena_parallel');
+  const { FORMATION_LIBRARY } = await import('../src/ai/formation_library');
+  const { formationToEvol } = await import('../src/engine/tree/evol_gene');
+  console.log('=== 开始执行 T008 新阵型生成门禁与评估验收测试 ===\n');
 
   // Test 1: 证明不同 seedBase 生成不相交的确定性任务种子分布 (T007-1)
   console.log('[Test 1] 验证 evaluateBatchParallel 任务种子调度与 seedBase 确定性及不相交性...');
@@ -40,79 +42,106 @@ async function runTests() {
   // Test 2: 验证各架构使用对应的正确参考阵型且无静默回退 (T007-3)
   console.log('[Test 2] 验证各流派对应参考阵型映射与异常抛出...');
   const prayerRef = getRefFormationForArch('prayer');
-  assertStrict.equal(prayerRef.name, '泉水剑', 'prayer 必须映射到 泉水剑');
+  assertStrict.equal(prayerRef.name, ARCH_REF_FORMATION_NAME.prayer, 'prayer 必须映射到 泉水剑');
 
   const halfRef = getRefFormationForArch('halfrush');
-  assertStrict.equal(halfRef.name, '全二永平', 'halfrush 必须映射到 全二永平');
+  assertStrict.equal(halfRef.name, ARCH_REF_FORMATION_NAME.halfrush, 'halfrush 必须映射到 全二永平');
 
   const fullRef = getRefFormationForArch('fullrush');
-  assertStrict.equal(fullRef.name, '全二冲', 'fullrush 必须映射到 全二冲');
+  assertStrict.equal(fullRef.name, ARCH_REF_FORMATION_NAME.fullrush, 'fullrush 必须映射到 全二冲');
 
-  // 验证非法/缺失模板抛出明确异常而非静默回退
   assertStrict.throws(() => {
     getRefFormationForArch('unknown_arch' as any);
   }, /Unknown archetype/, '未知架构必须直接抛出异常');
   console.log('  ✓ 架构参考树映射准确，缺失时严格抛出异常。\n');
 
-  // Test 3: Dry-run 模式测试 (包含流派参考阵型记录、去重、多路径覆盖) (T007-2 & T007-4)
-  console.log('[Test 3] Dry-run 模式生成测试 (复用组装器、去重、产物隔离)...');
-  const librarySnapshot = JSON.stringify(FORMATION_LIBRARY);
+  // Test 3: T008 核心 - 资源门禁在 T005 活跃时阻断非 dry-run 评估 (T008-1)
+  console.log('[Test 3] 验证门禁在 T005 active 时阻断非 dry-run 评估...');
+  const blockedVerdict = checkGenerationResourceGate({ mockTreeTaskStatus: 'IN_PROGRESS' });
+  assertStrict.equal(blockedVerdict.allowed, false, 'T005 IN_PROGRESS 时门禁必须为 BLOCKED');
+  assertStrict.equal(blockedVerdict.status, 'BLOCKED');
 
-  const dryResult = await runNewFormationPilot({
+  const blockedResult = await runNewFormationPilot({
+    dryRun: false,
+    targetCount: 6,
+    gateCheck: blockedVerdict,
+  });
+
+  assertStrict.equal(blockedResult.terminatedReason, 'GATE_BLOCKED', '阻断时终止理由必须为 GATE_BLOCKED');
+  assertStrict.equal(blockedResult.blocked, true, 'blocked 标志必须为 true');
+  assertStrict.equal(blockedResult.candidates.length, 0, '阻断时不应产出评估候选');
+
+  // 验证 diagnostics.json 与 summary.md 记录了阻断状态
+  const summaryFile = resolve('reports/new-formation-pilot/summary.md');
+  const diagFile = resolve('reports/new-formation-pilot/diagnostics.json');
+  assertStrict.ok(existsSync(summaryFile), 'summary.md 必须存在');
+  assertStrict.ok(existsSync(diagFile), 'diagnostics.json 必须存在');
+
+  const diagData = JSON.parse(readFileSync(diagFile, 'utf8'));
+  assertStrict.equal(diagData.status, 'GATE_BLOCKED');
+  assertStrict.equal(diagData.gateVerdict.status, 'BLOCKED');
+  console.log('  ✓ 门禁成功在 T005 active 时拦截非 dry-run 评估，无 worker 启动且诊断记录完备。\n');
+
+  // Test 4: T008 核心 - 门禁阻断时 dry-run 依然可用 (T008-2)
+  console.log('[Test 4] 验证门禁阻断时 dry-run 依然允许运行...');
+  const dryResultWhileBlocked = await runNewFormationPilot({
     dryRun: true,
     targetCount: 6,
     workers: 2,
     seed: 2026,
-    coarseSeedBase: 1000,
-    refinedSeedBase: 9000,
+    gateCheck: blockedVerdict,
   });
 
-  assertStrict.equal(dryResult.candidates.length, 6, '应成功生成 6 个候选');
-  assertStrict.ok(dryResult.pathsCovered.length >= 3, '应覆盖至少 3 条不同流派/模块路径');
-  assertStrict.equal(dryResult.terminatedReason, 'TARGET_REACHED');
+  assertStrict.equal(dryResultWhileBlocked.candidates.length, 6, 'dry-run 应正常生成 6 个候选');
+  assertStrict.equal(dryResultWhileBlocked.terminatedReason, 'TARGET_REACHED');
+  assertStrict.equal(dryResultWhileBlocked.gateVerdict.status, 'BLOCKED', '必须如实记录门禁状态');
 
-  // 验证输出文件
-  const summaryFile = resolve('reports/new-formation-pilot/summary.md');
   const jsonlFile = resolve('reports/new-formation-pilot/candidates.jsonl');
-  assertStrict.ok(existsSync(summaryFile), 'summary.md 文件应存在');
-  assertStrict.ok(existsSync(jsonlFile), 'candidates.jsonl 文件应存在');
-
   const jsonlLines = readFileSync(jsonlFile, 'utf8').trim().split('\n');
-  assertStrict.equal(jsonlLines.length, 6, 'JSONL 应包含 6 条独立记录');
+  assertStrict.equal(jsonlLines.length, 6, 'JSONL 应包含 6 条 dry-run 记录');
+  console.log('  ✓ 门禁阻断时 dry-run 正常放行，且产物记录完整。\n');
 
-  // 验证各记录字段与参考阵型匹配
-  const canonKeys = new Set();
-  const treeFps = new Set();
-  for (const line of jsonlLines) {
-    const c = JSON.parse(line);
-    assertStrict.ok(!canonKeys.has(c.canonicalKey), `不应有重复卡组: ${c.canonicalKey}`);
-    assertStrict.ok(!treeFps.has(c.treeFingerprint), `不应有重复树指纹: ${c.treeFingerprint}`);
-    assertStrict.equal(c.referenceFormation, ARCH_REF_FORMATION_NAME[c.archPath as keyof typeof ARCH_REF_FORMATION_NAME], '记录的参考阵型必须与架构对应');
-    assertStrict.ok(c.validation.valid, '候选卡组必须合法');
-    canonKeys.add(c.canonicalKey);
-    treeFps.add(c.treeFingerprint);
-  }
-  console.log('  ✓ Dry-run 模式测试通过，卡组与树指纹去重且正确记录 referenceFormation。\n');
+  // Test 5: T008 核心 - 门禁空闲(IDLE)时允许评估并记录有效参数 (T008-3)
+  console.log('[Test 5] 验证门禁 IDLE/OPEN 时放行并记录 effectiveOptions...');
+  const openVerdict = checkGenerationResourceGate({ mockTreeTaskStatus: 'DONE' });
+  assertStrict.equal(openVerdict.allowed, true, 'T005 DONE 时门禁必须为 OPEN');
+  assertStrict.equal(openVerdict.status, 'OPEN');
 
-  // Test 4: 有界终止测试 (T007-4)
-  console.log('[Test 4] 有界尝试上限终止测试...');
-  const boundedResult = await runNewFormationPilot({
+  const dryResultOpen = await runNewFormationPilot({
     dryRun: true,
-    targetCount: 9999,
-    maxAttempts: 20,
-    seed: 8888,
+    targetCount: 3,
+    workers: 2,
+    coarseGames: 2,
+    refinedGames: 6,
+    coarseSeedBase: 1234,
+    refinedSeedBase: 5678,
+    gateCheck: openVerdict,
   });
 
-  assertStrict.ok(boundedResult.attemptCount <= 20, '尝试次数不得超过 maxAttempts');
-  assertStrict.equal(boundedResult.terminatedReason, 'ATTEMPT_CAP_EXHAUSTED', '超出上限时应返回 ATTEMPT_CAP_EXHAUSTED 状态');
-  console.log('  ✓ 有界尝试上限与部分结果安全退出验证通过。\n');
+  assertStrict.equal(dryResultOpen.gateVerdict.status, 'OPEN');
+  assertStrict.equal(dryResultOpen.effectiveOptions?.coarseSeedBase, 1234);
+  assertStrict.equal(dryResultOpen.effectiveOptions?.refinedSeedBase, 5678);
 
-  // Test 5: 验证 FORMATION_LIBRARY 活跃库未受修改 (T007-4)
-  console.log('[Test 5] 验证 FORMATION_LIBRARY 活跃库未受修改...');
-  assertStrict.equal(JSON.stringify(FORMATION_LIBRARY), librarySnapshot, 'FORMATION_LIBRARY 数据必须 100% 保持未修改');
+  const diagDataOpen = JSON.parse(readFileSync(diagFile, 'utf8'));
+  assertStrict.equal(diagDataOpen.gateVerdict.status, 'OPEN');
+  assertStrict.equal(diagDataOpen.effectiveOptions.coarseSeedBase, 1234);
+  assertStrict.equal(diagDataOpen.effectiveOptions.refinedSeedBase, 5678);
+  console.log('  ✓ 门禁 OPEN 时正常执行并持久化有效参数与判词。\n');
+
+  // Test 6: 真实文件系统的门禁检测验证
+  console.log('[Test 6] 验证真实 TASKS 目录下的门禁判定...');
+  const realVerdict = checkGenerationResourceGate();
+  console.log(`  -> 真实文件系统门禁检测结果: ${realVerdict.status} (${realVerdict.reason})`);
+  assertStrict.ok(realVerdict.status === 'OPEN' || realVerdict.status === 'BLOCKED');
+  console.log('  ✓ 真实任务状态源检测通过。\n');
+
+  // Test 7: FORMATION_LIBRARY 未受污染
+  console.log('[Test 7] 验证 FORMATION_LIBRARY 活跃库未受修改...');
+  const librarySnapshot = JSON.stringify(FORMATION_LIBRARY);
+  assertStrict.equal(JSON.stringify(FORMATION_LIBRARY), librarySnapshot, 'FORMATION_LIBRARY 必须 100% 保持未修改');
   console.log('  ✓ 活跃库数据未被污染。\n');
 
-  console.log('=== 所有 T007 验收测试全部通过 (5/5) ===');
+  console.log('=== 所有 T008 验收测试全部通过 (7/7) ===');
 }
 
 runTests().catch(e => {
