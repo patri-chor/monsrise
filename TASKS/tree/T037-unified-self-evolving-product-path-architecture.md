@@ -1,7 +1,9 @@
-STATUS: OPEN
+STATUS: SUPERSEDED_BY_PHASED_T036_T038
 DOMAIN: tree
 
 # T037 - Unified Rapid Self-Evolving Product-Path Architecture
+
+> Superseded before execution by the smaller phased implementation chain: T036 foundation, T037 screen/check chain, then T038 adaptive loop. Retained as historical planning only; do not execute.
 
 > Domain: `tree` | Executor branch: `agent/tree`
 > This is the active implementation task. It supersedes T036 as the execution plan, but does not delete T036 or historical evidence.

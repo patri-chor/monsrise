@@ -1,7 +1,9 @@
-STATUS: OPEN
+STATUS: SUPERSEDED_BY_PHASED_T036_T038
 DOMAIN: tree
 
 # T036 - Continuous Product-Path Tree Optimization and Mixed-Style Pool
+
+> Superseded before execution by the phased implementation chain: `T036-product-path-foundation-and-gift-repair.md`, T037, then T038. Retained as historical planning only; do not execute.
 
 > Domain: `tree` | Executor branch: `agent/tree`
 > User-authorized execution task. Use only the verified product-path evaluator: `playFullGame + declarative tree strategy`, scheduled through `PersistentSimPool` workers. Never use the deprecated arena runner for formal evidence.
