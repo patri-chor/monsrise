@@ -21,9 +21,32 @@ The current deck-size rule is exactly **8 monsters** for new generated candidate
 
 ## Objective
 
-Make the existing T016 training output reproducible, reinforced, and reviewable without adding new optimization dimensions or applying any candidate.
+First repair tree/deck coherence so structurally unplayable candidates never enter simulation. Only after the coherence gate is proven may this task produce reinforced, reproducible, reviewable T016 results. Do not add new optimization dimensions or apply any candidate.
 
-## A. Eight-Monster Candidate Rule
+## A. Mandatory Tree/Deck Coherence Gate (Highest Priority)
+
+### Failure Pattern
+
+Some prayer/halfrush descendants of complex source trees recorded `0W/0D/14L`. When deck mutation or R1 changes leave a deep branch placement referencing a monster absent from the mutated team, the game engine cannot deploy the tree plan and the match is directly lost. This is a structural invalidity, not a weak matchup or a valid training result.
+
+### Required Work
+
+1. Before coarse screening, every generated candidate must run a full recursive tree/deck closure check over **every node and every branch path**:
+   - each placement `monsterId` is present in candidate `team`;
+   - no duplicate deployment on any root-to-leaf path;
+   - round monotonicity, coordinate legality, and existing tree legality hold;
+   - every executable branch can deploy its planned units under the candidate team.
+2. Reuse `validateEvol(root, new Set(teamIds))` or extract a shared public validator from it. Do not create a weaker shallow-only duplicate checker.
+3. Reject before any simulation all candidates failing the gate. Record candidate ID, source, deep node ID/round, missing monster ID, and exact validator error in `screening_ledger.jsonl` and `rejection_ledger.jsonl`.
+4. Never classify a structural-invalid candidate from an all-loss signature such as `0W/0D/14L`; remove prior invalid results from all attempt, holdout, generalization, Tier 2/Tier 3, and reinforcement calculations.
+5. For each rejected invalid mutation, either:
+   - deterministically rebuild/rebind its tree to the mutated deck while preserving all legal paths; or
+   - replace it with a deterministic, unique, full-tree-coherent mutation for the same source/bucket.
+   Do not silently drop a source/bucket without a recorded reason.
+6. Add tests using a complex branching prayer/halfrush fixture that intentionally removes a monster referenced only by a deep branch. The test must prove rejection before `PersistentSimPool` receives the candidate. Add a valid complex-tree counterpart that passes.
+7. Produce a structural-screening summary with counts for valid, missing-team-monster, duplicate-path-deployment, coordinate/round invalid, and engine-runtime failure. Any engine-runtime structural failure must block tiering.
+
+## B. Eight-Monster Candidate Rule
 
 1. New generated/mutated candidates must contain exactly 8 monsters and satisfy all existing architecture, tactical, badge, and tree legality checks.
 2. Do not apply any total-cost rejection rule.
@@ -33,7 +56,7 @@ Make the existing T016 training output reproducible, reinforced, and reviewable 
    - a 7-monster generated candidate is rejected;
    - the 7-monster `gift_jungle` baseline remains present only as a frozen legacy Tier 1 record.
 
-## B. Real Reinforcement Pass
+## C. Real Reinforcement Pass
 
 1. Implement the T016 fourth independent reinforcement pass for exactly one best robust candidate per source, if a source has any robust candidate. Do not run it for non-robust candidates merely to search for a fourth lucky result.
 2. Use a fourth non-overlapping search/held-out seed schedule and all seven early bundle families.
@@ -41,7 +64,7 @@ Make the existing T016 training output reproducible, reinforced, and reviewable 
 4. Persist reinforcement input candidate ID, source ID, seeds, baseline/final W-D-L and trainingScore, pass/reject reason, and whether it replaced the selected result.
 5. Add a focused test proving failed reinforcement cannot replace a three-attempt selected tree.
 
-## C. Committed Auditable Archive
+## D. Committed Auditable Archive
 
 1. Preserve ignored runtime reports if useful, but additionally write a committed archive under:
 
@@ -67,7 +90,7 @@ tests/fixtures/tree/t016_training_archive/
 4. The archive must expose actual Tier 1/Tier 2/Tier 3/rejected counts and complete IDs, not only examples.
 5. Do not commit bulky unstructured trace dumps, node_modules, ignored runtime `reports/`, active library, bundle artifacts, or shared matrix/state.
 
-## D. Execution and Verification
+## E. Execution and Verification
 
 1. Re-run the corrected deterministic T016 pipeline only as needed to create the compliant archive; do not fabricate artifacts.
 2. Use 3 independent attempts for every valid 8-monster candidate, 5 final games per opponent/side cell, outer concurrency <=2, and zero worker errors for tiered candidates.
@@ -78,9 +101,11 @@ tests/fixtures/tree/t016_training_archive/
 
 ## Acceptance
 
+- [ ] Full recursive tree/deck coherence gate rejects deep-branch references to missing team monsters before simulation.
+- [ ] Prior `0W/0D/14L` structural-invalid results are excluded from attempts, holdout, generalization, reinforcement, and tier calculations.
 - [ ] Tier 1 archive contains exactly the original 11 baselines, with `gift_jungle` explicitly marked as frozen legacy 7-monster baseline.
 - [ ] Every Tier 2/Tier 3 generated candidate has exactly 8 monsters; legal multi-four-cost candidates above 18 total cost are retained.
-- [ ] Every valid 8-monster candidate has 3 independent complete attempt records and seven-family held-out records.
+- [ ] Every valid coherent 8-monster candidate has 3 independent complete attempt records and seven-family held-out records.
 - [ ] Reinforcement exists only for source-best robust candidates and is independently recorded.
 - [ ] Archive contains all required data and full tier/rejection IDs/counts.
 - [ ] No worker errors among tiered candidates, and no active library/bundle/apply/deploy changes.
