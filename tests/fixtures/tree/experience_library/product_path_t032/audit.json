@@ -1,0 +1,244 @@
+{
+  "auditVersion": "T034_READ_ONLY_AUDIT_V1",
+  "noSimulationPerformed": true,
+  "sourceDir": "D:\\develope\\monsrise1\\reports\\t032-product-path-formal",
+  "files": [
+    {
+      "name": "manifest.json",
+      "sha256": "e347411215f31b91f26733a9c8543bb6daee50597edd1811a4a7b46156b7ebc9",
+      "recoveredSHA256": "e347411215f31b91f26733a9c8543bb6daee50597edd1811a4a7b46156b7ebc9",
+      "recoveryHashMatches": true,
+      "bytes": 794
+    },
+    {
+      "name": "observations.jsonl",
+      "sha256": "61758ea5ac7ce90eee225ecd6d45d1e04a2029fc80710ae954fc9286621bdd3a",
+      "recoveredSHA256": "61758ea5ac7ce90eee225ecd6d45d1e04a2029fc80710ae954fc9286621bdd3a",
+      "recoveryHashMatches": true,
+      "bytes": 32165
+    },
+    {
+      "name": "cursor.json",
+      "sha256": "ffde9717d6f07b6d519e97bb197382126893588a3fcb92ed94b4bbb6b286985a",
+      "recoveredSHA256": "ffde9717d6f07b6d519e97bb197382126893588a3fcb92ed94b4bbb6b286985a",
+      "recoveryHashMatches": true,
+      "bytes": 2064
+    },
+    {
+      "name": "product_path_frontiers.json",
+      "sha256": "6699ac985961e0124846fd04fbe1e314e11c3228ddfe31e361f228529e549914",
+      "recoveredSHA256": "6699ac985961e0124846fd04fbe1e314e11c3228ddfe31e361f228529e549914",
+      "recoveryHashMatches": true,
+      "bytes": 4578
+    }
+  ],
+  "rawCandidateRecords": 60,
+  "aggregateCandidateGames": 8400,
+  "uniqueCandidateIds": 60,
+  "duplicateIds": [],
+  "invalidRows": [],
+  "sourcesWithRecords": 10,
+  "rowsPerSource": {
+    "springsword": 6,
+    "nutsavior": 6,
+    "all2rush": 6,
+    "classicsavior": 6,
+    "all2prayer": 6,
+    "suqing": 6,
+    "laddersel": 6,
+    "spade_multi": 6,
+    "gift_savior": 6,
+    "golden_boom": 6
+  },
+  "cursorCompletedIds": 60,
+  "cursorMatchesRows": true,
+  "manifestHash": "eb6a0ac471f8c8b3ddf2a220cbb84d3d3bf1dac6f5293a6783b5d850af1446a9",
+  "gamesPerCell": 10,
+  "perfectRows": 17,
+  "recomputedFrontiers": [
+    {
+      "sourceId": "springsword",
+      "sourceName": "泉水剑",
+      "candidateId": "cand_s0_1_light_spri",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "nutsavior",
+      "sourceName": "坚果救星",
+      "candidateId": "cand_s1_1_light_nuts",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "suqing",
+      "sourceName": "肃清",
+      "candidateId": "cand_s5_1_light_suqi",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "gift_savior",
+      "sourceName": "礼物救星",
+      "candidateId": "cand_s8_2_light_gift",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "golden_boom",
+      "sourceName": "壕炸金猴",
+      "candidateId": "cand_s9_3_medium_gold",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "laddersel",
+      "sourceName": "梯子塞雷",
+      "candidateId": "cand_s6_1_light_ladd",
+      "metrics": {
+        "win": 110,
+        "draw": 10,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.8214285714285714,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "spade_multi",
+      "sourceName": "铲土多核",
+      "candidateId": "cand_s7_1_light_spad",
+      "metrics": {
+        "win": 110,
+        "draw": 10,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.8214285714285714,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "classicsavior",
+      "sourceName": "经典救星",
+      "candidateId": "cand_s3_3_medium_clas",
+      "metrics": {
+        "win": 110,
+        "draw": 0,
+        "loss": 30,
+        "total": 140,
+        "trainingScore": 0.7857142857142857,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.7857142857142857,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "all2prayer",
+      "sourceName": "全二永平",
+      "candidateId": "cand_s4_1_light_all2",
+      "metrics": {
+        "win": 100,
+        "draw": 20,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.7857142857142857,
+        "pureWinRate": 0.7142857142857143,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "all2rush",
+      "sourceName": "全二冲",
+      "candidateId": "cand_s2_3_medium_all2",
+      "metrics": {
+        "win": 60,
+        "draw": 10,
+        "loss": 70,
+        "total": 140,
+        "trainingScore": 0.4642857142857143,
+        "pureWinRate": 0.42857142857142855,
+        "undefeatedRate": 0.5,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    }
+  ],
+  "frontierMatches": true,
+  "rawBaselineRecordsPresent": false,
+  "rawFourCostLedgerPresent": false,
+  "perCellSideSeedRecordsPresent": false,
+  "candidateContentFingerprintsPresent": false,
+  "opposingDeploymentTracesPresent": false,
+  "classification": "PARTIAL_RAW_AGGREGATES_ONLY",
+  "blockers": [
+    "No product-path baseline raw records were persisted.",
+    "No product-path individual four-cost trace ledger was persisted.",
+    "Candidate observations are aggregate W/D/L only: no per-family/side/seed cell records.",
+    "Candidate content/team/tree fingerprints are absent from raw records.",
+    "No candidate/opponent deployment traces exist to audit 100% outcomes."
+  ]
+}

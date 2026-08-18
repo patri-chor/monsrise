@@ -1,0 +1,178 @@
+{
+  "protocol": "PRODUCT_PATH_FORMAL_SCREEN_T032_V1",
+  "manifestHash": "eb6a0ac471f8c8b3ddf2a220cbb84d3d3bf1dac6f5293a6783b5d850af1446a9",
+  "signalOnly": true,
+  "tierPromotion": "NOT_PERFORMED",
+  "frontiers": [
+    {
+      "sourceId": "springsword",
+      "sourceName": "泉水剑",
+      "candidateId": "cand_s0_1_light_spri",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "nutsavior",
+      "sourceName": "坚果救星",
+      "candidateId": "cand_s1_1_light_nuts",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "suqing",
+      "sourceName": "肃清",
+      "candidateId": "cand_s5_1_light_suqi",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "gift_savior",
+      "sourceName": "礼物救星",
+      "candidateId": "cand_s8_2_light_gift",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "golden_boom",
+      "sourceName": "壕炸金猴",
+      "candidateId": "cand_s9_3_medium_gold",
+      "metrics": {
+        "win": 140,
+        "draw": 0,
+        "loss": 0,
+        "total": 140,
+        "trainingScore": 1,
+        "pureWinRate": 1,
+        "undefeatedRate": 1,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "laddersel",
+      "sourceName": "梯子塞雷",
+      "candidateId": "cand_s6_1_light_ladd",
+      "metrics": {
+        "win": 110,
+        "draw": 10,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.8214285714285714,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "spade_multi",
+      "sourceName": "铲土多核",
+      "candidateId": "cand_s7_1_light_spad",
+      "metrics": {
+        "win": 110,
+        "draw": 10,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.8214285714285714,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "classicsavior",
+      "sourceName": "经典救星",
+      "candidateId": "cand_s3_3_medium_clas",
+      "metrics": {
+        "win": 110,
+        "draw": 0,
+        "loss": 30,
+        "total": 140,
+        "trainingScore": 0.7857142857142857,
+        "pureWinRate": 0.7857142857142857,
+        "undefeatedRate": 0.7857142857142857,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "all2prayer",
+      "sourceName": "全二永平",
+      "candidateId": "cand_s4_1_light_all2",
+      "metrics": {
+        "win": 100,
+        "draw": 20,
+        "loss": 20,
+        "total": 140,
+        "trainingScore": 0.7857142857142857,
+        "pureWinRate": 0.7142857142857143,
+        "undefeatedRate": 0.8571428571428571,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    },
+    {
+      "sourceId": "all2rush",
+      "sourceName": "全二冲",
+      "candidateId": "cand_s2_3_medium_all2",
+      "metrics": {
+        "win": 60,
+        "draw": 10,
+        "loss": 70,
+        "total": 140,
+        "trainingScore": 0.4642857142857143,
+        "pureWinRate": 0.42857142857142855,
+        "undefeatedRate": 0.5,
+        "workerErrorCount": 0,
+        "workerErrors": [],
+        "isEvaluationComplete": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "protocol": "PRODUCT_PATH_FORMAL_SCREEN_T032_V1",
+  "timestamp": "2026-08-18T07:31:31.837Z",
+  "manifest": {
+    "executionSemanticsVersion": "play_full_game_product_path_v1",
+    "productEntryModule": "src/engine/play_full_game.ts",
+    "strategyAdapterVersion": "tree-strategy-v1",
+    "authorityBundleAbsolutePath": "D:\\develope\\monsrise1\\public\\ai-bundle.iife.js",
+    "authorityBundleSHA256": "a9821e8986b8722e89ccd32024e650e3f5853bf75df23c74a3e92e35240d6e43",
+    "runnerCommit": "30d6aff1adc2946457bf304447d873c254be0b9a",
+    "configuredWorkerCount": 32,
+    "observedWorkerCount": 32
+  },
+  "manifestHash": "eb6a0ac471f8c8b3ddf2a220cbb84d3d3bf1dac6f5293a6783b5d850af1446a9",
+  "noApplyDeployOrPromotion": true,
+  "historicProtocolStatus": "SANDBOX_ENGINE_UNVERIFIED_PRE_T032"
+}
