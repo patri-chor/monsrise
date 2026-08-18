@@ -59,10 +59,12 @@ optional decision/branch provenance
 
 ## C. Replace Training Evaluation Path
 
-1. Add a product-path evaluator used by `fine_grained_worker` / `persistent_pool` for tree formal evaluation. It must invoke `playFullGame` for both candidate sides and collect the product entry traces.
-2. Existing `arena.ts -> playSpecVsSpec` must not be used for any new formal screen, promotion, four-cost gate, H2H, or experience-library observation after this task. It may remain only as deprecated diagnostic code with an explicit `SANDBOX_ONLY_DEPRECATED` designation.
-3. Add a fail-closed protocol gate: any formal evaluation attempting the old arena runner must throw before workers start.
-4. Update the real artifact/provenance manifest to record:
+1. Retain the existing multi-thread/process scheduling architecture: `PersistentSimPool` and its worker pool remain the dispatcher, task queue, error propagator, and resumable checkpoint coordinator. Do not regress formal evaluation to serial execution.
+2. Add a product-path evaluator used inside each `fine_grained_worker` / `persistent_pool` worker for tree formal evaluation. Each worker must invoke `playFullGame` for both candidate sides and collect the product entry traces. `PersistentSimPool` is permitted only as the outer scheduler here; it is not the battle execution path.
+3. Preserve configurable bounded concurrency, with outer candidate concurrency <=2 and existing inner worker parallelism retained unless trace safety requires a documented lower cap. Record configured and observed worker concurrency in every new run manifest.
+4. Existing `arena.ts -> playSpecVsSpec` must not be used for any new formal screen, promotion, four-cost gate, H2H, or experience-library observation after this task. It may remain only as deprecated diagnostic code with an explicit `SANDBOX_ONLY_DEPRECATED` designation.
+5. Add a fail-closed protocol gate: any formal evaluation attempting the old arena runner must throw before workers start.
+6. Update the real artifact/provenance manifest to record:
 
 ```text
 executionSemanticsVersion
