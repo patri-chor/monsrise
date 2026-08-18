@@ -39,7 +39,7 @@ async function runT013Tests() {
     'T005', 'T006', 'T007', 'T008', 'T009', 'T010',
     'T011', 'T012', 'T013', 'T014', 'T015', 'T016',
     'T017', 'T018', 'T019', 'T020', 'T021', 'T022',
-    'T023',
+    'T023', 'T024',
   ];
 
   const actualFiles = readdirSync(tasksDir);
@@ -55,7 +55,7 @@ async function runT013Tests() {
     const specContent = readFileSync(join(tasksDir, specFile!), 'utf8').trim();
     assertStrict.ok(specContent.length > 0, `规格文件不得为空: ${specFile}`);
   }
-  console.log('  ✓ 全部 T005~T023 任务规格与交付报告成对存在且非空。\n');
+  console.log('  ✓ 全部 T005~T024 任务规格与交付报告成对存在且非空。\n');
 
   // Test 2: 模拟意外删除场景拦截
   console.log('[Test 2] 模拟意外删除场景（包含历史或当前 spec 被删除）...');
@@ -80,6 +80,7 @@ async function runT013Tests() {
     'T021-t020-elite-retest-and-runtime-diagnostic-repair.md', 'T021.report.md',
     'T022-four-cost-fidelity-gate-and-resumable-experience-training.md', 'T022.report.md',
     'T023-real-trace-fidelity-and-atomic-experience-runner.md', 'T023.report.md',
+    'T024-formal-run-identity-and-trace-coverage-repair.md', 'T024.report.md',
   ];
 
   const faultyScenario = allExpectedFiles.filter(f => !f.startsWith('T022-') && !f.startsWith('T020-'));

@@ -1,6 +1,8 @@
 {
-  "lastRunId": "smoke_t023_v2",
+  "lastRunId": "smoke_t024_run",
+  "lastRunKind": "SMOKE",
   "lastCandidateIndex": 59,
   "lastCandidateId": "cand_s9_6_heavy_gold",
-  "timestamp": "2026-08-18T04:14:38.964Z"
+  "lastObservationKey": "1.2.0::T024_COMPLETE_RUN_IDENTITY::SMOKE::screen::cand_s9_6_heavy_gold::fp_cand_s9_6_heavy_gold::fp_eleven_frozen_v1::early_seven_held_out::both_sides::schedule_1_screen::gpc_1::commit_t024",
+  "timestamp": "2026-08-18T04:21:13.357Z"
 }

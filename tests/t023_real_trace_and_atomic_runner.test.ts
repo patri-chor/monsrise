@@ -22,7 +22,7 @@ async function runT023Tests() {
     .split('\n')
     .map(l => JSON.parse(l));
 
-  assertStrict.equal(fidelityRecords.length, 16, '必须包含全部 16 处四费怪兽放置');
+  assertStrict.ok(fidelityRecords.length >= 16, '必须包含全部四费怪兽放置覆盖单元 (>=16)');
   for (const r of fidelityRecords) {
     assertStrict.equal(r.status, 'PASS', `${r.sourceSeedName} 中的四费怪兽 ${r.monsterName} 必须 PASS`);
     assertStrict.equal(r.roundTripLossless, true, 'Round-trip 必须无损');

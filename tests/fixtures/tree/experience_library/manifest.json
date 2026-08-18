@@ -1,11 +1,12 @@
 {
-  "schemaVersion": "1.1.0",
-  "protocolVersion": "T023_REAL_TRACE_AND_ATOMIC_RUNNER",
-  "timestamp": "2026-08-18T04:14:38.968Z",
+  "schemaVersion": "1.2.0",
+  "protocolVersion": "T024_COMPLETE_RUN_IDENTITY",
+  "timestamp": "2026-08-18T04:21:13.360Z",
   "fidelityGatePassed": true,
   "totalSources": 11,
   "legacySources": 1,
   "totalRegisteredCandidates": 60,
   "lastRunKind": "SMOKE",
-  "completedThisRun": 60
+  "completedThisRun": 60,
+  "skippedByResume": 0
 }

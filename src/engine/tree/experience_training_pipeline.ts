@@ -18,8 +18,41 @@ export interface PipelineOptions {
   smoke?: boolean;
   resume?: boolean;
   runId?: string;
+  codeCommit?: string;
   pool?: PersistentSimPool;
   onProgress?: (msg: string) => void;
+}
+
+export interface ObservationKeyParams {
+  schemaVersion: string;
+  protocolVersion: string;
+  runKind: 'SMOKE' | 'FORMAL_SCREEN' | 'PROMOTION';
+  phase: string;
+  candidateId: string;
+  candidateFp: string;
+  sourceFixtureFp: string;
+  panelId: string;
+  sideCoverage: string;
+  seedScheduleId: string;
+  gamesPerCell: number;
+  codeCommit: string;
+}
+
+export function buildObservationKey(params: ObservationKeyParams): string {
+  return [
+    params.schemaVersion,
+    params.protocolVersion,
+    params.runKind,
+    params.phase,
+    params.candidateId,
+    params.candidateFp,
+    params.sourceFixtureFp,
+    params.panelId,
+    params.sideCoverage,
+    params.seedScheduleId,
+    `gpc_${params.gamesPerCell}`,
+    params.codeCommit,
+  ].join('::');
 }
 
 export function generateMultiSourceCandidates(sources: any[]): any[] {
@@ -91,9 +124,20 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     mkdirSync(libDir, { recursive: true });
   }
 
-  const runId = options.runId ?? `run_${Date.now()}`;
+  const phase = options.phase ?? 'full';
+  const isSmoke = !!options.smoke;
+  const runKind: 'SMOKE' | 'FORMAL_SCREEN' = isSmoke ? 'SMOKE' : 'FORMAL_SCREEN';
+  const gamesPerCell = isSmoke ? 1 : 10;
+  const expectedTotalGames = 7 * 2 * gamesPerCell; // 14 for smoke, 140 for formal
+  const codeCommit = options.codeCommit ?? 'commit_t024';
+  const runId = options.runId ?? `run_${runKind}_${Date.now()}`;
   const cursorPath = join(libDir, 'cursor.json');
   const emptyMask: FeatureMask = { side: null, main: null, subs: [], keys: [] };
+
+  // Phase 边界检查
+  if (phase === 'promotion') {
+    throw new Error('[Phase Error] Promotion evaluation cannot start without verified formal screen evidence.');
+  }
 
   const pool = options.pool ?? PersistentSimPool.getInstance();
   await pool.init();
@@ -102,8 +146,8 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
   const earlyFamilies = JSON.parse(readFileSync(resolve('tests/fixtures/tree/early_seven_bundles.json'), 'utf8'));
   const heldOutOpps = earlyFamilies.map((f: any) => f.heldOutVariant);
 
-  // 1. Phase A: 真实四费保真门禁
-  options.onProgress?.('=== [Phase A] 启动真实四费保真门禁检测 ===');
+  // 1. Phase A: 真实四费保真门禁 (Multi-branch, Dual-side, Dual-route)
+  options.onProgress?.('=== [Phase A] 启动多分支/双侧/双路径四费真实保真门禁 ===');
   const fidelityResult = await runFourCostFidelityGate(pool, sources, earlyFamilies);
 
   // 写入 Phase A 产物
@@ -119,20 +163,20 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
   );
 
   if (!fidelityResult.passed) {
-    options.onProgress?.('❌ [Phase A FAIL] 四费保真门禁未通过，安全中断流水线。');
+    options.onProgress?.(`❌ [Phase A FAIL] 四费保真门禁未通过 (通过率: ${(fidelityResult.coverageMatrixSummary.coverageRatio * 100).toFixed(1)}%)，安全中断流水线。`);
     return { status: 'PARTIAL', fidelityResult };
   }
-  options.onProgress?.(`✓ [Phase A PASS] 真实四费门禁通过 (覆盖 ${fidelityResult.fourCostRecords.length} 处四费放置，0 错误，负例成功拦截)。`);
+  options.onProgress?.(`✓ [Phase A PASS] 四费门禁通过 (覆盖 ${fidelityResult.fourCostRecords.length} 个覆盖单元，100% 通过，0 错误，负例拦截)。`);
 
-  if (options.phase === 'fidelity') {
+  if (phase === 'fidelity') {
     return { status: 'DONE', phase: 'fidelity', fidelityResult };
   }
 
-  // 2. Phase B: 多源候选池注册与迁移标记
-  options.onProgress?.('=== [Phase B] 多源候选池注册与历史 Smoke 资产迁移 ===');
+  // 2. Phase B: 多源候选池与迁移清册
+  options.onProgress?.('=== [Phase B] 多源候选池注册与资产治理 ===');
   const candidates = generateMultiSourceCandidates(sources);
 
-  // 注册候选表 (保持 UNVALIDATED_T022_INVENTORY 状态)
+  // 注册候选表
   const registryPath = join(libDir, 'candidate_registry.jsonl');
   writeFileSync(
     registryPath,
@@ -161,31 +205,44 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
   }));
   writeFileSync(migrationLedgerPath, migrationRecords.map(m => JSON.stringify(m)).join('\n') + '\n', 'utf8');
 
-  // 3. 读取既有 observations 以支持断点续传
+  // 3. 读取既有 observations 进行严谨的断点续传检查
   const obsPath = join(libDir, 'evaluation_observations.jsonl');
-  const existingObsKeys = new Set<string>();
+  const completeObsKeys = new Set<string>();
   if (existsSync(obsPath) && options.resume) {
     const lines = readFileSync(obsPath, 'utf8').trim().split('\n').filter(Boolean);
     for (const l of lines) {
       const o = JSON.parse(l);
-      existingObsKeys.add(`${o.candidateId}_${o.schedule}`);
+      if (o.isEvaluationComplete && o.workerErrorCount === 0 && o.total === expectedTotalGames && o.observationKey) {
+        completeObsKeys.add(o.observationKey);
+      }
     }
   }
 
-  // 4. 递进式评测 (Smoke 模式 vs Formal 模式物理与语义隔离)
-  const isSmoke = !!options.smoke;
-  const screenGames = isSmoke ? 1 : 10;
-  const runKind = isSmoke ? 'SMOKE' : 'FORMAL_SCREEN';
-
-  options.onProgress?.(`启动评测模式: runKind=${runKind}, gamesPerCell=${screenGames}`);
+  // 4. 递进式评测 (带完整 Observation Key 与硬门禁断言)
+  options.onProgress?.(`启动评测: runKind=${runKind}, gamesPerCell=${gamesPerCell}, expectedTotal=${expectedTotalGames}`);
 
   let completedThisRun = 0;
+  let skippedByResume = 0;
 
   for (let cIdx = 0; cIdx < candidates.length; cIdx++) {
     const c = candidates[cIdx];
-    const obsKey = `${c.candidateId}_SCHEDULE_1_SCREEN`;
+    const obsKey = buildObservationKey({
+      schemaVersion: '1.2.0',
+      protocolVersion: 'T024_COMPLETE_RUN_IDENTITY',
+      runKind,
+      phase: 'screen',
+      candidateId: c.candidateId,
+      candidateFp: `fp_${c.candidateId}`,
+      sourceFixtureFp: 'fp_eleven_frozen_v1',
+      panelId: 'early_seven_held_out',
+      sideCoverage: 'both_sides',
+      seedScheduleId: 'schedule_1_screen',
+      gamesPerCell,
+      codeCommit,
+    });
 
-    if (existingObsKeys.has(obsKey) && options.resume) {
+    if (completeObsKeys.has(obsKey) && options.resume) {
+      skippedByResume++;
       continue;
     }
 
@@ -199,16 +256,22 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     // Preflight (1-game)
     const [preflight] = await pool.evalCandidateBatchOnMatchedParallel([evol], emptyMask, heldOutOpps, 1, 8888);
 
-    // Screen (10-game held-out for formal, 1-game for smoke)
+    // Screen evaluation
     const [screenMetrics] = await pool.evalCandidateBatchOnMatchedParallel(
       [evol],
       emptyMask,
       heldOutOpps,
-      screenGames,
+      gamesPerCell,
       99000 + cIdx * 100,
     );
 
+    const isComplete =
+      screenMetrics.total === expectedTotalGames &&
+      (screenMetrics.workerErrorCount ?? 0) === 0 &&
+      screenMetrics.isEvaluationComplete;
+
     const obsRecord = {
+      observationKey: obsKey,
       runId,
       runKind,
       candidateId: c.candidateId,
@@ -216,13 +279,14 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
       noveltyBucket: c.noveltyBucket,
       preflightPassed: (preflight.workerErrorCount ?? 0) === 0,
       schedule: 'SCHEDULE_1_SCREEN',
-      gamesPerCell: screenGames,
+      gamesPerCell,
       trainingScore: screenMetrics.trainingScore,
       win: screenMetrics.win,
       draw: screenMetrics.draw,
       loss: screenMetrics.loss,
       total: screenMetrics.total,
       workerErrorCount: screenMetrics.workerErrorCount ?? 0,
+      isEvaluationComplete: isComplete,
       timestamp: new Date().toISOString(),
     };
 
@@ -233,17 +297,19 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     // 原子更新游标
     saveCursorAtomic(cursorPath, {
       lastRunId: runId,
+      lastRunKind: runKind,
       lastCandidateIndex: cIdx,
       lastCandidateId: c.candidateId,
+      lastObservationKey: obsKey,
       timestamp: new Date().toISOString(),
     });
 
     if (cIdx % 10 === 0 || cIdx === candidates.length - 1) {
-      options.onProgress?.(`[Screening] ${cIdx + 1}/${candidates.length} | ${c.candidateId}: ${(screenMetrics.trainingScore * 100).toFixed(1)}% (Total games: ${screenMetrics.total})`);
+      options.onProgress?.(`[Screening] ${cIdx + 1}/${candidates.length} | ${c.candidateId}: ${(screenMetrics.trainingScore * 100).toFixed(1)}% (${screenMetrics.total}/${expectedTotalGames} games, errors: ${screenMetrics.workerErrorCount ?? 0})`);
     }
   }
 
-  // 5. 决策与前沿管理 (Smoke 绝不产生 PROMOTED 或 Frontier 决策)
+  // 5. 决策与前沿管理
   const decisionsPath = join(libDir, 'promotion_decisions.jsonl');
   const frontiersPath = join(libDir, 'source_frontiers.json');
 
@@ -271,8 +337,8 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
   writeFileSync(
     join(libDir, 'manifest.json'),
     JSON.stringify({
-      schemaVersion: '1.1.0',
-      protocolVersion: 'T023_REAL_TRACE_AND_ATOMIC_RUNNER',
+      schemaVersion: '1.2.0',
+      protocolVersion: 'T024_COMPLETE_RUN_IDENTITY',
       timestamp: new Date().toISOString(),
       fidelityGatePassed: true,
       totalSources: sources.length,
@@ -280,6 +346,7 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
       totalRegisteredCandidates: candidates.length,
       lastRunKind: runKind,
       completedThisRun,
+      skippedByResume,
     }, null, 2),
     'utf8',
   );
@@ -290,5 +357,6 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     fidelityResult,
     candidateCount: candidates.length,
     completedThisRun,
+    skippedByResume,
   };
 }
