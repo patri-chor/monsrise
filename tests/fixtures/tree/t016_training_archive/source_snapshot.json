@@ -1,9 +1,12 @@
 [
   {
+    "tier": "Tier 1",
     "sourceIndex": 0,
     "id": "springsword",
     "name": "泉水剑",
     "archetype": "prayer",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -185,17 +188,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.25,
-    "calculatedCount": 2,
-    "controllableCount": 6,
-    "isLegacyBaseline": false,
-    "fingerprint": "199220465e46"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 1,
     "id": "nutsavior",
     "name": "坚果救星",
     "archetype": "half_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -442,17 +444,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.375,
-    "calculatedCount": 3,
-    "controllableCount": 5,
-    "isLegacyBaseline": false,
-    "fingerprint": "adf84ded3b73"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 2,
     "id": "all2rush",
     "name": "全二冲",
     "archetype": "full_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -762,17 +763,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.75,
-    "calculatedCount": 6,
-    "controllableCount": 2,
-    "isLegacyBaseline": false,
-    "fingerprint": "157be1f9b219"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 3,
     "id": "classicsavior",
     "name": "经典救星",
     "archetype": "full_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 117,
@@ -1019,17 +1019,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.625,
-    "calculatedCount": 5,
-    "controllableCount": 3,
-    "isLegacyBaseline": false,
-    "fingerprint": "471c28e13f11"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 4,
     "id": "all2prayer",
     "name": "全二永平",
     "archetype": "prayer",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -1218,17 +1217,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.375,
-    "calculatedCount": 3,
-    "controllableCount": 5,
-    "isLegacyBaseline": false,
-    "fingerprint": "5e0600c16478"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 5,
     "id": "suqing",
     "name": "肃清",
     "archetype": "half_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -1540,17 +1538,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.5,
-    "calculatedCount": 4,
-    "controllableCount": 4,
-    "isLegacyBaseline": false,
-    "fingerprint": "681905685e85"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 6,
     "id": "laddersel",
     "name": "梯子塞雷",
     "archetype": "full_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -1882,17 +1879,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.875,
-    "calculatedCount": 7,
-    "controllableCount": 1,
-    "isLegacyBaseline": false,
-    "fingerprint": "06dbc598758a"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 7,
     "id": "spade_multi",
     "name": "铲土多核",
     "archetype": "prayer",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 115,
@@ -2287,17 +2283,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.25,
-    "calculatedCount": 2,
-    "controllableCount": 6,
-    "isLegacyBaseline": false,
-    "fingerprint": "42b95f0e2f20"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 8,
     "id": "gift_savior",
     "name": "礼物救星",
     "archetype": "half_rush",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -2705,17 +2700,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.25,
-    "calculatedCount": 2,
-    "controllableCount": 6,
-    "isLegacyBaseline": false,
-    "fingerprint": "14e946358ffd"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 9,
     "id": "golden_boom",
     "name": "壕炸金猴",
     "archetype": "prayer",
+    "teamSize": 8,
+    "isLegacyBaseline": false,
     "team": [
       {
         "monsterId": 110,
@@ -2897,17 +2891,16 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.25,
-    "calculatedCount": 2,
-    "controllableCount": 6,
-    "isLegacyBaseline": false,
-    "fingerprint": "ef0c73839d7e"
+    "description": "Current bundle authoritative baseline (Frozen snapshot)"
   },
   {
+    "tier": "Tier 1",
     "sourceIndex": 10,
     "id": "gift_jungle",
     "name": "礼物丛林",
     "archetype": "prayer",
+    "teamSize": 7,
+    "isLegacyBaseline": true,
     "team": [
       {
         "monsterId": 110,
@@ -3190,10 +3183,6 @@
         }
       ]
     },
-    "calculatedUnitRatio": 0.14285714285714285,
-    "calculatedCount": 1,
-    "controllableCount": 6,
-    "isLegacyBaseline": true,
-    "fingerprint": "4c913570e3c9"
+    "description": "Frozen legacy 7-monster baseline (Requires explicit decision for expansion)"
   }
 ]

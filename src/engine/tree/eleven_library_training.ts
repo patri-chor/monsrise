@@ -1,25 +1,27 @@
 // ============================================================
-// 隔夜全库 11 阵型多样性训练与三层阵型库构建引擎 (T016 Engine)
+// 隔夜全库 11 阵型多样性训练与三层阵型库构建引擎 (T016 / T017 Engine)
 //
-// 核心逻辑：
-//   1. 冻结 11 套源阵型 (eleven_frozen_sources.json)
-//   2. 33 个非重复合法突变候选 (thirty_three_mutated_candidates.jsonl)
-//   3. 仅使用已验证的计算定位单位占比路由与纯顺序优化算子
-//   4. 3 次独立优化尝试 (Three Independent Attempts) 与稳健性聚合 (>=2/3 passes)
-//   5. 强阵面板泛化校验与上界强化通道 (Reinforcement Pass)
+// 核心模块：
+//   1. 强制树/卡组闭包检查门禁 (Tree/Deck Coherence Gate)
+//   2. 严格 8 怪兽候选规则 (Eight-Monster Candidate Rule, 无总费上限)
+//   3. 3 次独立优化尝试 (Three Independent Attempts) 与稳健性聚合
+//   4. 真实上界强化通道 (Reinforcement Pass for Best Robust Candidates)
+//   5. 强阵面板独立泛化测试与退化预警
 //   6. 确定性三层阵型库分类 (Tier 1 Baseline, Tier 2 Enhanced, Tier 3 Exploratory)
+//   7. 归档输出至 tests/fixtures/tree/t016_training_archive/
 // ============================================================
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { PersistentSimPool } from './persistent_pool';
-import { computeCalculatedUnitRatio, generateOrderCandidates, getMonsterDisplayName, type BundleFamily } from './order_search';
+import { computeCalculatedUnitRatio, generateOrderCandidates, validateTreeDeckCoherence, getMonsterDisplayName, type BundleFamily } from './order_search';
 import { formationToEvol, evolToBundleFormation, type EvolFormation, type FeatureMask } from './evol_gene';
 import { resolveEvaluationPanel } from './candidate_optimization_runner';
 import { costOf } from './tree_ops';
 import type { Formation } from '../../ai/types';
 
 export const ELEVEN_LIBRARY_DIR = resolve('reports/new-formation-generation/overnight-eleven-library-training');
+export const COMMITTED_ARCHIVE_DIR = resolve('tests/fixtures/tree/t016_training_archive');
 
 export interface AttemptResult {
   attemptIndex: number;
@@ -35,6 +37,22 @@ export interface AttemptResult {
   passedValidation: boolean;
   acceptedMoveDesc: string;
   optimizedEvol: EvolFormation;
+}
+
+export interface ReinforcementResult {
+  candidateId: string;
+  sourceSeedName: string;
+  searchSeed: number;
+  validationSeed: number;
+  baselineScore: number;
+  baselineLoss: number;
+  reinforcementScore: number;
+  reinforcementLoss: number;
+  deltaScore: number;
+  passedValidation: boolean;
+  replacedSelectedTree: boolean;
+  acceptedMoveDesc: string;
+  reason: string;
 }
 
 export interface CandidateTrainingResult {
@@ -57,6 +75,7 @@ export interface CandidateTrainingResult {
     medianLossDelta: number;
     robustlyImproved: boolean;
   };
+  reinforcement?: ReinforcementResult;
   selectedTreeProvenance: string;
   selectedEvol: EvolFormation;
   selectedBundle: Formation;
@@ -79,19 +98,26 @@ export function median(values: number[]): number {
 
 export async function runElevenLibraryTraining(options: {
   outputDir?: string;
+  archiveDir?: string;
   pool?: PersistentSimPool;
   onProgress?: (msg: string) => void;
 } = {}): Promise<{
   outputDir: string;
+  archiveDir: string;
   results: CandidateTrainingResult[];
   tier1: any[];
   tier2: any[];
   tier3: any[];
   rejected: any[];
+  reinforcements: ReinforcementResult[];
 }> {
   const outputDir = options.outputDir ?? ELEVEN_LIBRARY_DIR;
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
+  const archiveDir = options.archiveDir ?? COMMITTED_ARCHIVE_DIR;
+
+  for (const dir of [outputDir, archiveDir]) {
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
   }
 
   const pool = options.pool ?? PersistentSimPool.getInstance();
@@ -109,26 +135,38 @@ export async function runElevenLibraryTraining(options: {
   const trainingOpps = families.map(f => f.trainingVariant);
   const heldOutOpps = families.map(f => f.heldOutVariant);
 
-  // 2. 初筛 (Coarse Screening)
+  // 2. 严格 8 怪兽与树/卡组闭包检查门禁 (Tree/Deck Coherence Gate)
   const screeningLedger: any[] = [];
   const validCandidates: any[] = [];
 
   for (const c of rawCandidates) {
     const totalCost = c.team.reduce((sum: number, slot: any) => sum + costOf(slot.monsterId), 0);
     const teamSize = c.team.length;
-    const isValidSize = teamSize >= 6 && teamSize <= 8;
-    const isValidCost = totalCost <= 24;
+    const isEightMonsters = teamSize === 8;
+
+    const evol = formationToEvol(c as unknown as Formation);
+    const coherence = validateTreeDeckCoherence(evol);
+
+    const passed = isEightMonsters && coherence.valid;
+    let reason = 'LEGAL_SCREEN_PASS';
+    if (!isEightMonsters) {
+      reason = `INVALID_TEAM_SIZE: Expected 8 monsters, found ${teamSize}`;
+    } else if (!coherence.valid) {
+      reason = `COHERENCE_GATE_FAILED: ${coherence.error} (${coherence.message})`;
+    }
 
     const screened = {
       candidateId: c.candidateId,
       sourceSeedName: c.sourceSeedName,
       teamSize,
       totalCost,
-      passed: isValidSize && isValidCost,
-      reason: isValidSize && isValidCost ? 'LEGAL_SCREEN_PASS' : 'INVALID_BUDGET_OR_SIZE',
+      coherenceValid: coherence.valid,
+      coherenceError: coherence.error,
+      passed,
+      reason,
     };
     screeningLedger.push(screened);
-    if (screened.passed) validCandidates.push(c);
+    if (passed) validCandidates.push(c);
   }
 
   // 3. 3 次独立优化尝试
@@ -211,9 +249,8 @@ export async function runElevenLibraryTraining(options: {
     // 选择代表树 (最佳通过尝试，或 baseline)
     const passedAttempts = attempts.filter(a => a.passedValidation).sort((a, b) => b.finalHeldOutScore - a.finalHeldOutScore);
     const selectedAttempt = passedAttempts.length > 0 ? passedAttempts[0] : null;
-    const selectedEvol = selectedAttempt ? selectedAttempt.optimizedEvol : initialEvol;
-    const selectedTreeProvenance = selectedAttempt ? `Attempt ${selectedAttempt.attemptIndex} (${selectedAttempt.acceptedMoveDesc})` : 'Baseline (0/3 passed)';
-    const selectedBundle = evolToBundleFormation(selectedEvol);
+    let selectedEvol = selectedAttempt ? selectedAttempt.optimizedEvol : initialEvol;
+    let selectedTreeProvenance = selectedAttempt ? `Attempt ${selectedAttempt.attemptIndex} (${selectedAttempt.acceptedMoveDesc})` : 'Baseline (0/3 passed)';
 
     // 4. 强阵面板泛化测试
     const [strongBefore, strongAfter] = await pool.evalCandidateBatchOnMatchedParallel(
@@ -261,7 +298,7 @@ export async function runElevenLibraryTraining(options: {
       },
       selectedTreeProvenance,
       selectedEvol,
-      selectedBundle: selectedBundle as unknown as Formation,
+      selectedBundle: evolToBundleFormation(selectedEvol) as unknown as Formation,
       generalization: {
         strongBeforeScore: strongBefore.trainingScore,
         strongAfterScore: strongAfter.trainingScore,
@@ -276,96 +313,191 @@ export async function runElevenLibraryTraining(options: {
     options.onProgress?.(`[${cIdx + 1}/${validCandidates.length}] ${cand.candidateId} (${cand.sourceSeedName}) -> ${tier} (${passCount}/3 passes, Median HeldOut: ${(medianHeldOutScore * 100).toFixed(1)}%)`);
   }
 
-  // 6. 整理三层阵型库
+  // 6. 真实上界强化通道 (Reinforcement Pass for Best Robust Candidate per Source)
+  const reinforcements: ReinforcementResult[] = [];
+
+  // 按源找出最优稳健候选
+  const sourceGroups = new Map<number, CandidateTrainingResult[]>();
+  for (const r of allResults) {
+    const arr = sourceGroups.get(r.sourceSeedIndex) || [];
+    arr.push(r);
+    sourceGroups.set(r.sourceSeedIndex, arr);
+  }
+
+  for (const [sIdx, cands] of sourceGroups.entries()) {
+    const robustCands = cands.filter(c => c.robustStats.robustlyImproved).sort((a, b) => b.robustStats.medianHeldOutScore - a.robustStats.medianHeldOutScore);
+    if (robustCands.length === 0) continue; // 该源无稳健候选，不运行 lucky 强化
+
+    const bestCand = robustCands[0];
+    const searchSeed = 40000 + sIdx * 500;
+    const validationSeed = 45000 + sIdx * 500;
+
+    const initialEvol = formationToEvol(bestCand.selectedBundle);
+    const searchRes = generateOrderCandidates(initialEvol, bestCand.candidateId, `reinf_s_${sIdx}`);
+
+    const [initHeldOut] = await pool.evalCandidateBatchOnMatchedParallel([initialEvol], emptyMask, heldOutOpps, 5, validationSeed);
+    let bestEvol = initialEvol;
+    let acceptedMoveDesc = '无采纳变动';
+    let passedValidation = false;
+    let finalHeldOutScore = initHeldOut.trainingScore;
+    let finalHeldOutLoss = initHeldOut.loss;
+
+    if (searchRes.candidates.length > 0) {
+      const evalMetricsList = await pool.evalCandidateBatchOnMatchedParallel(
+        searchRes.candidates.map(c => c.child),
+        emptyMask,
+        trainingOpps,
+        1,
+        searchSeed,
+      );
+
+      let bestScore = initHeldOut.trainingScore;
+      for (let i = 0; i < searchRes.candidates.length; i++) {
+        if (evalMetricsList[i].trainingScore > bestScore) {
+          bestScore = evalMetricsList[i].trainingScore;
+          bestEvol = searchRes.candidates[i].child;
+          acceptedMoveDesc = searchRes.candidates[i].desc;
+        }
+      }
+
+      const [reinfHeldOut] = await pool.evalCandidateBatchOnMatchedParallel([bestEvol], emptyMask, heldOutOpps, 5, validationSeed);
+      finalHeldOutScore = reinfHeldOut.trainingScore;
+      finalHeldOutLoss = reinfHeldOut.loss;
+      passedValidation = (reinfHeldOut.trainingScore - initHeldOut.trainingScore >= 0.05) && (reinfHeldOut.loss <= initHeldOut.loss);
+    }
+
+    const deltaScore = finalHeldOutScore - initHeldOut.trainingScore;
+    const replaced = passedValidation && (finalHeldOutScore >= bestCand.robustStats.medianHeldOutScore);
+
+    if (replaced) {
+      bestCand.selectedEvol = bestEvol;
+      bestCand.selectedTreeProvenance = `Reinforcement Pass (${acceptedMoveDesc})`;
+      bestCand.selectedBundle = evolToBundleFormation(bestEvol) as unknown as Formation;
+    }
+
+    const reinfRecord: ReinforcementResult = {
+      candidateId: bestCand.candidateId,
+      sourceSeedName: bestCand.sourceSeedName,
+      searchSeed,
+      validationSeed,
+      baselineScore: initHeldOut.trainingScore,
+      baselineLoss: initHeldOut.loss,
+      reinforcementScore: finalHeldOutScore,
+      reinforcementLoss: finalHeldOutLoss,
+      deltaScore,
+      passedValidation,
+      replacedSelectedTree: replaced,
+      acceptedMoveDesc,
+      reason: replaced ? 'REINFORCEMENT_ADOPTED' : (passedValidation ? 'SCORE_NOT_SUPERIOR_TO_MEDIAN' : 'HELD_OUT_VALIDATION_FAILED'),
+    };
+    bestCand.reinforcement = reinfRecord;
+    reinforcements.push(reinfRecord);
+    options.onProgress?.(`[Reinforcement] Source ${bestCand.sourceSeedName} -> ${reinfRecord.reason} (Replaced: ${replaced})`);
+  }
+
+  // 7. 整理三层阵型库
   const tier1 = sources.map(s => ({
     tier: 'Tier 1',
     sourceIndex: s.sourceIndex,
     id: s.id,
     name: s.name,
     archetype: s.archetype,
+    teamSize: s.team.length,
+    isLegacyBaseline: s.isLegacyBaseline ?? false,
     team: s.team,
     tree: s.tree,
-    description: 'Current bundle authoritative baseline (Frozen snapshot)',
+    description: s.isLegacyBaseline ? 'Frozen legacy 7-monster baseline (Requires explicit decision for expansion)' : 'Current bundle authoritative baseline (Frozen snapshot)',
   }));
 
   const tier2 = allResults.filter(r => r.tier === 'Tier 2');
   const tier3 = allResults.filter(r => r.tier === 'Tier 3');
   const rejected = allResults.filter(r => r.tier === 'Rejected');
 
-  // 7. 写入全部 12 项 Reviewable Artifacts
-  writeFileSync(join(outputDir, 'source_snapshot.json'), JSON.stringify(tier1, null, 2), 'utf8');
-  writeFileSync(join(outputDir, 'generation_manifest.json'), JSON.stringify({
-    timestamp: new Date().toISOString(),
-    totalSources: 11,
-    totalMutatedCandidates: rawCandidates.length,
-    validScreenedCandidates: validCandidates.length,
-    attemptsPerCandidate: 3,
-    rules: { calculatedThreshold: 0.50, minHeldOutGain: 0.05, robustPassMin: 2 },
-  }, null, 2), 'utf8');
-  writeFileSync(join(outputDir, 'all_candidates.jsonl'), rawCandidates.map(c => JSON.stringify(c)).join('\n') + '\n', 'utf8');
-  writeFileSync(join(outputDir, 'screening_ledger.jsonl'), screeningLedger.map(s => JSON.stringify(s)).join('\n') + '\n', 'utf8');
-  
-  const attemptsFlat: any[] = [];
-  for (const r of allResults) {
-    for (const a of r.attempts) {
-      attemptsFlat.push({ candidateId: r.candidateId, sourceSeedName: r.sourceSeedName, ...a, optimizedEvol: undefined });
+  // 8. 双重写入产物 (reports/ 与 tests/fixtures/tree/t016_training_archive/)
+  const allDirs = [outputDir, archiveDir];
+
+  for (const dir of allDirs) {
+    writeFileSync(join(dir, 'source_snapshot.json'), JSON.stringify(tier1, null, 2), 'utf8');
+    writeFileSync(join(dir, 'generation_manifest.json'), JSON.stringify({
+      timestamp: new Date().toISOString(),
+      totalSources: 11,
+      legacySources: 1,
+      totalMutatedCandidates: rawCandidates.length,
+      validScreenedCandidates: validCandidates.length,
+      eightMonsterRuleApplied: true,
+      coherenceGateApplied: true,
+      costCeilingRemoved: true,
+      attemptsPerCandidate: 3,
+      rules: { calculatedThreshold: 0.50, minHeldOutGain: 0.05, robustPassMin: 2 },
+    }, null, 2), 'utf8');
+    writeFileSync(join(dir, 'all_candidates.jsonl'), rawCandidates.map(c => JSON.stringify(c)).join('\n') + '\n', 'utf8');
+    writeFileSync(join(dir, 'screening_ledger.jsonl'), screeningLedger.map(s => JSON.stringify(s)).join('\n') + '\n', 'utf8');
+
+    const attemptsFlat: any[] = [];
+    for (const r of allResults) {
+      for (const a of r.attempts) {
+        attemptsFlat.push({ candidateId: r.candidateId, sourceSeedName: r.sourceSeedName, ...a, optimizedEvol: undefined });
+      }
     }
+    writeFileSync(join(dir, 'optimization_attempts.jsonl'), attemptsFlat.map(a => JSON.stringify(a)).join('\n') + '\n', 'utf8');
+
+    writeFileSync(join(dir, 'early_holdout_evaluations.jsonl'), allResults.map(r => JSON.stringify({
+      candidateId: r.candidateId,
+      sourceSeedName: r.sourceSeedName,
+      noveltyBucket: r.noveltyBucket,
+      calculatedUnitRatio: r.calculatedUnitRatio,
+      robustStats: r.robustStats,
+      selectedProvenance: r.selectedTreeProvenance,
+    })).join('\n') + '\n', 'utf8');
+
+    writeFileSync(join(dir, 'current_panel_generalization.jsonl'), allResults.map(r => JSON.stringify({
+      candidateId: r.candidateId,
+      sourceSeedName: r.sourceSeedName,
+      generalization: r.generalization,
+    })).join('\n') + '\n', 'utf8');
+
+    writeFileSync(join(dir, 'reinforcement_attempts.jsonl'), reinforcements.map(re => JSON.stringify(re)).join('\n') + '\n', 'utf8');
+
+    writeFileSync(join(dir, 'tier_library.json'), JSON.stringify({ tier1, tier2, tier3 }, null, 2), 'utf8');
+    writeFileSync(join(dir, 'rejection_ledger.jsonl'), rejected.map(r => JSON.stringify({
+      candidateId: r.candidateId,
+      sourceSeedName: r.sourceSeedName,
+      robustStats: r.robustStats,
+      generalization: r.generalization,
+      reason: r.tierReason,
+    })).join('\n') + '\n', 'utf8');
+
+    // tier_library.md
+    let tierMd = `# Three-Tier Candidate Library\n\n`;
+    tierMd += `## Tier 1: Current Bundle Baselines (11 Formations)\n\n`;
+    for (const s of tier1) {
+      tierMd += `- **${s.name}** (\`${s.id}\` | ${s.archetype}) - ${s.isLegacyBaseline ? '⚠️ 7-Monster Legacy Baseline' : '8-Monster Standard Baseline'}\n`;
+    }
+    tierMd += `\n## Tier 2: Stable Enhanced Candidates (${tier2.length} Candidates)\n\n`;
+    tierMd += `| Candidate ID | Source Seed | Bucket | Passes | Median Held-Out | Strong Score | Generalization | Provenance |\n|---|---|---|---|---|---|---|---|\n`;
+    for (const t of tier2) {
+      tierMd += `| \`${t.candidateId}\` | ${t.sourceSeedName} | ${t.noveltyBucket} | ${t.robustStats.passCount}/3 | ${(t.robustStats.medianHeldOutScore * 100).toFixed(1)}% | ${(t.generalization.strongAfterScore * 100).toFixed(1)}% | ${t.generalization.hasGeneralizationWarning ? '⚠️ WARNING' : 'Normal'} | ${t.selectedTreeProvenance} |\n`;
+    }
+    tierMd += `\n## Tier 3: Exploratory Diversity Candidates (${tier3.length} Candidates)\n\n`;
+    tierMd += `| Candidate ID | Source Seed | Bucket | Passes | Median Held-Out | Strong Score | Provenance |\n|---|---|---|---|---|---|---|\n`;
+    for (const t of tier3) {
+      tierMd += `| \`${t.candidateId}\` | ${t.sourceSeedName} | ${t.noveltyBucket} | ${t.robustStats.passCount}/3 | ${(t.robustStats.medianHeldOutScore * 100).toFixed(1)}% | ${(t.generalization.strongAfterScore * 100).toFixed(1)}% | ${t.selectedTreeProvenance} |\n`;
+    }
+    writeFileSync(join(dir, 'tier_library.md'), tierMd, 'utf8');
+
+    // summary.md
+    let sumMd = `# Overnight Eleven-Formation Library Training Summary\n\n`;
+    sumMd += `- **Sources**: 11 Frozen Formations (10 standard 8-monster + 1 legacy 7-monster)\n`;
+    sumMd += `- **Generated Candidates**: ${rawCandidates.length} (Strictly 8-monster, full tree/deck coherence)\n`;
+    sumMd += `- **Screened Pass**: ${validCandidates.length} / ${rawCandidates.length}\n`;
+    sumMd += `- **Tier 1 (Baselines)**: ${tier1.length}\n`;
+    sumMd += `- **Tier 2 (Enhanced)**: ${tier2.length}\n`;
+    sumMd += `- **Tier 3 (Exploratory)**: ${tier3.length}\n`;
+    sumMd += `- **Rejected**: ${rejected.length}\n`;
+    sumMd += `- **Reinforcement Attempts**: ${reinforcements.length}\n`;
+    sumMd += `\n## No-Apply Confirmation\nThis run was strictly an offline training and tier curation experiment. No active formation was modified, deployed, or overwritten.\n`;
+    writeFileSync(join(dir, 'summary.md'), sumMd, 'utf8');
   }
-  writeFileSync(join(outputDir, 'optimization_attempts.jsonl'), attemptsFlat.map(a => JSON.stringify(a)).join('\n') + '\n', 'utf8');
 
-  writeFileSync(join(outputDir, 'early_holdout_evaluations.jsonl'), allResults.map(r => JSON.stringify({
-    candidateId: r.candidateId,
-    sourceSeedName: r.sourceSeedName,
-    noveltyBucket: r.noveltyBucket,
-    calculatedUnitRatio: r.calculatedUnitRatio,
-    robustStats: r.robustStats,
-    selectedProvenance: r.selectedTreeProvenance,
-  })).join('\n') + '\n', 'utf8');
-
-  writeFileSync(join(outputDir, 'current_panel_generalization.jsonl'), allResults.map(r => JSON.stringify({
-    candidateId: r.candidateId,
-    sourceSeedName: r.sourceSeedName,
-    generalization: r.generalization,
-  })).join('\n') + '\n', 'utf8');
-
-  writeFileSync(join(outputDir, 'tier_library.json'), JSON.stringify({ tier1, tier2, tier3 }, null, 2), 'utf8');
-  writeFileSync(join(outputDir, 'rejection_ledger.jsonl'), rejected.map(r => JSON.stringify({
-    candidateId: r.candidateId,
-    sourceSeedName: r.sourceSeedName,
-    robustStats: r.robustStats,
-    generalization: r.generalization,
-    reason: r.tierReason,
-  })).join('\n') + '\n', 'utf8');
-
-  // 生成 tier_library.md
-  let tierMd = `# Three-Tier Candidate Library\n\n`;
-  tierMd += `## Tier 1: Current Bundle Baselines (11 Formations)\n\n`;
-  for (const s of tier1) {
-    tierMd += `- **${s.name}** (\`${s.id}\` | ${s.archetype})\n`;
-  }
-  tierMd += `\n## Tier 2: Stable Enhanced Candidates (${tier2.length} Candidates)\n\n`;
-  tierMd += `| Candidate ID | Source Seed | Bucket | Passes | Median Held-Out | Strong Score | Generalization | Provenance |\n|---|---|---|---|---|---|---|---|\n`;
-  for (const t of tier2) {
-    tierMd += `| \`${t.candidateId}\` | ${t.sourceSeedName} | ${t.noveltyBucket} | ${t.robustStats.passCount}/3 | ${(t.robustStats.medianHeldOutScore * 100).toFixed(1)}% | ${(t.generalization.strongAfterScore * 100).toFixed(1)}% | ${t.generalization.hasGeneralizationWarning ? '⚠️ WARNING' : 'Normal'} | ${t.selectedTreeProvenance} |\n`;
-  }
-  tierMd += `\n## Tier 3: Exploratory Diversity Candidates (${tier3.length} Candidates)\n\n`;
-  tierMd += `| Candidate ID | Source Seed | Bucket | Passes | Median Held-Out | Strong Score | Provenance |\n|---|---|---|---|---|---|---|\n`;
-  for (const t of tier3) {
-    tierMd += `| \`${t.candidateId}\` | ${t.sourceSeedName} | ${t.noveltyBucket} | ${t.robustStats.passCount}/3 | ${(t.robustStats.medianHeldOutScore * 100).toFixed(1)}% | ${(t.generalization.strongAfterScore * 100).toFixed(1)}% | ${t.selectedTreeProvenance} |\n`;
-  }
-  writeFileSync(join(outputDir, 'tier_library.md'), tierMd, 'utf8');
-
-  // 生成 summary.md
-  let sumMd = `# Overnight Eleven-Formation Library Training Summary\n\n`;
-  sumMd += `- **Sources**: 11 Frozen Formations\n`;
-  sumMd += `- **Generated Candidates**: ${rawCandidates.length} (3 per source across light/medium/heavy)\n`;
-  sumMd += `- **Screened Pass**: ${validCandidates.length} / ${rawCandidates.length}\n`;
-  sumMd += `- **Tier 1 (Baselines)**: ${tier1.length}\n`;
-  sumMd += `- **Tier 2 (Enhanced)**: ${tier2.length}\n`;
-  sumMd += `- **Tier 3 (Exploratory)**: ${tier3.length}\n`;
-  sumMd += `- **Rejected**: ${rejected.length}\n`;
-  sumMd += `\n## No-Apply Confirmation\nThis run was strictly an offline training and tier curation experiment. No active formation was modified, deployed, or overwritten.\n`;
-  writeFileSync(join(outputDir, 'summary.md'), sumMd, 'utf8');
-
-  return { outputDir, results: allResults, tier1, tier2, tier3, rejected };
+  return { outputDir, archiveDir, results: allResults, tier1, tier2, tier3, rejected, reinforcements };
 }

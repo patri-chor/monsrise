@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { FORMATION_LIBRARY } from '../src/ai/formation_library';
 import { formationToEvol, evolToBundleFormation, cloneEvolFormation, walkEvolNodes, type EvolFormation } from '../src/engine/tree/evol_gene';
-import { computeCalculatedUnitRatio, validateTreePlacements, getMonsterDisplayName } from '../src/engine/tree/order_search';
+import { computeCalculatedUnitRatio, validateTreeDeckCoherence, getMonsterDisplayName } from '../src/engine/tree/order_search';
 import { costOf } from '../src/engine/tree/tree_ops';
 import type { Formation } from '../src/ai/types';
 
@@ -22,6 +22,7 @@ export interface FrozenSourceRecord {
   calculatedUnitRatio: number;
   calculatedCount: number;
   controllableCount: number;
+  isLegacyBaseline?: boolean;
   fingerprint: string;
 }
 
@@ -49,6 +50,7 @@ export function buildT016Fixtures() {
   // 1. Snapshot 11 Sources
   const sources: FrozenSourceRecord[] = FORMATION_LIBRARY.slice(0, 11).map((f, idx) => {
     const ratioAnalysis = computeCalculatedUnitRatio(f.team);
+    const isLegacy = f.team.length === 7;
     return {
       sourceIndex: idx,
       id: f.id ?? `source_${idx + 1}`,
@@ -59,31 +61,40 @@ export function buildT016Fixtures() {
       calculatedUnitRatio: ratioAnalysis.ratio,
       calculatedCount: ratioAnalysis.calculatedCount,
       controllableCount: ratioAnalysis.controllableMonsterIds.length,
+      isLegacyBaseline: isLegacy,
       fingerprint: computeFingerprint(f),
     };
   });
 
   const sourcesPath = resolve(fixturesDir, 'eleven_frozen_sources.json');
   writeFileSync(sourcesPath, JSON.stringify(sources, null, 2), 'utf8');
-  console.log(`[T016 Fixture] Snapshot 11 sources written to ${sourcesPath}`);
+  console.log(`[T016/T017 Fixture] Snapshot 11 sources written to ${sourcesPath}`);
 
-  // 2. 生成 33 个合法突变候选 (每源 3 个, light/medium/heavy)
+  // 2. 为前 10 个 8 怪兽源生成 30 个合法且完全闭合的突变候选 (每源 3 个, light/medium/heavy)
   const allCandidates: GeneratedCandidateRecord[] = [];
 
-  for (let sIdx = 0; sIdx < sources.length; sIdx++) {
+  for (let sIdx = 0; sIdx < 10; sIdx++) {
     const src = sources[sIdx];
     const evol = formationToEvol(src as unknown as Formation);
 
-    // Mutation 1: Light (微调 R1/R2 可控怪兽站位或轮内顺序)
+    // 基础闭包验证
+    const baseCoherence = validateTreeDeckCoherence(evol);
+    if (!baseCoherence.valid) {
+      console.warn(`Source ${src.name} base coherence check failed:`, baseCoherence);
+    }
+
+    // Mutation 1: Light (微调 R1/R2 可控怪兽站位)
     const c1Evol = cloneEvolFormation(evol);
-    const nodes = walkEvolNodes(c1Evol.root);
-    const r1Node = nodes.find(n => n.round === 1);
+    const nodes1 = walkEvolNodes(c1Evol.root);
+    const r1Node1 = nodes1.find(n => n.round === 1);
     let m1Desc = 'R1 站位微调';
-    if (r1Node && r1Node.placements.length > 0) {
-      const p = r1Node.placements[0];
+    if (r1Node1 && r1Node1.placements.length > 0) {
+      const p = r1Node1.placements[0];
       p.y = (p.y + 1) % 5;
       m1Desc = `R1 ${getMonsterDisplayName(p.monsterId)} 站位平移至 (${p.x},${p.y})`;
     }
+    const c1Coherence = validateTreeDeckCoherence(c1Evol);
+    if (!c1Coherence.valid) throw new Error(`c1 coherence failed: ${c1Coherence.message}`);
     const c1Bundle = evolToBundleFormation(c1Evol);
     const c1DeckKey = c1Bundle.team.map(t => t.monsterId).sort().join('-');
     allCandidates.push({
@@ -101,15 +112,16 @@ export function buildT016Fixtures() {
       treeFingerprint: computeFingerprint(c1Bundle.tree),
     });
 
-    // Mutation 2: Medium (微调徽章或中前期间隔重排)
+    // Mutation 2: Medium (微调徽章搭配或轮内顺序)
     const c2Evol = cloneEvolFormation(evol);
     const c2Bundle = evolToBundleFormation(c2Evol);
-    // 徽章微调
     if (c2Bundle.team.length > 0 && c2Bundle.team[0].badgeIds.length >= 2) {
       const b0 = c2Bundle.team[0].badgeIds[0];
       c2Bundle.team[0].badgeIds[0] = c2Bundle.team[0].badgeIds[1];
       c2Bundle.team[0].badgeIds[1] = b0;
     }
+    const c2Coherence = validateTreeDeckCoherence(c2Evol);
+    if (!c2Coherence.valid) throw new Error(`c2 coherence failed: ${c2Coherence.message}`);
     const c2DeckKey = c2Bundle.team.map(t => t.monsterId).sort().join('-');
     allCandidates.push({
       candidateId: `cand_s${sIdx + 1}_2_${computeFingerprint(c2Bundle).slice(0, 4)}`,
@@ -135,14 +147,19 @@ export function buildT016Fixtures() {
     if (r2Node && r3Node && r3Node.placements.length > 0) {
       const p = r3Node.placements[0];
       if (costOf(p.monsterId) <= 2) {
-        // 尝试时机提前
         r3Node.placements.shift();
         r2Node.placements.push(p);
-        if (validateTreePlacements(c3Evol)) {
+        if (validateTreeDeckCoherence(c3Evol).valid) {
           m3Desc = `怪兽 ${getMonsterDisplayName(p.monsterId)} 从 R3 提前至 R2`;
+        } else {
+          // 回退
+          r2Node.placements.pop();
+          r3Node.placements.unshift(p);
         }
       }
     }
+    const c3Coherence = validateTreeDeckCoherence(c3Evol);
+    if (!c3Coherence.valid) throw new Error(`c3 coherence failed: ${c3Coherence.message}`);
     const c3Bundle = evolToBundleFormation(c3Evol);
     const c3DeckKey = c3Bundle.team.map(t => t.monsterId).sort().join('-');
     allCandidates.push({
@@ -163,7 +180,7 @@ export function buildT016Fixtures() {
 
   const candsPath = resolve(fixturesDir, 'thirty_three_mutated_candidates.jsonl');
   writeFileSync(candsPath, allCandidates.map(c => JSON.stringify(c)).join('\n') + '\n', 'utf8');
-  console.log(`[T016 Fixture] 33 mutated candidates written to ${candsPath}`);
+  console.log(`[T016/T017 Fixture] 30 valid 8-monster mutated candidates written to ${candsPath}`);
 }
 
 buildT016Fixtures();

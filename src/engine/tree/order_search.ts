@@ -51,25 +51,74 @@ export function getMonsterDisplayName(monsterId: number): string {
   return MONSTER_SHORT_NAMES[monsterId] ?? `怪兽${monsterId}`;
 }
 
-export function validateTreePlacements(formation: EvolFormation): boolean {
-  // 检查每条从根到叶的路径
-  function checkPath(node: EvolNode, seenMonsters: Set<number>, accumulatedCost: number): boolean {
+export interface CoherenceCheckResult {
+  valid: boolean;
+  error?: 'MISSING_TEAM_MONSTER' | 'DUPLICATE_PATH_DEPLOYMENT' | 'BUDGET_EXCEEDED' | 'INVALID_COORDINATES' | 'INVALID_ROUND_ORDER';
+  message?: string;
+  detail?: { round: number; monsterId: number; nodeId?: string; x?: number; y?: number };
+}
+
+export function validateTreeDeckCoherence(formation: EvolFormation): CoherenceCheckResult {
+  const teamMonsterIds = new Set(formation.team.map(s => s.monsterId));
+
+  function checkNode(node: EvolNode, parentRound: number, seenMonsters: Set<number>, accumulatedCost: number): CoherenceCheckResult {
+    if (node.round < parentRound) {
+      return { valid: false, error: 'INVALID_ROUND_ORDER', message: `Round not monotonic: ${node.round} < ${parentRound}` };
+    }
+
     let currentCost = accumulatedCost;
     for (const p of node.placements) {
-      if (seenMonsters.has(p.monsterId)) return false; // 重复入场
+      if (!teamMonsterIds.has(p.monsterId)) {
+        return {
+          valid: false,
+          error: 'MISSING_TEAM_MONSTER',
+          message: `Monster ${p.monsterId} placed in round ${node.round} is not present in candidate team [${Array.from(teamMonsterIds).join(',')}]`,
+          detail: { round: node.round, monsterId: p.monsterId, nodeId: node.id, x: p.x, y: p.y },
+        };
+      }
+      if (seenMonsters.has(p.monsterId)) {
+        return {
+          valid: false,
+          error: 'DUPLICATE_PATH_DEPLOYMENT',
+          message: `Monster ${p.monsterId} deployed more than once on path at round ${node.round}`,
+          detail: { round: node.round, monsterId: p.monsterId, nodeId: node.id },
+        };
+      }
+      if (p.x < 0 || p.x > 10 || p.y < 0 || p.y > 4) {
+        return {
+          valid: false,
+          error: 'INVALID_COORDINATES',
+          message: `Invalid placement coordinates (${p.x},${p.y}) for monster ${p.monsterId}`,
+          detail: { round: node.round, monsterId: p.monsterId, x: p.x, y: p.y },
+        };
+      }
       seenMonsters.add(p.monsterId);
       currentCost += costOf(p.monsterId);
     }
+
     const maxBudget = BUDGET_LIMITS[node.round] ?? 16;
-    if (currentCost > maxBudget) return false; // 超过该轮预算上限
+    if (currentCost > maxBudget) {
+      return {
+        valid: false,
+        error: 'BUDGET_EXCEEDED',
+        message: `Accumulated cost ${currentCost} exceeds budget ${maxBudget} at round ${node.round}`,
+        detail: { round: node.round, monsterId: 0 },
+      };
+    }
 
     for (const child of node.children) {
-      if (!checkPath(child, new Set(seenMonsters), currentCost)) return false;
+      const res = checkNode(child, node.round, new Set(seenMonsters), currentCost);
+      if (!res.valid) return res;
     }
-    return true;
+
+    return { valid: true };
   }
 
-  return checkPath(formation.root, new Set(), 0);
+  return checkNode(formation.root, 0, new Set(), 0);
+}
+
+export function validateTreePlacements(formation: EvolFormation): boolean {
+  return validateTreeDeckCoherence(formation).valid;
 }
 
 export interface CalculatedUnitAnalysis {

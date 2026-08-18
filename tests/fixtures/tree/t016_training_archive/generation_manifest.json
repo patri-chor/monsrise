@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-08-18T03:28:12.041Z",
+  "totalSources": 11,
+  "legacySources": 1,
+  "totalMutatedCandidates": 30,
+  "validScreenedCandidates": 30,
+  "eightMonsterRuleApplied": true,
+  "coherenceGateApplied": true,
+  "costCeilingRemoved": true,
+  "attemptsPerCandidate": 3,
+  "rules": {
+    "calculatedThreshold": 0.5,
+    "minHeldOutGain": 0.05,
+    "robustPassMin": 2
+  }
+}
