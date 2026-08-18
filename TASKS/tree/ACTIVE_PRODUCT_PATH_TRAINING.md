@@ -9,7 +9,8 @@ Authoritative execution path: playFullGame + declarative Evol tree strategy
 Authoritative evidence: PRODUCT_PATH_FORMAL_SCREEN_T035_V1
 Parallel scheduler: PersistentSimPool worker pool
 Worker configuration recorded by T035: 32 configured / 32 observed
-Current active execution task: T036
+Current active execution task: T036 Product-Path Foundation and Gift Jungle Repair
+Execution chain: T036 foundation -> T037 screen/check chain -> T038 adaptive loop
 Tier 1: frozen current 11 formations
 Tier 2: none
 Automatic apply/deploy: prohibited
@@ -85,9 +86,9 @@ Reject before simulation when any condition fails:
 
 ```text
 not exactly 8 monsters for a new candidate
-legacy gift_jungle descendant
+historic gift_jungle modified instead of creating gift_jungle_v2
 invalid/deep-incoherent Evol tree
-calculator-controlled position moved
+calculator-controlled position moved outside an approved formation transform
 duplicate canonical fingerprint
 missing authority artifact/protocol identity
 old arena formal execution request
@@ -98,26 +99,27 @@ old arena formal execution request
 Prioritize mutations that cover untested real product-path behavior:
 
 ```text
-legal ordinary-monster coordinates
-within-round placement order
-branch conditions and branch paths
-cross-branch placements
-legal reserve/substitute changes
+spatial_local: legal ordinary-monster coordinates only
+formation_transform: separately declared legal translation/mirror/pattern flip
+strategy_schedule_branch: cross-round timing + deck/badge + R1/R2+ branch together
+multi_monster_exploration: only after repeated single-operator failures
 ```
 
-Record parent fingerprint, mutation operator, affected node/round/path, and prior coverage. A cosmetic ID change is not a new candidate.
+Same-round placement-array order is not an optimization operator: all valid round actions load before battle. `side` is an optional branch condition and mandatory two-side evaluation dimension, never a one-sided score-selection shortcut.
 
-### 3. Source-balanced search allocation
+Record parent fingerprint, mutation operator, affected node/round/path, transform mapping where relevant, and prior coverage. A cosmetic ID change is not a new candidate.
 
-Per resumable T036 cycle:
+### 3. Adaptive source allocation
+
+T038's unattended cycle adapts the search budget:
 
 ```text
-50% current source-local frontier deepening
-30% source-balanced novel variants
-20% underrepresented branch/route/source exploration reserve
+mature / strong source: mostly one-change spatial, transform, or strategy candidates
+early / weak / unexplored source: start single-change; escalate to seeded 2-4-change exploration only after recorded failures
+calculator-controlled-heavy source: reduce spatial budget by controllable placement ratio; use strategy/transform budget instead
 ```
 
-A saturated source is not allowed to consume the budget just because it scores 100% on the current held-out panel.
+Saturated sources cannot dominate simply from a 100% held-out score. Every source retains a novelty floor.
 
 ### 4. Product-path screen
 
@@ -136,6 +138,8 @@ candidate delta = candidate score - matched own-source baseline score
 ```
 
 Raw cross-source score is not an improvement metric.
+
+After a conditional frontier is selected, product-path post-pruning tests each nonempty branch against a matched branch-removed candidate. Prune only when removal causes no material source-relative or weakest-side regression. Legacy `prune.ts` and `prune_branch.ts` remain sandbox-only because they use arena.
 
 ### 5. Independent high-sample verification
 
