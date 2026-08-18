@@ -1,5 +1,6 @@
 ﻿import * as assertStrict from 'node:assert/strict';
 import { buildObservationKey, getCandidateObservationFingerprint, getSourceFixtureObservationFingerprint } from '../src/engine/tree/experience_training_pipeline';
+
 const base = { team: [{ monsterId: 110, badgeIds: [23, 8] }], tree: { id: 'root', placements: [{ monsterId: 110, x: 9, y: 2 }], children: [] } };
 const moved = { team: [{ monsterId: 110, badgeIds: [23, 8] }], tree: { id: 'root', placements: [{ monsterId: 110, x: 9, y: 3 }], children: [] } };
 const badgeChanged = { team: [{ monsterId: 110, badgeIds: [8, 23] }], tree: base.tree };
