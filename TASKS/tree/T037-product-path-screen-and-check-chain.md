@@ -63,11 +63,13 @@ Each cell includes manifest/protocol identity, entity/fingerprint/parent, operat
 Evaluate only a small deterministic Phase-2 batch:
 
 ```text
-one gift_jungle_v2 baseline
+one product-path baseline per eligible eight-monster source
 one spatial_local candidate per eligible source
 one formation_transform candidate per eligible transformable source
 one strategy_schedule_branch candidate per eligible source
 ```
+
+The repaired eight-monster `gift_jungle` is included like every other executable source. Its pre-T036 seven-monster evidence remains historical-only and must never be merged with the repaired source fingerprint or score.
 
 No multi-monster random exploration yet. Exclude duplicate/no-op candidates before workers start. Same-round list ordering is never a candidate.
 

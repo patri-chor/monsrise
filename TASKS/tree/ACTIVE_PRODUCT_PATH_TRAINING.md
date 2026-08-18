@@ -9,14 +9,14 @@ Authoritative execution path: playFullGame + declarative Evol tree strategy
 Authoritative evidence: PRODUCT_PATH_FORMAL_SCREEN_T035_V1
 Parallel scheduler: PersistentSimPool worker pool
 Worker configuration recorded by T035: 32 configured / 32 observed
-Current active execution task: T036 Product-Path Foundation and Gift Jungle Repair
+Current active execution task: T036 Product-Path Foundation and Gift Jungle Eight-Monster Repair
 Execution chain: T036 foundation -> T037 screen/check chain -> T038 adaptive loop
 Tier 1: frozen current 11 formations
 Tier 2: none
 Automatic apply/deploy: prohibited
 ```
 
-`gift_jungle` remains a frozen seven-monster Tier 1 legacy baseline. Do not add an eighth monster and do not generate descendants.
+`gift_jungle` is repaired in place by T036 to exactly eight monsters through one addition only: `116` with badges `[3, 5]`. After its new product-path baseline, it is an executable optimization source. The pre-T036 seven-monster T035 evidence remains historical-only and fingerprint/protocol-separated.
 
 ## One Formal Call Path
 
@@ -86,7 +86,7 @@ Reject before simulation when any condition fails:
 
 ```text
 not exactly 8 monsters for a new candidate
-historic gift_jungle modified instead of creating gift_jungle_v2
+gift_jungle modified beyond the one allowed in-place addition of 116 [3,5]
 invalid/deep-incoherent Evol tree
 calculator-controlled position moved outside an approved formation transform
 duplicate canonical fingerprint
