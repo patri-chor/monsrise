@@ -4,11 +4,11 @@ import {
   evolToBundleFormation,
   walkEvolNodes,
   type EvolFormation,
-  type FeatureMask,
 } from './evol_gene';
-import { validateTreeDeckCoherence, getMonsterDisplayName } from './order_search';
+import { getMonsterDisplayName } from './order_search';
 import { costOf } from './tree_ops';
 import type { Formation } from '../../ai/types';
+import type { ExecutionMode } from './fine_grained_worker';
 
 export interface FourCostCoverageUnit {
   sourceId: string;
@@ -27,6 +27,8 @@ export interface FourCostCoverageUnit {
   costCharged: number;
   budgetAfter: number;
   isTraceValid: boolean;
+  /** 旧双路径 gate 的无损转换标记；产品路径仍保留用于审计 */
+  roundTripLossless?: boolean;
   workerErrorCount: number;
   status: 'PASS' | 'FAIL' | 'MISSING_TRACE';
 }
@@ -47,6 +49,7 @@ export async function runFourCostFidelityGate(
   pool: PersistentSimPool,
   sources: any[],
   earlyFamilies: any[],
+  mode: ExecutionMode = 'arena_sandbox_deprecated',
 ): Promise<FidelityGateResult> {
   const trainingOpps = earlyFamilies.map((f: any) => f.trainingVariant);
   const heldOutOpps = earlyFamilies.map((f: any) => f.heldOutVariant);
@@ -68,9 +71,9 @@ export async function runFourCostFidelityGate(
     const evol = formationToEvol(s as unknown as Formation);
 
     const { metrics: trainMetrics, deploymentTraces: trainTraces } =
-      await pool.evalCandidateWithDeploymentTraces(evol, trainingOpps, 1, 1000);
+      await pool.evalCandidateWithDeploymentTraces(evol, trainingOpps, 1, 1000, mode);
     const { metrics: heldOutMetrics, deploymentTraces: heldOutTraces } =
-      await pool.evalCandidateWithDeploymentTraces(evol, heldOutOpps, 1, 2000);
+      await pool.evalCandidateWithDeploymentTraces(evol, heldOutOpps, 1, 2000, mode);
 
     const allDirectTraces = [...trainTraces, ...heldOutTraces];
 
@@ -89,10 +92,10 @@ export async function runFourCostFidelityGate(
 
     // 2. 双路径（direct_evol vs round_trip_evol）全量采集
     const bundleFmt = evolToBundleFormation(evol);
-    const roundTripEvol = formationToEvol(bundleFmt);
+    const roundTripEvol = formationToEvol(bundleFmt as unknown as Formation);
 
     const { deploymentTraces: rtTraces } =
-      await pool.evalCandidateWithDeploymentTraces(roundTripEvol, heldOutOpps, 1, 3000);
+      await pool.evalCandidateWithDeploymentTraces(roundTripEvol, heldOutOpps, 1, 3000, mode);
 
     // 3. 遍历树中所有节点与分支
     for (const node of walkEvolNodes(evol.root)) {
@@ -203,6 +206,7 @@ export async function runFourCostFidelityGate(
     trainingOpps.slice(0, 1),
     1,
     9999,
+    mode,
   );
 
   const negEvent = negTraces.find(t => t.monsterId === 103);

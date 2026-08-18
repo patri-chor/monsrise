@@ -15,13 +15,46 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import type { Formation } from '../../ai/types';
 import type { EvolFormation, FeatureMask } from './evol_gene';
-import type { SimTaskMessage, SimResultMessage } from './fine_grained_worker';
+import type { SimTaskMessage, SimResultMessage, ExecutionMode } from './fine_grained_worker';
 import { calculateMatchMetrics, type MatchMetrics } from './match_metrics';
 import { CpuLoadMonitor } from './cpu_monitor';
 import type { MatchTrace } from './branch_induct';
+import { EXECUTION_SEMANTICS_VERSION } from '../play_full_game';
+import { STRATEGY_ADAPTER_VERSION } from './product_tree_strategy';
+import { getAuthorityArtifactManifest } from './independent_real_entry_parity';
 
 const WORKER_SRC = resolve('src/engine/tree/fine_grained_worker.ts');
 const WORKER_OUT = resolve('reports/fine_grained_worker.cjs');
+
+/** T032 C.4/D.5：正式请求选择旧 arena 路径 → 在 worker 启动前 fail-closed */
+export class DeprecatedArenaFormalError extends Error {
+  public taskIds: number[];
+  constructor(taskIds: number[]) {
+    super(`[DeprecatedArenaFormalError] Formal request must use product path (playFullGame); arena.ts -> playSpecVsSpec is SANDBOX_ONLY_DEPRECATED. Blocked tasks: ${taskIds.join(', ')}`);
+    this.name = 'DeprecatedArenaFormalError';
+    this.taskIds = taskIds;
+  }
+}
+
+/** T032 D.1：产品路径 manifest */
+export interface ProductPathManifest {
+  executionSemanticsVersion: string;
+  productEntryModule: string;
+  strategyAdapterVersion: string;
+  authorityBundleAbsolutePath: string;
+  authorityBundleSHA256: string;
+  runnerCommit: string;
+  configuredWorkerCount: number;
+  observedWorkerCount: number;
+}
+
+/** 正式请求 fail-closed 守卫（必须在任何 worker 启动前调用） */
+export function failClosedArenaFormal(tasks: SimTaskMessage[]): void {
+  const blocked = tasks.filter(t => t.formalRequest === true && (t.executionMode ?? 'arena_sandbox_deprecated') === 'arena_sandbox_deprecated');
+  if (blocked.length > 0) {
+    throw new DeprecatedArenaFormalError(blocked.map(t => t.taskId));
+  }
+}
 
 export class StructuredSimError extends Error {
   public requestId: string;
@@ -94,6 +127,27 @@ export class PersistentSimPool {
     }
   }
 
+  /** T032 D.1：记录产品路径运行 provenance 与池实际并发规模 */
+  public getProductPathManifest(): ProductPathManifest {
+    const authority = getAuthorityArtifactManifest();
+    let runnerCommit = 'UNKNOWN';
+    try {
+      runnerCommit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    } catch {
+      // 保留 UNKNOWN；调用方可把缺失 provenance 作为 fail-closed 条件处理。
+    }
+    return {
+      executionSemanticsVersion: EXECUTION_SEMANTICS_VERSION,
+      productEntryModule: 'src/engine/play_full_game.ts',
+      strategyAdapterVersion: STRATEGY_ADAPTER_VERSION,
+      authorityBundleAbsolutePath: authority.authorityBundleAbsoluteSource,
+      authorityBundleSHA256: authority.authorityBundleSHA256,
+      runnerCommit,
+      configuredWorkerCount: this.workerCount,
+      observedWorkerCount: this.workers.length,
+    };
+  }
+
   public destroy(): void {
     if (this.cpuMonitor) {
       this.cpuMonitor.stop();
@@ -111,6 +165,9 @@ export class PersistentSimPool {
    * 并发执行一组 SimTask 任务，支持基于 requestId 的安全请求隔离与结构化校验
    */
   public async dispatchTasks(tasks: SimTaskMessage[], candidateIdentity?: string): Promise<SimResultMessage[]> {
+    // T032 C.4：正式请求若选择旧 arena 路径，在 worker 启动前 fail-closed
+    failClosedArenaFormal(tasks);
+
     await this.init();
 
     if (tasks.length === 0) return [];
@@ -218,6 +275,7 @@ export class PersistentSimPool {
     matchedOpps: Formation[],
     games: number,
     seedBase: number,
+    mode: ExecutionMode = 'arena_sandbox_deprecated',
   ): Promise<MatchMetrics[]> {
     const tasks: SimTaskMessage[] = [];
     let taskId = 0;
@@ -236,6 +294,8 @@ export class PersistentSimPool {
               side,
               seed: seedBase,
               games,
+              executionMode: mode,
+              formalRequest: mode === 'product_path',
             });
         }
       }
@@ -271,6 +331,7 @@ export class PersistentSimPool {
     matchedOpps: Formation[],
     games: number,
     seedBase: number,
+    mode: ExecutionMode = 'arena_sandbox_deprecated',
   ): Promise<{ metrics: MatchMetrics; deploymentTraces: any[] }> {
     const tasks: SimTaskMessage[] = [];
     let taskId = 0;
@@ -286,6 +347,8 @@ export class PersistentSimPool {
           seed: seedBase,
           games,
           collectDeploymentTraces: true,
+          executionMode: mode,
+          formalRequest: mode === 'product_path',
         });
       }
     }
