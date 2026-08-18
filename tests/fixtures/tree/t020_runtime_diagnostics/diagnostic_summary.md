@@ -6,9 +6,9 @@
 
 | Candidate ID | Source Seed | Provenance | Historical T014 $\Delta$ | T021 Early Held-Out | T021 Strong Panel | Errors | Status |
 |---|---|---|---|---|---|---|---|
-| `cand_s1_1_2a` | 泉水剑 | T014 | Held-Out +5.7% | 47.1% (20W/26D/24L) | 36.3% (17W/24D/39L) | 0 | COMPLETE_VALID_EVALUATED |
-| `cand_s1_2_2b` | 泉水剑 | T014 | Held-Out +17.1% | 59.3% (34W/15D/21L) | 48.1% (31W/15D/34L) | 0 | COMPLETE_VALID_EVALUATED |
-| `cand_s2_1_8e` | 坚果救星 | T014 | Held-Out +9.3% | 60.0% (35W/14D/21L) | 52.5% (33W/18D/29L) | 0 | COMPLETE_VALID_EVALUATED |
+| `cand_s1_1_2a` | 泉水剑 | T014 | Held-Out +5.7% | 47.9% (24W/19D/27L) | 35.6% (19W/19D/42L) | 0 | COMPLETE_VALID_EVALUATED |
+| `cand_s1_2_2b` | 泉水剑 | T014 | Held-Out +17.1% | 45.0% (24W/15D/31L) | 35.6% (21W/15D/44L) | 0 | COMPLETE_VALID_EVALUATED |
+| `cand_s2_1_8e` | 坚果救星 | T014 | Held-Out +9.3% | 63.6% (37W/15D/18L) | 55.6% (36W/17D/27L) | 0 | COMPLETE_VALID_EVALUATED |
 
 ## 2. All-Zero Candidate Diagnostics Classification (30 Candidates)
 
@@ -20,15 +20,15 @@
 | `cand_s2_1_f175` | 坚果救星 | light | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s2_2_49de` | 坚果救星 | medium | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s2_3_568c` | 坚果救星 | heavy | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
-| `cand_s3_1_ef23` | 全二冲 | light | PASS | 34.3% | 18/12/40 | 0 | `COMPLETE_VALID_EVALUATED` |
-| `cand_s3_2_74a3` | 全二冲 | medium | PASS | 34.3% | 18/12/40 | 0 | `COMPLETE_VALID_EVALUATED` |
-| `cand_s3_3_473f` | 全二冲 | heavy | PASS | 34.3% | 18/12/40 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s3_1_ef23` | 全二冲 | light | PASS | 32.1% | 17/11/42 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s3_2_74a3` | 全二冲 | medium | PASS | 32.1% | 17/11/42 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s3_3_473f` | 全二冲 | heavy | PASS | 32.1% | 17/11/42 | 0 | `COMPLETE_VALID_EVALUATED` |
 | `cand_s4_1_e154` | 经典救星 | light | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s4_2_13b2` | 经典救星 | medium | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s4_3_f2ce` | 经典救星 | heavy | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
-| `cand_s5_1_dbd1` | 全二永平 | light | PASS | 35.7% | 7/36/27 | 0 | `COMPLETE_VALID_EVALUATED` |
-| `cand_s5_2_88ba` | 全二永平 | medium | PASS | 35.7% | 7/36/27 | 0 | `COMPLETE_VALID_EVALUATED` |
-| `cand_s5_3_3922` | 全二永平 | heavy | PASS | 35.7% | 7/36/27 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s5_1_dbd1` | 全二永平 | light | PASS | 40.7% | 14/29/27 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s5_2_88ba` | 全二永平 | medium | PASS | 40.7% | 14/29/27 | 0 | `COMPLETE_VALID_EVALUATED` |
+| `cand_s5_3_3922` | 全二永平 | heavy | PASS | 40.7% | 14/29/27 | 0 | `COMPLETE_VALID_EVALUATED` |
 | `cand_s6_1_bb14` | 肃清 | light | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s6_2_46d5` | 肃清 | medium | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |
 | `cand_s6_3_f085` | 肃清 | heavy | PASS | 0.0% | 0/0/70 | 0 | `COMPLETE_VALID_ALL_LOSS` |

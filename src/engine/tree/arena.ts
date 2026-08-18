@@ -307,23 +307,7 @@ function bundleRoundPlanFor(
     throw new Error(`[arena] decideWithFormation 失败: ${(e as Error).message}`);
   }
   for (const a of placements) {
-    if (!inHand.has(a.monsterId)) continue;
-    const cost = ai.getMonster(a.monsterId)?.cost ?? 0;
-    if (cost > curBudget) continue;
-    const lo = 6, hi = 10;
-    if (a.x < lo || a.x > hi || a.y < 0 || a.y > 4) {
-      const r = relocateNear(a.x, a.y, 'p2', occupied);
-      if (!r) continue;
-      a.x = r[0]; a.y = r[1];
-    }
-    if (occupied.has(a.x * 10 + a.y)) {
-      const r = relocateNear(a.x, a.y, 'p2', occupied);
-      if (!r) continue;
-      a.x = r[0]; a.y = r[1];
-    }
-    occupied.add(a.x * 10 + a.y);
     plan.push({ monsterId: a.monsterId, x: a.x, y: a.y });
-    curBudget -= cost;
   }
   return plan;
 }

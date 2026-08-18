@@ -40,7 +40,16 @@ async function runT023Tests() {
   const illegalFourCost: EvolFormation = {
     name: 'IllegalFourCostTest',
     archetype: 'prayer',
-    team: [{ monsterId: 110, badgeIds: [] }],
+    team: [
+      { monsterId: 110, badgeIds: [] },
+      { monsterId: 101, badgeIds: [] },
+      { monsterId: 102, badgeIds: [] },
+      { monsterId: 105, badgeIds: [] },
+      { monsterId: 106, badgeIds: [] },
+      { monsterId: 109, badgeIds: [] },
+      { monsterId: 111, badgeIds: [] },
+      { monsterId: 112, badgeIds: [] },
+    ],
     root: {
       id: 'root',
       round: 0,
