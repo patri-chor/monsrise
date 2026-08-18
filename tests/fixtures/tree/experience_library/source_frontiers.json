@@ -1,57 +1,147 @@
 {
   "泉水剑": {
     "sourceId": "springsword",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s0_5_heavy_spri",
+      "trainingScore": 0.4857142857142857,
+      "win": 45,
+      "draw": 46,
+      "loss": 49,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "坚果救星": {
     "sourceId": "nutsavior",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s1_5_heavy_nuts",
+      "trainingScore": 0.5321428571428571,
+      "win": 48,
+      "draw": 53,
+      "loss": 39,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "全二冲": {
     "sourceId": "all2rush",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s2_4_medium_all2",
+      "trainingScore": 0.5214285714285715,
+      "win": 66,
+      "draw": 14,
+      "loss": 60,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "经典救星": {
     "sourceId": "classicsavior",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s3_1_light_clas",
+      "trainingScore": 0.6035714285714285,
+      "win": 79,
+      "draw": 11,
+      "loss": 50,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "全二永平": {
     "sourceId": "all2prayer",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s4_2_light_all2",
+      "trainingScore": 0.5535714285714286,
+      "win": 39,
+      "draw": 77,
+      "loss": 24,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "肃清": {
     "sourceId": "suqing",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s5_2_light_suqi",
+      "trainingScore": 0.8571428571428571,
+      "win": 110,
+      "draw": 20,
+      "loss": 10,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "梯子塞雷": {
     "sourceId": "laddersel",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s6_3_medium_ladd",
+      "trainingScore": 0.43214285714285716,
+      "win": 44,
+      "draw": 33,
+      "loss": 63,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "铲土多核": {
     "sourceId": "spade_multi",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s7_4_medium_spad",
+      "trainingScore": 0.575,
+      "win": 64,
+      "draw": 33,
+      "loss": 43,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "礼物救星": {
     "sourceId": "gift_savior",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s8_3_medium_gift",
+      "trainingScore": 0.6571428571428571,
+      "win": 71,
+      "draw": 42,
+      "loss": 27,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "壕炸金猴": {
     "sourceId": "golden_boom",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": false,
+    "status": "FORMAL_FRONTIER_ESTABLISHED",
+    "bestCandidate": {
+      "candidateId": "cand_s9_5_heavy_gold",
+      "trainingScore": 0.6928571428571428,
+      "win": 86,
+      "draw": 22,
+      "loss": 32,
+      "total": 140
+    },
+    "evaluatedCandidatesCount": 6
   },
   "礼物丛林": {
     "sourceId": "gift_jungle",
-    "status": "NO_COMPLETE_FORMAL_FRONTIER",
-    "note": "Smoke data cannot be used to select best frontier candidate"
+    "isLegacyBaseline": true,
+    "status": "LEGACY_7_MONSTER_BASELINE"
   }
 }

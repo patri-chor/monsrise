@@ -1,4 +1,4 @@
-﻿import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync, renameSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { PersistentSimPool } from './persistent_pool';
 import {
@@ -353,6 +353,59 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
       };
     }
     writeFileSync(frontiersPath, JSON.stringify(emptyFrontiers, null, 2), 'utf8');
+  } else {
+    // 读取全部 140 局 formal observations
+    const allFormalObs = readFileSync(obsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map(l => JSON.parse(l))
+      .filter(o => o.runKind === 'FORMAL_SCREEN' && o.total === 140 && o.isEvaluationComplete && (o.workerErrorCount ?? 0) === 0);
+
+    const formalDecisions = candidates.map(c => {
+      const cObs = allFormalObs.filter(o => o.candidateId === c.candidateId);
+      const latestObs = cObs[cObs.length - 1];
+      const score = latestObs ? latestObs.trainingScore : 0;
+      const isPromoted = score >= 0.40;
+      return {
+        candidateId: c.candidateId,
+        sourceSeedName: c.sourceSeedName,
+        decision: isPromoted ? 'FORMAL_PROMOTED_ELIGIBLE' : 'DEFERRED',
+        reason: isPromoted ? 'Met formal 140-game held-out threshold (>=40.0%) with 0 errors' : 'Below formal screening threshold',
+        score,
+        totalGames: latestObs ? latestObs.total : 0,
+      };
+    });
+    writeFileSync(decisionsPath, formalDecisions.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
+
+    const formalFrontiers: Record<string, any> = {};
+    for (const s of sources) {
+      if (s.isLegacyBaseline) {
+        formalFrontiers[s.name] = {
+          sourceId: s.id,
+          isLegacyBaseline: true,
+          status: 'LEGACY_7_MONSTER_BASELINE',
+        };
+        continue;
+      }
+      const sObs = allFormalObs.filter(o => o.sourceSeedName === s.name);
+      sObs.sort((a, b) => b.trainingScore - a.trainingScore);
+      const best = sObs[0] ?? null;
+      formalFrontiers[s.name] = {
+        sourceId: s.id,
+        isLegacyBaseline: false,
+        status: best ? 'FORMAL_FRONTIER_ESTABLISHED' : 'NO_FORMAL_DATA',
+        bestCandidate: best ? {
+          candidateId: best.candidateId,
+          trainingScore: best.trainingScore,
+          win: best.win,
+          draw: best.draw,
+          loss: best.loss,
+          total: best.total,
+        } : null,
+        evaluatedCandidatesCount: sObs.length,
+      };
+    }
+    writeFileSync(frontiersPath, JSON.stringify(formalFrontiers, null, 2), 'utf8');
   }
 
   // 写入 manifest.json

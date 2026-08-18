@@ -1,8 +1,8 @@
 {
-  "lastRunId": "smoke_t024_run",
-  "lastRunKind": "SMOKE",
+  "lastRunId": "formal_screen_t024_init",
+  "lastRunKind": "FORMAL_SCREEN",
   "lastCandidateIndex": 59,
   "lastCandidateId": "cand_s9_6_heavy_gold",
-  "lastObservationKey": "1.2.0::T024_COMPLETE_RUN_IDENTITY::SMOKE::screen::cand_s9_6_heavy_gold::fp_cand_s9_6_heavy_gold::fp_eleven_frozen_v1::early_seven_held_out::both_sides::schedule_1_screen::gpc_1::commit_t024",
-  "timestamp": "2026-08-18T04:21:13.357Z"
+  "lastObservationKey": "1.2.0::T024_COMPLETE_RUN_IDENTITY::FORMAL_SCREEN::screen::cand_s9_6_heavy_gold::candidate_8092b44b::sources_dde3ed7f::early_seven_held_out::both_sides::schedule_1_screen::gpc_10::commit_t024",
+  "timestamp": "2026-08-18T04:43:23.210Z"
 }
