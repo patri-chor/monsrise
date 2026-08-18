@@ -1,0 +1,3847 @@
+[
+  {
+    "candidateId": "cand_s3_1_light_clas",
+    "sourceSeedName": "经典救星",
+    "originalNodes": 9,
+    "prunedNodes": 9,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n34",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n35",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 108,
+              "x": 9,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n36",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 117,
+                  "x": 6,
+                  "y": 2
+                },
+                {
+                  "monsterId": 110,
+                  "x": 7,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n37",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 9,
+                      "y": 2
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n38",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n39",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 7,
+                              "y": 0
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n15",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "fullrush",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 119,
+                      "x": 10,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n16",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n17",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 8,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s3_2_light_clas",
+    "sourceSeedName": "经典救星",
+    "originalNodes": 9,
+    "prunedNodes": 9,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n34",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n35",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 108,
+              "x": 10,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n36",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 117,
+                  "x": 6,
+                  "y": 2
+                },
+                {
+                  "monsterId": 110,
+                  "x": 7,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n37",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 9,
+                      "y": 2
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n38",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n39",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 7,
+                              "y": 0
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n15",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "fullrush",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 119,
+                      "x": 10,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n16",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n17",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 8,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s4_2_light_all2",
+    "sourceSeedName": "全二永平",
+    "originalNodes": 6,
+    "prunedNodes": 6,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n54",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n55",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 8,
+              "y": 0
+            }
+          ],
+          "children": [
+            {
+              "id": "n56",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 103,
+                  "x": 7,
+                  "y": 1
+                },
+                {
+                  "monsterId": 105,
+                  "x": 8,
+                  "y": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "n57",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 112,
+                      "x": 7,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 106,
+                      "x": 8,
+                      "y": 2
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n58",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 7,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n59",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_1_light_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 3
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_2_light_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 8,
+              "y": 2
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_3_medium_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 2
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_4_medium_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 2
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_5_heavy_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 2
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s5_6_heavy_suqi",
+    "sourceSeedName": "肃清",
+    "originalNodes": 12,
+    "prunedNodes": 12,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n40",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n41",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 7,
+              "y": 2
+            },
+            {
+              "monsterId": 124,
+              "x": 8,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n42",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 101,
+                  "x": 9,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n43",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n44",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n45",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 107,
+                              "x": 10,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n48",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": [
+                      "drill"
+                    ]
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 2
+                    },
+                    {
+                      "monsterId": 114,
+                      "x": 8,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n49",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n50",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 9,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n51",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": "prayer",
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 114,
+                      "x": 7,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 107,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n52",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 8,
+                          "y": 4
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n53",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s7_4_medium_spad",
+    "sourceSeedName": "铲土多核",
+    "originalNodes": 17,
+    "prunedNodes": 17,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n18",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n19",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 115,
+              "x": 7,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n20",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 0
+                }
+              ],
+              "children": [
+                {
+                  "id": "n21",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 101,
+                      "x": 9,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n22",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 112,
+                          "x": 7,
+                          "y": 1
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n23",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n26",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 117,
+                      "x": 6,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 110,
+                      "x": 7,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n27",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 112,
+                          "x": 8,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n28",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 124,
+                              "x": 8,
+                              "y": 4
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n19_b686378",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [
+              "dof"
+            ],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 115,
+              "x": 8,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n19_b686378_0",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 0
+                }
+              ],
+              "children": [
+                {
+                  "id": "n19_b686378_0_0",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 101,
+                      "x": 8,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n19_b686378_0_0_0",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 112,
+                          "x": 8,
+                          "y": 1
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n19_b686378_0_0_0_0",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n19_b686378_0_1",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 117,
+                      "x": 6,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 110,
+                      "x": 7,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n19_b686378_0_1_0",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 112,
+                          "x": 8,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n19_b686378_0_1_0_0",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 124,
+                              "x": 8,
+                              "y": 4
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s8_3_medium_gift",
+    "sourceSeedName": "礼物救星",
+    "originalNodes": 16,
+    "prunedNodes": 16,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n7",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": "prayer",
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 108,
+              "x": 8,
+              "y": 3
+            }
+          ],
+          "children": [
+            {
+              "id": "n8",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 109,
+                  "x": 6,
+                  "y": 3
+                },
+                {
+                  "monsterId": 110,
+                  "x": 8,
+                  "y": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "n9",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 104,
+                      "x": 8,
+                      "y": 0
+                    },
+                    {
+                      "monsterId": 119,
+                      "x": 10,
+                      "y": 0
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n10",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 1
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n11",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n2_b686378",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 119,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n2_b686378_0",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n2_b686378_0_0",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n2_b686378_0_0_0",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n2_b686378_0_0_0_0",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s8_5_heavy_gift",
+    "sourceSeedName": "礼物救星",
+    "originalNodes": 16,
+    "prunedNodes": 16,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n7",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": "prayer",
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 108,
+              "x": 8,
+              "y": 3
+            }
+          ],
+          "children": [
+            {
+              "id": "n8",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 110,
+                  "x": 8,
+                  "y": 1
+                },
+                {
+                  "monsterId": 109,
+                  "x": 6,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n9",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 104,
+                      "x": 8,
+                      "y": 0
+                    },
+                    {
+                      "monsterId": 119,
+                      "x": 10,
+                      "y": 0
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n10",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 1
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n11",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n2_b686378",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 119,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n2_b686378_0",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n2_b686378_0_0",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n2_b686378_0_0_0",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n2_b686378_0_0_0_0",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s8_6_heavy_gift",
+    "sourceSeedName": "礼物救星",
+    "originalNodes": 16,
+    "prunedNodes": 16,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n7",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": "prayer",
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 108,
+              "x": 8,
+              "y": 3
+            }
+          ],
+          "children": [
+            {
+              "id": "n8",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 110,
+                  "x": 8,
+                  "y": 1
+                },
+                {
+                  "monsterId": 109,
+                  "x": 6,
+                  "y": 3
+                }
+              ],
+              "children": [
+                {
+                  "id": "n9",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 104,
+                      "x": 8,
+                      "y": 0
+                    },
+                    {
+                      "monsterId": 119,
+                      "x": 10,
+                      "y": 0
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n10",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 105,
+                          "x": 9,
+                          "y": 1
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n11",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "n2_b686378",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 119,
+              "x": 8,
+              "y": 1
+            },
+            {
+              "monsterId": 116,
+              "x": 6,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n2_b686378_0",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 8,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n2_b686378_0_0",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 109,
+                      "x": 6,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 105,
+                      "x": 9,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n2_b686378_0_0_0",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 104,
+                          "x": 8,
+                          "y": 0
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n2_b686378_0_0_0_0",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 9,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s9_3_medium_gold",
+    "sourceSeedName": "壕炸金猴",
+    "originalNodes": 6,
+    "prunedNodes": 6,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 2
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 120,
+                  "x": 10,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 125,
+                      "x": 6,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 124,
+                          "x": 10,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s9_4_medium_gold",
+    "sourceSeedName": "壕炸金猴",
+    "originalNodes": 6,
+    "prunedNodes": 6,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 2
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 120,
+                  "x": 10,
+                  "y": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 125,
+                      "x": 6,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 124,
+                          "x": 10,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s9_5_heavy_gold",
+    "sourceSeedName": "壕炸金猴",
+    "originalNodes": 6,
+    "prunedNodes": 6,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 2
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 120,
+                  "x": 10,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 125,
+                      "x": 6,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 124,
+                          "x": 10,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  },
+  {
+    "candidateId": "cand_s9_6_heavy_gold",
+    "sourceSeedName": "壕炸金猴",
+    "originalNodes": 6,
+    "prunedNodes": 6,
+    "prunedBranchCount": 0,
+    "prunedTree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 2
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 1
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 120,
+                  "x": 10,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 125,
+                      "x": 6,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 124,
+                          "x": 10,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 106,
+                              "x": 6,
+                              "y": 3
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "prePruningScore": 0,
+    "postPruningScore": 0
+  }
+]
