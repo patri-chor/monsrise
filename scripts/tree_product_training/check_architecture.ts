@@ -32,6 +32,7 @@ import {
   walkEvolNodes,
 } from '../../src/engine/tree/evol_gene';
 import type { FeatureMask } from '../../src/engine/tree/evol_gene';
+import { treeStrategyFor } from '../../src/engine/tree/product_tree_strategy';
 
 console.log('=== check_architecture.ts — T036 Architecture Verification ===\n');
 
@@ -124,38 +125,88 @@ check('fingerprint rejects no-op (clone = same fingerprint)', () => {
   assert(result.isNoOp, 'clone should be no-op');
 });
 
-// ---- 4. R1 分支行为 ----
-console.log('\n--- R1 branch selection ---');
+// ---- 4. R1 直接产品适配器证据 (treeStrategyFor) ----
+console.log('\n--- R1 product adapter: direct treeStrategyFor() calls ---');
 
 const gjRaw: any[] = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
 const gjSrc = gjRaw.find((s: any) => s.id === 'gift_jungle');
 const gjEvol = formationToEvol(gjSrc);
+const gjTeam = gjSrc.team.map((s: any) => ({ monsterId: s.monsterId, badgeIds: s.badgeIds ?? [] }));
 
-check('gift_jungle has at least 1 R1 branch', () => {
+function makeR1Ctx(side: 1 | 2, enemyHandIds: number[]): any {
+  return {
+    side, identity: 'gift_jungle', round: 1, seed: 1, rng: () => 0.5,
+    team: gjTeam, hand: gjTeam, ownMonsters: [], enemyMonsters: [],
+    enemyRevealedHand: enemyHandIds.map(id => ({ monsterId: id, badgeIds: [] })),
+    budget: 999,
+    zone: side === 1 ? { min: 1, max: 5 } : { min: 6, max: 10 },
+  };
+}
+
+check('gift_jungle R1 has 2 branches: n2 (fallback) and n7 (fullrush)', () => {
   const branches = listR1Branches(gjEvol);
-  assert(branches.length >= 1, `expected ≥1 R1 branch, got ${branches.length}`);
+  assert(branches.length === 2, `expected 2 R1 branches, got ${branches.length}`);
+  assert(branches.some(b => b.isFallback && b.nodeId === 'n2'), 'n2 fallback not found');
+  assert(branches.some(b => !b.isFallback && b.nodeId === 'n7'), 'n7 condition not found');
 });
 
-check('R1 fallback branch selected for empty enemy state (side 1)', () => {
-  const sel = getR1BranchSelection(gjEvol, { enemyHandIds: new Set(), enemyHandBadges: new Set() });
-  assert(sel.side1 !== null, 'side1 R1 branch selection returned null');
+const gjStrategy = treeStrategyFor(gjEvol);
+
+check('[P2] R1 fallback: treeStrategyFor branchId=n2, m110@(7,3)', () => {
+  const intents = gjStrategy(makeR1Ctx(2, []));
+  assert(intents.length > 0, 'no intents emitted for P2 fallback');
+  assert(intents.every(i => i.branch?.branchId === 'n2'), `expected all branchId=n2, got: ${intents.map(i => i.branch?.branchId)}`);
+  const ids = intents.map(i => i.monsterId);
+  assert(ids.includes(110), 'missing m110 in P2 fallback');
+  assert(ids.includes(124), 'missing m124 in P2 fallback');
+  const m110 = intents.find(i => i.monsterId === 110)!;
+  assert(m110.plannedX === 7, `P2 m110 plannedX: expected 7, got ${m110.plannedX}`);
+  assert(m110.plannedY === 3, `P2 m110 plannedY: expected 3, got ${m110.plannedY}`);
 });
 
-check('R1 fallback branch selected for empty enemy state (side 2)', () => {
-  const sel = getR1BranchSelection(gjEvol, { enemyHandIds: new Set(), enemyHandBadges: new Set() });
-  assert(sel.side2 !== null, 'side2 R1 branch selection returned null');
+check('[P1] R1 fallback: treeStrategyFor branchId=n2, m110 x=3 (10-7 mirror)', () => {
+  const intents = gjStrategy(makeR1Ctx(1, []));
+  assert(intents.length > 0, 'no intents emitted for P1 fallback');
+  assert(intents.every(i => i.branch?.branchId === 'n2'), `expected all branchId=n2, got: ${intents.map(i => i.branch?.branchId)}`);
+  const m110 = intents.find(i => i.monsterId === 110)!;
+  assert(m110.plannedX === 3, `P1 m110 plannedX: expected 3 (10-7), got ${m110.plannedX}`);
+  assert(m110.plannedY === 3, `P1 m110 plannedY: expected 3, got ${m110.plannedY}`);
 });
 
-check('P2 side: treeX=7 → productX=7', () => {
-  assert(treeXToProductX(7, 2) === 7, 'P2 coord should pass through unchanged');
+check('[P2] R1 n7/fullrush: treeStrategyFor branchId=n7 (hand=[114,113])', () => {
+  const intents = gjStrategy(makeR1Ctx(2, [114, 113]));
+  assert(intents.length > 0, 'no intents emitted for P2 fullrush');
+  assert(intents.every(i => i.branch?.branchId === 'n7'), `expected all branchId=n7, got: ${intents.map(i => i.branch?.branchId)}`);
+  const ids = intents.map(i => i.monsterId);
+  assert(ids.includes(110), 'missing m110 in P2 n7');
+  assert(ids.includes(124), 'missing m124 in P2 n7');
+  const m110 = intents.find(i => i.monsterId === 110)!;
+  assert(m110.plannedX === 7, `P2 n7 m110 plannedX: expected 7, got ${m110.plannedX}`);
+  assert(m110.plannedY === 3, `P2 n7 m110 plannedY: expected 3, got ${m110.plannedY}`);
 });
 
-check('P1 side: treeX=7 → productX=3 (mirror 10-7)', () => {
-  assert(treeXToProductX(7, 1) === 3, 'P1 coord should mirror to 10-7=3');
+check('[P1] R1 n7/fullrush: treeStrategyFor branchId=n7, m110 x=3 (mirror)', () => {
+  const intents = gjStrategy(makeR1Ctx(1, [114, 113]));
+  assert(intents.length > 0, 'no intents emitted for P1 fullrush');
+  assert(intents.every(i => i.branch?.branchId === 'n7'), `expected all branchId=n7, got: ${intents.map(i => i.branch?.branchId)}`);
+  const m110 = intents.find(i => i.monsterId === 110)!;
+  assert(m110.plannedX === 3, `P1 n7 m110 plannedX: expected 3 (10-7), got ${m110.plannedX}`);
+  assert(m110.plannedY === 3, `P1 n7 m110 plannedY: expected 3, got ${m110.plannedY}`);
 });
 
-check('P1 side: treeX=9 → productX=1', () => {
-  assert(treeXToProductX(9, 1) === 1, 'P1 coord should mirror to 10-9=1');
+check('n7 branchId ≠ n2 branchId (fullrush vs fallback)', () => {
+  const fb = gjStrategy(makeR1Ctx(2, []))[0]?.branch?.branchId;
+  const n7 = gjStrategy(makeR1Ctx(2, [114, 113]))[0]?.branch?.branchId;
+  assert(fb === 'n2', `fallback branchId: expected n2, got ${fb}`);
+  assert(n7 === 'n7', `fullrush branchId: expected n7, got ${n7}`);
+  assert(fb !== n7, 'n2 and n7 should differ');
+});
+
+check('branch_semantics helper agrees with product adapter (fullrush P2)', () => {
+  const helper = getR1BranchSelection(gjEvol, { enemyHandIds: new Set([114, 113]), enemyHandBadges: new Set() });
+  const adapter = gjStrategy(makeR1Ctx(2, [114, 113]));
+  assert(helper.side2?.id === 'n7', `helper selected ${helper.side2?.id}, expected n7`);
+  assert(adapter[0]?.branch?.branchId === 'n7', `adapter branchId: ${adapter[0]?.branch?.branchId}, expected n7`);
 });
 
 // ---- 5. 分支条件类型 ----

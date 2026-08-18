@@ -34,6 +34,8 @@ import {
 } from '../src/engine/tree/product_training';
 import { formationToEvol, cloneEvolFormation } from '../src/engine/tree/evol_gene';
 import type { EvolFormation, FeatureMask } from '../src/engine/tree/evol_gene';
+import { treeStrategyFor } from '../src/engine/tree/product_tree_strategy';
+import type { DeploymentStrategyContext, TeamSlot } from '../src/engine/play_full_game';
 
 describe('T036 — Product Training Foundation', () => {
 
@@ -121,65 +123,161 @@ describe('T036 — Product Training Foundation', () => {
 
   // ---- R1 分支行为 ----
 
-  describe('branch_semantics: R1 branch selection', () => {
+  // ---- R1 分支行为（直接产品适配器证据） ----
+
+  describe('product adapter: R1 branch parity via treeStrategyFor()', () => {
     function getGiftJungleEvol(): EvolFormation {
       const raw: any[] = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
       const gj = raw.find((s: any) => s.id === 'gift_jungle');
       return formationToEvol(gj);
     }
 
-    it('R1 branches are listed correctly', () => {
+    /** 构造 R1 DeploymentStrategyContext */
+    function makeR1Ctx(side: 1 | 2, enemyHandMonsterIds: number[]): DeploymentStrategyContext {
+      const raw: any[] = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
+      const gj = raw.find((s: any) => s.id === 'gift_jungle');
+      const team: TeamSlot[] = gj.team.map((s: any) => ({ monsterId: s.monsterId, badgeIds: s.badgeIds ?? [] }));
+      return {
+        side,
+        identity: 'gift_jungle',
+        round: 1,
+        seed: 1,
+        rng: () => 0.5,
+        team,
+        hand: team,
+        ownMonsters: [],
+        enemyMonsters: [],
+        enemyRevealedHand: enemyHandMonsterIds.map(id => ({ monsterId: id, badgeIds: [] })),
+        budget: 999,
+        zone: side === 1 ? { min: 1, max: 5 } : { min: 6, max: 10 },
+      } as any;
+    }
+
+    it('R1 branches listed: n2 (fallback) and n7 (fullrush) exist', () => {
       const evol = getGiftJungleEvol();
       const branches = listR1Branches(evol);
-      // gift_jungle has 2 R1 branches: n2 (empty/fallback) and n7 (fullrush condition?)
-      expect(branches.length).toBeGreaterThanOrEqual(1);
+      expect(branches.length).toBe(2);
+      expect(branches.some(b => b.isFallback && b.nodeId === 'n2')).toBe(true);
+      expect(branches.some(b => !b.isFallback && b.nodeId === 'n7')).toBe(true);
     });
 
-    it('R1 fallback branch selected when no condition matches (empty mask)', () => {
+    it('[P2] R1 fallback: treeStrategyFor emits branchId=n2, intents contain m110+m124, x direct', () => {
       const evol = getGiftJungleEvol();
-      // Empty enemy state → should select fallback branch
-      const sel = getR1BranchSelection(evol, {
-        enemyHandIds: new Set<number>(),
+      const strategy = treeStrategyFor(evol);
+      const intents = strategy(makeR1Ctx(2, [])); // empty hand → no fullrush
+      expect(intents.length).toBeGreaterThan(0);
+      for (const intent of intents) {
+        expect(intent.branch?.branchId).toBe('n2');
+      }
+      const ids = intents.map(i => i.monsterId);
+      expect(ids).toContain(110);
+      expect(ids).toContain(124);
+      // P2: treeX=7 → plannedX=7
+      const m110 = intents.find(i => i.monsterId === 110)!;
+      expect(m110.plannedX).toBe(7);
+      expect(m110.plannedY).toBe(3);
+    });
+
+    it('[P1] R1 fallback: treeStrategyFor emits branchId=n2, x mirrored to 10-x', () => {
+      const evol = getGiftJungleEvol();
+      const strategy = treeStrategyFor(evol);
+      const intents = strategy(makeR1Ctx(1, [])); // empty hand → fallback
+      expect(intents.length).toBeGreaterThan(0);
+      for (const intent of intents) {
+        expect(intent.branch?.branchId).toBe('n2');
+      }
+      const ids = intents.map(i => i.monsterId);
+      expect(ids).toContain(110);
+      expect(ids).toContain(124);
+      // P1: treeX=7 → plannedX=3 (10-7)
+      const m110 = intents.find(i => i.monsterId === 110)!;
+      expect(m110.plannedX).toBe(3);
+      expect(m110.plannedY).toBe(3);
+    });
+
+    it('[P2] R1 n7/fullrush: treeStrategyFor emits branchId=n7 when hand has ≥2 of [114,113,107]', () => {
+      const evol = getGiftJungleEvol();
+      const strategy = treeStrategyFor(evol);
+      const intents = strategy(makeR1Ctx(2, [114, 113])); // fullrush hand
+      expect(intents.length).toBeGreaterThan(0);
+      for (const intent of intents) {
+        expect(intent.branch?.branchId).toBe('n7');
+      }
+      const ids = intents.map(i => i.monsterId);
+      expect(ids).toContain(110);
+      expect(ids).toContain(124);
+      // P2: treeX=7 → plannedX=7
+      const m110 = intents.find(i => i.monsterId === 110)!;
+      expect(m110.plannedX).toBe(7);
+      expect(m110.plannedY).toBe(3);
+    });
+
+    it('[P1] R1 n7/fullrush: treeStrategyFor emits branchId=n7, x mirrored', () => {
+      const evol = getGiftJungleEvol();
+      const strategy = treeStrategyFor(evol);
+      const intents = strategy(makeR1Ctx(1, [114, 113])); // fullrush
+      expect(intents.length).toBeGreaterThan(0);
+      for (const intent of intents) {
+        expect(intent.branch?.branchId).toBe('n7');
+      }
+      const ids = intents.map(i => i.monsterId);
+      expect(ids).toContain(110);
+      expect(ids).toContain(124);
+      // P1: treeX=7 → 10-7=3
+      const m110 = intents.find(i => i.monsterId === 110)!;
+      expect(m110.plannedX).toBe(3);
+      expect(m110.plannedY).toBe(3);
+    });
+
+    it('n7 branchId ≠ n2 branchId (fullrush vs fallback differ)', () => {
+      const evol = getGiftJungleEvol();
+      const strategy = treeStrategyFor(evol);
+      const fallback = strategy(makeR1Ctx(2, []));
+      const n7 = strategy(makeR1Ctx(2, [114, 113]));
+      expect(fallback[0]?.branch?.branchId).toBe('n2');
+      expect(n7[0]?.branch?.branchId).toBe('n7');
+      expect(fallback[0]?.branch?.branchId).not.toBe(n7[0]?.branch?.branchId);
+    });
+
+    it('branch_semantics helper agrees with product adapter for same R1 input', () => {
+      const evol = getGiftJungleEvol();
+      const strategy = treeStrategyFor(evol);
+      const helperSel = getR1BranchSelection(evol, {
+        enemyHandIds: new Set([114, 113]),
         enemyHandBadges: new Set<number>(),
       });
-      expect(sel.side1).not.toBeNull();
-      expect(sel.side2).not.toBeNull();
+      const adapterIntents = strategy(makeR1Ctx(2, [114, 113]));
+      expect(helperSel.side2?.id).toBe('n7');
+      expect(adapterIntents[0]?.branch?.branchId).toBe('n7');
     });
 
-    it('P1 side mirrors x coordinate (10-x), P2 uses direct', () => {
-      // P2 coordinate x=7 → P1 side: 10-7=3
+    it('P1/P2 coordinate mirror (helper check)', () => {
       expect(treeXToProductX(7, 2)).toBe(7);
       expect(treeXToProductX(7, 1)).toBe(3);
-      // P2 coordinate x=9 → P1 side: 10-9=1
-      expect(treeXToProductX(9, 2)).toBe(9);
       expect(treeXToProductX(9, 1)).toBe(1);
     });
 
-    it('side-only condition is accepted', () => {
-      const sideOnlyMask: FeatureMask = { side: 1, main: null, subs: [], keys: [] };
-      expect(isSideOnlyCondition(sideOnlyMask)).toBe(true);
-      expect(isR1Observable(sideOnlyMask)).toBe(true);
+    it('side-only condition accepted (R1 observable)', () => {
+      const m: FeatureMask = { side: 1, main: null, subs: [], keys: [] };
+      expect(isSideOnlyCondition(m)).toBe(true);
+      expect(isR1Observable(m)).toBe(true);
     });
 
-    it('side+visible-opponent-feature condition is accepted', () => {
-      const sidePlusMask: FeatureMask = { side: 2, main: 'fullrush', subs: [], keys: [] };
-      expect(isSidePlusOpponentFeatureCondition(sidePlusMask)).toBe(true);
-      expect(isR1Observable(sidePlusMask)).toBe(true);
+    it('side+visible-opponent-feature condition accepted', () => {
+      const m: FeatureMask = { side: 2, main: 'fullrush', subs: [], keys: [] };
+      expect(isSidePlusOpponentFeatureCondition(m)).toBe(true);
+      expect(isR1Observable(m)).toBe(true);
     });
 
-    it('future-state R1 condition is rejected', () => {
-      const raw: any[] = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
-      const gj = raw.find((s: any) => s.id === 'gift_jungle');
-      const evol = formationToEvol(gj);
-      // Inject a future-state condition for testing
+    it('future-state R1 condition rejected', () => {
+      const evol = getGiftJungleEvol();
       const futureEvol = cloneEvolFormation(evol);
-      const r1Children = futureEvol.root.children.filter(c => c.round === 1);
-      if (r1Children.length > 0) {
-        (r1Children[0].condition as any).requiresBoardIds = true;
-      }
+      const r1 = futureEvol.root.children.filter(c => c.round === 1);
+      if (r1.length > 0) (r1[0].condition as any).requiresBoardIds = true;
       expect(hasFutureStateCondition(futureEvol)).toBe(true);
     });
   });
+
 
   // ---- 验证模块 ----
 
