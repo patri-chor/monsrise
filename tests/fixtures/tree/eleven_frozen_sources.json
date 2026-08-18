@@ -2957,6 +2957,13 @@
           8,
           6
         ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
       }
     ],
     "tree": {
@@ -3066,7 +3073,17 @@
                           "round": 5,
                           "label": "局5",
                           "comment": "",
-                          "placement": [],
+                          "placement": [
+                            {
+                              "monsterId": 116,
+                              "badgeIds": [
+                                3,
+                                5
+                              ],
+                              "x": 8,
+                              "y": 1
+                            }
+                          ],
                           "children": []
                         }
                       ]
@@ -3177,7 +3194,17 @@
                           "round": 5,
                           "label": "局5",
                           "comment": "",
-                          "placement": [],
+                          "placement": [
+                            {
+                              "monsterId": 116,
+                              "badgeIds": [
+                                3,
+                                5
+                              ],
+                              "x": 8,
+                              "y": 1
+                            }
+                          ],
                           "children": []
                         }
                       ]
@@ -3192,8 +3219,22 @@
     },
     "calculatedUnitRatio": 0.14285714285714285,
     "calculatedCount": 1,
-    "controllableCount": 6,
-    "isLegacyBaseline": true,
-    "fingerprint": "4c913570e3c9"
+    "controllableCount": 7,
+    "isLegacyBaseline": false,
+    "fingerprint": "1f7554a84e29",
+    "sourceMetadata": {
+      "sourceId": "gift_jungle",
+      "repairKind": "add_eighth_monster_only",
+      "addedSlot": {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      "archiveReference": "D:\\\\develope\\\\对战ai\\\\_archive\\\\阵型库\\\\礼物丛林1.json",
+      "historicalEvidence": "PRODUCT_PATH_FORMAL_SCREEN_T035_V1 / seven-monster / retained-separate",
+      "repairedAt": "2026-08-18T13:48:12.877Z"
+    }
   }
 ]

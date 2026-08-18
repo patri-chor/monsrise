@@ -293,10 +293,16 @@ function bundleNodeToEvol(n: any): EvolNode {
 }
 
 export function formationToEvol(f: Formation): EvolFormation {
+  const teamSlots: FormationTeamSlot[] = (f.team ?? []).map((s: any) =>
+    typeof s === 'number'
+      ? { monsterId: s, badgeIds: [] }
+      : { monsterId: s.monsterId, badgeIds: s.badgeIds ? [...s.badgeIds] : [] },
+  ).filter(s => s.monsterId > 0);
+
   return {
     name: f.name,
     archetype: f.archetype,
-    team: f.team.filter(s => s.monsterId > 0).map(s => ({ monsterId: s.monsterId, badgeIds: [...s.badgeIds] })),
+    team: teamSlots,
     root: bundleNodeToEvol(f.tree),
   };
 }

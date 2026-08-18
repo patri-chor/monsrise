@@ -1,0 +1,81 @@
+{
+  "version": 2,
+  "bindings": [
+    {
+      "domain": "generation",
+      "workspace": "D:\\develope\\monsrise1",
+      "sessionId": "session-bfb0e735-bdd1-4c31-a23a-e35d35a3a82f",
+      "status": "active",
+      "delivered": [
+        "fa7c6a32b28a9851fa9c91290945102e71fd05a4",
+        "9517a1edf5b2ab42fa90fa5c39ed74780007bc7d",
+        "8af4da2ef5325338d5cce16492d5e4fcb3468b7e",
+        "acc40610efbc0a36dc9ad0cea9db8d72d4675518",
+        "eb995c2b51dd5ae646cd1027e3dc465c44fac2da",
+        "e61a149a5cbb18ba1a020c51356c0ae36ea20d79",
+        "b96dd264872352da555fe9a170d5f38a6f6918b3"
+      ],
+      "createdAt": "2026-08-17T13:00:56.345Z",
+      "kind": "named-domain"
+    },
+    {
+      "domain": "tree",
+      "workspace": "D:\\develope\\monsrise1",
+      "sessionId": "session-e249dbba-cc14-4690-a9f9-8a4c218472ae",
+      "status": "active",
+      "delivered": [
+        "65bd3756e6e43852e0e048f79a691b214252daa0",
+        "9fbdc879c1d84eac48c2b4e80a4f5b0086a0454c",
+        "faa973c2ef48fc6ab6ae38a6fbc714d7c24311ae",
+        "0ed3de742dad2da7851eb5ce4a89d8eefd9653b5",
+        "7984fb47dc1ca08f58c7faa86f494d3772250a9f",
+        "2ff7a6d949a122a7f47239dcd92bcad23c48d11b",
+        "d08afd5b24e69884b61453ffc15525ed9c8560ca",
+        "dd98a9bd1dc40441f8b4d581cb2706e8deee989b",
+        "71b409c3d690138f00bd0ef3ebdc87faac97f9c4",
+        "b18d754d4eb9c45430aa991aeccecca386e6c51e",
+        "26a87c4438ae85e5c79e239724fc57fafc30c227",
+        "31e7f5413816f8eec017c459c79cd7a951b7afd0",
+        "a9cdf1981c0f4fea6b54e1420dc93f93e8e5b0b0",
+        "c02f7064ee18be4cb870b1c803d32c5e69d529cf",
+        "c1a9aaa50eda42be6cf41bbe15e6a65917f3bfec",
+        "c87ced17bcc4fab8d18d6534f952783b2abaff39",
+        "1c72bca8e25dcbee62534c68675ff14076738347",
+        "4ebfcfa6e37c0e00b568a7e95f22d0b183d88043",
+        "ad6a61f23f4135b65c7a5df4779282591b8cd233",
+        "3be3ad0f6b53a9d5ce06abe7d6fe5113bb8f1ff4",
+        "543c827720d92ba9483da804f8a603367be1fa45",
+        "fc2d42dcec4a029c32095c9d216fbaa88526a068",
+        "1a010dda78299ecc1367c4c43aa6e6b005496506",
+        "6886a5f032dc6d872b76fed5fac935ced8bd1c3a",
+        "40ae4beddcdee4fd275df8bc2d37125a36dc3b0f",
+        "32d5a6aa8f61c1c252736844c972557d92785b09",
+        "517733f9ed3b9c8d2bda42bd452f0e3860ad21b9",
+        "506c89c5690f204712bb748124640f4716830197",
+        "aafe3554a55987260e2c0251af685a7572c418cf",
+        "12b8c316cd87dc38f851052565db93cf5c7580ca",
+        "1831b625c992b69b4775391f7fde2dcd13c14daa",
+        "b27633196105c3780484b99753b80ea03971652a",
+        "f6ba1715d20e785f3886162d6232ee5251d24f4f",
+        "50b83f5991a84e849224ba8ef8a4ac5285fc547c",
+        "2719d1a94b0a073c21a994d6675763009f671ca9",
+        "83b7c963b83c2e8875f3f326c62800071403ce9f",
+        "827ff65d39f9ad96aa354bf9e72686205013a244",
+        "3032b3897acc83d4c92c20d595f34fc18ba3a999",
+        "cf65e553dd42d49b853a2fa55f4490c045c707c6",
+        "ff6e9d834e788abfb0345e206c5475db64ce0db6",
+        "e6381468c21dcaa225a8892bd6d01329bbe9110a",
+        "e2349b743a4b33847eb17f567eea3a9ec778e2a0",
+        "5432d51c976d12c186074db20287bc22aaa59f80"
+      ],
+      "createdAt": "2026-08-18T02:41:40.155Z",
+      "kind": "task-folder"
+    }
+  ],
+  "policies": {
+    "tree": {
+      "mode": "continuous",
+      "changedAt": "2026-08-18T03:33:22.857Z"
+    }
+  }
+}
