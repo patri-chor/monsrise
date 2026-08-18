@@ -1,0 +1,60 @@
+{"candidateId":"cand_s0_1_light_spri","sourceSeedName":"泉水剑","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.25}
+{"candidateId":"cand_s0_2_light_spri","sourceSeedName":"泉水剑","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.21428571428571427}
+{"candidateId":"cand_s0_3_medium_spri","sourceSeedName":"泉水剑","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5}
+{"candidateId":"cand_s0_4_medium_spri","sourceSeedName":"泉水剑","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s0_5_heavy_spri","sourceSeedName":"泉水剑","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5}
+{"candidateId":"cand_s0_6_heavy_spri","sourceSeedName":"泉水剑","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6785714285714286}
+{"candidateId":"cand_s1_1_light_nuts","sourceSeedName":"坚果救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6428571428571429}
+{"candidateId":"cand_s1_2_light_nuts","sourceSeedName":"坚果救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s1_3_medium_nuts","sourceSeedName":"坚果救星","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s1_4_medium_nuts","sourceSeedName":"坚果救星","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.17857142857142858}
+{"candidateId":"cand_s1_5_heavy_nuts","sourceSeedName":"坚果救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s1_6_heavy_nuts","sourceSeedName":"坚果救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s2_1_light_all2","sourceSeedName":"全二冲","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s2_2_light_all2","sourceSeedName":"全二冲","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s2_3_medium_all2","sourceSeedName":"全二冲","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s2_4_medium_all2","sourceSeedName":"全二冲","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s2_5_heavy_all2","sourceSeedName":"全二冲","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s2_6_heavy_all2","sourceSeedName":"全二冲","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s3_1_light_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.4642857142857143}
+{"candidateId":"cand_s3_2_light_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s3_3_medium_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.4642857142857143}
+{"candidateId":"cand_s3_4_medium_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s3_5_heavy_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6428571428571429}
+{"candidateId":"cand_s3_6_heavy_clas","sourceSeedName":"经典救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s4_1_light_all2","sourceSeedName":"全二永平","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.35714285714285715}
+{"candidateId":"cand_s4_2_light_all2","sourceSeedName":"全二永平","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s4_3_medium_all2","sourceSeedName":"全二永平","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.4642857142857143}
+{"candidateId":"cand_s4_4_medium_all2","sourceSeedName":"全二永平","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s4_5_heavy_all2","sourceSeedName":"全二永平","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s4_6_heavy_all2","sourceSeedName":"全二永平","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.32142857142857145}
+{"candidateId":"cand_s5_1_light_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.7142857142857143}
+{"candidateId":"cand_s5_2_light_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.8928571428571429}
+{"candidateId":"cand_s5_3_medium_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s5_4_medium_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.8214285714285714}
+{"candidateId":"cand_s5_5_heavy_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s5_6_heavy_suqi","sourceSeedName":"肃清","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s6_1_light_ladd","sourceSeedName":"梯子塞雷","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.35714285714285715}
+{"candidateId":"cand_s6_2_light_ladd","sourceSeedName":"梯子塞雷","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.35714285714285715}
+{"candidateId":"cand_s6_3_medium_ladd","sourceSeedName":"梯子塞雷","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.32142857142857145}
+{"candidateId":"cand_s6_4_medium_ladd","sourceSeedName":"梯子塞雷","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s6_5_heavy_ladd","sourceSeedName":"梯子塞雷","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s6_6_heavy_ladd","sourceSeedName":"梯子塞雷","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s7_1_light_spad","sourceSeedName":"铲土多核","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s7_2_light_spad","sourceSeedName":"铲土多核","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.39285714285714285}
+{"candidateId":"cand_s7_3_medium_spad","sourceSeedName":"铲土多核","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5}
+{"candidateId":"cand_s7_4_medium_spad","sourceSeedName":"铲土多核","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s7_5_heavy_spad","sourceSeedName":"铲土多核","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6785714285714286}
+{"candidateId":"cand_s7_6_heavy_spad","sourceSeedName":"铲土多核","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s8_1_light_gift","sourceSeedName":"礼物救星","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.35714285714285715}
+{"candidateId":"cand_s8_2_light_gift","sourceSeedName":"礼物救星","decision":"DEFERRED","reason":"Below screening floor or early exploration","score":0.25}
+{"candidateId":"cand_s8_3_medium_gift","sourceSeedName":"礼物救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s8_4_medium_gift","sourceSeedName":"礼物救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.42857142857142855}
+{"candidateId":"cand_s8_5_heavy_gift","sourceSeedName":"礼物救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s8_6_heavy_gift","sourceSeedName":"礼物救星","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}
+{"candidateId":"cand_s9_1_light_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6785714285714286}
+{"candidateId":"cand_s9_2_light_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.6071428571428571}
+{"candidateId":"cand_s9_3_medium_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.7142857142857143}
+{"candidateId":"cand_s9_4_medium_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5357142857142857}
+{"candidateId":"cand_s9_5_heavy_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.7142857142857143}
+{"candidateId":"cand_s9_6_heavy_gold","sourceSeedName":"壕炸金猴","decision":"PROMOTED","reason":"Met source-relative screening threshold","score":0.5714285714285714}

@@ -1,0 +1,208 @@
+{
+  "泉水剑": {
+    "sourceId": "springsword",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s0_6_heavy_spri",
+      "sourceSeedName": "泉水剑",
+      "noveltyBucket": "heavy",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.6785714285714286,
+      "win": 8,
+      "draw": 3,
+      "loss": 3,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:06:40.190Z"
+    },
+    "evaluatedCount": 6
+  },
+  "坚果救星": {
+    "sourceId": "nutsavior",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s1_1_light_nuts",
+      "sourceSeedName": "坚果救星",
+      "noveltyBucket": "light",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.6428571428571429,
+      "win": 6,
+      "draw": 6,
+      "loss": 2,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:06:41.131Z"
+    },
+    "evaluatedCount": 6
+  },
+  "全二冲": {
+    "sourceId": "all2rush",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s2_2_light_all2",
+      "sourceSeedName": "全二冲",
+      "noveltyBucket": "light",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.42857142857142855,
+      "win": 5,
+      "draw": 2,
+      "loss": 7,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:06:46.831Z"
+    },
+    "evaluatedCount": 6
+  },
+  "经典救星": {
+    "sourceId": "classicsavior",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s3_5_heavy_clas",
+      "sourceSeedName": "经典救星",
+      "noveltyBucket": "heavy",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.6428571428571429,
+      "win": 9,
+      "draw": 0,
+      "loss": 5,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:06:53.016Z"
+    },
+    "evaluatedCount": 6
+  },
+  "全二永平": {
+    "sourceId": "all2prayer",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s4_2_light_all2",
+      "sourceSeedName": "全二永平",
+      "noveltyBucket": "light",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.5357142857142857,
+      "win": 3,
+      "draw": 9,
+      "loss": 2,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:06:55.761Z"
+    },
+    "evaluatedCount": 6
+  },
+  "肃清": {
+    "sourceId": "suqing",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s5_2_light_suqi",
+      "sourceSeedName": "肃清",
+      "noveltyBucket": "light",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.8928571428571429,
+      "win": 11,
+      "draw": 3,
+      "loss": 0,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:07:01.434Z"
+    },
+    "evaluatedCount": 6
+  },
+  "梯子塞雷": {
+    "sourceId": "laddersel",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s6_5_heavy_ladd",
+      "sourceSeedName": "梯子塞雷",
+      "noveltyBucket": "heavy",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.6071428571428571,
+      "win": 8,
+      "draw": 1,
+      "loss": 5,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:07:07.342Z"
+    },
+    "evaluatedCount": 6
+  },
+  "铲土多核": {
+    "sourceId": "spade_multi",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s7_5_heavy_spad",
+      "sourceSeedName": "铲土多核",
+      "noveltyBucket": "heavy",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.6785714285714286,
+      "win": 9,
+      "draw": 1,
+      "loss": 4,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:07:11.520Z"
+    },
+    "evaluatedCount": 6
+  },
+  "礼物救星": {
+    "sourceId": "gift_savior",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s8_3_medium_gift",
+      "sourceSeedName": "礼物救星",
+      "noveltyBucket": "medium",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.5714285714285714,
+      "win": 6,
+      "draw": 4,
+      "loss": 4,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:07:14.490Z"
+    },
+    "evaluatedCount": 6
+  },
+  "壕炸金猴": {
+    "sourceId": "golden_boom",
+    "isLegacyBaseline": false,
+    "bestCandidate": {
+      "candidateId": "cand_s9_3_medium_gold",
+      "sourceSeedName": "壕炸金猴",
+      "noveltyBucket": "medium",
+      "preflightPassed": true,
+      "schedule": "SCHEDULE_1_SCREEN",
+      "gamesPerCell": 1,
+      "trainingScore": 0.7142857142857143,
+      "win": 9,
+      "draw": 2,
+      "loss": 3,
+      "total": 14,
+      "workerErrorCount": 0,
+      "timestamp": "2026-08-18T04:07:18.702Z"
+    },
+    "evaluatedCount": 6
+  },
+  "礼物丛林": {
+    "sourceId": "gift_jungle",
+    "isLegacyBaseline": true,
+    "bestCandidate": null,
+    "evaluatedCount": 0
+  }
+}

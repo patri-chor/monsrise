@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "protocolVersion": "T022_RESUMABLE_HIGH_SAMPLE",
+  "timestamp": "2026-08-18T04:07:20.939Z",
+  "fidelityGatePassed": true,
+  "totalSources": 11,
+  "legacySources": 1,
+  "totalRegisteredCandidates": 60,
+  "completedObservations": 60,
+  "promotedCount": 44
+}
