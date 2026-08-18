@@ -1,7 +1,7 @@
 STATUS: OPEN
 DOMAIN: tree
 
-# T017 - T016 Cost Compliance, Reinforcement, and Auditable Results Rework
+# T017 - T016 Reinforcement and Auditable Results Rework
 
 > Domain: `tree` | Executor branch: `agent/tree`
 > Rework scope: T016 delivery. Do not change the accepted T009-T015 optimizer behavior or introduce new search algorithms.
@@ -10,25 +10,28 @@ DOMAIN: tree
 
 T016 executed real simulation through `PersistentSimPool`, but its delivery is not auditable or specification-complete:
 
-1. `src/engine/tree/eleven_library_training.ts` screens new candidates with `totalCost <= 24`, while T016 requires every new mutation to cost `<=18`.
-2. Required fourth independent reinforcement pass was described but not implemented.
-3. Complete output was written only under ignored `reports/`; no committed archive contains the actual tier counts, full candidate results, attempts, held-out evaluations, generalization records, rejection ledger, or final grids. A report assertion is not enough for review.
+1. Required fourth independent reinforcement pass was described but not implemented.
+2. Complete output was written only under ignored `reports/`; no committed archive contains the actual tier counts, full candidate results, attempts, held-out evaluations, generalization records, rejection ledger, or final grids. A report assertion is not enough for review.
 
-Tier 1 remains the frozen current 11-formation bundle baseline. A historical Tier 1 source may exceed 18 cost, but this does not relax the `<=18` limit for any new mutation/descendant.
+## Confirmed Rule Correction
+
+Total deck cost is **not** a legality or screening ceiling. A typical single-four-cost deck may total 18, while legal multi-four-cost decks are expected to total more. Do not reject, normalize, regenerate, or tier-down any candidate because of total cost alone.
+
+The current deck-size rule is exactly **8 monsters** for new generated candidates. Existing Tier 1 baselines remain frozen historical records. `gift_jungle` currently has 7 monsters; do not alter it in this task. It must be reported as a legacy baseline requiring a separate explicit decision before it can become an 8-monster training source.
 
 ## Objective
 
-Make the existing T016 training output reproducible, cost-compliant, reinforced, and reviewable without adding new optimization dimensions or applying any candidate.
+Make the existing T016 training output reproducible, reinforced, and reviewable without adding new optimization dimensions or applying any candidate.
 
-## A. Strict New-Candidate Cost Rule
+## A. Eight-Monster Candidate Rule
 
-1. Change T016 screening so every generated/mutated candidate must have total cost `<=18`, team size 6..8, and all existing legality checks.
-2. Tier 1 source snapshot remains all 11 current bundle formations exactly as-is, including historical baseline sources above 18 cost. Do not mutate, reject, normalize, or train a >18-cost baseline as a generated candidate.
-3. Regenerate/re-screen only affected candidate records deterministically. Preserve candidate IDs where still legal; give replacement candidates deterministic IDs and record the replacement reason where old candidate exceeded cost.
+1. New generated/mutated candidates must contain exactly 8 monsters and satisfy all existing architecture, tactical, badge, and tree legality checks.
+2. Do not apply any total-cost rejection rule.
+3. Tier 1 source snapshot remains all 11 current bundle formations exactly as-is. Do not mutate, reject, normalize, or train `gift_jungle` as a generated candidate in this task.
 4. Add test coverage proving:
-   - a 19+ cost mutation is rejected;
-   - an existing 22-cost Tier 1 baseline remains present only in Tier 1;
-   - no Tier 2/Tier 3 candidate exceeds 18 cost.
+   - a legal multi-four-cost mutation above 18 total cost is retained;
+   - a 7-monster generated candidate is rejected;
+   - the 7-monster `gift_jungle` baseline remains present only as a frozen legacy Tier 1 record.
 
 ## B. Real Reinforcement Pass
 
@@ -60,14 +63,14 @@ tests/fixtures/tree/t016_training_archive/
    - `rejection_ledger.jsonl`
    - `summary.md`
    - Chinese final R5 grid data/document for every Tier 1/Tier 2 candidate, marking calculator-controlled units as computed.
-3. Archive metadata must state code commit, fixture fingerprints, candidate-generation seed, all attempt seeds, panel/variant assignments, strict cost rule, and no-apply status.
+3. Archive metadata must state code commit, fixture fingerprints, candidate-generation seed, all attempt seeds, panel/variant assignments, exact 8-monster generated-candidate rule, legacy baseline exception, and no-apply status.
 4. The archive must expose actual Tier 1/Tier 2/Tier 3/rejected counts and complete IDs, not only examples.
 5. Do not commit bulky unstructured trace dumps, node_modules, ignored runtime `reports/`, active library, bundle artifacts, or shared matrix/state.
 
 ## D. Execution and Verification
 
 1. Re-run the corrected deterministic T016 pipeline only as needed to create the compliant archive; do not fabricate artifacts.
-2. Use 3 independent attempts for every valid candidate, 5 final games per opponent/side cell, outer concurrency <=2, and zero worker errors for tiered candidates.
+2. Use 3 independent attempts for every valid 8-monster candidate, 5 final games per opponent/side cell, outer concurrency <=2, and zero worker errors for tiered candidates.
 3. Existing search scope remains unchanged:
    - allowed: T014 calculated-unit-ratio routing, legal order/timing search, ordinary controllable R1/R2 position search;
    - disabled: external deck replacement, low-score pool, P4 opening operators, badge mutation during optimization, branch feature/condition mutation, and apply.
@@ -75,9 +78,9 @@ tests/fixtures/tree/t016_training_archive/
 
 ## Acceptance
 
-- [ ] Tier 1 archive contains exactly the original 11 baselines.
-- [ ] All Tier 2/Tier 3/archive generated candidates cost <=18, with no exception inherited from Tier 1.
-- [ ] Every valid candidate has 3 independent complete attempt records and seven-family held-out records.
+- [ ] Tier 1 archive contains exactly the original 11 baselines, with `gift_jungle` explicitly marked as frozen legacy 7-monster baseline.
+- [ ] Every Tier 2/Tier 3 generated candidate has exactly 8 monsters; legal multi-four-cost candidates above 18 total cost are retained.
+- [ ] Every valid 8-monster candidate has 3 independent complete attempt records and seven-family held-out records.
 - [ ] Reinforcement exists only for source-best robust candidates and is independently recorded.
 - [ ] Archive contains all required data and full tier/rejection IDs/counts.
 - [ ] No worker errors among tiered candidates, and no active library/bundle/apply/deploy changes.
