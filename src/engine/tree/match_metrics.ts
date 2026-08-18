@@ -15,9 +15,18 @@ export interface MatchMetrics {
   trainingScore: number;  // 0.0 ~ 1.0 (主要决策指标)
   pureWinRate: number;    // 0.0 ~ 1.0 (胜率)
   undefeatedRate: number; // 0.0 ~ 1.0 (不败率)
+  workerErrorCount?: number;
+  workerErrors?: string[];
+  isEvaluationComplete?: boolean;
 }
 
-export function calculateMatchMetrics(win: number, draw: number, loss: number): MatchMetrics {
+export function calculateMatchMetrics(
+  win: number,
+  draw: number,
+  loss: number,
+  workerErrorCount = 0,
+  workerErrors: string[] = [],
+): MatchMetrics {
   const total = win + draw + loss;
   const trainingScore = total > 0 ? (win + 0.5 * draw) / total : 0;
   const pureWinRate = total > 0 ? win / total : 0;
@@ -31,6 +40,9 @@ export function calculateMatchMetrics(win: number, draw: number, loss: number): 
     trainingScore,
     pureWinRate,
     undefeatedRate,
+    workerErrorCount,
+    workerErrors,
+    isEvaluationComplete: workerErrorCount === 0,
   };
 }
 
@@ -43,6 +55,9 @@ export function createEmptyMatchMetrics(): MatchMetrics {
     trainingScore: 0,
     pureWinRate: 0,
     undefeatedRate: 0,
+    workerErrorCount: 0,
+    workerErrors: [],
+    isEvaluationComplete: true,
   };
 }
 

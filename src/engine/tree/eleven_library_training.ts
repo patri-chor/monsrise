@@ -169,11 +169,38 @@ export async function runElevenLibraryTraining(options: {
     if (passed) validCandidates.push(c);
   }
 
-  // 3. 3 次独立优化尝试
+  // 3. Engine-Level Runtime Preflight Before Training
+  const preflightPassedCandidates: any[] = [];
+  const runtimeDiagnosticLedger: any[] = [];
+
+  for (const cand of validCandidates) {
+    const evol = formationToEvol(cand as unknown as Formation);
+    const [preflightMetrics] = await pool.evalCandidateBatchOnMatchedParallel([evol], emptyMask, trainingOpps, 1, 9999);
+    const hasRuntimeError = (preflightMetrics.workerErrorCount ?? 0) > 0;
+
+    runtimeDiagnosticLedger.push({
+      candidateId: cand.candidateId,
+      sourceSeedName: cand.sourceSeedName,
+      preflightPassed: !hasRuntimeError,
+      workerErrorCount: preflightMetrics.workerErrorCount ?? 0,
+      workerErrors: preflightMetrics.workerErrors ?? [],
+      w: preflightMetrics.win,
+      d: preflightMetrics.draw,
+      l: preflightMetrics.loss,
+    });
+
+    if (hasRuntimeError) {
+      options.onProgress?.(`[Preflight Rejection] ${cand.candidateId} (${cand.sourceSeedName}) failed runtime preflight: ${preflightMetrics.workerErrors?.join('; ')}`);
+    } else {
+      preflightPassedCandidates.push(cand);
+    }
+  }
+
+  // 4. 3 次独立优化尝试
   const allResults: CandidateTrainingResult[] = [];
 
-  for (let cIdx = 0; cIdx < validCandidates.length; cIdx++) {
-    const cand = validCandidates[cIdx];
+  for (let cIdx = 0; cIdx < preflightPassedCandidates.length; cIdx++) {
+    const cand = preflightPassedCandidates[cIdx];
     const initialEvol = formationToEvol(cand as unknown as Formation);
     const ratioAnalysis = computeCalculatedUnitRatio(cand.team);
 
@@ -432,6 +459,7 @@ export async function runElevenLibraryTraining(options: {
     }, null, 2), 'utf8');
     writeFileSync(join(dir, 'all_candidates.jsonl'), rawCandidates.map(c => JSON.stringify(c)).join('\n') + '\n', 'utf8');
     writeFileSync(join(dir, 'screening_ledger.jsonl'), screeningLedger.map(s => JSON.stringify(s)).join('\n') + '\n', 'utf8');
+    writeFileSync(join(dir, 'runtime_diagnostic_ledger.jsonl'), runtimeDiagnosticLedger.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 
     const attemptsFlat: any[] = [];
     for (const r of allResults) {

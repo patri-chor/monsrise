@@ -1,0 +1,623 @@
+[
+  {
+    "candidateId": "cand_s1_1_2a",
+    "sourceSeedName": "泉水剑",
+    "provenanceTask": "T014",
+    "adoptedMove": "[常规站位 R1] 可控怪兽 105 → (8,0)",
+    "historicalT014Metrics": {
+      "earlyHeldOutDelta": 0.057,
+      "strongPanelDelta": 0.119
+    },
+    "team": [
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          5,
+          3
+        ]
+      },
+      {
+        "monsterId": 119,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          18
+        ]
+      },
+      {
+        "monsterId": 112,
+        "badgeIds": [
+          8,
+          6
+        ]
+      },
+      {
+        "monsterId": 102,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          8,
+          4
+        ]
+      }
+    ],
+    "tree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 3
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 3
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 102,
+                  "x": 9,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 112,
+                      "x": 10,
+                      "y": 4
+                    },
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 104,
+                              "x": 10,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "candidateId": "cand_s1_2_2b",
+    "sourceSeedName": "泉水剑",
+    "provenanceTask": "T014",
+    "adoptedMove": "[常规站位 R1] 可控怪兽 105 → (8,1)",
+    "historicalT014Metrics": {
+      "earlyHeldOutDelta": 0.171,
+      "strongPanelDelta": 0.194
+    },
+    "team": [
+      {
+        "monsterId": 107,
+        "badgeIds": [
+          20,
+          1
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          32,
+          3
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          5,
+          3
+        ]
+      },
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          18
+        ]
+      },
+      {
+        "monsterId": 112,
+        "badgeIds": [
+          8,
+          6
+        ]
+      },
+      {
+        "monsterId": 102,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      }
+    ],
+    "tree": {
+      "id": "n1",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n2",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 3
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 3
+            }
+          ],
+          "children": [
+            {
+              "id": "n3",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 102,
+                  "x": 9,
+                  "y": 2
+                }
+              ],
+              "children": [
+                {
+                  "id": "n4",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 112,
+                      "x": 10,
+                      "y": 4
+                    },
+                    {
+                      "monsterId": 103,
+                      "x": 9,
+                      "y": 4
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n5",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 116,
+                          "x": 7,
+                          "y": 3
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n6",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 114,
+                              "x": 10,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "candidateId": "cand_s2_1_8e",
+    "sourceSeedName": "坚果救星",
+    "provenanceTask": "T014",
+    "adoptedMove": "[入场提前] 怪兽 110 从 R3 提前至 R2",
+    "historicalT014Metrics": {
+      "earlyHeldOutDelta": 0.093,
+      "strongPanelDelta": 0.125
+    },
+    "team": [
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          5,
+          3
+        ]
+      },
+      {
+        "monsterId": 119,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          16
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 108,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 125,
+        "badgeIds": [
+          27,
+          9
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          27,
+          35
+        ]
+      }
+    ],
+    "tree": {
+      "id": "n7",
+      "round": 0,
+      "condition": {
+        "side": null,
+        "main": null,
+        "subs": [],
+        "keys": []
+      },
+      "placements": [],
+      "children": [
+        {
+          "id": "n8",
+          "round": 1,
+          "condition": {
+            "side": null,
+            "main": null,
+            "subs": [],
+            "keys": []
+          },
+          "placements": [
+            {
+              "monsterId": 110,
+              "x": 9,
+              "y": 2
+            },
+            {
+              "monsterId": 105,
+              "x": 10,
+              "y": 2
+            }
+          ],
+          "children": [
+            {
+              "id": "n9",
+              "round": 2,
+              "condition": {
+                "side": null,
+                "main": null,
+                "subs": [],
+                "keys": []
+              },
+              "placements": [
+                {
+                  "monsterId": 108,
+                  "x": 9,
+                  "y": 1
+                }
+              ],
+              "children": [
+                {
+                  "id": "n10",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 104,
+                      "x": 10,
+                      "y": 3
+                    },
+                    {
+                      "monsterId": 106,
+                      "x": 6,
+                      "y": 1
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n11",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 119,
+                          "x": 6,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n12",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 7,
+                              "y": 2
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "n15",
+                  "round": 3,
+                  "condition": {
+                    "side": null,
+                    "main": null,
+                    "subs": [
+                      "dof"
+                    ],
+                    "keys": []
+                  },
+                  "placements": [
+                    {
+                      "monsterId": 125,
+                      "x": 10,
+                      "y": 1
+                    },
+                    {
+                      "monsterId": 104,
+                      "x": 10,
+                      "y": 3
+                    }
+                  ],
+                  "children": [
+                    {
+                      "id": "n16",
+                      "round": 4,
+                      "condition": {
+                        "side": null,
+                        "main": null,
+                        "subs": [],
+                        "keys": []
+                      },
+                      "placements": [
+                        {
+                          "monsterId": 106,
+                          "x": 6,
+                          "y": 2
+                        }
+                      ],
+                      "children": [
+                        {
+                          "id": "n17",
+                          "round": 5,
+                          "condition": {
+                            "side": null,
+                            "main": null,
+                            "subs": [],
+                            "keys": []
+                          },
+                          "placements": [
+                            {
+                              "monsterId": 116,
+                              "x": 6,
+                              "y": 1
+                            }
+                          ],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

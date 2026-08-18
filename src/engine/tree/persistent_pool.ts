@@ -242,17 +242,28 @@ export class PersistentSimPool {
     }
 
     const results = await this.dispatchTasks(tasks);
-    const stats: Array<{ win: number; draw: number; loss: number }> = candidates.map(() => ({ win: 0, draw: 0, loss: 0 }));
+    const stats: Array<{ win: number; draw: number; loss: number; workerErrorCount: number; workerErrors: string[] }> = candidates.map(() => ({
+      win: 0,
+      draw: 0,
+      loss: 0,
+      workerErrorCount: 0,
+      workerErrors: [],
+    }));
 
     for (const r of results) {
       if (r.candidateIdx !== undefined && stats[r.candidateIdx]) {
-        stats[r.candidateIdx].win += r.w;
-        stats[r.candidateIdx].draw += r.d;
-        stats[r.candidateIdx].loss += r.l;
+        if (r.error) {
+          stats[r.candidateIdx].workerErrorCount++;
+          stats[r.candidateIdx].workerErrors.push(r.error);
+        } else {
+          stats[r.candidateIdx].win += r.w;
+          stats[r.candidateIdx].draw += r.d;
+          stats[r.candidateIdx].loss += r.l;
+        }
       }
     }
 
-    return stats.map(s => calculateMatchMetrics(s.win, s.draw, s.loss));
+    return stats.map(s => calculateMatchMetrics(s.win, s.draw, s.loss, s.workerErrorCount, s.workerErrors));
   }
 
   public async collectInitialTracesParallel(

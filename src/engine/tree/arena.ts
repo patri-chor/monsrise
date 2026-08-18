@@ -275,8 +275,7 @@ function bundleRoundPlanFor(
       quiet(() => fe.setOpponentHand(oppHand.slice(0, 4)));
     }
   } catch (e) {
-    console.error(`[arena] 阵型加载失败: ${(e as Error).message}`);
-    return [];
+    throw new Error(`[arena] 阵型加载失败: ${(e as Error).message}`);
   }
   const plan: { monsterId: number; x: number; y: number }[] = [];
   const occupied = new Set(my.map(m => m.x * 10 + m.y));
@@ -288,8 +287,7 @@ function bundleRoundPlanFor(
     const raw = quiet(() => ai.pipeline.decideWithFormation(hand, round, st));
     placements = raw?.placements ?? [];
   } catch (e) {
-    console.error(`[arena] decideWithFormation 失败: ${(e as Error).message}`);
-    return [];
+    throw new Error(`[arena] decideWithFormation 失败: ${(e as Error).message}`);
   }
   for (const a of placements) {
     if (!inHand.has(a.monsterId)) continue;
