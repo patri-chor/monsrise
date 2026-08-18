@@ -266,6 +266,53 @@ export class PersistentSimPool {
     return stats.map(s => calculateMatchMetrics(s.win, s.draw, s.loss, s.workerErrorCount, s.workerErrors));
   }
 
+  public async evalCandidateWithDeploymentTraces(
+    candidate: EvolFormation,
+    matchedOpps: Formation[],
+    games: number,
+    seedBase: number,
+  ): Promise<{ metrics: MatchMetrics; deploymentTraces: any[] }> {
+    const tasks: SimTaskMessage[] = [];
+    let taskId = 0;
+    for (const opp of matchedOpps) {
+      for (const side of [1, 2] as (1 | 2)[]) {
+        tasks.push({
+          taskId: taskId++,
+          candidateIdx: 0,
+          formationA: candidate,
+          opponentNameOrId: opp.id ?? opp.name,
+          opponentFormation: opp,
+          side,
+          seed: seedBase,
+          games,
+          collectDeploymentTraces: true,
+        });
+      }
+    }
+
+    const results = await this.dispatchTasks(tasks);
+    let win = 0, draw = 0, loss = 0, workerErrorCount = 0;
+    const workerErrors: string[] = [];
+    const deploymentTraces: any[] = [];
+
+    for (const r of results) {
+      if (r.error) {
+        workerErrorCount++;
+        workerErrors.push(r.error);
+      } else {
+        win += r.w;
+        draw += r.d;
+        loss += r.l;
+      }
+      if (r.deploymentTraces) {
+        deploymentTraces.push(...r.deploymentTraces);
+      }
+    }
+
+    const metrics = calculateMatchMetrics(win, draw, loss, workerErrorCount, workerErrors);
+    return { metrics, deploymentTraces };
+  }
+
   public async collectInitialTracesParallel(
     candidate: EvolFormation,
     opponents: Formation[],

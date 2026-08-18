@@ -23,6 +23,7 @@ export interface SimTaskMessage {
   seed: number;
   games: number;
   collectObservations?: boolean;
+  collectDeploymentTraces?: boolean;
 }
 
 export interface SimResultMessage {
@@ -33,6 +34,7 @@ export interface SimResultMessage {
   d: number;
   l: number;
   error?: string;
+  deploymentTraces?: any[];
   traces?: Array<{
     seed: number;
     side: 1 | 2;
@@ -78,18 +80,31 @@ function executeTask(task: SimTaskMessage): SimResultMessage {
 
     let w = 0, d = 0, l = 0;
     const traces: SimResultMessage['traces'] = task.collectObservations ? [] : undefined;
+    const deploymentTraces: any[] = [];
 
     for (let i = 0; i < task.games; i++) {
       const seed = task.seed + i;
       const decisions = new Map<number, BranchDecision>();
 
-      const r = playSpecVsSpec(BundleAI, specA, specB, task.side, seed, (dec) => {
-        decisions.set(dec.round, dec);
-      });
+      const r = playSpecVsSpec(
+        BundleAI,
+        specA,
+        specB,
+        task.side,
+        seed,
+        (dec) => {
+          decisions.set(dec.round, dec);
+        },
+        task.collectDeploymentTraces,
+      );
 
       w += r.w;
       d += r.d;
       l += r.l;
+
+      if (task.collectDeploymentTraces && r.deploymentTraces) {
+        deploymentTraces.push(...r.deploymentTraces.map(dt => ({ seed, oppId: opp.id ?? opp.name, ...dt })));
+      }
 
       if (task.collectObservations && traces) {
         const obsList: Array<[number, RoundObservation]> = (r.observations ?? []).map(o => [o.round, o]);
@@ -115,6 +130,7 @@ function executeTask(task: SimTaskMessage): SimResultMessage {
       w,
       d,
       l,
+      deploymentTraces: task.collectDeploymentTraces ? deploymentTraces : undefined,
       traces,
     };
   } catch (err: any) {

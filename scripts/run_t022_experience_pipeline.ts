@@ -7,8 +7,9 @@ async function main() {
   const isSmoke = args.includes('--smoke');
   const phaseArg = args.find(a => a.startsWith('--phase='))?.split('=')[1] as any;
   const isResume = args.includes('--resume');
+  const runIdArg = args.find(a => a.startsWith('--run-id='))?.split('=')[1];
 
-  console.log(`=== 启动 T022 经验累积训练流水线 (Smoke: ${isSmoke}, Phase: ${phaseArg ?? 'full'}, Resume: ${isResume}) ===\n`);
+  console.log(`=== 启动 T023 经验累积训练流水线 (Smoke: ${isSmoke}, Phase: ${phaseArg ?? 'full'}, Resume: ${isResume}, RunID: ${runIdArg ?? 'auto'}) ===\n`);
 
   const pool = new PersistentSimPool({ workerCount: 8, enableCpuMonitor: false });
   await pool.init();
@@ -17,14 +18,20 @@ async function main() {
     smoke: isSmoke,
     phase: phaseArg ?? 'full',
     resume: isResume,
+    runId: runIdArg,
     pool,
     onProgress: (msg) => console.log(msg),
   });
 
   pool.destroy();
 
-  console.log('\n=== T022 流水线执行结果 ===');
-  console.log(JSON.stringify({ status: result.status, candidateCount: (result as any).candidateCount, observationCount: (result as any).observationCount }, null, 2));
+  console.log('\n=== T023 流水线执行结果 ===');
+  console.log(JSON.stringify({
+    status: result.status,
+    runKind: (result as any).runKind,
+    candidateCount: (result as any).candidateCount,
+    completedThisRun: (result as any).completedThisRun,
+  }, null, 2));
 }
 
 main().catch(err => {

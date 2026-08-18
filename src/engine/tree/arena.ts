@@ -215,6 +215,22 @@ export interface RoundObservation {
   boardIds: number[];
 }
 
+export interface DeploymentTraceEvent {
+  round: number;
+  side: 1 | 2;
+  monsterId: number;
+  attemptOrder: number;
+  plannedX: number;
+  plannedY: number;
+  accepted: boolean;
+  actualX?: number;
+  actualY?: number;
+  budgetBefore: number;
+  costCharged: number;
+  budgetAfter: number;
+  rejectionReason?: string;
+}
+
 export interface PlayResult {
   w: number;
   d: number;
@@ -223,6 +239,7 @@ export interface PlayResult {
   roundScores: number[];
   observations: RoundObservation[];
   decisions: BranchDecision[];
+  deploymentTraces?: DeploymentTraceEvent[];
 }
 
 function bundleRoundPlanFor(
@@ -326,6 +343,7 @@ export function playSpecVsSpec(
   aSide: 1 | 2,
   seed: number,
   onDecision?: (d: BranchDecision, outcome: 1 | 0 | -1) => void,
+  collectDeploymentTraces?: boolean,
 ): PlayResult {
   const teamA = teamOf(specA) as TeamSlot[];
   const teamB = teamOf(specB) as TeamSlot[];
@@ -350,6 +368,7 @@ export function playSpecVsSpec(
   // 收集本局 A 侧分支决策与每回合观察
   const aDecisions: BranchDecision[] = [];
   const aObservations: RoundObservation[] = [];
+  const aDeploymentTraces: DeploymentTraceEvent[] = [];
 
   for (let round = 1; round <= gameEngine.maxRounds; round++) {
     if (gameEngine.isGameOver()) break;
@@ -371,19 +390,86 @@ export function playSpecVsSpec(
         );
         const ordered = [...plan].sort((a, b) => (PRIORITY[a.monsterId] ?? 9) - (PRIORITY[b.monsterId] ?? 9));
         const occupiedNow = new Set(gameEngine.boardMonsters.filter(m => m.team === side).map(m => m.gridX * 10 + m.gridY));
+        let attemptIdx = 0;
+
         for (const p of ordered) {
+          attemptIdx++;
           const slot = team.find(s => s.monsterId === p.monsterId);
-          if (!slot) continue;
+          const budgetBefore = gameEngine[side === 1 ? 'p1RemainingBudget' : 'p2RemainingBudget'];
+
+          if (!slot) {
+            if (isA && collectDeploymentTraces) {
+              aDeploymentTraces.push({
+                round,
+                side,
+                monsterId: p.monsterId,
+                attemptOrder: attemptIdx,
+                plannedX: p.x,
+                plannedY: p.y,
+                accepted: false,
+                budgetBefore,
+                costCharged: 0,
+                budgetAfter: budgetBefore,
+                rejectionReason: 'SLOT_NOT_IN_TEAM',
+              });
+            }
+            continue;
+          }
+
           let px = side === 1 ? 10 - p.x : p.x;
           let py = p.y;
+          let accepted = false;
+
           if (occupiedNow.has(px * 10 + py) || !gameEngine.placeMonster(slot, px, py, side === 1)) {
             const rl = relocateNear(px, py, side === 1 ? 'p1' : 'p2', occupiedNow);
-            if (!rl) continue;
-            px = rl[0]; py = rl[1];
-            if (occupiedNow.has(px * 10 + py)) continue;
-            if (!gameEngine.placeMonster(slot, px, py, side === 1)) continue;
+            if (rl) {
+              px = rl[0]; py = rl[1];
+              if (!occupiedNow.has(px * 10 + py) && gameEngine.placeMonster(slot, px, py, side === 1)) {
+                accepted = true;
+              }
+            }
+          } else {
+            accepted = true;
           }
-          occupiedNow.add(px * 10 + py);
+
+          const budgetAfter = gameEngine[side === 1 ? 'p1RemainingBudget' : 'p2RemainingBudget'];
+          const costCharged = budgetBefore - budgetAfter;
+
+          if (accepted) {
+            occupiedNow.add(px * 10 + py);
+            if (isA && collectDeploymentTraces) {
+              aDeploymentTraces.push({
+                round,
+                side,
+                monsterId: p.monsterId,
+                attemptOrder: attemptIdx,
+                plannedX: p.x,
+                plannedY: p.y,
+                accepted: true,
+                actualX: side === 1 ? 10 - px : px,
+                actualY: py,
+                budgetBefore,
+                costCharged,
+                budgetAfter,
+              });
+            }
+          } else {
+            if (isA && collectDeploymentTraces) {
+              aDeploymentTraces.push({
+                round,
+                side,
+                monsterId: p.monsterId,
+                attemptOrder: attemptIdx,
+                plannedX: p.x,
+                plannedY: p.y,
+                accepted: false,
+                budgetBefore,
+                costCharged: 0,
+                budgetAfter: budgetBefore,
+                rejectionReason: 'PLACEMENT_RELOCATION_FAILED_OR_OVERBUDGET',
+              });
+            }
+          }
         }
       } finally { Math.random = realRandom; }
     };
@@ -427,10 +513,10 @@ export function playSpecVsSpec(
     const aWinRound = (aSide === 1 && r === 1) || (aSide === 2 && r === 2);
     return aWinRound ? 1 : -1;
   });
-  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions };
+  if (aWon === aLost) return { w: 0, d: 1, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions, deploymentTraces: aDeploymentTraces };
   return aWon > aLost
-    ? { w: 1, d: 0, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions }
-    : { w: 0, d: 0, l: 1, summary, roundScores, observations: aObservations, decisions: aDecisions };
+    ? { w: 1, d: 0, l: 0, summary, roundScores, observations: aObservations, decisions: aDecisions, deploymentTraces: aDeploymentTraces }
+    : { w: 0, d: 0, l: 1, summary, roundScores, observations: aObservations, decisions: aDecisions, deploymentTraces: aDeploymentTraces };
 }
 
 // ---------- 靶子与评估 ----------

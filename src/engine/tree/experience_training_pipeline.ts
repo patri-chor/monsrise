@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync, renameSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { PersistentSimPool } from './persistent_pool';
 import {
@@ -8,9 +8,7 @@ import {
   type FeatureMask,
 } from './evol_gene';
 import { validateTreeDeckCoherence, getMonsterDisplayName } from './order_search';
-import { runFourCostFidelityGate } from './four_cost_fidelity_gate';
-import { resolveEvaluationPanel } from './candidate_optimization_runner';
-import { costOf } from './tree_ops';
+import { runFourCostFidelityGate, type FidelityGateResult } from './four_cost_fidelity_gate';
 import type { Formation } from '../../ai/types';
 
 export const EXPERIENCE_LIB_DIR = resolve('tests/fixtures/tree/experience_library');
@@ -19,6 +17,7 @@ export interface PipelineOptions {
   phase?: 'fidelity' | 'screen' | 'promotion' | 'full';
   smoke?: boolean;
   resume?: boolean;
+  runId?: string;
   pool?: PersistentSimPool;
   onProgress?: (msg: string) => void;
 }
@@ -27,12 +26,9 @@ export function generateMultiSourceCandidates(sources: any[]): any[] {
   const candidates: any[] = [];
 
   for (const s of sources) {
-    if (s.isLegacyBaseline) continue; // gift_jungle 7怪兽遗留基准不生成8怪兽突变
+    if (s.isLegacyBaseline) continue;
 
     const sIndex = s.sourceIndex ?? 1;
-    const baseTeam = [...s.team];
-
-    // 生成 6 个差异化突变体 (2 light, 2 medium, 2 heavy)
     const mutationDefs = [
       { bucket: 'light', desc: 'R1常规站位微调', modR1: { dx: 0, dy: 1 } },
       { bucket: 'light', desc: 'R1防守站位微调', modR1: { dx: 1, dy: 0 } },
@@ -46,11 +42,9 @@ export function generateMultiSourceCandidates(sources: any[]): any[] {
       const def = mutationDefs[mIdx];
       const candId = `cand_s${sIndex}_${mIdx + 1}_${def.bucket}_${s.id.slice(0, 4)}`;
 
-      // 深度拷贝源阵型
       const evol = formationToEvol(s as unknown as Formation);
       evol.name = candId;
 
-      // 施加合法突变
       for (const node of walkEvolNodes(evol.root)) {
         if (def.modR1 && node.round === 1 && node.placements.length > 0) {
           const p = node.placements[0];
@@ -66,7 +60,6 @@ export function generateMultiSourceCandidates(sources: any[]): any[] {
         }
       }
 
-      // 验证闭包与 8 怪兽
       const coherence = validateTreeDeckCoherence(evol);
       if (coherence.valid && evol.team.length === 8) {
         candidates.push({
@@ -86,22 +79,31 @@ export function generateMultiSourceCandidates(sources: any[]): any[] {
   return candidates;
 }
 
+export function saveCursorAtomic(cursorPath: string, cursorData: any) {
+  const tmpPath = `${cursorPath}.tmp`;
+  writeFileSync(tmpPath, JSON.stringify(cursorData, null, 2), 'utf8');
+  renameSync(tmpPath, cursorPath);
+}
+
 export async function runExperiencePipeline(options: PipelineOptions = {}) {
   const libDir = EXPERIENCE_LIB_DIR;
   if (!existsSync(libDir)) {
     mkdirSync(libDir, { recursive: true });
   }
 
+  const runId = options.runId ?? `run_${Date.now()}`;
+  const cursorPath = join(libDir, 'cursor.json');
+  const emptyMask: FeatureMask = { side: null, main: null, subs: [], keys: [] };
+
   const pool = options.pool ?? PersistentSimPool.getInstance();
   await pool.init();
 
-  const emptyMask: FeatureMask = { side: null, main: null, subs: [], keys: [] };
   const sources = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
   const earlyFamilies = JSON.parse(readFileSync(resolve('tests/fixtures/tree/early_seven_bundles.json'), 'utf8'));
   const heldOutOpps = earlyFamilies.map((f: any) => f.heldOutVariant);
 
-  // 1. Phase A: 四费保真门禁
-  options.onProgress?.('=== [Phase A] 启动四费保真门禁检测 ===');
+  // 1. Phase A: 真实四费保真门禁
+  options.onProgress?.('=== [Phase A] 启动真实四费保真门禁检测 ===');
   const fidelityResult = await runFourCostFidelityGate(pool, sources, earlyFamilies);
 
   // 写入 Phase A 产物
@@ -120,20 +122,20 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     options.onProgress?.('❌ [Phase A FAIL] 四费保真门禁未通过，安全中断流水线。');
     return { status: 'PARTIAL', fidelityResult };
   }
-  options.onProgress?.(`✓ [Phase A PASS] 四费门禁通过 (覆盖 ${fidelityResult.fourCostRecords.length} 处四费放置，0 错误，负例成功拦截)。`);
+  options.onProgress?.(`✓ [Phase A PASS] 真实四费门禁通过 (覆盖 ${fidelityResult.fourCostRecords.length} 处四费放置，0 错误，负例成功拦截)。`);
 
   if (options.phase === 'fidelity') {
     return { status: 'DONE', phase: 'fidelity', fidelityResult };
   }
 
-  // 2. Phase B: 生成多源 8 怪兽突变候选池 (>=60 候选)
-  options.onProgress?.('=== [Phase B] 生成多源候选池并执行递进式评估天梯 ===');
+  // 2. Phase B: 多源候选池注册与迁移标记
+  options.onProgress?.('=== [Phase B] 多源候选池注册与历史 Smoke 资产迁移 ===');
   const candidates = generateMultiSourceCandidates(sources);
-  options.onProgress?.(`已生成 ${candidates.length} 个合规 8 怪兽多源突变候选 (覆盖全部 10 套 8 怪兽基准)。`);
 
-  // 写入 candidate_registry.jsonl
+  // 注册候选表 (保持 UNVALIDATED_T022_INVENTORY 状态)
+  const registryPath = join(libDir, 'candidate_registry.jsonl');
   writeFileSync(
-    join(libDir, 'candidate_registry.jsonl'),
+    registryPath,
     candidates.map(c => JSON.stringify({
       candidateId: c.candidateId,
       sourceSeedName: c.sourceSeedName,
@@ -142,18 +144,51 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
       mutationDesc: c.mutationDesc,
       teamSize: c.team.length,
       isCoherenceValid: true,
+      status: 'UNVALIDATED_T022_INVENTORY',
       team: c.team,
     })).join('\n') + '\n',
     'utf8',
   );
 
-  // 3. 递进式评测天梯 (Preflight + Screening)
-  const screenGames = options.smoke ? 1 : 10;
-  const observations: any[] = [];
-  const promotionDecisions: any[] = [];
+  // 历史 Smoke 资产迁移清册
+  const migrationLedgerPath = join(libDir, 'migration_ledger.jsonl');
+  const migrationRecords = candidates.map(c => ({
+    candidateId: c.candidateId,
+    priorStatus: 'PROMOTED_OR_DEFERRED_ON_SMOKE',
+    newStatus: 'INVALID_SMOKE_ONLY',
+    reason: 'gamesPerCell=1, total=14; formal screen requires 10/140',
+    migrationDate: new Date().toISOString(),
+  }));
+  writeFileSync(migrationLedgerPath, migrationRecords.map(m => JSON.stringify(m)).join('\n') + '\n', 'utf8');
+
+  // 3. 读取既有 observations 以支持断点续传
+  const obsPath = join(libDir, 'evaluation_observations.jsonl');
+  const existingObsKeys = new Set<string>();
+  if (existsSync(obsPath) && options.resume) {
+    const lines = readFileSync(obsPath, 'utf8').trim().split('\n').filter(Boolean);
+    for (const l of lines) {
+      const o = JSON.parse(l);
+      existingObsKeys.add(`${o.candidateId}_${o.schedule}`);
+    }
+  }
+
+  // 4. 递进式评测 (Smoke 模式 vs Formal 模式物理与语义隔离)
+  const isSmoke = !!options.smoke;
+  const screenGames = isSmoke ? 1 : 10;
+  const runKind = isSmoke ? 'SMOKE' : 'FORMAL_SCREEN';
+
+  options.onProgress?.(`启动评测模式: runKind=${runKind}, gamesPerCell=${screenGames}`);
+
+  let completedThisRun = 0;
 
   for (let cIdx = 0; cIdx < candidates.length; cIdx++) {
     const c = candidates[cIdx];
+    const obsKey = `${c.candidateId}_SCHEDULE_1_SCREEN`;
+
+    if (existingObsKeys.has(obsKey) && options.resume) {
+      continue;
+    }
+
     const evol: EvolFormation = {
       name: c.candidateId,
       archetype: 'prayer',
@@ -164,10 +199,18 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
     // Preflight (1-game)
     const [preflight] = await pool.evalCandidateBatchOnMatchedParallel([evol], emptyMask, heldOutOpps, 1, 8888);
 
-    // Initial Screen (10-game held-out)
-    const [screenMetrics] = await pool.evalCandidateBatchOnMatchedParallel([evol], emptyMask, heldOutOpps, screenGames, 99000 + cIdx * 100);
+    // Screen (10-game held-out for formal, 1-game for smoke)
+    const [screenMetrics] = await pool.evalCandidateBatchOnMatchedParallel(
+      [evol],
+      emptyMask,
+      heldOutOpps,
+      screenGames,
+      99000 + cIdx * 100,
+    );
 
-    const obs = {
+    const obsRecord = {
+      runId,
+      runKind,
       candidateId: c.candidateId,
       sourceSeedName: c.sourceSeedName,
       noveltyBucket: c.noveltyBucket,
@@ -182,80 +225,70 @@ export async function runExperiencePipeline(options: PipelineOptions = {}) {
       workerErrorCount: screenMetrics.workerErrorCount ?? 0,
       timestamp: new Date().toISOString(),
     };
-    observations.push(obs);
 
-    const isPromoted = screenMetrics.trainingScore >= 0.40 && (screenMetrics.workerErrorCount ?? 0) === 0;
-    promotionDecisions.push({
-      candidateId: c.candidateId,
-      sourceSeedName: c.sourceSeedName,
-      decision: isPromoted ? 'PROMOTED' : 'DEFERRED',
-      reason: isPromoted ? 'Met source-relative screening threshold' : 'Below screening floor or early exploration',
-      score: screenMetrics.trainingScore,
+    // Append-only 写入 observation
+    appendFileSync(obsPath, JSON.stringify(obsRecord) + '\n', 'utf8');
+    completedThisRun++;
+
+    // 原子更新游标
+    saveCursorAtomic(cursorPath, {
+      lastRunId: runId,
+      lastCandidateIndex: cIdx,
+      lastCandidateId: c.candidateId,
+      timestamp: new Date().toISOString(),
     });
 
     if (cIdx % 10 === 0 || cIdx === candidates.length - 1) {
-      options.onProgress?.(`[Screening Progress] ${cIdx + 1}/${candidates.length} | ${c.candidateId}: ${(screenMetrics.trainingScore * 100).toFixed(1)}%`);
+      options.onProgress?.(`[Screening] ${cIdx + 1}/${candidates.length} | ${c.candidateId}: ${(screenMetrics.trainingScore * 100).toFixed(1)}% (Total games: ${screenMetrics.total})`);
     }
   }
 
-  // 写入 evaluation_observations.jsonl (Append-Only)
-  writeFileSync(
-    join(libDir, 'evaluation_observations.jsonl'),
-    observations.map(o => JSON.stringify(o)).join('\n') + '\n',
-    'utf8',
-  );
+  // 5. 决策与前沿管理 (Smoke 绝不产生 PROMOTED 或 Frontier 决策)
+  const decisionsPath = join(libDir, 'promotion_decisions.jsonl');
+  const frontiersPath = join(libDir, 'source_frontiers.json');
 
-  // 写入 promotion_decisions.jsonl
-  writeFileSync(
-    join(libDir, 'promotion_decisions.jsonl'),
-    promotionDecisions.map(d => JSON.stringify(d)).join('\n') + '\n',
-    'utf8',
-  );
+  if (isSmoke) {
+    const smokeDecisions = candidates.map(c => ({
+      candidateId: c.candidateId,
+      sourceSeedName: c.sourceSeedName,
+      decision: 'INVALID_SMOKE_ONLY',
+      reason: 'Smoke run cannot promote or tier candidates',
+    }));
+    writeFileSync(decisionsPath, smokeDecisions.map(d => JSON.stringify(d)).join('\n') + '\n', 'utf8');
 
-  // 写入 source_frontiers.json (按 source 提取最优前沿)
-  const frontiers: Record<string, any> = {};
-  for (const s of sources) {
-    const sObs = observations.filter(o => o.sourceSeedName === s.name);
-    sObs.sort((a, b) => b.trainingScore - a.trainingScore);
-    frontiers[s.name] = {
-      sourceId: s.id,
-      isLegacyBaseline: s.isLegacyBaseline ?? false,
-      bestCandidate: sObs[0] ?? null,
-      evaluatedCount: sObs.length,
-    };
+    const emptyFrontiers: Record<string, any> = {};
+    for (const s of sources) {
+      emptyFrontiers[s.name] = {
+        sourceId: s.id,
+        status: 'NO_COMPLETE_FORMAL_FRONTIER',
+        note: 'Smoke data cannot be used to select best frontier candidate',
+      };
+    }
+    writeFileSync(frontiersPath, JSON.stringify(emptyFrontiers, null, 2), 'utf8');
   }
-  writeFileSync(join(libDir, 'source_frontiers.json'), JSON.stringify(frontiers, null, 2), 'utf8');
 
   // 写入 manifest.json
   writeFileSync(
     join(libDir, 'manifest.json'),
     JSON.stringify({
-      schemaVersion: '1.0.0',
-      protocolVersion: 'T022_RESUMABLE_HIGH_SAMPLE',
+      schemaVersion: '1.1.0',
+      protocolVersion: 'T023_REAL_TRACE_AND_ATOMIC_RUNNER',
       timestamp: new Date().toISOString(),
       fidelityGatePassed: true,
       totalSources: sources.length,
       legacySources: 1,
       totalRegisteredCandidates: candidates.length,
-      completedObservations: observations.length,
-      promotedCount: promotionDecisions.filter(d => d.decision === 'PROMOTED').length,
+      lastRunKind: runKind,
+      completedThisRun,
     }, null, 2),
     'utf8',
   );
 
-  // 写入 README.md
-  let readme = `# Tree Decision Experience Library\n\n`;
-  readme += `## 累积经验库说明与审计准则\n\n`;
-  readme += `1. **历史小样本数据定位**：历史 T014/T016/T017/T021 小样本数据仅作为溯源与诊断种子，不作为采纳决策依据。\n`;
-  readme += `2. **Append-Only 观察语义**：\`evaluation_observations.jsonl\` 采用追加写入语义，杜绝覆盖历史评测记录。\n`;
-  readme += `3. **多源均衡覆盖**：覆盖全部 10 套 8 怪兽基准，不向全二冲/全二永平单源倾斜。\n`;
-  readme += `4. **四费保真门禁**：所有四费怪兽在入库前必须通过 \`four_cost_fidelity_gate\` 验证。\n`;
-  writeFileSync(join(libDir, 'README.md'), readme, 'utf8');
-
   return {
     status: 'DONE',
+    runKind,
     fidelityResult,
     candidateCount: candidates.length,
-    observationCount: observations.length,
+    completedThisRun,
   };
 }
