@@ -1,14 +1,14 @@
 {
-  "schemaVersion": "T045R_TIER_POLICY_V1",
+  "schemaVersion": "T046_TIER_POLICY_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "policyRevision": "v3.0.0-t045r-approved-55-60-55",
+  "policyRevision": "v3.1.0-t046-authorized-80-85-no-cap",
   "hysteresisThresholds": {
-    "t3ToT2GateL3": 0.55,
-    "t2ToT1GateL2": 0.6,
-    "t1ToT2DemoteL2": 0.55,
+    "t3ToT2GateL3": 0.8,
+    "t2ToT1GateL2": 0.85,
+    "t1ToT2DemoteL2": 0.8,
     "hysteresisBandL2": [
-      0.55,
-      0.6
+      0.8,
+      0.85
     ]
   },
   "learningLevels": {

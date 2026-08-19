@@ -1,18 +1,18 @@
 {
-  "schemaVersion": "T045R_FORMATION_STRENGTH_LIBRARY_V1",
+  "schemaVersion": "T046_FORMATION_STRENGTH_LIBRARY_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "policyRevision": "v3.0.0-t045r-approved-55-60-55",
-  "updatedAt": "2026-08-19T09:11:57.534Z",
+  "policyRevision": "v3.1.0-t046-authorized-80-85-no-cap",
+  "updatedAt": "2026-08-19T09:31:44.801Z",
   "counts": {
     "T0Count": 11,
     "T0L1OpponentMemberCount": 11,
     "T0L1LearnerCount": 0,
-    "T1Count": 73,
-    "T2Count": 2,
-    "T3Count": 7,
-    "T1L1EligibleCount": 73,
+    "T1Count": 58,
+    "T2Count": 5,
+    "T3Count": 19,
+    "T1L1EligibleCount": 58,
     "T1L1StableCount": 35,
-    "T1L1DiagnoseRequiredCount": 38
+    "T1L1DiagnoseRequiredCount": 23
   },
   "formations": [
     {
@@ -30,10 +30,10 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": null,
+      "l2Score": 1,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.104Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.796Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -52,10 +52,10 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": null,
+      "l2Score": 1,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -73,11 +73,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.5,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.5,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -95,11 +95,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.7142857142857143,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.7142857142857143,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -117,11 +117,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.7857142857142857,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.7857142857142857,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -139,11 +139,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.8928571428571429,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.8928571428571429,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -161,11 +161,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.8571428571428571,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.8571428571428571,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -183,11 +183,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.7857142857142857,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.7857142857142857,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -206,10 +206,10 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": null,
+      "l2Score": 1,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -228,10 +228,10 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": null,
+      "l2Score": 1,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -249,11 +249,11 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 0.8571428571428571,
-      "l2Score": null,
+      "l3Score": 1,
+      "l2Score": 0.8571428571428571,
       "l1Score": null,
       "l2AttemptsCount": null,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.797Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -262,20 +262,19 @@
       "canonicalFingerprint": "64c37c871c2ba5bb2f6803db",
       "rootT0SourceId": "springsword",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:springsword:spatial_local:0",
-      "currentTier": "T1",
+      "currentTier": "T2",
       "learningPermissions": [
         "L3",
-        "L2",
-        "L1"
+        "L2"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.8214285714285714,
       "l2Score": 0.8214285714285714,
-      "l1Score": 0.8214285714285714,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.107Z",
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -297,7 +296,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.107Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -319,7 +318,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.107Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -339,7 +338,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.107Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -361,7 +360,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.107Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -383,7 +382,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -392,20 +391,18 @@
       "canonicalFingerprint": "242a1f8787cbedff15dfd777",
       "rootT0SourceId": "all2prayer",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:formation_transform:0",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.6428571428571429,
-      "l2Score": 0.6428571428571429,
-      "l1Score": 0.6428571428571429,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -427,7 +424,7 @@
       "l2Score": 0.9642857142857143,
       "l1Score": 0.9642857142857143,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -436,20 +433,18 @@
       "canonicalFingerprint": "00dd55042587d79931a4dae4",
       "rootT0SourceId": "laddersel",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:laddersel:spatial_local:0",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.6785714285714286,
-      "l2Score": 0.6785714285714286,
-      "l1Score": 0.6785714285714286,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -458,20 +453,19 @@
       "canonicalFingerprint": "922dbcc3a61ea7a5698e0cb8",
       "rootT0SourceId": "spade_multi",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:spatial_local:0",
-      "currentTier": "T1",
+      "currentTier": "T2",
       "learningPermissions": [
         "L3",
-        "L2",
-        "L1"
+        "L2"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.8214285714285714,
       "l2Score": 0.8214285714285714,
-      "l1Score": 0.8214285714285714,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -493,7 +487,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -515,7 +509,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -537,7 +531,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -559,7 +553,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -581,7 +575,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -603,7 +597,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -625,7 +619,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -647,7 +641,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -669,7 +663,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -691,7 +685,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -711,7 +705,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.108Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -720,19 +714,18 @@
       "canonicalFingerprint": "3be86bcc85837cf70b2b0a26",
       "rootT0SourceId": "all2rush",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2rush:formation_transform:c0_flip",
-      "currentTier": "T2",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
       "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.5714285714285714,
-      "l2Score": 0.5714285714285714,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -752,7 +745,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -772,7 +765,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -781,20 +774,19 @@
       "canonicalFingerprint": "ad83a5e41ff67addd8f792d2",
       "rootT0SourceId": "classicsavior",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:spatial_local:c0_108",
-      "currentTier": "T1",
+      "currentTier": "T2",
       "learningPermissions": [
         "L3",
-        "L2",
-        "L1"
+        "L2"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.8214285714285714,
       "l2Score": 0.8214285714285714,
-      "l1Score": 0.8214285714285714,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -816,7 +808,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -825,20 +817,18 @@
       "canonicalFingerprint": "75f7e220a935f2dd90a12ac4",
       "rootT0SourceId": "classicsavior",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:strategy_schedule_branch:c0_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7142857142857143,
-      "l2Score": 0.7142857142857143,
-      "l1Score": 0.7142857142857143,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -847,20 +837,18 @@
       "canonicalFingerprint": "367ed3f223f14528de6f0b10",
       "rootT0SourceId": "all2prayer",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:spatial_local:c0_110",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7857142857142857,
-      "l2Score": 0.7857142857142857,
-      "l1Score": 0.7857142857142857,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.798Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -882,7 +870,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -891,20 +879,18 @@
       "canonicalFingerprint": "73a659c494e642c65c9c2195",
       "rootT0SourceId": "all2prayer",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:strategy_schedule_branch:c0_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7857142857142857,
-      "l2Score": 0.7857142857142857,
-      "l1Score": 0.7857142857142857,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.109Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -926,7 +912,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -948,7 +934,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -970,7 +956,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -979,20 +965,19 @@
       "canonicalFingerprint": "88c2a571ebd0085cb7bed8d8",
       "rootT0SourceId": "laddersel",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:laddersel:spatial_local:c0_110",
-      "currentTier": "T1",
+      "currentTier": "T2",
       "learningPermissions": [
         "L3",
-        "L2",
-        "L1"
+        "L2"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.8214285714285714,
       "l2Score": 0.8214285714285714,
-      "l1Score": 0.8214285714285714,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1014,7 +999,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1036,7 +1021,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1058,7 +1043,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1067,20 +1052,18 @@
       "canonicalFingerprint": "bae67ed80e3f4990284f3398",
       "rootT0SourceId": "spade_multi",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:strategy_schedule_branch:c0_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7857142857142857,
-      "l2Score": 0.7857142857142857,
-      "l1Score": 0.7857142857142857,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1102,7 +1085,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1124,7 +1107,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.110Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1146,7 +1129,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1168,7 +1151,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1190,7 +1173,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1212,7 +1195,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1234,7 +1217,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1256,7 +1239,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1278,7 +1261,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1300,7 +1283,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1322,7 +1305,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1342,7 +1325,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1351,19 +1334,18 @@
       "canonicalFingerprint": "3be86bcc85837cf70b2b0a26",
       "rootT0SourceId": "all2rush",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2rush:formation_transform:c1_flip",
-      "currentTier": "T2",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
       "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.5714285714285714,
-      "l2Score": 0.5714285714285714,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1383,7 +1365,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1403,7 +1385,7 @@
       "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": 0,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1425,7 +1407,7 @@
       "l2Score": 0.9642857142857143,
       "l1Score": 0.9642857142857143,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1447,7 +1429,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.111Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1456,20 +1438,18 @@
       "canonicalFingerprint": "7fd39e5bca1d8667b52bd3ab",
       "rootT0SourceId": "classicsavior",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:strategy_schedule_branch:c1_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7142857142857143,
-      "l2Score": 0.7142857142857143,
-      "l1Score": 0.7142857142857143,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.112Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1478,20 +1458,18 @@
       "canonicalFingerprint": "fb6ca370fca3099db7b942ad",
       "rootT0SourceId": "all2prayer",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:spatial_local:c1_116",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.6785714285714286,
-      "l2Score": 0.6785714285714286,
-      "l1Score": 0.6785714285714286,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.112Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1513,7 +1491,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.112Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1522,20 +1500,18 @@
       "canonicalFingerprint": "63f43e23dbc31e945488a9fd",
       "rootT0SourceId": "all2prayer",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:strategy_schedule_branch:c1_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7857142857142857,
-      "l2Score": 0.7857142857142857,
-      "l1Score": 0.7857142857142857,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.112Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1557,7 +1533,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.112Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1579,7 +1555,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1601,7 +1577,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1623,7 +1599,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1645,7 +1621,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1667,7 +1643,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1689,7 +1665,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1698,20 +1674,18 @@
       "canonicalFingerprint": "8ca2469f2934bd82159ce478",
       "rootT0SourceId": "spade_multi",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:strategy_schedule_branch:c1_side2",
-      "currentTier": "T1",
+      "currentTier": "T3",
       "learningPermissions": [
-        "L3",
-        "L2",
-        "L1"
+        "L3"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.7857142857142857,
-      "l2Score": 0.7857142857142857,
-      "l1Score": 0.7857142857142857,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1733,7 +1707,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1755,7 +1729,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1777,7 +1751,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1799,7 +1773,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.799Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1821,7 +1795,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1843,7 +1817,7 @@
       "l2Score": 0.8571428571428571,
       "l1Score": 0.8571428571428571,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1865,7 +1839,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.113Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1887,7 +1861,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.114Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1909,7 +1883,7 @@
       "l2Score": 0.9285714285714286,
       "l1Score": 0.9285714285714286,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.114Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1931,7 +1905,7 @@
       "l2Score": 0.9761904761904762,
       "l1Score": 0.9761904761904762,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.115Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1953,7 +1927,7 @@
       "l2Score": 0.9523809523809523,
       "l1Score": 0.9523809523809523,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.115Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1975,7 +1949,7 @@
       "l2Score": 0.8928571428571429,
       "l1Score": 0.8928571428571429,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.115Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -1997,7 +1971,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.116Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -2019,7 +1993,7 @@
       "l2Score": 1,
       "l1Score": 1,
       "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.117Z",
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     },
@@ -2028,23 +2002,21 @@
       "canonicalFingerprint": "0d75942adf49341695510ac2",
       "rootT0SourceId": "golden_boom",
       "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:golden_boom:spatial_local:c1_105",
-      "currentTier": "T1",
+      "currentTier": "T2",
       "learningPermissions": [
         "L3",
-        "L2",
-        "L1"
+        "L2"
       ],
       "benchmarkRoles": [],
       "opponentCatalogRoles": [],
-      "l1LearnerStatus": "L1_DIAGNOSE_REQUIRED",
+      "l1LearnerStatus": "L1_NOT_PERMITTED",
       "l3Score": 0.8214285714285714,
       "l2Score": 0.8214285714285714,
-      "l1Score": 0.8214285714285714,
-      "l2AttemptsCount": 3,
-      "lastEvaluatedAt": "2026-08-19T08:27:24.118Z",
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T09:31:44.800Z",
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     }
-  ],
-  "auditNote": "T047: Fixed T0 l3Score (hardcoded 1.0 -> true L3 screen_obs measurement), l2Score (L3-heldout value -> null, T0 has no independent L2 evaluation)"
+  ]
 }

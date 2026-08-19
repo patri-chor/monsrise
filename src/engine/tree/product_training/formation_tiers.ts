@@ -1,10 +1,10 @@
 // ============================================================
 // src/engine/tree/product_training/formation_tiers.ts
-// T045R 双轴阵型强度梯队与学习评测环境状态机（恢复 55%/60%/55% 门禁与 T0 角色修复）
+// T046 双轴阵型强度梯队与学习评测环境状态机（保留 80%/85% 门禁、无 Top-1 限制、T0 角色彻底隔离）
 //
 // 规范要求：
-//   - 门禁阈值：T3->T2 (L3 >= 55%), T2->T1 (L2 >= 60%), T1->T2 (L2 < 55%), 迟滞带 [55%, 60%)
-//   - 无 Top-1 配额限制：同一流派允许多个合规变体共同晋升 T1
+//   - 强度门禁：T3->T2 (L3 >= 80%), T2->T1 (L2 >= 85%), T1->T2 (L2 < 80%), 迟滞带 [80%, 85%]
+//   - 无 Top-1 配额限制：每个满足 L2 >= 85% 的合规候选均可作为 T1
 //   - T0 角色修复：learningPermissions=[], benchmarkRoles=['L2_FROZEN_T0_ANCHOR'],
 //                 opponentCatalogRoles=['L1_ROOT_LINEAGE_MEMBER'], l1LearnerStatus='NOT_APPLICABLE', l1Score=null
 // ============================================================
@@ -27,14 +27,14 @@ export const LEARNING_LEVEL_EVALUATIONS_PATH = resolve(`${T037_OUTPUT_DIR}/learn
 // ---- 策略配置 ----
 
 export interface FormationTierPolicyConfig {
-  schemaVersion: 'T045R_TIER_POLICY_V1';
+  schemaVersion: 'T046_TIER_POLICY_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   policyRevision: string;
   hysteresisThresholds: {
-    t3ToT2GateL3: number;     // 0.55
-    t2ToT1GateL2: number;     // 0.60
-    t1ToT2DemoteL2: number;   // 0.55
-    hysteresisBandL2: [number, number]; // [0.55, 0.60]
+    t3ToT2GateL3: number;     // 0.80
+    t2ToT1GateL2: number;     // 0.85
+    t1ToT2DemoteL2: number;   // 0.80
+    hysteresisBandL2: [number, number]; // [0.80, 0.85]
   };
   learningLevels: {
     L3: { name: string; opponentCount: number; description: string };
@@ -51,14 +51,14 @@ export interface FormationTierPolicyConfig {
 
 export function getDefaultTierPolicy(): FormationTierPolicyConfig {
   return {
-    schemaVersion: 'T045R_TIER_POLICY_V1',
+    schemaVersion: 'T046_TIER_POLICY_V1',
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-    policyRevision: 'v3.0.0-t045r-approved-55-60-55',
+    policyRevision: 'v3.1.0-t046-authorized-80-85-no-cap',
     hysteresisThresholds: {
-      t3ToT2GateL3: 0.55,
-      t2ToT1GateL2: 0.60,
-      t1ToT2DemoteL2: 0.55,
-      hysteresisBandL2: [0.55, 0.60],
+      t3ToT2GateL3: 0.80,
+      t2ToT1GateL2: 0.85,
+      t1ToT2DemoteL2: 0.80,
+      hysteresisBandL2: [0.80, 0.85],
     },
     learningLevels: {
       L3: { name: 'Early Bundle 8', opponentCount: 8, description: 'Early 7 bundles + historical Gift Jungle' },
@@ -108,7 +108,7 @@ export interface FormationLibraryEntry {
 }
 
 export interface FormationStrengthLibraryFile {
-  schemaVersion: 'T045R_FORMATION_STRENGTH_LIBRARY_V1';
+  schemaVersion: 'T046_FORMATION_STRENGTH_LIBRARY_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   policyRevision: string;
   updatedAt: string;
@@ -167,7 +167,7 @@ export function appendLearningEvaluationRecord(rec: LearningLevelEvaluationRecor
   appendFileSync(LEARNING_LEVEL_EVALUATIONS_PATH, JSON.stringify(rec) + '\n', 'utf8');
 }
 
-/** 评估梯队跃迁与门禁决策（严格 55%/60%/55% 迟滞带） */
+/** 评估梯队跃迁与门禁决策（严格 80%/85% 无 Top-1 cap 门禁） */
 export function evaluateTierGate(opts: {
   currentTier: FormationTier;
   level: LearningLevel;
@@ -265,13 +265,13 @@ export function saveFormationStrengthLibrary(entries: FormationLibraryEntry[]): 
   }
 
   const file: FormationStrengthLibraryFile = {
-    schemaVersion: 'T045R_FORMATION_STRENGTH_LIBRARY_V1',
+    schemaVersion: 'T046_FORMATION_STRENGTH_LIBRARY_V1',
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
     policyRevision: policy.policyRevision,
     updatedAt: new Date().toISOString(),
     counts: {
       T0Count: t0,
-      T0L1OpponentMemberCount: t0Opponent,
+      T0L1OpponentMemberCount: t0Opp,
       T0L1LearnerCount: t0Learner,
       T1Count: t1,
       T2Count: t2,

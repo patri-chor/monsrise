@@ -7,6 +7,8 @@ import { music } from '../game/MusicManager';
 import { isIOSDevice, requestFullscreen } from './shared/fullscreen';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
 import { t } from '../game/LanguageManager';
+import { L1MeleeChallengeManager } from './L1MeleeChallengeManager';
+import { L1ChallengeHistoryUI } from './L1ChallengeHistoryUI';
 
 export class TeamEditorUI {
   private _container: HTMLDivElement;
@@ -288,9 +290,10 @@ export class TeamEditorUI {
 
           <!-- Bottom Actions（归属于 left panel 内部） -->
           <div class="editor-actions-container">
-            <button id="lobbyExperimentalModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('实验模式', 'Sandbox Mode')}</button>
-            <button id="lobbyAiModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('人机对战', 'VS AI')}</button>
-            <button id="lobbyOnlineModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('联机模式', 'Online Mode')}</button>
+            <button id="lobbyExperimentalModeBtn" class="pixel-btn" style="width: 300px; height: 60px; font-size: 54px;">${t('实验模式', 'Sandbox Mode')}</button>
+            <button id="lobbyAiModeBtn" class="pixel-btn" style="width: 300px; height: 60px; font-size: 54px;">${t('人机对战', 'VS AI')}</button>
+            <button id="lobbyOnlineModeBtn" class="pixel-btn" style="width: 300px; height: 60px; font-size: 54px;">${t('联机模式', 'Online Mode')}</button>
+            <button id="lobbyChallengeHistoryBtn" class="pixel-btn" style="width: 300px; height: 60px; font-size: 54px; color: #ffcc00;">${t('对战记录', 'History')}</button>
           </div>
 
         </div>
@@ -592,39 +595,48 @@ export class TeamEditorUI {
     });
 
     const aiBtn = document.getElementById('lobbyAiModeBtn');
-    aiBtn?.addEventListener('click', () => {
-      this._startBattleTransition(() => {
-        const ai = new BattleAI();
-        ai.setDifficulty('normal');
-        const aiHand: AICard[] = DB_MONSTERS.filter(m => !m.isSummon).map(m => ({
-          monsterId: m.id,
-          badgeIds: []
-        }));
-        const aiTeamResult = ai.buildTeam(aiHand);
+    aiBtn?.addEventListener('click', async () => {
+      try {
+        const mgr = L1MeleeChallengeManager.getInstance();
+        await mgr.loadCatalog();
+        const { opponent, archetype } = mgr.sampleOpponent();
+        console.log(`[T046] Sampled L1 Opponent: ${opponent.name} (${opponent.memberId}) from ${archetype.displayName}`);
 
-        // Copy player's selected team to teams[0]
-        gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
-          monsterId: s.monsterId,
-          badgeIds: [...s.badgeIds]
-        }));
+        this._startBattleTransition(() => {
+          // 1. 复制玩家自选队伍到 teams[0]
+          gameEngine.teams[0] = gameEngine.teams[gameEngine.selectedTeamIndex].map(s => ({
+            monsterId: s.monsterId,
+            badgeIds: [...s.badgeIds]
+          }));
 
-        const aiTeamSlots: { monsterId: number; badgeIds: number[] }[] = aiTeamResult.cards.map(
-          (m: { monsterId: number; badgeIds: number[] }) => ({
-            monsterId: m.monsterId,
-            badgeIds: m.badgeIds
-          })
-        );
-        while (aiTeamSlots.length < 8) {
-          aiTeamSlots.push({ monsterId: 0, badgeIds: [] });
-        }
-        
-        gameEngine.teams[1] = aiTeamSlots;
-        (gameEngine as any)._aiInstance = ai;
-        gameEngine.mode = 'ai';
-        gameEngine.state = 'PREPARATION_LEFT';
-        gameEngine.resetBoardForNextRound();
-        uiManager.syncStateWithUI();
-      });
+          // 2. 将抽样到的 L1 挑战对手队伍放入 teams[1]
+          const oppSlots: { monsterId: number; badgeIds: number[] }[] = (opponent.team || []).map(s => ({
+            monsterId: s.monsterId,
+            badgeIds: [...s.badgeIds]
+          }));
+          while (oppSlots.length < 8) {
+            oppSlots.push({ monsterId: 0, badgeIds: [] });
+          }
+          gameEngine.teams[1] = oppSlots;
+
+          // 3. 挂载 L1 对手对象到 gameEngine
+          (gameEngine as any)._l1ChallengeOpponent = opponent;
+          (gameEngine as any)._l1ChallengeArchetype = archetype;
+
+          gameEngine.mode = 'ai';
+          gameEngine.state = 'PREPARATION_LEFT';
+          gameEngine.resetBoardForNextRound();
+          uiManager.syncStateWithUI();
+        });
+      } catch (err: any) {
+        console.error('[T046] Failed to start L1 Challenge:', err);
+        alert(`启动人机对战失败: ${err.message || err}`);
+      }
+    });
+
+    const historyBtn = document.getElementById('lobbyChallengeHistoryBtn');
+    historyBtn?.addEventListener('click', () => {
+      L1ChallengeHistoryUI.show();
     });
 
     const onlineBtn = document.getElementById('lobbyOnlineModeBtn');

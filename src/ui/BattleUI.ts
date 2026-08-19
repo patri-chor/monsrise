@@ -9,6 +9,7 @@ import { director } from '../core/Director';
 import { uiManager } from './UIManager';
 import { networkManager } from '../net/NetworkManager';
 import { vfx } from '../game/VfxManager';
+import { L1MeleeChallengeManager } from './L1MeleeChallengeManager';
 
 // 联机等待状态需跨 BattleUI 实例持久化（syncStateWithUI 会重建实例）
 let _globalIsWaiting: boolean = false;
@@ -202,6 +203,18 @@ export class BattleUI {
             }).join('')}
           </div>
         </div>
+
+        ${(() => {
+          const l1Opp = (gameEngine as any)._l1ChallengeOpponent;
+          if (gameEngine.mode === 'ai' && l1Opp) {
+            return `
+              <div class="l1-opponent-banner" style="position: absolute; top: 78px; left: 50%; transform: translateX(-50%); background: rgba(24,20,37,0.9); border: 2px solid #8b9bb4; padding: 2px 14px; font-size: 13px; color: #ffcc00; z-index: 25; pointer-events: none; white-space: nowrap; font-family: monospace;">
+                【L1挑战】${l1Opp.name} | 流派: ${l1Opp.rootSourceId} | FP: ${l1Opp.canonicalFingerprint?.slice(0, 8)}
+              </div>
+            `;
+          }
+          return '';
+        })()}
 
         <!-- 战斗倍速切换（1x → 2x → 3x） -->
         <button id="speedToggleBtn" class="speed-toggle-btn" style="display:none;">1x</button>
@@ -596,9 +609,16 @@ export class BattleUI {
     };
   }
 
-  /** AI auto-placement: 使用 ai-bundle 规则引擎规划整轮布阵 */
+  /** AI auto-placement: 优先使用 L1 Melee 挑战树策略，fallback 到旧版规则引擎 */
   private async runAIPlacements(): Promise<void> {
     console.log('[AI] Starting AI placements...');
+
+    if ((gameEngine as any)._l1ChallengeOpponent) {
+      console.log('[AI] Using L1 Melee tree strategy for placements...');
+      L1MeleeChallengeManager.getInstance().executeOpponentPlacements(gameEngine, gameEngine.currentRound);
+      this.showBattleStartAnnouncement();
+      return;
+    }
 
     let ai = (gameEngine as any)._aiInstance as BattleAI;
     if (!ai) {
@@ -718,7 +738,21 @@ export class BattleUI {
             el.style.opacity = '0';
             setTimeout(() => {
               el.style.display = 'none';
-              if (gameEngine.mode === 'online') {
+              if (gameEngine.mode === 'ai') {
+                const winnerSide: 0 | 1 | 2 =
+                  gameEngine.p1Score > gameEngine.p2Score
+                    ? 1
+                    : gameEngine.p2Score > gameEngine.p1Score
+                      ? 2
+                      : 0;
+                L1MeleeChallengeManager.getInstance().recordBattleOutcome({
+                  playerTeam: gameEngine.teams[0] || [],
+                  playerScore: gameEngine.p1Score,
+                  opponentScore: gameEngine.p2Score,
+                  winner: winnerSide,
+                  roundCount: gameEngine.currentRound,
+                });
+              } else if (gameEngine.mode === 'online') {
                 networkManager.leaveMatch();
                 gameEngine.mode = 'experimental';
               }
