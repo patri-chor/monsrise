@@ -561,29 +561,34 @@ export async function executeCycle(opts: {
   log(`  Level L1: Probabilistic Melee Catalog (${archetypeConfig.totalMembers} members, ${archetypeConfig.totalArchetypes} archetypes)`);
 
   // 7. 注册原始冻结 T0 根源到阵型库
+  // T0 根源：不参与学习，只作为 L2 基准锚点和 L1 对手目录成员
+  // l3Score 来自 T037 screen_observations（heldout 7 池），l2Score/l1Score=null（无独立评测）
   const libraryEntries: FormationLibraryEntry[] = [];
   for (const src of execSources) {
     const srcId = (src as any).id;
     const evol = formationToEvol(src);
     const fp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
-    const baseScore = baselineScoreMap.get(srcId) ?? 0.85;
+    const t0L3Score = baselineScoreMap.get(srcId) ?? null;
     libraryEntries.push({
       formationId: `t0:${srcId}`,
       canonicalFingerprint: fp,
       rootT0SourceId: srcId,
       lineageProof: `immutable_root_t0:${srcId}`,
       currentTier: 'T0',
-      l1Status: 'L1_STABLE',
-      allowedLearningLevels: ['L3', 'L2', 'L1'],
-      l3Score: 1.0,
-      l2Score: baseScore,
-      l1Score: baseScore,
-      l2AttemptsCount: 0,
+      learningPermissions: [],
+      benchmarkRoles: ['L2_FROZEN_T0_ANCHOR'],
+      opponentCatalogRoles: ['L1_ROOT_LINEAGE_MEMBER'],
+      l1LearnerStatus: 'NOT_APPLICABLE',
+      l3Score: t0L3Score,
+      l2Score: null,
+      l1Score: null,
+      l2AttemptsCount: null,
       lastEvaluatedAt: new Date().toISOString(),
       evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
       noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE',
     });
   }
+
 
   // 8. 自适应生成新候选（初始梯队均为 T3）
   const seenFps = new Set<string>();

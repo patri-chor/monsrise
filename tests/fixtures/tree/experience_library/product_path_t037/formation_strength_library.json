@@ -2,7 +2,7 @@
   "schemaVersion": "T045R_FORMATION_STRENGTH_LIBRARY_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
   "policyRevision": "v3.0.0-t045r-approved-55-60-55",
-  "updatedAt": "2026-08-19T08:27:24.118Z",
+  "updatedAt": "2026-08-19T09:11:57.534Z",
   "counts": {
     "T0Count": 11,
     "T0L1OpponentMemberCount": 11,
@@ -30,7 +30,7 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": 1,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.104Z",
@@ -52,7 +52,7 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": 1,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -73,8 +73,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.5,
+      "l3Score": 0.5,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -95,8 +95,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.7142857142857143,
+      "l3Score": 0.7142857142857143,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -117,8 +117,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.7857142857142857,
+      "l3Score": 0.7857142857142857,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -139,8 +139,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.8928571428571429,
+      "l3Score": 0.8928571428571429,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -161,8 +161,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.8571428571428571,
+      "l3Score": 0.8571428571428571,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -183,8 +183,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.7857142857142857,
+      "l3Score": 0.7857142857142857,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -206,7 +206,7 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": 1,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -228,7 +228,7 @@
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
       "l3Score": 1,
-      "l2Score": 1,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -249,8 +249,8 @@
         "L1_ROOT_LINEAGE_MEMBER"
       ],
       "l1LearnerStatus": "NOT_APPLICABLE",
-      "l3Score": 1,
-      "l2Score": 0.8571428571428571,
+      "l3Score": 0.8571428571428571,
+      "l2Score": null,
       "l1Score": null,
       "l2AttemptsCount": null,
       "lastEvaluatedAt": "2026-08-19T08:27:24.105Z",
@@ -2045,5 +2045,6 @@
       "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
       "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
     }
-  ]
+  ],
+  "auditNote": "T047: Fixed T0 l3Score (hardcoded 1.0 -> true L3 screen_obs measurement), l2Score (L3-heldout value -> null, T0 has no independent L2 evaluation)"
 }
