@@ -1,13 +1,12 @@
 // ============================================================
 // src/engine/tree/product_training/formation_tiers.ts
-// T044 双轴阵型强度梯队 (T-Axis) 与学习评测环境 (L-Axis) 状态机与阵型库
+// T045R 双轴阵型强度梯队与学习评测环境状态机（恢复 55%/60%/55% 门禁与 T0 角色修复）
 //
 // 规范要求：
-//   - T 轴 (Formation Tier): T0 (原始冻结11根源), T3 (早期候选), T2 (过L3>=55%), T1 (过L2>=60%)
-//   - L 轴 (Learning Level): L3 (Early Bundle 8), L2 (冻结T0 11), L1 (血缘概率Melee池)
-//   - 迟滞带 [55%, 60%): T3->T2 (>=55%), T2->T1 (>=60%), T1->T2降级 (<55%)
-//   - T1 L1状态: L1_NOT_YET_EVALUATED, L1_ELIGIBLE (完成>=3次L2尝试), L1_STABLE, L1_DIAGNOSE_REQUIRED
-//   - 权限控制: T3禁止L2/L1, T2禁止L1, T1满足条件才进L1
+//   - 门禁阈值：T3->T2 (L3 >= 55%), T2->T1 (L2 >= 60%), T1->T2 (L2 < 55%), 迟滞带 [55%, 60%)
+//   - 无 Top-1 配额限制：同一流派允许多个合规变体共同晋升 T1
+//   - T0 角色修复：learningPermissions=[], benchmarkRoles=['L2_FROZEN_T0_ANCHOR'],
+//                 opponentCatalogRoles=['L1_ROOT_LINEAGE_MEMBER'], l1LearnerStatus='NOT_APPLICABLE', l1Score=null
 // ============================================================
 
 import { writeFileSync, renameSync, appendFileSync } from 'node:fs';
@@ -16,7 +15,9 @@ import { T037_OUTPUT_DIR } from './04_screen';
 
 export type FormationTier = 'T0' | 'T1' | 'T2' | 'T3';
 export type LearningLevel = 'L1' | 'L2' | 'L3';
-export type L1StatusMarker = 'L1_NOT_YET_EVALUATED' | 'L1_ELIGIBLE' | 'L1_STABLE' | 'L1_DIAGNOSE_REQUIRED';
+export type L1LearnerStatus = 'L1_NOT_YET_EVALUATED' | 'L1_ELIGIBLE' | 'L1_STABLE' | 'L1_DIAGNOSE_REQUIRED' | 'L1_NOT_PERMITTED' | 'NOT_APPLICABLE';
+export type BenchmarkRole = 'L2_FROZEN_T0_ANCHOR' | 'L3_BASELINE_ANCHOR';
+export type OpponentCatalogRole = 'L1_ROOT_LINEAGE_MEMBER' | 'L2_BENCHMARK_OPPONENT' | 'L3_OPPONENT';
 
 export const FORMATION_TIER_POLICY_PATH = resolve(`${T037_OUTPUT_DIR}/formation_tier_policy.json`);
 export const FORMATION_STRENGTH_LIBRARY_PATH = resolve(`${T037_OUTPUT_DIR}/formation_strength_library.json`);
@@ -26,7 +27,7 @@ export const LEARNING_LEVEL_EVALUATIONS_PATH = resolve(`${T037_OUTPUT_DIR}/learn
 // ---- 策略配置 ----
 
 export interface FormationTierPolicyConfig {
-  schemaVersion: 'T044_TIER_POLICY_V1';
+  schemaVersion: 'T045R_TIER_POLICY_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   policyRevision: string;
   hysteresisThresholds: {
@@ -41,18 +42,18 @@ export interface FormationTierPolicyConfig {
     L1: { name: string; description: string };
   };
   permissionRules: {
-    T3: { allowedLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean };
-    T2: { allowedLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean };
-    T1: { allowedLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean; l1EligibilityRequiresL2Attempts: number };
-    T0: { immutable: boolean; role: string };
+    T3: { allowedLearnerLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean; l1LearnerStatus: 'L1_NOT_PERMITTED' };
+    T2: { allowedLearnerLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean; l1LearnerStatus: 'L1_NOT_PERMITTED' };
+    T1: { allowedLearnerLevels: LearningLevel[]; canDispatchL2: boolean; canDispatchL1: boolean; l1EligibilityRequiresL2Attempts: number };
+    T0: { immutable: boolean; isLearner: false; benchmarkRoles: BenchmarkRole[]; opponentCatalogRoles: OpponentCatalogRole[]; l1LearnerStatus: 'NOT_APPLICABLE' };
   };
 }
 
 export function getDefaultTierPolicy(): FormationTierPolicyConfig {
   return {
-    schemaVersion: 'T044_TIER_POLICY_V1',
+    schemaVersion: 'T045R_TIER_POLICY_V1',
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-    policyRevision: 'v1.0.0-t044-two-axis',
+    policyRevision: 'v3.0.0-t045r-approved-55-60-55',
     hysteresisThresholds: {
       t3ToT2GateL3: 0.55,
       t2ToT1GateL2: 0.60,
@@ -65,10 +66,16 @@ export function getDefaultTierPolicy(): FormationTierPolicyConfig {
       L1: { name: 'Lineage Probabilistic Melee', description: 'T042 Root-Lineage Melee Catalog sampling' },
     },
     permissionRules: {
-      T3: { allowedLevels: ['L3'], canDispatchL2: false, canDispatchL1: false },
-      T2: { allowedLevels: ['L3', 'L2'], canDispatchL2: true, canDispatchL1: false },
-      T1: { allowedLevels: ['L3', 'L2', 'L1'], canDispatchL2: true, canDispatchL1: true, l1EligibilityRequiresL2Attempts: 3 },
-      T0: { immutable: true, role: 'ANCHOR_ROOT_SOURCE_AND_L2_BENCHMARK' },
+      T3: { allowedLearnerLevels: ['L3'], canDispatchL2: false, canDispatchL1: false, l1LearnerStatus: 'L1_NOT_PERMITTED' },
+      T2: { allowedLearnerLevels: ['L3', 'L2'], canDispatchL2: true, canDispatchL1: false, l1LearnerStatus: 'L1_NOT_PERMITTED' },
+      T1: { allowedLearnerLevels: ['L3', 'L2', 'L1'], canDispatchL2: true, canDispatchL1: true, l1EligibilityRequiresL2Attempts: 3 },
+      T0: {
+        immutable: true,
+        isLearner: false,
+        benchmarkRoles: ['L2_FROZEN_T0_ANCHOR'],
+        opponentCatalogRoles: ['L1_ROOT_LINEAGE_MEMBER'],
+        l1LearnerStatus: 'NOT_APPLICABLE',
+      },
     },
   };
 }
@@ -79,7 +86,7 @@ export function saveTierPolicy(policy: FormationTierPolicyConfig = getDefaultTie
   renameSync(tmp, FORMATION_TIER_POLICY_PATH);
 }
 
-// ---- 阵型库记录与阵型条目 ----
+// ---- 阵型库条目 ----
 
 export interface FormationLibraryEntry {
   formationId: string;
@@ -87,24 +94,28 @@ export interface FormationLibraryEntry {
   rootT0SourceId: string;
   lineageProof: string;
   currentTier: FormationTier;
-  l1Status: L1StatusMarker;
-  allowedLearningLevels: LearningLevel[];
+  learningPermissions: LearningLevel[];
+  benchmarkRoles: BenchmarkRole[];
+  opponentCatalogRoles: OpponentCatalogRole[];
+  l1LearnerStatus: L1LearnerStatus;
   l3Score: number | null;
   l2Score: number | null;
   l1Score: number | null;
-  l2AttemptsCount: number;
+  l2AttemptsCount: number | null;
   lastEvaluatedAt: string;
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE';
 }
 
 export interface FormationStrengthLibraryFile {
-  schemaVersion: 'T044_FORMATION_STRENGTH_LIBRARY_V1';
+  schemaVersion: 'T045R_FORMATION_STRENGTH_LIBRARY_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   policyRevision: string;
   updatedAt: string;
   counts: {
     T0Count: number;
+    T0L1OpponentMemberCount: number;
+    T0L1LearnerCount: number;
     T1Count: number;
     T2Count: number;
     T3Count: number;
@@ -156,7 +167,7 @@ export function appendLearningEvaluationRecord(rec: LearningLevelEvaluationRecor
   appendFileSync(LEARNING_LEVEL_EVALUATIONS_PATH, JSON.stringify(rec) + '\n', 'utf8');
 }
 
-/** 评估梯队跃迁与门禁决策（严格迟滞带逻辑） */
+/** 评估梯队跃迁与门禁决策（严格 55%/60%/55% 迟滞带） */
 export function evaluateTierGate(opts: {
   currentTier: FormationTier;
   level: LearningLevel;
@@ -171,7 +182,7 @@ export function evaluateTierGate(opts: {
   const { t3ToT2GateL3, t2ToT1GateL2, t1ToT2DemoteL2 } = policy.hysteresisThresholds;
 
   if (currentTier === 'T0') {
-    return { newTier: 'T0', decision: 'RETAINED', reason: 'T0 is immutable original root benchmark' };
+    return { newTier: 'T0', decision: 'RETAINED', reason: 'T0 is immutable original root benchmark anchor' };
   }
 
   if (level === 'L3') {
@@ -220,7 +231,7 @@ export function evaluateTierGate(opts: {
         return {
           newTier: 'T1',
           decision: 'RETAINED',
-          reason: `Maintained L2 strength: score=${score.toFixed(3)} >= ${t1ToT2DemoteL2} (in hysteresis band or above) -> Retained at T1`,
+          reason: `Maintained L2 strength: score=${score.toFixed(3)} >= ${t1ToT2DemoteL2} -> Retained at T1`,
         };
       }
     }
@@ -232,31 +243,40 @@ export function evaluateTierGate(opts: {
 /** 保存并更新阵型强度库文件 */
 export function saveFormationStrengthLibrary(entries: FormationLibraryEntry[]): FormationStrengthLibraryFile {
   const policy = getDefaultTierPolicy();
-  let t0 = 0, t1 = 0, t2 = 0, t3 = 0;
+  let t0 = 0, t0Opponent = 0, t0Learner = 0;
+  let t1 = 0, t2 = 0, t3 = 0;
   let t1Eligible = 0, t1Stable = 0, t1Diagnose = 0;
 
   for (const e of entries) {
-    if (e.currentTier === 'T0') t0++;
-    else if (e.currentTier === 'T1') {
+    if (e.currentTier === 'T0') {
+      t0++;
+      if (e.opponentCatalogRoles.includes('L1_ROOT_LINEAGE_MEMBER')) t0Opponent++;
+      if (e.l1LearnerStatus !== 'NOT_APPLICABLE' || e.learningPermissions.length > 0) t0Learner++;
+    } else if (e.currentTier === 'T1') {
       t1++;
-      if (e.l1Status === 'L1_ELIGIBLE') t1Eligible++;
-      else if (e.l1Status === 'L1_STABLE') t1Stable++;
-      else if (e.l1Status === 'L1_DIAGNOSE_REQUIRED') t1Diagnose++;
-    } else if (e.currentTier === 'T2') t2++;
-    else if (e.currentTier === 'T3') t3++;
+      if (e.l1LearnerStatus === 'L1_ELIGIBLE') t1Eligible++;
+      else if (e.l1LearnerStatus === 'L1_STABLE') t1Stable++;
+      else if (e.l1LearnerStatus === 'L1_DIAGNOSE_REQUIRED') t1Diagnose++;
+    } else if (e.currentTier === 'T2') {
+      t2++;
+    } else if (e.currentTier === 'T3') {
+      t3++;
+    }
   }
 
   const file: FormationStrengthLibraryFile = {
-    schemaVersion: 'T044_FORMATION_STRENGTH_LIBRARY_V1',
+    schemaVersion: 'T045R_FORMATION_STRENGTH_LIBRARY_V1',
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
     policyRevision: policy.policyRevision,
     updatedAt: new Date().toISOString(),
     counts: {
       T0Count: t0,
+      T0L1OpponentMemberCount: t0Opponent,
+      T0L1LearnerCount: t0Learner,
       T1Count: t1,
       T2Count: t2,
       T3Count: t3,
-      T1L1EligibleCount: t1Eligible,
+      T1L1EligibleCount: t1Eligible + t1Stable + t1Diagnose,
       T1L1StableCount: t1Stable,
       T1L1DiagnoseRequiredCount: t1Diagnose,
     },

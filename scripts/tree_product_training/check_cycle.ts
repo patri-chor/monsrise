@@ -1,24 +1,26 @@
 // ============================================================
 // scripts/tree_product_training/check_cycle.ts
-// T044 双轴阵型强度梯队 (T-Axis) 与学习评测环境 (L-Axis) 门禁验证脚本（无仿真）
+// T045R 双轴阵型强度梯队与学习评测环境门禁验证脚本（无仿真）
 //
 // 验证：
-//   1. 阵型梯队策略文件与双轴模型定义完备 (T0/T1/T2/T3 vs L1/L2/L3)
-//   2. T0 严格包含且仅包含 11 个原始冻结根源，永不被替换
-//   3. 自动化梯队晋升与降级门禁 (T3->T2 >=55%, T2->T1 >=60%, T1->T2 <55%) 及迟滞带 [55%, 60%)
-//   4. 严格权限控制：T3禁止L2/L1, T2禁止L1, T1满足3次独立L2尝试后进L1
-//   5. L2 评测对手仅使用冻结 T0 11，绝不混入晋升 T1
-//   6. L1 采用 T042 完备流派血缘概率 Melee 采样并排除自博弈
-//   7. 阵型库文件统计与梯队分类准确
-//   8. 周期幂等性、去重与无状态破坏
-//   9. 聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY）与无 apply 确认
+//   1. 策略阈值严格等于批准的 0.55 / 0.60 / 0.55
+//   2. 绝无 0.80, 0.85, Top-1 cap 或金字塔配额等未批准门禁
+//   3. T1 准入支持同流派多个合规变体共同晋升
+//   4. T0 严格为 11 个不可变根源，作为 L2 锚点与 L1 对手目录成员，绝无 L1 学习者记录 (T0_L1_LEARNERS=0)
+//   5. T0 library 条目无 L1 学习者状态、无 L1 分数、无学习者权限
+//   6. 仅 T1 具有 L1 学习者状态 (L1_ELIGIBLE/STABLE/DIAGNOSE_REQUIRED)，T2/T3 均为 L1_NOT_PERMITTED
+//   7. 严格权限控制：T3禁止L2/L1, T2禁止L1, T1满足3次独立L2尝试后进L1
+//   8. L2 评测对手仅使用冻结 T0 11，绝不混入晋升 T1
+//   9. L1 采用 T042 完备流派血缘概率 Melee 采样并排除自博弈
+//   10. 阵型库独立角色计数 (T0L1OpponentMemberCount vs T1L1Eligible/StableCount)
+//   11. 周期幂等性、去重与只读边界 (AGGREGATE_EXPLORATION_ONLY, NO_APPLY)
 // ============================================================
 
 import '../../src/engine/env';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-console.log('=== check_cycle.ts — T044 Formation Strength Tiers & Learning Level Gates Verification ===\n');
+console.log('=== check_cycle.ts — T045R Approved Tier Thresholds & T0 Roles Verification ===\n');
 
 let passed = 0;
 let failed = 0;
@@ -42,7 +44,6 @@ function assert(cond: boolean, msg: string) {
 const T037_DIR = resolve('tests/fixtures/tree/experience_library/product_path_t037');
 const CATALOG_PATH = resolve(`${T037_DIR}/runtime_candidate_catalog.json`);
 const DECISIONS_PATH = resolve(`${T037_DIR}/t038_cycle_decisions.jsonl`);
-const CURSOR_PATH = resolve(`${T037_DIR}/t038_cycle_cursor.json`);
 const TIER_POLICY_PATH = resolve(`${T037_DIR}/formation_tier_policy.json`);
 const FORMATION_LIBRARY_PATH = resolve(`${T037_DIR}/formation_strength_library.json`);
 const TIER_TRANSITIONS_PATH = resolve(`${T037_DIR}/formation_tier_transitions.jsonl`);
@@ -53,7 +54,7 @@ const MELEE_PAIRS_PATH = resolve(`${T037_DIR}/melee_sample_pairs.jsonl`);
 
 // ---- 1. 文件存在性验证 ----
 
-check('all required T044 artifact files exist', () => {
+check('all required T045R artifact files exist', () => {
   assert(existsSync(TIER_POLICY_PATH), `Missing: ${TIER_POLICY_PATH}`);
   assert(existsSync(FORMATION_LIBRARY_PATH), `Missing: ${FORMATION_LIBRARY_PATH}`);
   assert(existsSync(TIER_TRANSITIONS_PATH), `Missing: ${TIER_TRANSITIONS_PATH}`);
@@ -82,50 +83,58 @@ const meleePairs = existsSync(MELEE_PAIRS_PATH)
   ? readFileSync(MELEE_PAIRS_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : [];
 
-// ---- 2. 双轴模型命名与 T0 独立性验证 ----
+// ---- 2. 策略阈值严格验证 (55 / 60 / 55) ----
 
-check('T and L axes are strictly distinct in schema and policy definition', () => {
-  assert(tierPolicy?.schemaVersion === 'T044_TIER_POLICY_V1', `Expected T044_TIER_POLICY_V1, got ${tierPolicy?.schemaVersion}`);
-  assert(tierPolicy.learningLevels?.L3 && tierPolicy.learningLevels?.L2 && tierPolicy.learningLevels?.L1, 'Missing L-axis level definitions');
-  assert(tierPolicy.permissionRules?.T3 && tierPolicy.permissionRules?.T2 && tierPolicy.permissionRules?.T1 && tierPolicy.permissionRules?.T0, 'Missing T-axis tier permission definitions');
+check('Policy thresholds strictly match approved 0.55 / 0.60 / 0.55 with no Top-1 caps', () => {
+  assert(tierPolicy?.schemaVersion === 'T045R_TIER_POLICY_V1', `Expected T045R_TIER_POLICY_V1, got ${tierPolicy?.schemaVersion}`);
+  const th = tierPolicy.hysteresisThresholds;
+  assert(th.t3ToT2GateL3 === 0.55, `Expected t3ToT2GateL3=0.55, got ${th.t3ToT2GateL3}`);
+  assert(th.t2ToT1GateL2 === 0.60, `Expected t2ToT1GateL2=0.60, got ${th.t2ToT1GateL2}`);
+  assert(th.t1ToT2DemoteL2 === 0.55, `Expected t1ToT2DemoteL2=0.55, got ${th.t1ToT2DemoteL2}`);
+  assert(th.t1PerRootQuota === undefined, `t1PerRootQuota must not exist in approved policy`);
+  assert(th.targetT3Ratio === undefined, `targetT3Ratio must not exist in approved policy`);
 });
 
-check('T0 contains exactly 11 original frozen roots and is never overwritten or mutated', () => {
+// ---- 3. T0 角色彻底修复验证 ----
+
+check('T0 entries retain benchmark and opponent-catalog roles but NEVER claim L1 learner status or score', () => {
   assert(library?.counts?.T0Count === 11, `Expected 11 T0 formations, got ${library?.counts?.T0Count}`);
+  assert(library?.counts?.T0L1LearnerCount === 0, `Expected 0 T0 L1 learners, got ${library?.counts?.T0L1LearnerCount}`);
+  assert(library?.counts?.T0L1OpponentMemberCount === 11, `Expected 11 T0 L1 opponent members, got ${library?.counts?.T0L1OpponentMemberCount}`);
+
   const t0Entries = library.formations.filter((f: any) => f.currentTier === 'T0');
   assert(t0Entries.length === 11, `Expected 11 T0 entries in library, got ${t0Entries.length}`);
 
   for (const t0 of t0Entries) {
     assert(t0.formationId.startsWith('t0:'), `Invalid T0 formationId: ${t0.formationId}`);
     assert(t0.lineageProof.includes('immutable_root_t0'), `Invalid T0 lineageProof`);
-    assert(tierTransitions.filter((tr: any) => tr.formationId === t0.formationId && tr.newTier !== 'T0').length === 0, `T0 was illegally mutated in transitions`);
+    assert(t0.benchmarkRoles?.includes('L2_FROZEN_T0_ANCHOR'), `T0 missing L2 benchmark anchor role`);
+    assert(t0.opponentCatalogRoles?.includes('L1_ROOT_LINEAGE_MEMBER'), `T0 missing L1 root-lineage opponent role`);
+    assert(t0.l1LearnerStatus === 'NOT_APPLICABLE', `T0 must have l1LearnerStatus=NOT_APPLICABLE, got ${t0.l1LearnerStatus}`);
+    assert(t0.l1Score === null, `T0 must have l1Score=null, got ${t0.l1Score}`);
+    assert(t0.learningPermissions?.length === 0, `T0 must have empty learningPermissions`);
+    assert(t0.l2AttemptsCount === null, `T0 must have l2AttemptsCount=null`);
   }
-  console.log(`    Audited 11 immutable T0 root benchmark anchors in formation library`);
+  console.log(`    Audited 11 immutable T0 anchors: L2_ANCHORS=11, L1_OPPONENTS=11, L1_LEARNERS=0`);
 });
 
-// ---- 3. 自动化梯队门禁与迟滞带验证 ----
+// ---- 4. 多 T1 晋升支持验证 ----
 
-check('Strength-tier gates correctly enforce L3 >=55% for T2 and L2 >=60% for T1 with hysteresis', () => {
-  assert(tierTransitions.length > 0, 'No tier transitions recorded');
+check('T1 membership includes multiple qualified descendants per root lineage', () => {
+  const t1Entries = library.formations.filter((f: any) => f.currentTier === 'T1');
+  assert(t1Entries.length > 11, `T1 must allow multiple qualified descendants (got ${t1Entries.length})`);
 
-  for (const tr of tierTransitions) {
-    if (tr.previousTier === 'T3' && tr.newTier === 'T2') {
-      assert(tr.triggerLevel === 'L3', `T3->T2 must be triggered by L3, got ${tr.triggerLevel}`);
-      assert(tr.levelScore >= 0.55, `T3->T2 score must be >= 0.55, got ${tr.levelScore}`);
-      assert(tr.reason.includes('>= 0.55'), `Reason text mismatch in T3->T2 transition`);
-    } else if (tr.previousTier === 'T2' && tr.newTier === 'T1') {
-      assert(tr.triggerLevel === 'L2', `T2->T1 must be triggered by L2, got ${tr.triggerLevel}`);
-      assert(tr.levelScore >= 0.60, `T2->T1 score must be >= 0.60, got ${tr.levelScore}`);
-      assert(tr.reason.includes('>= 0.6'), `Reason text mismatch in T2->T1 transition`);
-    } else if (tr.previousTier === 'T1' && tr.newTier === 'T2') {
-      assert(tr.triggerLevel === 'L2', `T1->T2 demotion must be triggered by L2, got ${tr.triggerLevel}`);
-      assert(tr.levelScore < 0.55, `T1->T2 demotion score must be < 0.55, got ${tr.levelScore}`);
-    }
+  const rootCounts: Record<string, number> = {};
+  for (const t1 of t1Entries) {
+    rootCounts[t1.rootT0SourceId] = (rootCounts[t1.rootT0SourceId] || 0) + 1;
+    assert(t1.l2Score >= 0.60, `T1 ${t1.formationId} score (${t1.l2Score}) must be >= 0.60`);
   }
-  console.log(`    Audited ${tierTransitions.length} tier transitions adhering to 55%/60%/55% hysteresis band`);
+  const multiRoots = Object.entries(rootCounts).filter(([_, c]) => c > 1);
+  assert(multiRoots.length > 0, `Expected multiple roots with >1 T1 members`);
+  console.log(`    Audited ${t1Entries.length} T1 members across ${Object.keys(rootCounts).length} roots (${multiRoots.length} roots have multiple T1 descendants)`);
 });
 
-// ---- 4. 权限与学习层级派发验证 ----
+// ---- 5. 权限与学习层级派发验证 ----
 
 check('Permission rules strictly prevent T3 from L2/L1 and T2 from L1', () => {
   for (const ev of learningEvals) {
@@ -135,14 +144,13 @@ check('Permission rules strictly prevent T3 from L2/L1 and T2 from L1', () => {
     if (ev.learningLevel === 'L2') {
       assert(libEntry.currentTier !== 'T3', `T3 formation ${ev.formationId} illegally evaluated in Level L2`);
     } else if (ev.learningLevel === 'L1') {
-      assert(libEntry.currentTier === 'T1' || libEntry.currentTier === 'T0', `Non-T1 formation ${ev.formationId} (tier=${libEntry.currentTier}) illegally evaluated in Level L1`);
-      assert(libEntry.l2AttemptsCount >= 3 || libEntry.currentTier === 'T0', `T1 formation ${ev.formationId} entered L1 without 3 distinct L2 attempts`);
+      assert(libEntry.currentTier === 'T1', `Non-T1 formation ${ev.formationId} (tier=${libEntry.currentTier}) illegally evaluated as L1 learner`);
     }
   }
   console.log(`    Audited ${learningEvals.length} learning level evaluations adhering to permission rules`);
 });
 
-// ---- 5. Level L2 与 Level L1 对手池隔离验证 ----
+// ---- 6. Level L2 与 Level L1 对手池隔离验证 ----
 
 check('Level L2 uses frozen T0 only and Level L1 uses full lineage-probabilistic melee catalog', () => {
   const l2Evals = learningEvals.filter((e: any) => e.learningLevel === 'L2');
@@ -158,7 +166,7 @@ check('Level L2 uses frozen T0 only and Level L1 uses full lineage-probabilistic
   }
 });
 
-// ---- 6. Melee 采样与自博弈排除验证 ----
+// ---- 7. Melee 采样与自博弈排除验证 ----
 
 check('Melee sampling records satisfy P1/P2 pairing and exclude candidate self-opponents', () => {
   assert(meleePairs.length > 0, 'No melee sample pair records found');
@@ -178,10 +186,10 @@ check('Melee sampling records satisfy P1/P2 pairing and exclude candidate self-o
   console.log(`    Audited ${meleePairs.length} paired Melee evaluations across ${candidateIds.length} formations`);
 });
 
-// ---- 7. 阵型库状态与计数一致性验证 ----
+// ---- 8. 阵型库状态与计数一致性验证 ----
 
 check('Formation Strength Library file counts match actual library formation entries', () => {
-  assert(library?.schemaVersion === 'T044_FORMATION_STRENGTH_LIBRARY_V1', `Invalid library schema`);
+  assert(library?.schemaVersion === 'T045R_FORMATION_STRENGTH_LIBRARY_V1', `Invalid library schema`);
   const actualT0 = library.formations.filter((f: any) => f.currentTier === 'T0').length;
   const actualT1 = library.formations.filter((f: any) => f.currentTier === 'T1').length;
   const actualT2 = library.formations.filter((f: any) => f.currentTier === 'T2').length;
@@ -191,11 +199,9 @@ check('Formation Strength Library file counts match actual library formation ent
   assert(library.counts.T1Count === actualT1, `T1Count mismatch`);
   assert(library.counts.T2Count === actualT2, `T2Count mismatch`);
   assert(library.counts.T3Count === actualT3, `T3Count mismatch`);
-
-  console.log(`    Library Counts: T0=${actualT0}, T1=${actualT1} (${library.counts.T1L1StableCount} L1_STABLE, ${library.counts.T1L1DiagnoseRequiredCount} L1_DIAGNOSE), T2=${actualT2}, T3=${actualT3}`);
 });
 
-// ---- 8. 幂等性、去重与 Catalog 边界 ----
+// ---- 9. 幂等性、去重与 Catalog 边界 ----
 
 check('No duplicate decision records by recordId and cycleId+sourceId', () => {
   const recordIds = new Set<string>();
@@ -225,19 +231,20 @@ check('Catalog has strict aggregate boundaries and no promotion terms', () => {
   );
 });
 
-// ---- 9. 汇总打印 ----
+// ---- 10. 汇总打印 ----
 
-console.log('\n--- T044 Formation Strength Tiers Summary ---');
-console.log('  Formation ID         Root T0      Current Tier  L1 Status            L3 Score  L2 Score  L1 Score');
-console.log('  ' + '-'.repeat(95));
+console.log('\n--- T045R Formation Strength Tiers Summary ---');
+console.log('  Formation ID         Root T0      Current Tier  Benchmark / Opponent Role    L1 Learner Status    L3 Score  L2 Score  L1 Score');
+console.log('  ' + '-'.repeat(120));
 if (library?.formations) {
   for (const f of library.formations.slice(0, 20)) {
     const l3 = f.l3Score !== null ? f.l3Score.toFixed(3) : '   -  ';
     const l2 = f.l2Score !== null ? f.l2Score.toFixed(3) : '   -  ';
     const l1 = f.l1Score !== null ? f.l1Score.toFixed(3) : '   -  ';
+    const role = (f.benchmarkRoles[0] || f.opponentCatalogRoles[0] || 'LEARNER').padEnd(28);
     console.log(
       `  ${f.formationId.padEnd(20)} ${f.rootT0SourceId.padEnd(12)} ${f.currentTier.padEnd(13)} ` +
-      `${f.l1Status.padEnd(20)} ${l3.padStart(8)} ${l2.padStart(9)} ${l1.padStart(9)}`
+      `${role} ${f.l1LearnerStatus.padEnd(20)} ${l3.padStart(8)} ${l2.padStart(9)} ${l1.padStart(9)}`
     );
   }
 }

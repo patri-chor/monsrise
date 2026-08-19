@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "T044_TIER_POLICY_V1",
+  "schemaVersion": "T045R_TIER_POLICY_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "policyRevision": "v1.0.0-t044-two-axis",
+  "policyRevision": "v3.0.0-t045r-approved-55-60-55",
   "hysteresisThresholds": {
     "t3ToT2GateL3": 0.55,
     "t2ToT1GateL2": 0.6,
@@ -29,22 +29,24 @@
   },
   "permissionRules": {
     "T3": {
-      "allowedLevels": [
+      "allowedLearnerLevels": [
         "L3"
       ],
       "canDispatchL2": false,
-      "canDispatchL1": false
+      "canDispatchL1": false,
+      "l1LearnerStatus": "L1_NOT_PERMITTED"
     },
     "T2": {
-      "allowedLevels": [
+      "allowedLearnerLevels": [
         "L3",
         "L2"
       ],
       "canDispatchL2": true,
-      "canDispatchL1": false
+      "canDispatchL1": false,
+      "l1LearnerStatus": "L1_NOT_PERMITTED"
     },
     "T1": {
-      "allowedLevels": [
+      "allowedLearnerLevels": [
         "L3",
         "L2",
         "L1"
@@ -55,7 +57,14 @@
     },
     "T0": {
       "immutable": true,
-      "role": "ANCHOR_ROOT_SOURCE_AND_L2_BENCHMARK"
+      "isLearner": false,
+      "benchmarkRoles": [
+        "L2_FROZEN_T0_ANCHOR"
+      ],
+      "opponentCatalogRoles": [
+        "L1_ROOT_LINEAGE_MEMBER"
+      ],
+      "l1LearnerStatus": "NOT_APPLICABLE"
     }
   }
 }
