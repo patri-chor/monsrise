@@ -4,7 +4,7 @@
 // 不包含长时间搜索；不导入 arena / hill_climb / sequential_tree_optimization。
 // ============================================================
 
-import { createHash } from 'node:crypto';
+import { sha256Hex } from '../sha256_pure';
 import type { EvolNode } from '../evol_gene';
 import { walkEvolNodes } from '../evol_gene';
 import type { EvolFormation } from '../evol_gene';
@@ -202,5 +202,5 @@ export function computeCandidateFingerprint(evol: EvolFormation): string {
       .sort((a, b) => a.monsterId - b.monsterId),
     root: nodeSignature(evol.root),
   };
-  return createHash('sha256').update(JSON.stringify(sig)).digest('hex').slice(0, 24);
+  return sha256Hex(JSON.stringify(sig)).slice(0, 24);
 }

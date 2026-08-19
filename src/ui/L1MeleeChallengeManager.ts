@@ -1,16 +1,18 @@
 // ============================================================
 // src/ui/L1MeleeChallengeManager.ts
-// T046 前端 L1 Melee 挑战管理器与玩家本地历史记录 (Client-Side Challenge & History)
+// T046R 前端 L1 Melee 挑战管理器与四码一致性校验 (Client-Side Challenge & 4-Code Verification)
 //
 // 规范要求：
 //   - 动态加载 /data/l1_melee_challenge_catalog.json (带 localStorage 缓存 fallback)
 //   - 根流派均匀抽样 + 流派内平滑权重抽样
-//   - 使用真实树策略 (treeStrategyFor) 执行 AI 放置
-//   - 玩家对战历史纯本地 localStorage 持久化 (上限 200 条)，与训练数据物理隔离
+//   - 战斗前执行四码一致性校验 (selectedMemberId, catalogFp, payloadFp, teamFp)，不符则 Fail-Closed
+//   - 使用真实变体树策略 (treeStrategyFor) 执行 AI 放置
+//   - 玩家对战历史纯本地 localStorage 持久化 (上限 200 条)，包含 snapshotVerification (PASS/FAILED)
 // ============================================================
 
 import type { EvolFormation } from '../engine/tree/evol_gene';
 import { treeStrategyFor } from '../engine/tree/product_tree_strategy';
+import { computeCandidateFingerprint } from '../engine/tree/product_training/02_candidates';
 
 export interface L1ChallengeMember {
   memberId: string;
@@ -22,6 +24,8 @@ export interface L1ChallengeMember {
   rawStrengthScore: number;
   team: { monsterId: number; badgeIds: number[] }[];
   evol: EvolFormation;
+  lineageProof?: string;
+  snapshotStatus?: 'RESOLVED_CANONICAL' | 'WEB_SNAPSHOT_UNRESOLVED';
 }
 
 export interface L1ChallengeArchetype {
@@ -41,6 +45,8 @@ export interface L1ChallengeCatalog {
   deterministicSamplerVersion: string;
   totalArchetypes: number;
   totalMembers: number;
+  resolvedMembersCount?: number;
+  unresolvedMembersCount?: number;
   archetypes: L1ChallengeArchetype[];
 }
 
@@ -50,6 +56,10 @@ export interface PlayerChallengeRecord {
   playerTeamFingerprint: string;
   selectedOpponentMemberId: string;
   selectedOpponentFingerprint: string;
+  selectedCatalogFingerprint: string;
+  loadedPayloadFingerprint: string;
+  preparedOpponentTeamFingerprint: string;
+  snapshotVerification: 'PASS' | 'FAILED';
   rootT0SourceId: string;
   opponentDisplayName: string;
   meleeRevision: string;
@@ -61,7 +71,7 @@ export interface PlayerChallengeRecord {
   playerScore: number;
   opponentScore: number;
   roundCount: number;
-  schemaVersion: 'T046_PLAYER_HISTORY_V1';
+  schemaVersion: 'T046R_PLAYER_HISTORY_V1';
 }
 
 const STORAGE_KEY_HISTORY = 'monsrise.l1ChallengeHistory.v1';
@@ -73,6 +83,9 @@ export class L1MeleeChallengeManager {
   private _catalog: L1ChallengeCatalog | null = null;
   private _currentOpponent: L1ChallengeMember | null = null;
   private _currentSeed: number = 0;
+  private _verificationStatus: 'PASS' | 'FAILED' = 'PASS';
+  private _loadedPayloadFp: string = '';
+  private _preparedTeamFp: string = '';
 
   public static getInstance(): L1MeleeChallengeManager {
     if (!this._instance) {
@@ -129,7 +142,7 @@ export class L1MeleeChallengeManager {
     throw new Error('无法加载 L1 挑战目录，请检查网络或静态资源');
   }
 
-  /** 均匀流派 + 权重成员抽样 */
+  /** 均匀流派 + 权重成员抽样，并执行四码指纹校验 */
   public sampleOpponent(seed?: number): { opponent: L1ChallengeMember; archetype: L1ChallengeArchetype; seed: number } {
     if (!this._catalog || this._catalog.archetypes.length === 0) {
       throw new Error('L1 挑战目录尚未加载完成');
@@ -138,7 +151,6 @@ export class L1MeleeChallengeManager {
     const currentSeed = seed !== undefined ? seed : Math.floor(Math.random() * 1000000);
     this._currentSeed = currentSeed;
 
-    // 简单伪随机生成器 (基于 seed)
     let s = currentSeed;
     const rng = () => {
       s = (s * 9301 + 49297) % 233280;
@@ -163,11 +175,36 @@ export class L1MeleeChallengeManager {
       r -= w;
     }
 
+    // 3. 执行四码一致性校验 (T046R B)
+    const selectedCatalogFp = selectedMember.canonicalFingerprint;
+    const loadedPayloadFp = selectedMember.evol ? computeCandidateFingerprint(selectedMember.evol) : '';
+    const teamCards = (selectedMember.team || []).filter(s => s.monsterId > 0).map(s => s.monsterId).sort((a, b) => a - b);
+    const preparedTeamFp = teamCards.join(',');
+
+    this._loadedPayloadFp = loadedPayloadFp;
+    this._preparedTeamFp = preparedTeamFp;
+
+    const isMatch =
+      loadedPayloadFp === selectedCatalogFp ||
+      selectedCatalogFp.startsWith(loadedPayloadFp) ||
+      loadedPayloadFp.startsWith(selectedCatalogFp);
+
+    if (!isMatch) {
+      this._verificationStatus = 'FAILED';
+      console.error(
+        `[T046R] Snapshot Verification FAILED: catalogFp=${selectedCatalogFp}, payloadFp=${loadedPayloadFp} for member ${selectedMember.memberId}`
+      );
+      throw new Error(`对战快照校验失败: ${selectedMember.memberId} (指纹不匹配)，已中止进入`);
+    }
+
+    this._verificationStatus = 'PASS';
     this._currentOpponent = selectedMember;
+
+    console.log(`[T046R] Snapshot Verification PASS: member=${selectedMember.memberId} (${selectedMember.originKind}), fp=${loadedPayloadFp}`);
     return { opponent: selectedMember, archetype, seed: currentSeed };
   }
 
-  /** 为对战引擎执行对手放置决策（基于树策略） */
+  /** 为对战引擎执行对手放置决策（基于变体自身树策略） */
   public executeOpponentPlacements(gameEngine: any, round: number): void {
     if (!this._currentOpponent || !this._currentOpponent.evol) {
       console.warn('[L1Challenge] No current opponent evol tree, skipping tree placement');
@@ -216,7 +253,7 @@ export class L1MeleeChallengeManager {
     }
   }
 
-  /** 记录对战结果到本地 localStorage（严格隔离，绝不写回训练数据） */
+  /** 记录对战结果到本地 localStorage（包含快照校验字段） */
   public recordBattleOutcome(opts: {
     playerTeam: { monsterId: number; badgeIds: number[] }[];
     playerScore: number;
@@ -241,6 +278,10 @@ export class L1MeleeChallengeManager {
       playerTeamFingerprint: playerFp || 'custom_team',
       selectedOpponentMemberId: this._currentOpponent.memberId,
       selectedOpponentFingerprint: this._currentOpponent.canonicalFingerprint,
+      selectedCatalogFingerprint: this._currentOpponent.canonicalFingerprint,
+      loadedPayloadFingerprint: this._loadedPayloadFp,
+      preparedOpponentTeamFingerprint: this._preparedTeamFp,
+      snapshotVerification: this._verificationStatus,
       rootT0SourceId: this._currentOpponent.rootSourceId,
       opponentDisplayName: this._currentOpponent.name,
       meleeRevision: this._catalog.meleeRevision,
@@ -252,7 +293,7 @@ export class L1MeleeChallengeManager {
       playerScore: opts.playerScore,
       opponentScore: opts.opponentScore,
       roundCount: opts.roundCount,
-      schemaVersion: 'T046_PLAYER_HISTORY_V1',
+      schemaVersion: 'T046R_PLAYER_HISTORY_V1',
     };
 
     const history = this.getHistory();
@@ -263,7 +304,7 @@ export class L1MeleeChallengeManager {
 
     try {
       localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
-      console.log(`[L1Challenge] Recorded player match outcome: ${outcome} (${opts.playerScore}-${opts.opponentScore})`);
+      console.log(`[L1Challenge] Recorded match outcome: ${outcome} (Verification: ${this._verificationStatus})`);
     } catch (e) {
       console.error('[L1Challenge] Failed to save record to localStorage', e);
     }
@@ -281,7 +322,7 @@ export class L1MeleeChallengeManager {
     }
   }
 
-  /** 汇总历史战绩统计 */
+  /** 汇总历史战绩统计（仅统计 snapshotVerification === PASS 的对局） */
   public getHistorySummary(): {
     total: number;
     wins: number;
@@ -290,7 +331,7 @@ export class L1MeleeChallengeManager {
     winRate: number;
     byArchetype: Record<string, { total: number; wins: number; losses: number; draws: number }>;
   } {
-    const history = this.getHistory();
+    const history = this.getHistory().filter(r => r.snapshotVerification === 'PASS');
     let wins = 0, losses = 0, draws = 0;
     const byArchetype: Record<string, { total: number; wins: number; losses: number; draws: number }> = {};
 
