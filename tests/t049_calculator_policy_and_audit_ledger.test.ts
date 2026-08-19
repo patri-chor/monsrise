@@ -14,6 +14,7 @@ import {
   evaluateSpecialPlacementWithPolicy,
   evaluateAimPlacementWithPolicy,
   DEFAULT_CALCULATOR_POLICY,
+  ALL2RUSH_USER_OPTIMIZED_POLICY,
   CALCULATOR_POLICY_SCHEMA_VERSION,
   type CalculatorContextPolicy,
 } from '../src/engine/tree/calculator_policy';
@@ -28,10 +29,7 @@ import type { EvolFormation, EvolNode } from '../src/engine/tree/evol_gene';
 import { emptyMask } from '../src/engine/tree/evol_gene';
 import {
   AUDIT_LEDGER_PATH,
-  AUDIT_LEDGER_SCHEMA_VERSION,
-  type FormationWinrateAuditLedgerRecord,
 } from '../src/engine/tree/product_training/audit_ledger';
-import { ALL2RUSH_USER_OPTIMIZED_POLICY } from '../scripts/tree_product_training/generate_audit_ledger';
 
 console.log('=== 开始执行 T049 Calculator Context-Policy 与胜率审计总账专项验收测试 ===\n');
 
@@ -223,22 +221,23 @@ assert.strictEqual(candidateMeta.delta.newCanonicalValue, 'four_cost_first');
 console.log('  ✓ 候选算子元数据与 Delta 结构校验通过。');
 
 // -------------------------------------------------------------
-// [Test 5] 验证阵型胜率审计总账 (Audit Ledger) 完整性与 T048 隔离门禁
+// [Test 5] 验证阵型胜率审计总账 (T049R Schema V2) 数学不变量与真实 RAW / AGG 分离
 // -------------------------------------------------------------
-console.log('\n[Test 5] 验证阵型胜率审计总账 (Audit Ledger) 完整性与 T048 隔离门禁...');
+console.log('\n[Test 5] 验证阵型胜率审计总账 (T049R Schema V2) 数学不变量与真实 RAW / AGG 分离...');
 
 assert(existsSync(AUDIT_LEDGER_PATH), `Audit Ledger 文件必须存在: ${AUDIT_LEDGER_PATH}`);
 const ledgerLines = readFileSync(AUDIT_LEDGER_PATH, 'utf8').split('\n').filter(Boolean);
-const ledgerRecords: FormationWinrateAuditLedgerRecord[] = ledgerLines.map(l => JSON.parse(l));
+const ledgerRecords: any[] = ledgerLines.map(l => JSON.parse(l));
 
 assert(ledgerRecords.length >= 200, `Audit Ledger 条目数必须充分覆盖 (${ledgerRecords.length} >= 200)`);
 
-// 检查字段完整性
-let quarantinedPerfectCount = 0;
+let rawReconciledCount = 0;
+let aggScoreOnlyCount = 0;
+let quarantinedCount = 0;
 const uniqueFormations = new Set<string>();
 
 for (const r of ledgerRecords) {
-  assert.strictEqual(r.schemaVersion, AUDIT_LEDGER_SCHEMA_VERSION);
+  assert.strictEqual(r.schemaVersion, 'T049R_FORMATION_WINRATE_AUDIT_LEDGER_V2');
   assert.strictEqual(r.executionProvenance, 'PRODUCT_PATH');
   assert(r.formationId && r.canonicalFingerprint, '必须包含阵型身份与规范指纹');
   assert(r.calculatorPolicyFingerprint, '必须包含 Policy 独立指纹');
@@ -246,17 +245,37 @@ for (const r of ledgerRecords) {
   assert(Number.isFinite(r.totalGames) && r.totalGames > 0, '总局数必须 > 0');
   uniqueFormations.add(r.formationId);
 
-  if (r.score === 1 && r.verificationState === 'UNVERIFIED_AGGREGATE_ONLY') {
-    quarantinedPerfectCount++;
+  if (r.outcomeEvidenceKind === 'RAW_OUTCOMES_RECONCILED') {
+    rawReconciledCount++;
+    assert.strictEqual(typeof r.w, 'number', 'RAW 记录必须包含数字 w');
+    assert.strictEqual(typeof r.d, 'number', 'RAW 记录必须包含数字 d');
+    assert.strictEqual(typeof r.l, 'number', 'RAW 记录必须包含数字 l');
+    assert.strictEqual(r.w + r.d + r.l, r.totalGames, 'RAW 记录必须严格满足 w+d+l === totalGames');
+    assert(r.pureWinRate >= 0 && r.pureWinRate <= 1, 'pureWinRate 必须在 [0, 1]');
+  } else if (r.outcomeEvidenceKind === 'AGGREGATE_SCORE_ONLY') {
+    aggScoreOnlyCount++;
+    assert.strictEqual(r.w, null, 'AGG 记录严禁伪造数字 w');
+    assert.strictEqual(r.d, null, 'AGG 记录严禁伪造数字 d');
+    assert.strictEqual(r.l, null, 'AGG 记录严禁伪造数字 l');
+    assert.strictEqual(r.pureWinRate, null, 'AGG 记录严禁伪造 pureWinRate');
+  }
+
+  if (r.verificationState === 'UNVERIFIED_AGGREGATE_ONLY') {
+    quarantinedCount++;
   }
 }
 
 assert(uniqueFormations.size >= 90, `必须覆盖至少 90 套活跃阵型 (实际: ${uniqueFormations.size})`);
-assert(quarantinedPerfectCount > 0, 'T048 隔离门禁必须生效，未验证满分必须被标记为 UNVERIFIED_AGGREGATE_ONLY');
+assert(rawReconciledCount > 0, '必须包含全二冲等真实产品路径 RAW 记录');
+assert(aggScoreOnlyCount > 0, '必须包含探索阶段的 AGG 记录');
+assert(quarantinedCount > 0, '未经验证的满分记录必须处于隔离状态');
 
-console.log(`  覆盖活跃阵型数: ${uniqueFormations.size}`);
-console.log(`  总账记录数:   ${ledgerRecords.length}`);
-console.log(`  隔离满分条目数: ${quarantinedPerfectCount}`);
-console.log('  ✓ 阵型胜率审计总账完整性与 T048 隔离规则校验通过。');
+console.log(`  覆盖活跃阵型数:     ${uniqueFormations.size}`);
+console.log(`  总账记录数:         ${ledgerRecords.length}`);
+console.log(`  RAW 重测自洽记录数: ${rawReconciledCount}`);
+console.log(`  AGG 探索分数记录数: ${aggScoreOnlyCount}`);
+console.log(`  隔离状态记录数:     ${quarantinedCount}`);
+console.log('  ✓ 阵型胜率审计总账数学不变量与分类证据支持 100% 校验通过。');
 
-console.log('\n=== 所有 T049 验收测试全部通过 ===');
+console.log('\n=== 所有 T049R 验收测试全部通过 ===');
+

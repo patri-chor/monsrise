@@ -82,8 +82,18 @@ for (const f of library.formations) {
 
   const bestScoreVal = f.l1Score ?? f.l2Score ?? f.l3Score ?? 0;
   const bestScoreStr = (bestScoreVal * 100).toFixed(1) + '%';
-  const wdlStr = ledger ? `${ledger.w}/${ledger.d}/${ledger.l}` : '-';
-  const games = ledger ? ledger.totalGames : 0;
+  
+  // 严格区分 RAW 和 AGGREGATE 证据
+  let wdlStr = '-';
+  let games = 0;
+  if (ledger && ledger.w !== null && ledger.d !== null && ledger.l !== null) {
+    wdlStr = `${ledger.w}/${ledger.d}/${ledger.l}`;
+    games = ledger.totalGames;
+  } else if (ledger) {
+    wdlStr = `[AGG]`;
+    games = ledger.totalGames;
+  }
+
   const highestLevel = ledger ? ledger.latestLevel : 'L3';
   const policyFp = ledger ? ledger.policyFp.slice(0, 8) : 'default';
   const verification = ledger ? ledger.verificationState : (f.currentTier === 'T0' ? 'INDEPENDENT_VERIFIED' : 'UNVERIFIED');

@@ -69,6 +69,21 @@ export const DEFAULT_CALCULATOR_POLICY: Readonly<CalculatorContextPolicy> = Obje
   },
 });
 
+export const ALL2RUSH_USER_OPTIMIZED_POLICY: Readonly<CalculatorContextPolicy> = Object.freeze({
+  schemaVersion: CALCULATOR_POLICY_SCHEMA_VERSION,
+  special: {
+    charge: { targetPriority: 'iron_first' },
+    spell: { targetPriority: 'four_cost_first', preferXOffset: 6 },
+    tutu: { modePreference: 'voodoo_shield_first' },
+    drill: { targetPriority: 'spell_counter', yOffset: 1 },
+    tiejia: { protectTarget: 'imperial_shield' },
+  },
+  aim: {
+    mineBoom: { targetPriority: 'ranged_first' },
+    selei: { sidePreference: 'most_enemies_flank' },
+  },
+});
+
 /** 校验 Policy 是否符合白名单与有限值域要求 */
 export function validateCalculatorPolicy(raw: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
