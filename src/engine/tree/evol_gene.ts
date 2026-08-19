@@ -156,11 +156,15 @@ export interface EvolNode {
   children: EvolNode[];
 }
 
+import type { CalculatorContextPolicy } from './calculator_policy';
+import { canonicalizeCalculatorPolicy } from './calculator_policy';
+
 export interface EvolFormation {
   name: string;
   archetype: string;
   team: FormationTeamSlot[];   // 固定卡组（含徽章）
   root: EvolNode;
+  calculatorPolicy?: CalculatorContextPolicy | null;
 }
 
 // ---------- 转换 ----------
@@ -186,6 +190,7 @@ export function cloneEvolFormation(f: EvolFormation): EvolFormation {
     archetype: f.archetype,
     team: f.team.map(s => ({ monsterId: s.monsterId, badgeIds: [...s.badgeIds] })),
     root: cloneEvolNode(f.root),
+    calculatorPolicy: f.calculatorPolicy ? canonicalizeCalculatorPolicy(f.calculatorPolicy) : null,
   };
 }
 

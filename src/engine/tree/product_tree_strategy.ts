@@ -66,6 +66,16 @@ export function selectBranchNodeAtRound(
   return current.length > 0 ? current[0] : null;
 }
 
+import {
+  evaluateSpecialPlacementWithPolicy,
+  evaluateAimPlacementWithPolicy,
+  type ReadonlyPlacementContext,
+  type BoardUnitPosition,
+} from './calculator_policy';
+
+const SPECIAL_MONSTER_IDS = new Set([106, 107, 114, 116, 117]);
+const AIM_MONSTER_IDS = new Set([113, 118]);
+
 /**
  * 由进化阵型构造产品入口策略。
  * 返回策略对每个回合上下文产出声明式意图（含分支溯源）；已上场怪跳过，预算/占位由产品入口校验。
@@ -81,14 +91,72 @@ export function treeStrategyFor(f: EvolFormation): DeploymentStrategy {
     if (!node) return [];
     const placedIds = new Set(ctx.ownMonsters.map(m => m.dbId));
     const intents: DeploymentIntent[] = [];
+
+    // 构造纯只读上下文（坐标统一标准化为 p2 视角以便计算器计算）
+    const isSide1 = ctx.side === 1;
+    const ownP2: BoardUnitPosition[] = ctx.ownMonsters.map(m => ({
+      monsterId: m.dbId,
+      dbId: m.dbId,
+      x: isSide1 ? 10 - m.gridX : m.gridX,
+      y: m.gridY,
+      badgeIds: m.badges.map(b => b.id),
+    }));
+    const enemyP2: BoardUnitPosition[] = ctx.enemyMonsters.map(m => ({
+      monsterId: m.dbId,
+      dbId: m.dbId,
+      x: isSide1 ? 10 - m.gridX : m.gridX,
+      y: m.gridY,
+      badgeIds: m.badges.map(b => b.id),
+    }));
+
+    const readonlyCtx: ReadonlyPlacementContext = {
+      round: ctx.round,
+      side: ctx.side,
+      ownMonsters: ownP2,
+      enemyMonsters: enemyP2,
+      enemyRevealedHand: ctx.enemyRevealedHand.map(s => ({
+        monsterId: s.monsterId,
+        badgeIds: s.badgeIds ?? [],
+      })),
+    };
+
     for (const p of node.placements) {
       if (placedIds.has(p.monsterId)) continue;
-      // 产品坐标约定：树坐标为 p2/AI 视角(6-10)；source side=1 在此镜像（产品入口不做隐藏偏移）
-      const x = ctx.side === 1 ? 10 - p.x : p.x;
+      const mySlot = f.team.find(s => s.monsterId === p.monsterId);
+      const myBadgeIds = mySlot?.badgeIds ?? [];
+
+      let rawX = p.x;
+      let rawY = p.y;
+
+      if (SPECIAL_MONSTER_IDS.has(p.monsterId)) {
+        const specialPos = evaluateSpecialPlacementWithPolicy(
+          p.monsterId,
+          readonlyCtx,
+          p.x,
+          p.y,
+          myBadgeIds,
+          f.calculatorPolicy,
+        );
+        rawX = specialPos.x;
+        rawY = specialPos.y;
+      } else if (AIM_MONSTER_IDS.has(p.monsterId)) {
+        const aimPos = evaluateAimPlacementWithPolicy(
+          p.monsterId,
+          readonlyCtx,
+          p.x,
+          p.y,
+          f.calculatorPolicy,
+        );
+        rawX = aimPos.x;
+        rawY = aimPos.y;
+      }
+
+      // 产品坐标约定：树/计算器坐标为 p2/AI 视角(6-10)；source side=1 在此镜像（产品入口不做隐藏偏移）
+      const x = isSide1 ? 10 - rawX : rawX;
       intents.push({
         monsterId: p.monsterId,
         plannedX: x,
-        plannedY: p.y,
+        plannedY: rawY,
         branch: {
           branchId: node.id,
           branchLabel: isEmptyMask(node.condition) ? '主分支' : maskToLabel(node.condition),

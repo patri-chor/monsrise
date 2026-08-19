@@ -23,7 +23,22 @@ export type OperatorFamily =
   | 'spatial_local'
   | 'formation_transform'
   | 'strategy_schedule_branch'
-  | 'multi_monster_exploration';
+  | 'multi_monster_exploration'
+  | 'calculator_context_policy';
+
+// ---- 计算器上下文策略运算符 (T049) ----
+
+export interface CalculatorContextPolicyDelta {
+  operatorFamily: 'calculator_context_policy';
+  schemaVersion: string;
+  fieldPath: string;
+  oldCanonicalValue: any;
+  newCanonicalValue: any;
+  applicableMonsterIds: number[];
+  parentFingerprint: string;
+  resultFingerprint: string;
+  reason: string;
+}
 
 // ---- 空间局部运算符 ----
 
@@ -100,7 +115,8 @@ export type CandidateDelta =
   | SpatialLocalDelta
   | FormationTransformDelta
   | StrategyScheduleBranchDelta
-  | MultiMonsterExplorationMeta;
+  | MultiMonsterExplorationMeta
+  | CalculatorContextPolicyDelta;
 
 // ---- 候选元数据 ----
 
@@ -177,6 +193,8 @@ export function getControllablePlacements(
   return result;
 }
 
+import { computeCalculatorPolicyFingerprint } from '../calculator_policy';
+
 /** 计算候选规范指纹（用于去重和无操作检测） */
 export function computeCandidateFingerprint(evol: EvolFormation): string {
   // 提取对行为有意义的拓扑：team + 每节点的 condition + placements（坐标有序）
@@ -196,11 +214,14 @@ export function computeCandidateFingerprint(evol: EvolFormation): string {
       children: n.children.map(nodeSignature),
     };
   }
-  const sig = {
+  const sig: any = {
     team: evol.team
       .map(s => ({ monsterId: s.monsterId, badgeIds: [...s.badgeIds].sort() }))
       .sort((a, b) => a.monsterId - b.monsterId),
     root: nodeSignature(evol.root),
   };
+  if (evol.calculatorPolicy) {
+    sig.policy = computeCalculatorPolicyFingerprint(evol.calculatorPolicy);
+  }
   return sha256Hex(JSON.stringify(sig)).slice(0, 24);
 }
