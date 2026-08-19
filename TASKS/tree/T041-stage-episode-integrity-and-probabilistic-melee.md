@@ -95,35 +95,47 @@ results report by archetype, member, and actual side
 
 Use a bounded smooth weighting method with a nonzero floor. Persist formula version and exact normalized weights; do not recalculate from the candidate's own ongoing wins/losses.
 
-## C. Archetype Governance: No Guessing, No Silent Drift
+## C. Archetype Governance: T1 Parent Lineage, No Guessing, No Silent Drift
 
-`primaryArchetype` is a structural gameplay classification, not a current Tier label, current score, or source-parent identity. It denotes the dominant mechanism / opening tempo / core-monster interaction / win pattern used to balance melee exposure.
+For this training system, an archetype is **not** inferred from mechanics, current score, or current formal Tier membership. It is the immutable root T1 parent lineage:
 
-An archetype record consists of:
+```text
+primaryArchetype = root T1 sourceId
+
+one current frozen T1 source
++ every candidate, descendant, historical snapshot, or retained experimental variant
+  whose lineage roots at that source
+= one melee archetype
+```
+
+Thus every T1 source initially defines exactly one archetype. A variant does not receive a new archetype merely because it changes role/function after mutation. This deliberately prioritizes reproducible, lineage-balanced sampling over subjective mechanical reclassification.
+
+Each melee member record must contain:
 
 ```text
 formation snapshot fingerprint
-primaryArchetype: exactly one stable declared value
-auxiliary tags: zero or more
-classification rationale
+primaryArchetype: root T1 sourceId
+rootSourceId: same immutable source identity
+lineage proof: direct sourceId or complete parent chain to root
+auxiliary tags: optional diagnostics only; never sampling identity
 archetype revision
 ```
 
-Do not infer or fabricate the current 11-T1 mapping. Add a versioned editable archetype configuration and validator. Until every eligible melee member has an explicit declared primary archetype and rationale, melee dispatch must fail closed with:
+Early Bundle members, historical Gift Jungle, and prior experimental snapshots must map through explicit provenance/lineage to one current or historical T1 root source. Historical Gift Jungle maps to `gift_jungle`. A member without a verifiable root chain must be excluded from the current melee revision; it cannot be assigned a guessed archetype.
+
+Add a versioned editable lineage-archetype configuration and validator. Until every eligible melee member has exactly one root T1 source and lineage proof, melee dispatch must fail closed with:
 
 ```text
 MELEE_ARCHETYPE_CONFIG_REQUIRED
 ```
 
-A formation snapshot normally retains its primary archetype when its score/T1 membership changes. A new snapshot needs reclassification only when its dominant mechanism, opening tempo, core monster interaction, or win pattern changed materially; record old/new classification and reason. 
-
 When a T1 snapshot changes:
 
 ```text
-same structure: new fingerprint/strength evidence in a new revision; retain archetype
-material structure change: new snapshot, explicit reclassification required
-new T1 entrant: add to next strong-pool and melee revisions after archetype declaration
-T1 exit: remove from next strong-pool revision; retain in melee only if it contributes a declared distinct archetype or documented counter pressure
+same root source: new fingerprint/strength evidence in a new revision; retain root archetype
+new descendant/variant: retain its root T1 source archetype
+new T1 entrant: it creates a new root archetype in the next benchmark revision
+T1 exit: its historical root remains valid for existing lineage records; include it in a new melee revision only when deliberately retained as a documented counter-pressure member
 ```
 
 Existing T040's fixed melee pool is historical-only and must not serve as a T041 current melee revision.
