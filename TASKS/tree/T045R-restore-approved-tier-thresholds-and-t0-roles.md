@@ -1,7 +1,9 @@
-STATUS: OPEN
+STATUS: REJECTED
 DOMAIN: tree
 
 # T045R - Restore Approved Tier Thresholds and T0 Roles
+
+> REJECTED: The user authorized the current T045 pyramid thresholds (`T3 -> T2: L3 >= 80%`, `T2 -> T1: L2 >= 85%`). This task incorrectly attempted to restore 55%/60%/55%. Do not implement it. The only valid remaining correction is to remove the unapproved Top-1-per-root cap while retaining the authorized pyramid thresholds and the completed T0 learner-role repair.
 
 > T045/T044 updated report is rejected as a decision implementation. It changed the approved formation-tier policy without user authorization and retained the known T0/L1 role conflation. Repair only these regressions; preserve all aggregate sample records and lineage artifacts.
 
