@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "T040_BENCHMARK_MANIFEST_V1",
+  "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+  "createdAt": "2026-08-19T06:19:05.429Z",
+  "earlyBundleStage3": {
+    "poolName": "STAGE_3_EARLY_BUNDLE_8",
+    "revision": "v1.0.0-t040",
+    "opponentCount": 8,
+    "poolHash": "5cfe457f7eb4e601",
+    "members": [
+      {
+        "id": "springsword_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "06b65120d945b5913f24c53d",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "nutsavior_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "3ab91c2f7c067de6344be734",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "all2rush_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "691d5806b4a195a99cd1377e",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "classicsavior_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "a8fd06e1c676fecc6f40dd32",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "all2prayer_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "fe777bac6e62ef4a8c362f09",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "suqing_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "59ea644d8e9d99a6614f5c2e",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "laddersel_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "0b8ca8e3e7142bfda0b79ecb",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Early Bundle held-out variant for archetype undefined"
+      },
+      {
+        "id": "historical_gift_jungle_t016",
+        "sourcePool": "HISTORICAL_SNAPSHOT",
+        "fingerprint": "7969b175d9fb8583193fa8f9",
+        "provenance": "tests/fixtures/tree/t016_training_archive/source_snapshot.json#gift_jungle",
+        "teamSize": 7,
+        "selectionReason": "Historical 7-monster Gift Jungle snapshot to test legacy baseline pattern recognition"
+      }
+    ]
+  },
+  "currentStrongStage2Stage1": {
+    "poolName": "STAGE_2_1_CURRENT_STRONG_11",
+    "revision": "v1.0.0-t040",
+    "opponentCount": 11,
+    "poolHash": "a313f35e49608be4",
+    "members": [
+      {
+        "id": "springsword",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "199220465e46",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#springsword",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source springsword (prayer)"
+      },
+      {
+        "id": "nutsavior",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "adf84ded3b73",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#nutsavior",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source nutsavior (half_rush)"
+      },
+      {
+        "id": "all2rush",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "157be1f9b219",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#all2rush",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source all2rush (full_rush)"
+      },
+      {
+        "id": "classicsavior",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "471c28e13f11",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#classicsavior",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source classicsavior (full_rush)"
+      },
+      {
+        "id": "all2prayer",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "5e0600c16478",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#all2prayer",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source all2prayer (prayer)"
+      },
+      {
+        "id": "suqing",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "681905685e85",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#suqing",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source suqing (half_rush)"
+      },
+      {
+        "id": "laddersel",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "06dbc598758a",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#laddersel",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source laddersel (full_rush)"
+      },
+      {
+        "id": "spade_multi",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "42b95f0e2f20",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#spade_multi",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source spade_multi (prayer)"
+      },
+      {
+        "id": "gift_savior",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "14e946358ffd",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#gift_savior",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source gift_savior (half_rush)"
+      },
+      {
+        "id": "golden_boom",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "ef0c73839d7e",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#golden_boom",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source golden_boom (prayer)"
+      },
+      {
+        "id": "gift_jungle",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "1f7554a84e29",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#gift_jungle",
+        "teamSize": 8,
+        "selectionReason": "Current strong formation source gift_jungle (prayer)"
+      }
+    ]
+  },
+  "meleePool": {
+    "poolName": "MELEE_MIXED_POOL_16",
+    "revision": "v1.0.0-t040",
+    "opponentCount": 16,
+    "poolHash": "a7f470fe67e3dbfa",
+    "members": [
+      {
+        "id": "springsword_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "06b65120d945b5913f24c53d",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Early Bundle springsword_heldout"
+      },
+      {
+        "id": "nutsavior_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "3ab91c2f7c067de6344be734",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Early Bundle nutsavior_heldout"
+      },
+      {
+        "id": "all2rush_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "691d5806b4a195a99cd1377e",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Early Bundle all2rush_heldout"
+      },
+      {
+        "id": "classicsavior_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "a8fd06e1c676fecc6f40dd32",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Early Bundle classicsavior_heldout"
+      },
+      {
+        "id": "all2prayer_heldout",
+        "sourcePool": "EARLY_BUNDLE",
+        "fingerprint": "fe777bac6e62ef4a8c362f09",
+        "provenance": "tests/fixtures/tree/early_seven_bundles.json#undefined",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Early Bundle all2prayer_heldout"
+      },
+      {
+        "id": "springsword",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "199220465e46",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#springsword",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool springsword"
+      },
+      {
+        "id": "nutsavior",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "adf84ded3b73",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#nutsavior",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool nutsavior"
+      },
+      {
+        "id": "all2rush",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "157be1f9b219",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#all2rush",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool all2rush"
+      },
+      {
+        "id": "classicsavior",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "471c28e13f11",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#classicsavior",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool classicsavior"
+      },
+      {
+        "id": "all2prayer",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "5e0600c16478",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#all2prayer",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool all2prayer"
+      },
+      {
+        "id": "suqing",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "681905685e85",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#suqing",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool suqing"
+      },
+      {
+        "id": "laddersel",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "06dbc598758a",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#laddersel",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool laddersel"
+      },
+      {
+        "id": "spade_multi",
+        "sourcePool": "CURRENT_STRONG",
+        "fingerprint": "42b95f0e2f20",
+        "provenance": "tests/fixtures/tree/eleven_frozen_sources.json#spade_multi",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Strong Pool spade_multi"
+      },
+      {
+        "id": "cand_s1_1_2a",
+        "sourcePool": "EXPERIMENTAL_PREV",
+        "fingerprint": "82b958ecc5ae78b8c3aad641",
+        "provenance": "tests/fixtures/tree/four_frozen_candidates.jsonl#cand_s1_1_2a",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Prior experimental candidate cand_s1_1_2a"
+      },
+      {
+        "id": "cand_s1_2_2b",
+        "sourcePool": "EXPERIMENTAL_PREV",
+        "fingerprint": "ec8e34ec5bf38b803d1ab8af",
+        "provenance": "tests/fixtures/tree/four_frozen_candidates.jsonl#cand_s1_2_2b",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Prior experimental candidate cand_s1_2_2b"
+      },
+      {
+        "id": "cand_s1_3_2c",
+        "sourcePool": "EXPERIMENTAL_PREV",
+        "fingerprint": "b17d46ca96147f696953f321",
+        "provenance": "tests/fixtures/tree/four_frozen_candidates.jsonl#cand_s1_3_2c",
+        "teamSize": 8,
+        "selectionReason": "Melee representative: Prior experimental candidate cand_s1_3_2c"
+      }
+    ]
+  }
+}

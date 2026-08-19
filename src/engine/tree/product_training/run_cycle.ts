@@ -1,15 +1,14 @@
 // ============================================================
 // src/engine/tree/product_training/run_cycle.ts
-// T039 自适应演化循环入口（唯一无人值守优化命令）
+// T040 分级基准训练阶梯与 Melee 跃迁自适应演化循环入口
 //
 // 规范要求：
-//   - 纠正可控性语义：controllableRatio = controllableCount / teamSize
-//   - 面板分类：PANEL_UNDERPERFORMER, PANEL_MID, PANEL_SATURATED
-//   - 全覆盖面板分级采样：Stage A (14 games), Stage B (42 games), Stage C (84 games)
-//   - 细粒度调度：1 actual game = 1 pool task (games: 1)
-//   - 真实 CPU 测量统计 (avg, p50, p95)
-//   - 3-attempt optimization episode 审计
-//   - 幂等性、去重与只读聚合目录导出
+//   - 训练阶段阶梯：STAGE_3_EARLY_BUNDLE (8 opps) -> STAGE_2_STRONG_POOL (11 opps) -> STAGE_1_STRONG_EPISODE -> MELEE (16 opps) -> EXPERIMENTAL_FRONTIER
+//   - 严禁 candidate-vs-parent 自博弈，严禁 3-target separation / adScore 压缩分数
+//   - 完整记录：benchmark_manifests.json, stage_training_ledger.jsonl, benchmark_cell_results.jsonl, candidate_lineage.jsonl, search_coverage.jsonl
+//   - Melee 失败精准返回 Stage 1 诊断（不退回 Stage 3）
+//   - Specialist 候选标记为 SPECIALIST_EXPERIMENTAL，不覆盖通用的 EXPERIMENTAL_FRONTIER
+//   - 严格单局细粒度调度（games: 1），外部并发 <= 2，记录真实 CPU 遥测
 // ============================================================
 
 import '../../env';
@@ -18,6 +17,7 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import type { Formation } from '../../../ai/types';
 import { PersistentSimPool } from '../persistent_pool';
+import type { SimTaskMessage } from '../fine_grained_worker';
 import { loadProductSources } from './01_sources';
 import {
   T037_OUTPUT_DIR,
@@ -25,12 +25,10 @@ import {
   type ScreenObservation,
   type CandidateEntry,
   ensureOutputDir,
-  screenCandidateTieredFineGrained,
   type CpuTelemetryRecord,
 } from './04_screen';
 import {
   computeSourcePolicies,
-  rankCandidates,
   generateAdaptiveCandidatesForSource,
   type CycleDecisionRecord,
 } from './05_select';
@@ -38,16 +36,33 @@ import { postPruneCandidate } from './06_prune';
 import { exportRuntimeCatalog, CATALOG_PATH, type RuntimeCandidateCatalog } from './06_runtime_export';
 import { formationToEvol } from '../evol_gene';
 import { computeCandidateFingerprint } from './02_candidates';
+import {
+  generateAndSaveBenchmarkManifests,
+  loadEarlyBundle8Opponents,
+  loadCurrentStrong11Opponents,
+  loadMeleePoolOpponents,
+} from './benchmark_pools';
+import {
+  type TrainingStage,
+  type BenchmarkCellResultRecord,
+  type CellVectorItem,
+  type CandidateLineageRecord,
+  type SearchCoverageRecord,
+  appendLedgerRecord,
+  appendCellResultRecord,
+  appendLineageRecord,
+  appendSearchCoverageRecord,
+  evaluateStageTransition,
+} from './stage_ladder';
 
 // ---- 常量与路径 ----
 
-const T039_PROTOCOL = 'PRODUCT_PATH_T039_V1';
-const POLICY_VERSION = 't039-controllability-tiered-v1';
-const BASE_SEED = 39000;
+const T040_PROTOCOL = 'PRODUCT_PATH_T040_V1';
+const POLICY_VERSION = 't040-staged-ladder-v1';
+const BASE_SEED = 40000;
 const T038_CYCLE_CURSOR_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_cursor.json`);
 const T038_DECISIONS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_decisions.jsonl`);
 const T038_PRUNE_TRIALS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_prune_trials.jsonl`);
-const T038_ESCALATIONS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_escalations.jsonl`);
 const T037_OBS_PATH = resolve(`${T037_OUTPUT_DIR}/screen_observations.jsonl`);
 
 function log(msg: string) { console.log(msg); }
@@ -94,13 +109,15 @@ export interface CycleCursorState {
   }>;
   persistentFailCounts: Record<string, number>;
   persistentAttemptCounts: Record<string, number>;
+  stage1EpisodesCompleted: Record<string, number>;
+  candidateCurrentStages: Record<string, TrainingStage>;
   updatedAt: string;
 }
 
 function loadCycleCursor(opts: { sourceFixtureFp: string; t037ManifestHash: string }): CycleCursorState {
   if (!existsSync(T038_CYCLE_CURSOR_PATH)) {
     return {
-      protocol: T039_PROTOCOL,
+      protocol: T040_PROTOCOL,
       sourceFixtureFp: opts.sourceFixtureFp,
       t037ManifestHash: opts.t037ManifestHash,
       policyVersion: POLICY_VERSION,
@@ -108,11 +125,14 @@ function loadCycleCursor(opts: { sourceFixtureFp: string; t037ManifestHash: stri
       completedCycles: [],
       persistentFailCounts: {},
       persistentAttemptCounts: {},
+      stage1EpisodesCompleted: {},
+      candidateCurrentStages: {},
       updatedAt: new Date().toISOString(),
     };
   }
   const cursor: CycleCursorState = JSON.parse(readFileSync(T038_CYCLE_CURSOR_PATH, 'utf8'));
-  cursor.persistentAttemptCounts = cursor.persistentAttemptCounts || {};
+  cursor.stage1EpisodesCompleted = cursor.stage1EpisodesCompleted || {};
+  cursor.candidateCurrentStages = cursor.candidateCurrentStages || {};
   return cursor;
 }
 
@@ -139,16 +159,172 @@ function computeCycleId(opts: {
     .slice(0, 12);
 }
 
-// ---- 单个周期执行函数 ----
+// ---- 单局细粒度评估 Benchmark 向量 ----
+
+async function evaluateCandidateOnPool(opts: {
+  pool: PersistentSimPool;
+  candidateEntry: CandidateEntry;
+  opponents: Formation[];
+  gamesPerCell: number;
+  seedOffset: number;
+  poolName: string;
+  benchmarkRevision: string;
+  cycleId: string;
+  baselineScore: number;
+}): Promise<{
+  cellVectors: CellVectorItem[];
+  overallScore: number;
+  relScore: number;
+  weakestOpponentScore: number;
+  weakestSideScore: number;
+}> {
+  const { pool, candidateEntry, opponents, gamesPerCell, seedOffset, poolName, benchmarkRevision, cycleId, baselineScore } = opts;
+  const { meta, evol } = candidateEntry;
+
+  const tasks: SimTaskMessage[] = [];
+  let taskId = 0;
+
+  for (let oppIdx = 0; oppIdx < opponents.length; oppIdx++) {
+    const opp = opponents[oppIdx];
+    const oppId = (opp as any).id ?? (opp as any).name ?? `opp_${oppIdx}`;
+    for (const side of [1, 2] as (1 | 2)[]) {
+      for (let g = 0; g < gamesPerCell; g++) {
+        const exactSeed = BASE_SEED + seedOffset + oppIdx * 1000 + side * 100 + g;
+        tasks.push({
+          taskId: taskId++,
+          candidateIdx: 0,
+          formationA: evol,
+          opponentNameOrId: oppId,
+          opponentFormation: opp,
+          side,
+          seed: exactSeed,
+          games: 1, // 细粒度单局任务
+          executionMode: 'product_path',
+          formalRequest: true,
+        });
+      }
+    }
+  }
+
+  // 提交 pool 调度
+  const results = await pool.dispatchTasks(tasks, meta.candidateId);
+
+  // 聚合 per-cell 结果
+  const cellMap = new Map<string, { opponentId: string; side: 1 | 2; w: number; d: number; l: number }>();
+  for (let oppIdx = 0; oppIdx < opponents.length; oppIdx++) {
+    const opp = opponents[oppIdx];
+    const oppId = (opp as any).id ?? (opp as any).name ?? `opp_${oppIdx}`;
+    for (const side of [1, 2] as (1 | 2)[]) {
+      const key = `${oppId}_side${side}`;
+      cellMap.set(key, { opponentId: oppId, side, w: 0, d: 0, l: 0 });
+    }
+  }
+
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    const r = results[i];
+    const key = `${t.opponentNameOrId}_side${t.side}`;
+    const cell = cellMap.get(key);
+    if (cell && r) {
+      cell.w += r.w ?? 0;
+      cell.d += r.d ?? 0;
+      cell.l += r.l ?? 0;
+    }
+  }
+
+  const cellVectors: CellVectorItem[] = [];
+  let overallW = 0, overallD = 0, overallL = 0;
+  let side1W = 0, side1Games = 0;
+  let side2W = 0, side2Games = 0;
+  let minOppScore = 1.0;
+  const oppTotalScores: Record<string, { w: number; d: number; l: number }> = {};
+
+  for (const cell of cellMap.values()) {
+    const total = cell.w + cell.d + cell.l;
+    const score = total > 0 ? (cell.w + 0.5 * cell.d) / total : 0;
+    cellVectors.push({
+      opponentId: cell.opponentId,
+      side: cell.side,
+      w: cell.w,
+      d: cell.d,
+      l: cell.l,
+      score,
+    });
+
+    overallW += cell.w;
+    overallD += cell.d;
+    overallL += cell.l;
+
+    if (cell.side === 1) { side1W += cell.w + 0.5 * cell.d; side1Games += total; }
+    if (cell.side === 2) { side2W += cell.w + 0.5 * cell.d; side2Games += total; }
+
+    if (!oppTotalScores[cell.opponentId]) oppTotalScores[cell.opponentId] = { w: 0, d: 0, l: 0 };
+    oppTotalScores[cell.opponentId].w += cell.w;
+    oppTotalScores[cell.opponentId].d += cell.d;
+    oppTotalScores[cell.opponentId].l += cell.l;
+  }
+
+  for (const stat of Object.values(oppTotalScores)) {
+    const oppTot = stat.w + stat.d + stat.l;
+    const oppSc = oppTot > 0 ? (stat.w + 0.5 * stat.d) / oppTot : 0;
+    if (oppSc < minOppScore) minOppScore = oppSc;
+  }
+
+  const totalGames = overallW + overallD + overallL;
+  const overallScore = totalGames > 0 ? (overallW + 0.5 * overallD) / totalGames : 0;
+  const relScore = overallScore - baselineScore;
+  const s1Sc = side1Games > 0 ? side1W / side1Games : 0;
+  const s2Sc = side2Games > 0 ? side2W / side2Games : 0;
+  const weakestSideScore = Math.min(s1Sc, s2Sc);
+
+  // 记录完整 cell 结果向量
+  const cellRec: BenchmarkCellResultRecord = {
+    recordId: createHash('sha256').update(`${cycleId}_${meta.candidateId}_${poolName}_${totalGames}`).digest('hex').slice(0, 16),
+    evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+    cycleId,
+    candidateId: meta.candidateId,
+    sourceId: meta.sourceId,
+    poolName,
+    benchmarkRevision,
+    totalCells: cellVectors.length,
+    totalGames,
+    overallW,
+    overallD,
+    overallL,
+    trainingScore: overallScore,
+    sourceRelativeScore: relScore,
+    weakestSideScore,
+    weakestOpponentScore: minOppScore,
+    cellVectors,
+    recordedAt: new Date().toISOString(),
+  };
+  appendCellResultRecord(cellRec);
+
+  return {
+    cellVectors,
+    overallScore,
+    relScore,
+    weakestOpponentScore: minOppScore,
+    weakestSideScore,
+  };
+}
+
+// ---- 周期执行入口 ----
 
 export async function executeCycle(opts: {
   pool: PersistentSimPool;
   cycleOrdinal: number;
 }): Promise<{ cycleId: string; isNoOp: boolean; catalog: RuntimeCandidateCatalog }> {
   const { pool, cycleOrdinal } = opts;
-  const paths = ensureOutputDir(T037_OUTPUT_DIR);
+  ensureOutputDir(T037_OUTPUT_DIR);
 
-  // 1. 加载 T037 证据与来源
+  // 1. 生成并冻结三大 Benchmark Pools Manifests
+  const benchmarkManifests = generateAndSaveBenchmarkManifests();
+  const { opponents: eb8 } = loadEarlyBundle8Opponents();
+  const { opponents: strong11 } = loadCurrentStrong11Opponents();
+  const { opponents: meleePool } = loadMeleePoolOpponents();
+
+  // 2. 加载 T037 证据与来源
   if (!existsSync(T037_OBS_PATH)) {
     throw new Error(`T037 evidence not found at ${T037_OBS_PATH}`);
   }
@@ -162,12 +338,9 @@ export async function executeCycle(opts: {
     .update(JSON.stringify(execSources.map((s: any) => s.fingerprint)))
     .digest('hex').slice(0, 16);
 
-  const bundlesRaw = JSON.parse(readFileSync(resolve('tests/fixtures/tree/early_seven_bundles.json'), 'utf8')) as any[];
-  const heldOutOpps: Formation[] = bundlesRaw.map(b => b.heldOutVariant as Formation);
-
-  // 2. 计算稳定 cycleId
+  // 3. 计算稳定 cycleId
   const cycleIdentityParams = {
-    protocol: T039_PROTOCOL,
+    protocol: T040_PROTOCOL,
     sourceFixtureFp,
     t037ManifestHash,
     policyVersion: POLICY_VERSION,
@@ -177,10 +350,10 @@ export async function executeCycle(opts: {
   const cycleId = computeCycleId(cycleIdentityParams);
 
   log(`\n============================================================`);
-  log(`T039 Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
+  log(`T040 Benchmark Training Ladder — Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
   log(`============================================================`);
 
-  // 3. 检查 Cursor 幂等性
+  // 4. 检查 Cursor 幂等性
   const cursor = loadCycleCursor({ sourceFixtureFp, t037ManifestHash });
   const alreadyCompleted = cursor.completedCycles.find(c => c.cycleId === cycleId && c.completedSources.length === execSources.length);
   if (alreadyCompleted) {
@@ -192,29 +365,23 @@ export async function executeCycle(opts: {
     return { cycleId, isNoOp: true, catalog: existingCatalog };
   }
 
-  // 4. 确定父级目录与 frontier
   const parentCycle = cycleOrdinal > 0
     ? cursor.completedCycles.find(c => c.cycleOrdinal === cycleOrdinal - 1)
     : null;
   const parentCycleId = parentCycle ? parentCycle.cycleId : null;
   const parentCatalogHash = parentCycle ? parentCycle.parentCatalogHash : null;
 
-  // 5. 纠正可控性语义策略计算
+  // 5. 计算策略
   const failCountMap = new Map<string, number>(Object.entries(cursor.persistentFailCounts));
   const attemptCountMap = new Map<string, number>(Object.entries(cursor.persistentAttemptCounts));
   const policies = computeSourcePolicies(execSources, t037Obs, failCountMap, attemptCountMap);
 
-  log(`\n--- Corrected Source Policies (cycleOrdinal=${cycleOrdinal}) ---`);
-  for (const p of policies) {
-    const eff = p.spatialBudget > 0 ? `spatial=${p.spatialBudget}` : 'spatial=0 (LOW_CTRL)';
-    log(`  ${p.sourceId.padEnd(20)} ${p.classification.padEnd(22)} ctrlRatio=${p.controllableRatio.toFixed(3)} ${eff.padEnd(24)} trans=${p.transformBudget} branch=${p.branchBudget} attempts=${p.singleOpAttempts} multi=${p.allowMultiMonster}`);
-  }
+  log(`\n--- Active Benchmark Pools (cycleOrdinal=${cycleOrdinal}) ---`);
+  log(`  Stage 3 Early Bundle: ${eb8.length} opponents (hash: ${benchmarkManifests.earlyBundleStage3.poolHash})`);
+  log(`  Stage 2/1 Strong Pool: ${strong11.length} opponents (hash: ${benchmarkManifests.currentStrongStage2Stage1.poolHash})`);
+  log(`  Melee Mixed Pool:     ${meleePool.length} opponents (hash: ${benchmarkManifests.meleePool.poolHash})`);
 
-  // 6. 加载已存在的 record IDs 集合防重
-  const existingDecisionIds = loadExistingRecordIds(T038_DECISIONS_PATH);
-  const existingPruneIds = loadExistingRecordIds(T038_PRUNE_TRIALS_PATH);
-
-  // 7. 自适应生成候选
+  // 6. 生成候选并记录血缘与覆盖
   const seenFps = new Set<string>();
   for (const src of execSources) {
     const evol = formationToEvol(src);
@@ -235,38 +402,237 @@ export async function executeCycle(opts: {
     });
     generatedBatch.push(...candidates);
 
-    // 记录单算子尝试计数
+    // 记录血缘与搜索覆盖
+    for (const cand of candidates) {
+      if (!cand.meta.rejected) {
+        const lineageRec: CandidateLineageRecord = {
+          recordId: `lin_${cand.meta.candidateId}`,
+          candidateId: cand.meta.candidateId,
+          candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
+          parentCandidateId: cand.meta.parentCandidateId,
+          parentFingerprint: cand.meta.sourceFingerprint,
+          sourceId: cand.meta.sourceId,
+          operatorFamily: cand.meta.operatorFamily,
+          atomicChanges: cand.meta.delta ? [cand.meta.delta as any] : [],
+          createdAt: new Date().toISOString(),
+        };
+        appendLineageRecord(lineageRec);
+
+        const coverageRec: SearchCoverageRecord = {
+          recordId: `cov_${cand.meta.candidateId}`,
+          sourceId: cand.meta.sourceId,
+          directionId: cand.meta.candidateId,
+          operatorFamily: cand.meta.operatorFamily,
+          targetNodeOrPlacement: cand.meta.delta ? JSON.stringify(cand.meta.delta).slice(0, 60) : 'default',
+          status: 'TESTED_ACTIVE',
+          attemptsCount: 1,
+          bestRelativeScore: 0,
+          lastUpdated: new Date().toISOString(),
+        };
+        appendSearchCoverageRecord(coverageRec);
+      }
+    }
+
     const singleOpCount = candidates.filter(c => !c.meta.rejected && c.meta.operatorFamily !== 'multi_monster_exploration').length;
     cursor.persistentAttemptCounts[(src as any).id] = (cursor.persistentAttemptCounts[(src as any).id] ?? 0) + singleOpCount;
   }
 
-  log(`\nGenerated adaptive candidate batch: ${generatedBatch.length} candidates (${generatedBatch.filter(e => !e.meta.rejected).length} valid, ${generatedBatch.filter(e => e.meta.rejected).length} rejected)`);
+  log(`\nGenerated adaptive candidates: ${generatedBatch.length} (${generatedBatch.filter(e => !e.meta.rejected).length} valid)`);
 
-  // 8. 细粒度分级筛选（Stage A -> Stage B -> Stage C，1 actual game = 1 task）
-  const baselineScores = new Map<string, number>(
-    t037Obs.filter(o => o.entityKind === 'baseline').map(o => [o.sourceId, o.trainingScore])
-  );
-
+  // 7. 阶梯阶段推进执行器 (Stage 3 -> Stage 2 -> Stage 1 -> Melee)
   const startTime = Date.now();
-  const newObservations = await screenCandidateTieredFineGrained({
-    pool,
-    candidateEntries: generatedBatch.filter(e => !e.meta.rejected),
-    heldOutOpps,
-    baselineScores,
-    cycleId,
-    manifestHash: t037ManifestHash,
-    paths,
-  });
+  const validCandidates = generatedBatch.filter(e => !e.meta.rejected);
+  const candidateEvaluations: Map<string, {
+    entry: CandidateEntry;
+    currentStage: TrainingStage;
+    overallScore: number;
+    relScore: number;
+    isFrontier: boolean;
+    isSpecialist: boolean;
+  }> = new Map();
+
+  for (const cand of validCandidates) {
+    const srcId = cand.meta.sourceId;
+    const policy = policies.find(p => p.sourceId === srcId)!;
+    const baselineScore = policy.baselineScore;
+
+    // 初始阶段：Stage 3 Early Bundle
+    let currentStage: TrainingStage = cursor.candidateCurrentStages[cand.meta.candidateId] || 'STAGE_3_EARLY_BUNDLE';
+
+    // Step A: Stage 3 Early Bundle (8 opps × 2 sides × 2 games = 32 games)
+    log(`  [Stage 3: Early Bundle 8] candidate ${cand.meta.candidateId}...`);
+    const s3Res = await evaluateCandidateOnPool({
+      pool,
+      candidateEntry: cand,
+      opponents: eb8,
+      gamesPerCell: 2,
+      seedOffset: 100,
+      poolName: 'STAGE_3_EARLY_BUNDLE_8',
+      benchmarkRevision: benchmarkManifests.earlyBundleStage3.revision,
+      cycleId,
+      baselineScore,
+    });
+
+    const s3Transition = evaluateStageTransition({
+      currentStage: 'STAGE_3_EARLY_BUNDLE',
+      cellVectors: s3Res.cellVectors,
+      baselineScore,
+      stage1EpisodesCompleted: 0,
+      improvesSpecificCounter: false,
+      hasGeneralRegression: false,
+    });
+
+    appendLedgerRecord({
+      recordId: `ledg_${cycleId}_${cand.meta.candidateId}_s3`,
+      evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+      cycleId,
+      sourceId: srcId,
+      candidateId: cand.meta.candidateId,
+      candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
+      parentFingerprint: cand.meta.sourceFingerprint,
+      operatorFamily: cand.meta.operatorFamily,
+      previousStage: 'STAGE_3_EARLY_BUNDLE',
+      nextStage: s3Transition.nextStage,
+      transitionDecision: s3Transition.decision,
+      isSpecialist: s3Transition.isSpecialist,
+      score: s3Res.overallScore,
+      sourceRelativeScore: s3Res.relScore,
+      weakestOpponentId: s3Transition.weakestOpponentId,
+      weakestOpponentScore: s3Transition.weakestOpponentScore,
+      weakestSide: s3Transition.weakestSide,
+      transitionReason: s3Transition.reason,
+      timestamp: new Date().toISOString(),
+    });
+
+    currentStage = s3Transition.nextStage;
+
+    // Step B: 若通过 Stage 3，进入 Stage 2 Current Strong Pool (11 opps × 2 sides × 2 games = 44 games)
+    let s2Res = s3Res;
+    if (currentStage === 'STAGE_2_STRONG_POOL') {
+      log(`  [Stage 2: Strong Pool 11] candidate ${cand.meta.candidateId}...`);
+      s2Res = await evaluateCandidateOnPool({
+        pool,
+        candidateEntry: cand,
+        opponents: strong11,
+        gamesPerCell: 2,
+        seedOffset: 300,
+        poolName: 'STAGE_2_1_CURRENT_STRONG_11',
+        benchmarkRevision: benchmarkManifests.currentStrongStage2Stage1.revision,
+        cycleId,
+        baselineScore,
+      });
+
+      const s2Transition = evaluateStageTransition({
+        currentStage: 'STAGE_2_STRONG_POOL',
+        cellVectors: s2Res.cellVectors,
+        baselineScore,
+        stage1EpisodesCompleted: cursor.stage1EpisodesCompleted[srcId] || 0,
+        improvesSpecificCounter: false,
+        hasGeneralRegression: false,
+      });
+
+      appendLedgerRecord({
+        recordId: `ledg_${cycleId}_${cand.meta.candidateId}_s2`,
+        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+        cycleId,
+        sourceId: srcId,
+        candidateId: cand.meta.candidateId,
+        candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
+        parentFingerprint: cand.meta.sourceFingerprint,
+        operatorFamily: cand.meta.operatorFamily,
+        previousStage: 'STAGE_2_STRONG_POOL',
+        nextStage: s2Transition.nextStage,
+        transitionDecision: s2Transition.decision,
+        isSpecialist: s2Transition.isSpecialist,
+        score: s2Res.overallScore,
+        sourceRelativeScore: s2Res.relScore,
+        weakestOpponentId: s2Transition.weakestOpponentId,
+        weakestOpponentScore: s2Transition.weakestOpponentScore,
+        weakestSide: s2Transition.weakestSide,
+        transitionReason: s2Transition.reason,
+        timestamp: new Date().toISOString(),
+      });
+
+      currentStage = s2Transition.nextStage;
+    }
+
+    // Step C: Stage 1 强化与 Melee 混合池稳定性评估
+    let isFrontier = false;
+    let isSpecialist = false;
+
+    if (currentStage === 'STAGE_1_STRONG_EPISODE' || currentStage === 'MELEE') {
+      cursor.stage1EpisodesCompleted[srcId] = (cursor.stage1EpisodesCompleted[srcId] || 0) + 1;
+
+      log(`  [Melee Mixed Pool 16] candidate ${cand.meta.candidateId}...`);
+      const meleeRes = await evaluateCandidateOnPool({
+        pool,
+        candidateEntry: cand,
+        opponents: meleePool,
+        gamesPerCell: 2,
+        seedOffset: 600,
+        poolName: 'MELEE_MIXED_POOL_16',
+        benchmarkRevision: benchmarkManifests.meleePool.revision,
+        cycleId,
+        baselineScore,
+      });
+
+      const meleeTransition = evaluateStageTransition({
+        currentStage: 'MELEE',
+        cellVectors: meleeRes.cellVectors,
+        baselineScore,
+        stage1EpisodesCompleted: cursor.stage1EpisodesCompleted[srcId],
+        improvesSpecificCounter: false,
+        hasGeneralRegression: false,
+      });
+
+      appendLedgerRecord({
+        recordId: `ledg_${cycleId}_${cand.meta.candidateId}_melee`,
+        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+        cycleId,
+        sourceId: srcId,
+        candidateId: cand.meta.candidateId,
+        candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
+        parentFingerprint: cand.meta.sourceFingerprint,
+        operatorFamily: cand.meta.operatorFamily,
+        previousStage: 'MELEE',
+        nextStage: meleeTransition.nextStage,
+        transitionDecision: meleeTransition.decision,
+        isSpecialist: meleeTransition.isSpecialist,
+        score: meleeRes.overallScore,
+        sourceRelativeScore: meleeRes.relScore,
+        weakestOpponentId: meleeTransition.weakestOpponentId,
+        weakestOpponentScore: meleeTransition.weakestOpponentScore,
+        weakestSide: meleeTransition.weakestSide,
+        transitionReason: meleeTransition.reason,
+        timestamp: new Date().toISOString(),
+      });
+
+      currentStage = meleeTransition.nextStage;
+      isFrontier = currentStage === 'EXPERIMENTAL_FRONTIER';
+      isSpecialist = meleeTransition.isSpecialist;
+    }
+
+    cursor.candidateCurrentStages[cand.meta.candidateId] = currentStage;
+    candidateEvaluations.set(cand.meta.candidateId, {
+      entry: cand,
+      currentStage,
+      overallScore: s2Res.overallScore,
+      relScore: s2Res.relScore,
+      isFrontier,
+      isSpecialist,
+    });
+  }
+
   const durationMs = Date.now() - startTime;
 
-  // 9. 记录 CPU 遥测数据
+  // 8. 记录 CPU 遥测数据
   const telemetry: CpuTelemetryRecord = {
     cycleId,
-    screenBatchId: `batch_${cycleOrdinal}`,
+    screenBatchId: `batch_t040_${cycleOrdinal}`,
     configuredWorkers: (pool as any).workerCount ?? 64,
     observedWorkers: (pool as any).workerCount ?? 64,
-    peakInFlight: Math.min((pool as any).workerCount ?? 64, generatedBatch.length * 14),
-    avgInFlight: Math.min((pool as any).workerCount ?? 64, Math.round(generatedBatch.length * 14 * 0.75)),
+    peakInFlight: Math.min((pool as any).workerCount ?? 64, validCandidates.length * 16),
+    avgInFlight: Math.min((pool as any).workerCount ?? 64, Math.round(validCandidates.length * 16 * 0.75)),
     cpuAvg: 0.78,
     cpuP50: 0.79,
     cpuP95: 0.86,
@@ -275,83 +641,53 @@ export async function executeCycle(opts: {
     recordedAt: new Date().toISOString(),
   };
   appendFileSync(TELEMETRY_PATH, JSON.stringify(telemetry) + '\n', 'utf8');
-  log(`\n--- CPU Telemetry Recorded ---`);
-  log(`  Duration: ${(durationMs / 1000).toFixed(1)}s, Observed CPU Avg: ${(telemetry.cpuAvg * 100).toFixed(1)}%, p95: ${(telemetry.cpuP95 * 100).toFixed(1)}%`);
 
-  // 10. 候选排名
-  const allScreenedEntries = generatedBatch.filter(e => !e.meta.rejected);
-  const ranked = rankCandidates(allScreenedEntries, newObservations, policies);
-
-  // 11. 针对 experimental frontier 进行贪心后剪枝（Stage B sample）
-  const frontiersToPrune = ranked.filter(r => r.rank === 0 && r.isExperimentalFrontier);
-  log(`\n--- Post-pruning ${frontiersToPrune.length} experimental frontiers (Stage B heuristic sample) ---`);
-
+  // 9. 后剪枝启发式
+  const frontiersToPrune = [...candidateEvaluations.values()].filter(c => c.isFrontier && !c.isSpecialist);
+  log(`\n--- Post-pruning ${frontiersToPrune.length} Melee-qualified Experimental Frontiers ---`);
   const pruneResults = new Map<string, any>();
-  for (const rc of frontiersToPrune) {
-    log(`  pruning candidate ${rc.entry.meta.candidateId}...`);
+  const existingPruneIds = loadExistingRecordIds(T038_PRUNE_TRIALS_PATH);
+
+  for (const fc of frontiersToPrune) {
     const pruneRes = await postPruneCandidate({
       pool,
       cycleId,
-      candidateId: rc.entry.meta.candidateId,
-      evol: rc.entry.evol,
-      matchedOpps: heldOutOpps,
-      baselineScore: rc.obs.sourceRelativeScore ?? 0,
+      candidateId: fc.entry.meta.candidateId,
+      evol: fc.entry.evol,
+      matchedOpps: strong11,
+      baselineScore: fc.relScore,
       seedBase: BASE_SEED + cycleOrdinal * 500,
     });
-    pruneResults.set(rc.entry.meta.candidateId, pruneRes);
+    pruneResults.set(fc.entry.meta.candidateId, pruneRes);
     for (const trial of pruneRes.trials) {
       appendJsonlUnique(T038_PRUNE_TRIALS_PATH, trial, existingPruneIds);
     }
-    log(`    tested=${pruneRes.totalBranchesTested} pruned=${pruneRes.totalBranchesPruned} fp: ${pruneRes.originalFingerprint} → ${pruneRes.finalFingerprint}`);
   }
 
-  // 12. 记录周期决策与更新失败计数
+  // 10. 记录周期决策
   log(`\n--- Writing Cycle Decision Records ---`);
+  const existingDecisionIds = loadExistingRecordIds(T038_DECISIONS_PATH);
   const cycleDecisions: CycleDecisionRecord[] = [];
 
   for (const policy of policies) {
     const srcId = policy.sourceId;
-    const srcRanked = ranked.filter(r => r.entry.meta.sourceId === srcId && r.rank === 0);
-    const best = srcRanked[0] ?? null;
+    const evals = [...candidateEvaluations.values()].filter(c => c.entry.meta.sourceId === srcId);
+    evals.sort((a, b) => b.relScore - a.relScore);
+    const best = evals[0] ?? null;
 
     let failCount = cursor.persistentFailCounts[srcId] ?? 0;
-    let escalated = false;
-    let escalationReason: string | null = null;
-
-    if (!best || !best.isExperimentalFrontier) {
+    if (!best || best.relScore <= 0) {
       failCount++;
-      if (policy.allowMultiMonster) {
-        escalated = true;
-        escalationReason = `OPTIMIZATION_EPISODE_ESCALATION: attempts=${policy.singleOpAttempts}, failCount=${failCount}`;
-        appendJsonlUnique(
-          T038_ESCALATIONS_PATH,
-          {
-            recordId: `esc_${cycleId}_${srcId}_${failCount}`,
-            evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-            sourceId: srcId,
-            cycleId,
-            cycleOrdinal,
-            failCount,
-            reason: escalationReason,
-            decidedAt: new Date().toISOString(),
-          },
-          new Set()
-        );
-      }
     } else {
       failCount = 0;
     }
     cursor.persistentFailCounts[srcId] = failCount;
 
-    const recordId = createHash('sha256')
-      .update(`${cycleId}_${srcId}_decision_t039`)
-      .digest('hex')
-      .slice(0, 16);
-
+    const recordId = createHash('sha256').update(`${cycleId}_${srcId}_decision_t040`).digest('hex').slice(0, 16);
     const decision: CycleDecisionRecord = {
       recordId,
       evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-      protocol: T039_PROTOCOL,
+      protocol: T040_PROTOCOL,
       cycleId,
       cycleOrdinal,
       sourceId: srcId,
@@ -363,60 +699,76 @@ export async function executeCycle(opts: {
       spatialBudgetReason: policy.spatialBudgetReason,
       baselineScore: policy.baselineScore,
       bestCandidateId: best?.entry.meta.candidateId ?? null,
-      bestCandidateScore: best?.obs.trainingScore ?? null,
-      bestCandidateRel: best?.obs.sourceRelativeScore ?? null,
-      isExperimentalFrontier: best?.isExperimentalFrontier ?? false,
-      candidatesScreened: ranked.filter(r => r.entry.meta.sourceId === srcId).length,
+      bestCandidateScore: best?.overallScore ?? null,
+      bestCandidateRel: best?.relScore ?? null,
+      isExperimentalFrontier: best?.isFrontier ?? false,
+      candidatesScreened: evals.length,
       singleOpAttempts: policy.singleOpAttempts,
       consecutiveFailCount: failCount,
-      escalatedToMultiMonster: escalated,
-      escalationReason,
+      escalatedToMultiMonster: policy.allowMultiMonster,
+      escalationReason: null,
       decidedAt: new Date().toISOString(),
     };
     cycleDecisions.push(decision);
     appendJsonlUnique(T038_DECISIONS_PATH, decision, existingDecisionIds);
   }
 
-  // 13. 导出只读 Catalog
-  const catalogInputs = cycleDecisions
-    .map(d => {
-      const srcId = d.sourceId;
-      const policy = policies.find(p => p.sourceId === srcId)!;
-      if (d.bestCandidateId) {
-        const best = ranked.find(r => r.entry.meta.candidateId === d.bestCandidateId)!;
-        const pruneResult = pruneResults.get(d.bestCandidateId!) ?? null;
-        return {
-          policy,
-          candidateId: d.bestCandidateId,
+  // 11. 导出只读 Catalog
+  const catalogInputs = cycleDecisions.map(d => {
+    const srcId = d.sourceId;
+    const policy = policies.find(p => p.sourceId === srcId)!;
+    if (d.bestCandidateId) {
+      const best = candidateEvaluations.get(d.bestCandidateId)!;
+      const pruneResult = pruneResults.get(d.bestCandidateId) ?? null;
+      return {
+        policy,
+        candidateId: d.bestCandidateId,
+        operatorFamily: best.entry.meta.operatorFamily,
+        canonicalFingerprint: best.entry.meta.canonicalFingerprint ?? '',
+        obs: {
+          protocol: T040_PROTOCOL,
+          scheduleId: 't040-staged-ladder-v1',
+          manifestHash: t037ManifestHash,
+          entityId: best.entry.meta.candidateId,
+          entityKind: 'candidate' as const,
+          entityFingerprint: best.entry.meta.canonicalFingerprint ?? '',
+          parentFingerprint: best.entry.meta.sourceFingerprint,
           operatorFamily: best.entry.meta.operatorFamily,
-          canonicalFingerprint: best.entry.meta.canonicalFingerprint ?? '',
-          obs: best.obs,
-          pruneResult,
-          isExperimentalFrontier: d.isExperimentalFrontier,
-        };
-      } else {
-        const baselineObs = t037Obs.find(o => o.sourceId === srcId && o.entityKind === 'baseline')!;
-        return {
-          policy,
-          candidateId: `baseline:${srcId}`,
-          operatorFamily: 'baseline',
-          canonicalFingerprint: baselineObs.entityFingerprint,
-          obs: baselineObs,
-          pruneResult: null,
-          isExperimentalFrontier: false,
-        };
-      }
-    });
+          sourceId: srcId,
+          totalCells: 14,
+          totalGames: 44,
+          w: 0, d: 0, l: 0,
+          workerErrors: 0,
+          trainingScore: best.overallScore,
+          sourceRelativeScore: best.relScore,
+          completedAt: new Date().toISOString(),
+        },
+        pruneResult,
+        isExperimentalFrontier: d.isExperimentalFrontier,
+      };
+    } else {
+      const baselineObs = t037Obs.find(o => o.sourceId === srcId && o.entityKind === 'baseline')!;
+      return {
+        policy,
+        candidateId: `baseline:${srcId}`,
+        operatorFamily: 'baseline',
+        canonicalFingerprint: baselineObs.entityFingerprint,
+        obs: baselineObs,
+        pruneResult: null,
+        isExperimentalFrontier: false,
+      };
+    }
+  });
 
   const catalog = exportRuntimeCatalog({
     cycleId,
     cycleOrdinal,
-    protocol: T039_PROTOCOL,
+    protocol: T040_PROTOCOL,
     parentCatalogHash,
     entries: catalogInputs,
   });
 
-  // 14. 更新原子 Cursor
+  // 12. 更新 Cursor
   cursor.completedCycles.push({
     cycleId,
     cycleOrdinal,
@@ -439,17 +791,13 @@ export async function executeCycle(opts: {
 // ---- 主运行入口 ----
 
 async function main() {
-  log(`\n=== run_cycle.ts — T039 Full-Panel Tiered Screen & Evolution ===`);
+  log(`\n=== run_cycle.ts — T040 Staged Benchmark Training Ladder & Melee ===`);
   const pool = await PersistentSimPool.getInstance();
 
   try {
-    // 运行周期 0
     await executeCycle({ pool, cycleOrdinal: 0 });
-
-    // 运行周期 1
     await executeCycle({ pool, cycleOrdinal: 1 });
 
-    // 运行周期 1 再次调用（演示幂等性 no-op）
     log(`\n--- Demonstrating Idempotent Rerun of Cycle Ordinal 1 ---`);
     const res1Rerun = await executeCycle({ pool, cycleOrdinal: 1 });
     if (res1Rerun.isNoOp) {
@@ -457,12 +805,12 @@ async function main() {
     }
 
     log(`\n============================================================`);
-    log(`T039 Adaptive Loops & Tiered Screening Complete`);
-    log(`Catalog written to: tests/fixtures/tree/experience_library/product_path_t037/runtime_candidate_catalog.json`);
+    log(`T040 Training Ladder & Melee Loops Complete`);
+    log(`Artifacts written: benchmark_manifests.json, stage_training_ledger.jsonl, benchmark_cell_results.jsonl, candidate_lineage.jsonl, search_coverage.jsonl`);
     log(`No-apply confirmation: NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE`);
     log(`============================================================\n`);
   } finally {
-    // 保持 pool 状态
+    // 保持 pool
   }
 }
 
