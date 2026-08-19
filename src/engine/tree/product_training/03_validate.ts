@@ -5,7 +5,7 @@
 // ============================================================
 
 import { computeCandidateFingerprint, isLegalP2Coord } from './02_candidates';
-import type { CandidateMetadata, FormationTransformDelta, SpatialLocalDelta } from './02_candidates';
+import type { FormationTransformDelta, SpatialLocalDelta } from './02_candidates';
 import type { EvolFormation } from '../evol_gene';
 import { walkEvolNodes, isEmptyMask } from '../evol_gene';
 

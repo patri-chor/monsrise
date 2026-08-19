@@ -127,17 +127,28 @@ class BoardSyncComponent extends Component {
       // 非战斗阶段（ROUND_END / PREPARATION / GAME_OVER）强制待机姿态：
       // 回合结束时技能动画可能仍在播，若不重置会顺延到下一回合继续播放。
       const animPlayable = (state === 'BATTLE' || isReplayCombat) && !m.isDead;
+      // 每轮打击次数（BURST_CONFIG：救星 2/突突突 4/钻头 10/金猴 5/丛林猴 5；非轮式 = 0）
+      const burstCount = (m as any).burstCount || 0;
       const animState = animPlayable ? m.state : 'idle';
       if (animState === 'attack' || animState === 'skill') {
         // attack 状态会跨整个攻速间隔持续保持，第 2 次及以后的普攻不会触发状态切换，
         // 仅靠状态切换重置会导致武器动画时间超过 duration 被强制回第 0 帧（看起来没动画）。
-        // 轮式攻击（段式攻击，BURST_CONFIG：救星打 2 下/突突突 4 下/钻头 10 下…）：
-        // 一轮内多次打击只重播一次动画，重播信号 = 轮次序号 roundIndex = floor(攻击次数/每轮次数)；
+        // 轮式攻击（段式攻击）：一轮内多次打击只重播一次动画，
+        // 重播信号 = 轮次序号 roundIndex = floor((攻击次数-1)/每轮次数)：
+        //   首段(第1次)=0、本轮末(第5次)仍 0、下轮首(第6次)变 1 → 动画在每轮首段重播；
+        //   attackCount=0 的"预置等待期"（开局即在射程，等满 interval）roundIndex=-1，
+        //   与首段(0)区分开，保证第一轮首段也能重播动画。
         // 非轮式怪每轮次数=1，roundIndex=攻击次数，行为与原来一致。
         const attackCount = (m as any).animAttackCount || 0;
-        const burstCount = (m as any).burstCount || 0;
-        const roundIndex = burstCount > 1 ? Math.floor(attackCount / burstCount) : attackCount;
-        if ((m as any)._lastAnimState !== animState || (m as any)._lastRoundIndex !== roundIndex) {
+        const roundIndex = burstCount > 1 ? Math.floor((attackCount - 1) / burstCount) : attackCount;
+        if (attackCount === 0) {
+          // 预置等待期（开局即在射程内，等满攻速间隔才打首轮）：未真实出手前武器停在待机帧，
+          // 避免攻击动画从第 0 帧直接播放（假挥击；部分怪动画开头帧武器尺寸/姿态异常）。
+          const clipRef0 = getAnimationClip(m.dbId, animState);
+          (m as any).weaponAnimTime = clipRef0 ? clipRef0.clip.duration / 100 : 0.3;
+          (m as any)._lastAnimState = animState;
+          (m as any)._lastRoundIndex = roundIndex;
+        } else if ((m as any)._lastAnimState !== animState || (m as any)._lastRoundIndex !== roundIndex) {
           if (animState === 'skill') {
             // 技能：状态切换即真实事件，从第 0 帧播放技能动画
             (m as any).weaponAnimTime = 0;
@@ -163,7 +174,10 @@ class BoardSyncComponent extends Component {
       } else {
         (m as any).weaponAnimTime = 0;
         (m as any)._lastAnimState = animState;
-        (m as any)._lastRoundIndex = (m as any).animAttackCount || 0;
+        // 与攻击状态的 roundIndex 同语义，保证离开/重回攻击状态时比较一致：
+        // 未出手(0) → -1；出手 n 次 → 其所属轮次序号。
+        const curAtkCount = (m as any).animAttackCount || 0;
+        (m as any)._lastRoundIndex = burstCount > 1 ? Math.floor((curAtkCount - 1) / burstCount) : curAtkCount;
       }
 
       // ==== 2. 提前计算身体的相对动作偏移量与旋转自转 ====
@@ -182,8 +196,15 @@ class BoardSyncComponent extends Component {
       // 单位换算 + 姿态计算（body 部分；targetAngle 在下方瞄准计算后再加到武器旋转上）
       // idlePose：攻击间隔期武器姿态（aim=一直瞄准停最后静止帧 / hold=回待机首帧摆正）
       const idlePose = AIM_IDLE_WEAPONS.has(m.dbId) ? 'aim' : 'hold';
+      // 技能无专属剪辑（无 {dbId}s）时渲染回落普攻剪辑：武器尺寸/动作正常，
+      // 避免走"无动画兜底"（scale=1 自然尺寸）导致武器巨大（如肃清技能/祈祷施放）。
+      // 技能动画时长仍由 BattleSystem 按技能类型控制，不受此影响。
+      let animClip = !m.isDead ? (getAnimationClip(m.dbId, animState)?.clip ?? null) : null;
+      if (!animClip && animState === 'skill') {
+        animClip = getAnimationClip(m.dbId, 'attack')?.clip ?? null;
+      }
       const pose = computeWeaponPose(
-        !m.isDead ? (getAnimationClip(m.dbId, animState)?.clip ?? null) : null,
+        animClip,
         animState,
         (m as any).weaponAnimTime || 0,
         displayW,

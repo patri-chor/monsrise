@@ -13,7 +13,6 @@ import {
   type EvolNode,
   type EvolFormation,
   type FeatureMask,
-  type RecognizedArchetype,
   walkEvolNodes,
   matchMask,
   isEmptyMask,

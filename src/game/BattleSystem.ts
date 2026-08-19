@@ -1527,8 +1527,17 @@ export class BattleSystem {
       // 开局即在射程内的远程怪（_justMoved=false）不触发，按攻速冷却等待，避免原地齐射。
       if ((m as any)._justMoved) {
         (m as any)._justMoved = false;
+        // 接触即交火对轮式（BURST）怪也走完整首段：预置连发计数，
+        // 让后续帧的段内连发逻辑接着射完（否则第一轮只发一枚）。
+        const bc = (m as any).burstCount || 0;
+        if (bc > 0) {
+          (m as any).burstTargetId = target.id;
+          (m as any).burstAttacksLeft = bc;
+          (m as any).burstTimer = 0;
+        }
         const fired = this.performNormalAttack(m);
         if (fired) {
+          if (bc > 0) (m as any).burstAttacksLeft--; // 首段算一发
           // 接触开火本身即一次真实攻击：清零攻速计时器，
           // 避免携带上一段累积的 ≥interval 计时器在下一帧立即再次开火
           // （短距离走位后快速两次攻击），连段怪还会直接接一轮连发。

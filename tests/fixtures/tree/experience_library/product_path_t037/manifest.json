@@ -1,0 +1,14 @@
+{
+  "protocol": "PRODUCT_PATH_T037_V1",
+  "scheduleId": "t037-heldout-7x2x10-seed-v1",
+  "createdAt": "2026-08-19T02:48:41.264Z",
+  "sourceFixtureRef": "tests/fixtures/tree/eleven_frozen_sources.json",
+  "sourceFixtureFp": "07bb1a55a1394ff1",
+  "executableSourceCount": 11,
+  "heldOutFamilyCount": 7,
+  "gamesPerCell": 10,
+  "cellsPerEntity": 14,
+  "totalGamesPerEntity": 140,
+  "callChain": "PersistentSimPool → fine_grained_worker(product_path) → playFullGame → product_tree_strategy",
+  "manifestHash": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85"
+}

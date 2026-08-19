@@ -107,6 +107,13 @@
   <button id="soundToggleBtn" type="button" title="音量">🔊 100</button>
 
   <script src="/ai-bundle.iife.js"></script>
+  <script>
+    // bundle 全局导出兼容：esbuild IIFE 产物将命名空间对象 { BattleAI: class } 挂到全局，
+    // 而代码按类使用（new BattleAI()）。此处把命名空间展开为类本身，保证两处调用点均可用。
+    if (window.BattleAI && typeof window.BattleAI === 'object' && typeof window.BattleAI.BattleAI === 'function') {
+      window.BattleAI = window.BattleAI.BattleAI;
+    }
+  </script>
   <script type="module" src="./src/main.ts"></script>
   <!-- 保险丝：若 15 秒后载入层仍未被游戏 JS 移除（如 main.ts 被覆盖导致隐藏逻辑丢失），强制淡出，防止永久卡在载入界面 -->
   <script>

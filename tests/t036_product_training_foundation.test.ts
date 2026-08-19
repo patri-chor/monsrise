@@ -19,7 +19,6 @@ import { resolve } from 'node:path';
 import {
   loadProductSources,
   assertNoGiftJungleV2,
-  computeSourceFingerprint,
   validateCandidateLegality,
   validateGiftJungleRepair,
   rejectIfNoOp,
@@ -35,7 +34,8 @@ import {
 import { formationToEvol, cloneEvolFormation } from '../src/engine/tree/evol_gene';
 import type { EvolFormation, FeatureMask } from '../src/engine/tree/evol_gene';
 import { treeStrategyFor } from '../src/engine/tree/product_tree_strategy';
-import type { DeploymentStrategyContext, TeamSlot } from '../src/engine/play_full_game';
+import type { DeploymentStrategyContext } from '../src/engine/play_full_game';
+import type { TeamSlot } from '../src/game/GameEngine';
 
 describe('T036 — Product Training Foundation', () => {
 
@@ -47,7 +47,6 @@ describe('T036 — Product Training Foundation', () => {
     });
 
     it('gift_jungle has exactly 8 monsters', () => {
-      const sources = loadProductSources();
       const raw: any[] = JSON.parse(readFileSync(resolve('tests/fixtures/tree/eleven_frozen_sources.json'), 'utf8'));
       const gj = raw.find((s: any) => s.id === 'gift_jungle');
       expect(gj.team.length).toBe(8);

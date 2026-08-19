@@ -162,7 +162,13 @@ export class PersistentSimPool {
   }
 
   /**
-   * 并发执行一组 SimTask 任务，支持基于 requestId 的安全请求隔离与结构化校验
+   * 并发执行一组 SimTask 任务，支持基于 requestId 的安全请求隔离与结构化校验。
+   *
+   * 动态并发控制：
+   *   - 初始 activeLimit = min(workerCount, tasks)
+   *   - 每个 chunk 完成后通过 CpuLoadMonitor.adaptConcurrency() 采样 CPU 负载
+   *   - 若 CPU > target（默认 80%）则收窄 limit；若 CPU < target 则扩大 limit
+   *   - 使用滑动窗口（Semaphore）保证同时在飞的 chunk 数 ≤ activeLimit
    */
   public async dispatchTasks(tasks: SimTaskMessage[], candidateIdentity?: string): Promise<SimResultMessage[]> {
     // T032 C.4：正式请求若选择旧 arena 路径，在 worker 启动前 fail-closed
@@ -174,29 +180,32 @@ export class PersistentSimPool {
 
     const requestId = randomUUID();
 
+    // 将每个 task 单独作为 1-element chunk，由滑动窗口控制真实并发度
+    // 这样 activeLimit 就直接等于同时在飞的 worker 调用数
+    const chunkSize = Math.max(1, Math.ceil(tasks.length / Math.min(this.workerCount * 4, tasks.length)));
     const chunks: SimTaskMessage[][] = [];
-    const numChunks = Math.min(this.workerCount, tasks.length);
-    const chunkSize = Math.ceil(tasks.length / numChunks);
-
     for (let i = 0; i < tasks.length; i += chunkSize) {
       chunks.push(tasks.slice(i, i + chunkSize));
     }
 
-    const chunkPromises = chunks.map((chunk, idx) => {
+    // 初始并发限制：min(workerCount, chunks.length)
+    let activeLimit = Math.min(this.workerCount, chunks.length);
+    let activeSemaphore = 0;
+    const results: SimResultMessage[][] = new Array(chunks.length);
+
+    const dispatchChunk = (idx: number): Promise<void> => {
+      const chunk = chunks[idx];
       const workerIdx = idx % this.workers.length;
       const worker = this.workers[workerIdx];
 
-      return new Promise<SimResultMessage[]>((resolvePromise, reject) => {
+      return new Promise<void>((resolveChunk, rejectChunk) => {
         const handler = (msg: any) => {
-          if (msg.requestId !== requestId) {
-            // 忽略非当前 request 的消息
-            return;
-          }
+          if (msg.requestId !== requestId) return;
 
           if (msg.type === 'batch_result') {
             cleanup();
             if (!Array.isArray(msg.results)) {
-              reject(new StructuredSimError('Worker returned non-array results payload', {
+              rejectChunk(new StructuredSimError('Worker returned non-array results payload', {
                 requestId,
                 expectedCount: chunk.length,
                 receivedCount: 0,
@@ -205,7 +214,7 @@ export class PersistentSimPool {
               return;
             }
             if (msg.results.length !== chunk.length) {
-              reject(new StructuredSimError(`Worker result count mismatch: expected ${chunk.length}, received ${msg.results.length}`, {
+              rejectChunk(new StructuredSimError(`Worker result count mismatch: expected ${chunk.length}, received ${msg.results.length}`, {
                 requestId,
                 expectedCount: chunk.length,
                 receivedCount: msg.results.length,
@@ -217,7 +226,7 @@ export class PersistentSimPool {
             for (let rIdx = 0; rIdx < msg.results.length; rIdx++) {
               const res = msg.results[rIdx];
               if (!res || typeof res.w !== 'number' || typeof res.d !== 'number' || typeof res.l !== 'number') {
-                reject(new StructuredSimError(`Worker result contains undefined or invalid W/D/L at index ${rIdx}`, {
+                rejectChunk(new StructuredSimError(`Worker result contains undefined or invalid W/D/L at index ${rIdx}`, {
                   requestId,
                   expectedCount: chunk.length,
                   receivedCount: msg.results.length,
@@ -226,10 +235,11 @@ export class PersistentSimPool {
                 return;
               }
             }
-            resolvePromise(msg.results);
+            results[idx] = msg.results;
+            resolveChunk();
           } else if (msg.type === 'error') {
             cleanup();
-            reject(new StructuredSimError(msg.error || 'Worker unknown error', {
+            rejectChunk(new StructuredSimError(msg.error || 'Worker unknown error', {
               requestId,
               expectedCount: chunk.length,
               receivedCount: 0,
@@ -240,7 +250,7 @@ export class PersistentSimPool {
 
         const errorHandler = (err: any) => {
           cleanup();
-          reject(new StructuredSimError(err?.message || String(err), {
+          rejectChunk(new StructuredSimError(err?.message || String(err), {
             requestId,
             expectedCount: chunk.length,
             receivedCount: 0,
@@ -257,17 +267,64 @@ export class PersistentSimPool {
         worker.on('error', errorHandler);
         worker.postMessage({ type: 'batch', requestId, tasks: chunk });
       });
-    });
+    };
 
-    const resultsNested = await Promise.all(chunkPromises);
-    const flattened: SimResultMessage[] = [];
-    for (const list of resultsNested) {
-      flattened.push(...list);
+    // 滑动窗口调度：动态 CPU 反馈控制并发度
+    // 使用 notification promise 避免 Promise.race 传播 reject 错误
+    const errors: Error[] = [];
+    let notifySlotFree: (() => void) | null = null;
+    let slotFreePromise: Promise<void> = Promise.resolve();
+
+    const resetSlotWait = () => {
+      slotFreePromise = new Promise<void>(r => { notifySlotFree = r; });
+    };
+
+    const onChunkDone = () => {
+      activeSemaphore--;
+      // CPU 自适应：每完成 1 个 chunk 重新采样
+      if (this.cpuMonitor) {
+        activeLimit = this.cpuMonitor.adaptConcurrency(
+          activeLimit,
+          Math.max(1, Math.min(4, this.workers.length)),   // minLimit
+          this.workers.length,                             // maxLimit = 实际 worker 数
+        );
+      }
+      // 通知等待中的 pump 有空位
+      if (notifySlotFree) { notifySlotFree(); notifySlotFree = null; }
+    };
+
+    const inFlight: Promise<void>[] = [];
+
+    resetSlotWait();
+
+    for (let idx = 0; idx < chunks.length; idx++) {
+      // 等待信号量空位
+      while (activeSemaphore >= activeLimit) {
+        await slotFreePromise;
+        resetSlotWait(); // 重置，防止上一次通知被重复消费
+      }
+
+      activeSemaphore++;
+      const p = dispatchChunk(idx)
+        .then(() => { onChunkDone(); })
+        .catch((err: Error) => { errors.push(err); onChunkDone(); });
+
+      inFlight.push(p);
     }
 
+    // 等待所有 in-flight chunk 完成
+    await Promise.all(inFlight);
+
+    if (errors.length > 0) throw errors[0];
+
+    const flattened: SimResultMessage[] = [];
+    for (const list of results) {
+      if (list) flattened.push(...list);
+    }
     flattened.sort((a, b) => a.taskId - b.taskId);
     return flattened;
   }
+
 
   public async evalCandidateBatchOnMatchedParallel(
     candidates: EvolFormation[],
