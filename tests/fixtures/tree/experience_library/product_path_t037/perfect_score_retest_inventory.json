@@ -1,0 +1,367 @@
+{
+  "schemaVersion": "T050_PERFECT_SCORE_RETEST_INVENTORY_V1",
+  "createdAt": "2026-08-19T17:04:26.921Z",
+  "targetCount": 28,
+  "targets": [
+    {
+      "formationId": "t0:springsword",
+      "rootT0SourceId": "springsword",
+      "currentTier": "T0",
+      "canonicalFingerprint": "06b65120d945b5913f24c53d",
+      "l2Score": 1,
+      "l1Score": null,
+      "l2AttemptsCount": null,
+      "levelsToRetest": [
+        "L2"
+      ]
+    },
+    {
+      "formationId": "t0:nutsavior",
+      "rootT0SourceId": "nutsavior",
+      "currentTier": "T0",
+      "canonicalFingerprint": "3ab91c2f7c067de6344be734",
+      "l2Score": 1,
+      "l1Score": null,
+      "l2AttemptsCount": null,
+      "levelsToRetest": [
+        "L2"
+      ]
+    },
+    {
+      "formationId": "t0:gift_savior",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T0",
+      "canonicalFingerprint": "db858ed989c84a71af59fe6d",
+      "l2Score": 1,
+      "l1Score": null,
+      "l2AttemptsCount": null,
+      "levelsToRetest": [
+        "L2"
+      ]
+    },
+    {
+      "formationId": "t0:golden_boom",
+      "rootT0SourceId": "golden_boom",
+      "currentTier": "T0",
+      "canonicalFingerprint": "e63ae36a66cb55b2194d70c9",
+      "l2Score": 1,
+      "l1Score": null,
+      "l2AttemptsCount": null,
+      "levelsToRetest": [
+        "L2"
+      ]
+    },
+    {
+      "formationId": "cand:nutsavior:spatial_local:0",
+      "rootT0SourceId": "nutsavior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "62432a3d43b95a3e24995283",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:golden_boom:spatial_local:0",
+      "rootT0SourceId": "golden_boom",
+      "currentTier": "T1",
+      "canonicalFingerprint": "0d0ee483f5314397215528c7",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:springsword:formation_transform:c0_flip",
+      "rootT0SourceId": "springsword",
+      "currentTier": "T1",
+      "canonicalFingerprint": "398067d0e3de36366f1d59d8",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:springsword:strategy_schedule_branch:c0_side2",
+      "rootT0SourceId": "springsword",
+      "currentTier": "T1",
+      "canonicalFingerprint": "7669c0c161540334f5a5f00f",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:nutsavior:spatial_local:c0_110",
+      "rootT0SourceId": "nutsavior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "fe14d73e9531479cb0d6fc78",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:nutsavior:strategy_schedule_branch:c0_side2",
+      "rootT0SourceId": "nutsavior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "63e8f4669eb2d55e156b1add",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:suqing:spatial_local:c0_110",
+      "rootT0SourceId": "suqing",
+      "currentTier": "T1",
+      "canonicalFingerprint": "7d89475312e6803d590c4b23",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:suqing:formation_transform:c0_flip",
+      "rootT0SourceId": "suqing",
+      "currentTier": "T1",
+      "canonicalFingerprint": "9600ca544c9eec75e604ad55",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_savior:formation_transform:c0_flip",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "691faad5e3a980582edb2f74",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_savior:strategy_schedule_branch:c0_side2",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "6c042d7a10fc7b36e64eaf50",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:golden_boom:strategy_schedule_branch:c0_side2",
+      "rootT0SourceId": "golden_boom",
+      "currentTier": "T1",
+      "canonicalFingerprint": "6f4149b78012969de189eb5e",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_jungle:formation_transform:c0_flip",
+      "rootT0SourceId": "gift_jungle",
+      "currentTier": "T1",
+      "canonicalFingerprint": "f713471a3b7b62a17b9bf5b6",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:springsword:formation_transform:c1_flip",
+      "rootT0SourceId": "springsword",
+      "currentTier": "T1",
+      "canonicalFingerprint": "398067d0e3de36366f1d59d8",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:springsword:strategy_schedule_branch:c1_side2",
+      "rootT0SourceId": "springsword",
+      "currentTier": "T1",
+      "canonicalFingerprint": "ae995f93d5914195733156ad",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:nutsavior:strategy_schedule_branch:c1_side2",
+      "rootT0SourceId": "nutsavior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "8e194c28d733ed5f6d806627",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:suqing:spatial_local:c1_124",
+      "rootT0SourceId": "suqing",
+      "currentTier": "T1",
+      "canonicalFingerprint": "d379b67e12ce971828aed0e3",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:suqing:formation_transform:c1_flip",
+      "rootT0SourceId": "suqing",
+      "currentTier": "T1",
+      "canonicalFingerprint": "9600ca544c9eec75e604ad55",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_savior:formation_transform:c1_flip",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "691faad5e3a980582edb2f74",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:golden_boom:strategy_schedule_branch:c1_side2",
+      "rootT0SourceId": "golden_boom",
+      "currentTier": "T1",
+      "canonicalFingerprint": "510f4c266210dcc89cec186d",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_jungle:formation_transform:c1_flip",
+      "rootT0SourceId": "gift_jungle",
+      "currentTier": "T1",
+      "canonicalFingerprint": "f713471a3b7b62a17b9bf5b6",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:spade_multi:spatial_local:c0_115",
+      "rootT0SourceId": "spade_multi",
+      "currentTier": "T1",
+      "canonicalFingerprint": "598d8635ae3a759d98992453",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:spade_multi:spatial_local:c1_108",
+      "rootT0SourceId": "spade_multi",
+      "currentTier": "T1",
+      "canonicalFingerprint": "abbc49efdb6f2efef316f180",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    },
+    {
+      "formationId": "cand:gift_savior:spatial_local:c1_116",
+      "rootT0SourceId": "gift_savior",
+      "currentTier": "T1",
+      "canonicalFingerprint": "3865970cb04411f46d48d5e6",
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "levelsToRetest": [
+        "L2",
+        "L1"
+      ]
+    }
+  ]
+}
