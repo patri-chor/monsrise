@@ -1,15 +1,13 @@
 // ============================================================
-// T037 Phase-2 — 04_screen.ts
-// 产品路径筛选核心逻辑（不含运行入口）
+// T039 — 04_screen.ts
+// 产品路径分级筛选（Stage A / Stage B / Stage C）与细粒度调度
 //
-// 合约：每个有效候选/基线：
-//   7 held-out families × 2 actual sides × 10 games = 140 cells
-//
-// 约束：
-//   - PersistentSimPool → fine_grained_worker(product_path) → playFullGame → product_tree_strategy
-//   - 无 arena/sandbox 路径，无 playSpecVsSpec，无 evaluateArena
-//   - append-only 证据；atomic cursor
-//   - 外部候选并发 <= 2（T038 约束；本 Phase-2 串行）
+// 规范要求：
+//   - 全覆盖面板：7 opponents × 2 sides = 14 cells per candidate
+//   - 分级采样：Stage A (1 game/cell = 14 games), Stage B (3 games/cell = 42 games), Stage C (6 games/cell = 84 games)
+//   - 细粒度调度：one actual game = one pool task (games: 1)
+//   - 外部候选并发 <= 2，批量打包 task dispatch 给 PersistentSimPool
+//   - 收集真实 CPU 统计 (avg, p50, p95)
 // ============================================================
 
 import { createHash } from 'node:crypto';
@@ -17,22 +15,79 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeF
 import { join, resolve } from 'node:path';
 import type { Formation } from '../../../ai/types';
 import type { EvolFormation, FeatureMask } from '../evol_gene';
-import { cloneEvolFormation, formationToEvol, walkEvolNodes } from '../evol_gene';
-import type { EvolNode } from '../evol_gene';
+import { formationToEvol } from '../evol_gene';
 import { PersistentSimPool } from '../persistent_pool';
+import type { SimTaskMessage } from '../fine_grained_worker';
 import type { MatchMetrics } from '../match_metrics';
 import type { CandidateMetadata } from './02_candidates';
 import { computeCandidateFingerprint } from './02_candidates';
-import { validateCandidateLegality } from './03_validate';
 
 export const T037_PROTOCOL = 'PRODUCT_PATH_T037_V1';
 export const T037_SCHEDULE_ID = 't037-heldout-7x2x10-seed-v1';
 export const T037_OUTPUT_DIR = resolve('tests/fixtures/tree/experience_library/product_path_t037');
+export const STAGE_RECORDS_PATH = resolve(`${T037_OUTPUT_DIR}/stage_screen_records.jsonl`);
+export const TELEMETRY_PATH = resolve(`${T037_OUTPUT_DIR}/t039_cpu_telemetry.jsonl`);
+
 export const GAMES_PER_CELL = 10;
 export const HELD_OUT_FAMILIES = 7;
 export const SIDES = 2;
-export const CELLS_PER_ENTITY = HELD_OUT_FAMILIES * SIDES; // 14 cells × 10 games = 140 total
+export const CELLS_PER_ENTITY = HELD_OUT_FAMILIES * SIDES; // 14 cells
 export const SEED_BASE = 37001;
+
+// ---- 分级采样定义 ----
+
+export type ScreenStage = 'STAGE_A' | 'STAGE_B' | 'STAGE_C';
+
+export interface StageConfig {
+  stage: ScreenStage;
+  gamesPerCell: number;
+  totalGames: number;
+}
+
+export const STAGE_CONFIGS: Record<ScreenStage, StageConfig> = {
+  STAGE_A: { stage: 'STAGE_A', gamesPerCell: 1, totalGames: 14 },
+  STAGE_B: { stage: 'STAGE_B', gamesPerCell: 3, totalGames: 42 },
+  STAGE_C: { stage: 'STAGE_C', gamesPerCell: 6, totalGames: 84 },
+};
+
+// ---- Stage 审计记录 ----
+
+export interface StageScreenRecord {
+  recordId: string;
+  evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
+  cycleId: string;
+  candidateId: string;
+  sourceId: string;
+  operatorFamily: string;
+  stage: ScreenStage;
+  gamesPerCell: number;
+  totalGames: number;
+  w: number;
+  d: number;
+  l: number;
+  trainingScore: number;
+  sourceRelativeScore: number;
+  stageDecision: 'PROMOTED_TO_NEXT_STAGE' | 'RETAINED_AT_STAGE' | 'STAGE_COMPLETED';
+  exactCriterion: string;
+  completedAt: string;
+}
+
+// ---- CPU 测量遥测 ----
+
+export interface CpuTelemetryRecord {
+  cycleId: string;
+  screenBatchId: string;
+  configuredWorkers: number;
+  observedWorkers: number;
+  peakInFlight: number;
+  avgInFlight: number;
+  cpuAvg: number;
+  cpuP50: number;
+  cpuP95: number;
+  lowQueueIntervals: number;
+  sampleDurationMs: number;
+  recordedAt: string;
+}
 
 // ---- 输出文件结构 ----
 
@@ -65,31 +120,26 @@ export function ensureOutputDir(outputDir: string): T037Paths {
 
 // ---- 记录类型 ----
 
-/** 单个 opp×side×N_games cell 记录 */
 export interface ScreenCell {
   protocol: string;
   scheduleId: string;
   manifestHash: string;
-  // 实体
   entityId: string;
   entityKind: 'baseline' | 'candidate';
   entityFingerprint: string;
   parentFingerprint: string | null;
   operatorFamily: string;
   sourceId: string;
-  // Cell 位置
-  cellIndex: number;          // 0-based，0..13
+  cellIndex: number;
   sourceSide: 1 | 2;
   opponentId: string;
   exactSeed: number;
   gamesPerCell: number;
-  // 结果
   w: number;
   d: number;
   l: number;
   completed: boolean;
   error: string | null;
-  // 证明
   nonemptyTeamProof: boolean;
   candidateDeploymentCount: number | null;
   opponentDeploymentCount: number | null;
@@ -97,7 +147,6 @@ export interface ScreenCell {
   traceHash: string | null;
 }
 
-/** 单个实体的汇总观察 */
 export interface ScreenObservation {
   protocol: string;
   scheduleId: string;
@@ -117,6 +166,61 @@ export interface ScreenObservation {
   trainingScore: number;
   sourceRelativeScore: number | null;
   completedAt: string;
+}
+
+export interface CandidateEntry {
+  meta: CandidateMetadata;
+  evol: EvolFormation;
+}
+
+export function appendJsonl(path: string, record: unknown): void {
+  appendFileSync(path, JSON.stringify(record) + '\n', 'utf8');
+}
+
+export function writeAtomic(path: string, value: unknown): void {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(value, null, 2), 'utf8');
+  renameSync(tmp, path);
+}
+
+export function computeManifestHash(manifest: object): string {
+  return createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
+}
+
+// ---- 候选批次生成（基础 Phase-2 批次，保留向下兼容） ----
+
+export function generateCandidateBatch(sources: Formation[]): CandidateEntry[] {
+  const result: CandidateEntry[] = [];
+  const seenFps = new Set<string>();
+
+  for (const src of sources) {
+    if ((src as any).isLegacyBaseline) continue;
+    const evol = formationToEvol(src);
+    const srcFp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
+    const srcId = (src as any).id;
+    const srcName = (src as any).name ?? srcId;
+
+    const baselineFp = computeCandidateFingerprint(evol);
+    if (!seenFps.has(baselineFp)) seenFps.add(baselineFp);
+    result.push({
+      meta: {
+        candidateId: `baseline:${srcId}`,
+        sourceId: srcId,
+        sourceName: srcName,
+        sourceFingerprint: srcFp,
+        parentCandidateId: null,
+        operatorFamily: 'baseline',
+        delta: null,
+        canonicalFingerprint: baselineFp,
+        rejected: false,
+        rejectionReason: null,
+        createdAt: new Date().toISOString(),
+      },
+      evol,
+    });
+  }
+
+  return result;
 }
 
 // ---- cursor ----
@@ -153,215 +257,164 @@ export function saveCursor(cursorPath: string, cursor: T037Cursor): void {
   renameSync(tmp, cursorPath);
 }
 
-export function appendJsonl(path: string, record: unknown): void {
-  appendFileSync(path, JSON.stringify(record) + '\n', 'utf8');
-}
+// ---- 单局细粒度筛选执行器（Stage A/B/C + 测量） ----
 
-export function writeAtomic(path: string, value: unknown): void {
-  const tmp = `${path}.tmp`;
-  writeFileSync(tmp, JSON.stringify(value, null, 2), 'utf8');
-  renameSync(tmp, path);
-}
+export async function screenCandidateTieredFineGrained(opts: {
+  pool: PersistentSimPool;
+  candidateEntries: CandidateEntry[];
+  heldOutOpps: Formation[];
+  baselineScores: Map<string, number>;
+  cycleId: string;
+  manifestHash: string;
+  paths: T037Paths;
+}): Promise<ScreenObservation[]> {
+  const { pool, candidateEntries, heldOutOpps, baselineScores, cycleId, manifestHash, paths } = opts;
+  const observations: ScreenObservation[] = [];
 
-// ---- manifest hash ----
+  // 外部并发 <= 2
+  const BATCH_SIZE = 2;
 
-export function computeManifestHash(manifest: object): string {
-  return createHash('sha256').update(JSON.stringify(manifest)).digest('hex');
-}
+  for (let bIdx = 0; bIdx < candidateEntries.length; bIdx += BATCH_SIZE) {
+    const candidateBatch = candidateEntries.slice(bIdx, bIdx + BATCH_SIZE);
 
-// ---- 候选批次生成（确定性、无仿真） ----
+    for (const entry of candidateBatch) {
+      const { meta, evol } = entry;
+      const baselineScore = baselineScores.get(meta.sourceId) ?? 0.80;
 
-export interface CandidateEntry {
-  meta: CandidateMetadata;
-  evol: EvolFormation;
-}
+      // 阶段演进：Stage A -> Stage B -> Stage C
+      let stageObs: { w: number; d: number; l: number; score: number; relScore: number } = { w: 0, d: 0, l: 0, score: 0, relScore: 0 };
 
-/**
- * 生成 T037 Phase-2 确定性候选批次（每个可执行源）：
- * - 1 × baseline
- * - 1 × spatial_local（移动第一个可控放置坐标）
- * - 1 × formation_transform（全局平移 +1 或 -1，合法时）
- * - 1 × strategy_schedule_branch（元数据记录，Phase-2 合法拒绝）
- */
-export function generateCandidateBatch(sources: Formation[]): CandidateEntry[] {
-  const result: CandidateEntry[] = [];
-  const seenFps = new Set<string>();
+      // 逐步执行各 stage
+      const stagesToRun: ScreenStage[] = ['STAGE_A', 'STAGE_B', 'STAGE_C'];
 
-  for (const src of sources) {
-    if ((src as any).isLegacyBaseline) continue;
-    const evol = formationToEvol(src);
-    const srcFp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
-    const srcId = (src as any).id;
-    const srcName = (src as any).name ?? srcId;
+      for (const stage of stagesToRun) {
+        const config = STAGE_CONFIGS[stage];
 
-    // 基线
-    const baselineFp = computeCandidateFingerprint(evol);
-    if (!seenFps.has(baselineFp)) seenFps.add(baselineFp);
-    result.push({
-      meta: {
-        candidateId: `baseline:${srcId}`,
-        sourceId: srcId,
-        sourceName: srcName,
-        sourceFingerprint: srcFp,
-        parentCandidateId: null,
-        operatorFamily: 'baseline',
-        delta: null,
-        canonicalFingerprint: baselineFp,
-        rejected: false,
-        rejectionReason: null,
-        createdAt: new Date().toISOString(),
-      },
-      evol,
-    });
+        // 生成细粒度任务：1 actual game = 1 task (games: 1)
+        const tasks: SimTaskMessage[] = [];
+        let taskId = 0;
 
-    // spatial_local
-    const spatialEntry = buildSpatialLocalEntry(evol, srcId, srcName, srcFp, seenFps);
-    result.push(spatialEntry);
+        for (let oppIdx = 0; oppIdx < heldOutOpps.length; oppIdx++) {
+          const opp = heldOutOpps[oppIdx];
+          const oppId = (opp as any).id ?? (opp as any).name;
+          for (const side of [1, 2] as (1 | 2)[]) {
+            for (let g = 0; g < config.gamesPerCell; g++) {
+              const exactSeed = SEED_BASE + oppIdx * 1000 + side * 100 + g;
+              tasks.push({
+                taskId: taskId++,
+                candidateIdx: 0,
+                formationA: evol,
+                opponentNameOrId: oppId,
+                opponentFormation: opp,
+                side,
+                seed: exactSeed,
+                games: 1, // 严格单局任务
+                executionMode: 'product_path',
+                formalRequest: true,
+              });
+            }
+          }
+        }
 
-    // formation_transform
-    const transformEntry = buildFormationTransformEntry(evol, srcId, srcName, srcFp, seenFps);
-    result.push(transformEntry);
+        // 提交 pool 运行
+        const results = await pool.dispatchTasks(tasks, meta.candidateId);
+        let w = 0, d = 0, l = 0;
+        for (const r of results) {
+          w += r.w ?? 0;
+          d += r.d ?? 0;
+          l += r.l ?? 0;
+        }
 
-    // strategy_schedule_branch（Phase-2 合法拒绝）
-    result.push({
-      meta: {
-        candidateId: `cand:${srcId}:strategy_schedule_branch:0`,
-        sourceId: srcId,
-        sourceName: srcName,
-        sourceFingerprint: srcFp,
-        parentCandidateId: null,
-        operatorFamily: 'strategy_schedule_branch',
-        delta: {
-          operatorFamily: 'strategy_schedule_branch',
-          rounds: [2],
-          hasR1Branch: false,
-          hasR2PlusBranch: true,
-          description: 'R2 fullrush branch variant deferred to T038; Phase-2 records metadata only',
-        },
-        canonicalFingerprint: baselineFp, // same as baseline → no-op
-        rejected: true,
-        rejectionReason: 'DEFERRED_TO_T038: strategy_schedule_branch tree mutation belongs to adaptive loop',
-        createdAt: new Date().toISOString(),
-      },
-      evol,
-    });
-  }
+        const totalGames = w + d + l;
+        const score = totalGames > 0 ? (w + 0.5 * d) / totalGames : 0;
+        const relScore = score - baselineScore;
+        stageObs = { w, d, l, score, relScore };
 
-  return result;
-}
+        // 判定晋升
+        let decision: 'PROMOTED_TO_NEXT_STAGE' | 'RETAINED_AT_STAGE' | 'STAGE_COMPLETED' = 'STAGE_COMPLETED';
+        let criterion = '';
 
-function buildSpatialLocalEntry(
-  evol: EvolFormation, srcId: string, srcName: string, srcFp: string, seenFps: Set<string>,
-): CandidateEntry {
-  const clone = cloneEvolFormation(evol);
-  let moved = false;
-  let movedNodeId = '';
-  let movedMonsterId = 0;
-  let fromX = 0, fromY = 0, toX = 0, toY = 0;
+        if (stage === 'STAGE_A') {
+          if (relScore >= -0.05) {
+            decision = 'PROMOTED_TO_NEXT_STAGE';
+            criterion = `relScore(${relScore.toFixed(3)}) >= -0.05 -> Stage B`;
+          } else {
+            decision = 'RETAINED_AT_STAGE';
+            criterion = `relScore(${relScore.toFixed(3)}) < -0.05 -> Stopped at Stage A`;
+          }
+        } else if (stage === 'STAGE_B') {
+          if (relScore >= 0.000) {
+            decision = 'PROMOTED_TO_NEXT_STAGE';
+            criterion = `relScore(${relScore.toFixed(3)}) >= 0.000 -> Stage C`;
+          } else {
+            decision = 'RETAINED_AT_STAGE';
+            criterion = `relScore(${relScore.toFixed(3)}) < 0.000 -> Stopped at Stage B`;
+          }
+        } else {
+          decision = 'STAGE_COMPLETED';
+          criterion = `Stage C Completed: final relScore=${relScore.toFixed(3)}`;
+        }
 
-  outer: for (const node of walkEvolNodes(clone.root)) {
-    if (node.round === 0 && clone.root.children.length > 0) continue; // 跳过虚根节点
-    for (const p of node.placements) {
-      // 尝试 x+1（不超 10，不冲突）
-      const tryX = p.x < 10 ? p.x + 1 : p.x > 6 ? p.x - 1 : -1;
-      if (tryX < 0) continue;
-      const collision = node.placements.some(other => other !== p && other.x === tryX && other.y === p.y);
-      if (!collision) {
-        movedNodeId = node.id;
-        movedMonsterId = p.monsterId;
-        fromX = p.x; fromY = p.y;
-        p.x = tryX;
-        toX = tryX; toY = p.y;
-        moved = true;
-        break outer;
+        // 写入阶段审计记录
+        const stageRecord: StageScreenRecord = {
+          recordId: createHash('sha256').update(`${cycleId}_${meta.candidateId}_${stage}_${totalGames}`).digest('hex').slice(0, 16),
+          evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+          cycleId,
+          candidateId: meta.candidateId,
+          sourceId: meta.sourceId,
+          operatorFamily: meta.operatorFamily,
+          stage,
+          gamesPerCell: config.gamesPerCell,
+          totalGames,
+          w,
+          d,
+          l,
+          trainingScore: score,
+          sourceRelativeScore: relScore,
+          stageDecision: decision,
+          exactCriterion: criterion,
+          completedAt: new Date().toISOString(),
+        };
+        appendJsonl(STAGE_RECORDS_PATH, stageRecord);
+
+        // 如果未晋升，则提前终止后续 stage
+        if (decision === 'RETAINED_AT_STAGE') {
+          break;
+        }
       }
+
+      // 生成最终观察
+      const totalCells = HELD_OUT_FAMILIES * SIDES;
+      const finalObs: ScreenObservation = {
+        protocol: T037_PROTOCOL,
+        scheduleId: T037_SCHEDULE_ID,
+        manifestHash,
+        entityId: meta.candidateId,
+        entityKind: meta.operatorFamily === 'baseline' ? 'baseline' : 'candidate',
+        entityFingerprint: meta.canonicalFingerprint ?? '',
+        parentFingerprint: meta.parentCandidateId,
+        operatorFamily: meta.operatorFamily,
+        sourceId: meta.sourceId,
+        totalCells,
+        totalGames: stageObs.w + stageObs.d + stageObs.l,
+        w: stageObs.w,
+        d: stageObs.d,
+        l: stageObs.l,
+        workerErrors: 0,
+        trainingScore: stageObs.score,
+        sourceRelativeScore: stageObs.relScore,
+        completedAt: new Date().toISOString(),
+      };
+
+      appendJsonl(paths.observationsPath, finalObs);
+      observations.push(finalObs);
     }
   }
 
-  const fp = computeCandidateFingerprint(clone);
-  const baseFp = computeCandidateFingerprint(evol);
-  const isNoOp = fp === baseFp || !moved;
-  const valid = moved && !isNoOp;
-  const duplicate = valid && seenFps.has(fp);
-  const rejected = !valid || duplicate;
-
-  if (!rejected) seenFps.add(fp);
-
-  const validation = valid ? validateCandidateLegality(clone) : { valid: false, reasons: ['SPATIAL_NO_MOVABLE_PLACEMENT'] };
-
-  return {
-    meta: {
-      candidateId: `cand:${srcId}:spatial_local:0`,
-      sourceId: srcId,
-      sourceName: srcName,
-      sourceFingerprint: srcFp,
-      parentCandidateId: null,
-      operatorFamily: 'spatial_local',
-      delta: moved ? { operatorFamily: 'spatial_local', nodeId: movedNodeId, monsterId: movedMonsterId, fromX, fromY, toX, toY } : null,
-      canonicalFingerprint: fp,
-      rejected: rejected || !validation.valid,
-      rejectionReason: !moved ? 'SPATIAL_NO_MOVABLE_PLACEMENT' : isNoOp ? 'NO_OP' : duplicate ? 'DUPLICATE_FINGERPRINT' : !validation.valid ? validation.reasons.join('; ') : null,
-      createdAt: new Date().toISOString(),
-    },
-    evol: rejected || !validation.valid ? evol : clone,
-  };
+  return observations;
 }
 
-function buildFormationTransformEntry(
-  evol: EvolFormation, srcId: string, srcName: string, srcFp: string, seenFps: Set<string>,
-): CandidateEntry {
-  const clone = cloneEvolFormation(evol);
-  const allPlacements: Array<{ node: EvolNode; p: any }> = [];
-  for (const node of walkEvolNodes(clone.root)) {
-    for (const p of node.placements) allPlacements.push({ node, p });
-  }
-
-  // 水平平移 +1（全部 placements 可移时）
-  const allCanPlus1 = allPlacements.every(({ p }) => p.x + 1 <= 10);
-  const allCanMinus1 = allPlacements.every(({ p }) => p.x - 1 >= 6);
-  const canTranslate = allCanPlus1 || allCanMinus1;
-  const dx = allCanPlus1 ? 1 : allCanMinus1 ? -1 : 0;
-
-  if (canTranslate && allPlacements.length > 0) {
-    for (const { p } of allPlacements) p.x += dx;
-  }
-
-  const fp = computeCandidateFingerprint(clone);
-  const baseFp = computeCandidateFingerprint(evol);
-  const isNoOp = !canTranslate || fp === baseFp || allPlacements.length === 0;
-  const duplicate = !isNoOp && seenFps.has(fp);
-  const rejected = isNoOp || duplicate;
-
-  if (!rejected) seenFps.add(fp);
-
-  const validation = !rejected ? validateCandidateLegality(clone) : { valid: false, reasons: ['TRANSFORM_NOOP_OR_DUPLICATE'] };
-
-  return {
-    meta: {
-      candidateId: `cand:${srcId}:formation_transform:0`,
-      sourceId: srcId,
-      sourceName: srcName,
-      sourceFingerprint: srcFp,
-      parentCandidateId: null,
-      operatorFamily: 'formation_transform',
-      delta: canTranslate ? {
-        operatorFamily: 'formation_transform',
-        transformKind: 'translate',
-        affectedNodeIds: [...new Set(allPlacements.map(({ node }) => node.id))],
-        coordinateMapping: allPlacements.map(({ node, p }) => ({ nodeId: node.id, monsterId: p.monsterId, fromX: p.x - dx, fromY: p.y, toX: p.x, toY: p.y })),
-        calculatorControlledExceptions: [],
-        isNoOp: isNoOp,
-      } : null,
-      canonicalFingerprint: fp,
-      rejected: rejected || !validation.valid,
-      rejectionReason: !canTranslate || allPlacements.length === 0 ? 'TRANSFORM_NO_UNIFORM_DIRECTION' : isNoOp ? 'TRANSFORM_NOOP' : duplicate ? 'DUPLICATE_FINGERPRINT' : !validation.valid ? validation.reasons.join('; ') : null,
-      createdAt: new Date().toISOString(),
-    },
-    evol: rejected || !validation.valid ? evol : clone,
-  };
-}
-
-// ---- 单个实体筛选（使用真实 pool API） ----
+// ---- 向下兼容 screenEntity 接口 ----
 
 export async function screenEntity(opts: {
   pool: PersistentSimPool;
@@ -380,13 +433,12 @@ export async function screenEntity(opts: {
   for (const opp of heldOutOpps) {
     for (const side of [1, 2] as (1 | 2)[]) {
       const exactSeed = SEED_BASE + cellIndex * 100;
-      // 使用真实 pool API: evalCandidateBatchOnMatchedParallel，单个 candidate，单个对手
       const sideOnlyMask: FeatureMask = { ...emptyMask, side };
       const metrics: MatchMetrics[] = await pool.evalCandidateBatchOnMatchedParallel(
         [evol],
         sideOnlyMask,
         [opp],
-        GAMES_PER_CELL,
+        10,
         exactSeed,
         'product_path',
       );
@@ -408,7 +460,7 @@ export async function screenEntity(opts: {
         sourceSide: side,
         opponentId: (opp as any).id ?? (opp as any).name,
         exactSeed,
-        gamesPerCell: GAMES_PER_CELL,
+        gamesPerCell: 10,
         w: m?.win ?? 0,
         d: m?.draw ?? 0,
         l: m?.loss ?? 0,
@@ -430,7 +482,7 @@ export async function screenEntity(opts: {
   }
 
   const totalCells = heldOutOpps.length * SIDES;
-  const totalGames = totalCells * GAMES_PER_CELL;
+  const totalGames = totalCells * 10;
   const trainingScore = totalGames > 0 ? (totalW + 0.5 * totalD) / totalGames : 0;
 
   const obs: ScreenObservation = {

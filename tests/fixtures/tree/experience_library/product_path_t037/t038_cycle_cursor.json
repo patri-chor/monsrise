@@ -1,15 +1,15 @@
 {
-  "protocol": "PRODUCT_PATH_T038_V1",
+  "protocol": "PRODUCT_PATH_T039_V1",
   "sourceFixtureFp": "07bb1a55a1394ff1",
   "t037ManifestHash": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
-  "policyVersion": "t038r-adaptive-policy-v1",
+  "policyVersion": "t039-controllability-tiered-v1",
   "currentCycleOrdinal": 2,
   "completedCycles": [
     {
-      "cycleId": "de59489371bc",
+      "cycleId": "792f0bb6f9f7",
       "cycleOrdinal": 0,
       "parentCycleId": null,
-      "parentCatalogHash": "3b00b11783e73e91",
+      "parentCatalogHash": "972743c6ecf8a24d",
       "completedSources": [
         "springsword",
         "nutsavior",
@@ -23,13 +23,13 @@
         "golden_boom",
         "gift_jungle"
       ],
-      "completedAt": "2026-08-19T04:42:56.979Z"
+      "completedAt": "2026-08-19T05:34:20.647Z"
     },
     {
-      "cycleId": "ac9bbcfce2d2",
+      "cycleId": "50b2614ca9df",
       "cycleOrdinal": 1,
-      "parentCycleId": "de59489371bc",
-      "parentCatalogHash": "bcbd68ef2d349369",
+      "parentCycleId": "792f0bb6f9f7",
+      "parentCatalogHash": "8156f4d87eaf4637",
       "completedSources": [
         "springsword",
         "nutsavior",
@@ -43,7 +43,7 @@
         "golden_boom",
         "gift_jungle"
       ],
-      "completedAt": "2026-08-19T04:53:24.441Z"
+      "completedAt": "2026-08-19T05:36:36.664Z"
     }
   ],
   "persistentFailCounts": {
@@ -59,5 +59,18 @@
     "golden_boom": 2,
     "gift_jungle": 0
   },
-  "updatedAt": "2026-08-19T04:53:24.441Z"
+  "persistentAttemptCounts": {
+    "springsword": 6,
+    "nutsavior": 6,
+    "all2rush": 4,
+    "classicsavior": 6,
+    "all2prayer": 6,
+    "suqing": 6,
+    "laddersel": 4,
+    "spade_multi": 6,
+    "gift_savior": 6,
+    "golden_boom": 6,
+    "gift_jungle": 5
+  },
+  "updatedAt": "2026-08-19T05:36:36.664Z"
 }

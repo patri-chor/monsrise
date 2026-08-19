@@ -20,7 +20,7 @@ export interface CatalogEntry {
   trainingScore: number;
   sourceRelativeScore: number;
   baselineScore: number;
-  maturity: string;
+  classification: string;
   controllableRatio: number;
   spatialBudget: number;
   branchesPruned: number;
@@ -75,7 +75,7 @@ export function exportRuntimeCatalog(opts: {
     trainingScore: e.obs.trainingScore,
     sourceRelativeScore: e.obs.sourceRelativeScore ?? 0,
     baselineScore: e.policy.baselineScore,
-    maturity: e.policy.maturity,
+    classification: e.policy.classification,
     controllableRatio: e.policy.controllableRatio,
     spatialBudget: e.policy.spatialBudget,
     branchesPruned: e.pruneResult?.totalBranchesPruned ?? 0,

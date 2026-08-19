@@ -1,11 +1,12 @@
 // ============================================================
-// T038R — 05_select.ts
-// 候选选择策略、自适应候选生成与排名
+// T039 — 05_select.ts
+// 纠正可控性语义、面板分类、自适应候选生成与排名
 //
 // 规范要求：
-//   - 成熟源（STRONG/MID）：受可控性预算限制生成单算子候选（spatial, transform, strategy_schedule_branch）
-//   - 弱源（WEAK）/连续失败达到阈值：触发确定性 multi_monster_exploration（2-4 个协调原子变更）
-//   - 真正生成合法 strategy_schedule_branch 候选（改变 cross-round 放置/手牌行为，满足 R1 约束）
+//   - 纠正可控性语义：controllableCount / teamSize (排除计算器控制单位)
+//   - 面板分类：PANEL_UNDERPERFORMER / PANEL_MID / PANEL_SATURATED
+//   - 3-attempt optimization episode 审计
+//   - 真正生成合法 strategy_schedule_branch 与 multi_monster_exploration
 //   - 严格使用聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY, isExperimentalFrontier）
 // ============================================================
 
@@ -25,37 +26,43 @@ import {
 } from './02_candidates';
 import { validateCandidateLegality } from './03_validate';
 
-// ---- 成熟度与升级阈值 ----
+// ---- 面板分类与阈值 ----
 
-export const MATURITY_STRONG_THRESHOLD = 0.92;   // >= 强/成熟
-export const MATURITY_MID_THRESHOLD    = 0.70;   // >= 中等
-export const LOW_CONTROLLABILITY_THRESHOLD = 0.30; // ratio <= 此值 → 空间预算归零
-export const SINGLE_OP_ESCALATION_LIMIT = 3;  // 连续 N 次无改进 → 升级至 multi_monster
+export const PANEL_SATURATED_THRESHOLD = 0.92;   // >= 饱和/高分
+export const PANEL_MID_THRESHOLD       = 0.70;   // >= 中等
+// < 0.70 = PANEL_UNDERPERFORMER (如 all2rush)
 
-// ---- 成熟度类型 ----
+export const LOW_CONTROLLABILITY_THRESHOLD = 0.30; // ratio <= 0.30 -> 空间预算归零 (如 all2rush, laddersel)
+export const SINGLE_OP_EPISODE_THRESHOLD   = 3;    // 完整优化 episode 至少 3 次单算子尝试
 
-export type SourceMaturity = 'STRONG' | 'MID' | 'WEAK';
+// ---- 分类类型 ----
+
+export type SourceClassification = 'PANEL_UNDERPERFORMER' | 'PANEL_MID' | 'PANEL_SATURATED';
 
 export interface SourcePolicy {
   sourceId: string;
   baselineScore: number;
-  maturity: SourceMaturity;
+  classification: SourceClassification;
+  controllableCount: number;
+  calculatedCount: number;
   controllableRatio: number;
   spatialBudget: number;    // 0-3，基于 controllableRatio × 3
   spatialBudgetReason: string;
   transformBudget: number;  // 1-2
   branchBudget: number;     // 1
   allowMultiMonster: boolean;
-  singleOpFailCount: number;
+  singleOpAttempts: number;
+  consecutiveFailCount: number;
   weakestSideScore: number | null;
   weakestSide: 1 | 2 | null;
 }
 
-/** 计算每个可执行源的自适应策略 */
+/** 计算每个可执行源的自适应策略（修正可控性语义） */
 export function computeSourcePolicies(
   execSources: Formation[],
   t037Obs: ScreenObservation[],
   persistentFailCounts: Map<string, number> = new Map(),
+  persistentAttemptCounts: Map<string, number> = new Map(),
 ): SourcePolicy[] {
   const baselineMap = new Map<string, ScreenObservation>(
     t037Obs.filter(o => o.entityKind === 'baseline').map(o => [o.sourceId, o]),
@@ -65,40 +72,55 @@ export function computeSourcePolicies(
     const srcId = (src as any).id;
     const baseline = baselineMap.get(srcId);
     const baselineScore = baseline?.trainingScore ?? 0;
-    const controllableRatio = (src as any).calculatedUnitRatio ?? 0;
-    const singleOpFailCount = persistentFailCounts.get(srcId) ?? 0;
+    const teamSize = Array.isArray((src as any).team) ? (src as any).team.length : 8;
 
-    const maturity: SourceMaturity =
-      baselineScore >= MATURITY_STRONG_THRESHOLD ? 'STRONG' :
-      baselineScore >= MATURITY_MID_THRESHOLD    ? 'MID' : 'WEAK';
+    // 纠正可控性语义：
+    // calculatedUnitRatio 是计算器控制单位比例（不可树调整）
+    // controllableCount = teamSize - calculatedCount
+    // controllableRatio = controllableCount / teamSize
+    const calculatedCount = (src as any).calculatedCount ?? Math.round(teamSize * ((src as any).calculatedUnitRatio ?? 0));
+    const controllableCount = (src as any).controllableCount ?? (teamSize - calculatedCount);
+    const controllableRatio = (src as any).controllableRatio ?? (controllableCount / teamSize);
 
-    // 空间预算 = base(3) × controllableRatio，rounded
+    const singleOpAttempts = persistentAttemptCounts.get(srcId) ?? 0;
+    const consecutiveFailCount = persistentFailCounts.get(srcId) ?? 0;
+
+    const classification: SourceClassification =
+      baselineScore >= PANEL_SATURATED_THRESHOLD ? 'PANEL_SATURATED' :
+      baselineScore >= PANEL_MID_THRESHOLD       ? 'PANEL_MID' : 'PANEL_UNDERPERFORMER';
+
+    // 空间预算计算
     let spatialBudget: number;
     let spatialBudgetReason: string;
     if (controllableRatio <= LOW_CONTROLLABILITY_THRESHOLD) {
       spatialBudget = 0;
-      spatialBudgetReason = `LOW_CONTROLLABILITY: ratio=${controllableRatio.toFixed(2)} <= ${LOW_CONTROLLABILITY_THRESHOLD}`;
-    } else if (maturity === 'STRONG') {
-      spatialBudget = Math.max(1, Math.round(3 * controllableRatio));
-      spatialBudgetReason = `STRONG_SOURCE: ratio=${controllableRatio.toFixed(2)}`;
+      spatialBudgetReason = `LOW_CONTROLLABILITY: controllableRatio=${controllableRatio.toFixed(3)} <= ${LOW_CONTROLLABILITY_THRESHOLD} (${controllableCount}/${teamSize} controllable)`;
     } else {
-      spatialBudget = Math.round(3 * controllableRatio);
-      spatialBudgetReason = `${maturity}_SOURCE: ratio=${controllableRatio.toFixed(2)}`;
+      spatialBudget = Math.max(1, Math.round(3 * controllableRatio));
+      spatialBudgetReason = `HIGH_CONTROLLABILITY: controllableRatio=${controllableRatio.toFixed(3)} (${controllableCount}/${teamSize} controllable, budget=${spatialBudget})`;
     }
 
     const transformBudget = controllableRatio <= LOW_CONTROLLABILITY_THRESHOLD ? 2 : 1;
 
+    // 只有在经历了完整的 optimization episode (至少 3 次单算子尝试) 之后，
+    // 或作为 PANEL_UNDERPERFORMER 的扩展预算，才允许触发 multi_monster_exploration
+    const allowMultiMonster = (classification === 'PANEL_UNDERPERFORMER' && singleOpAttempts >= 1) ||
+                              (singleOpAttempts >= SINGLE_OP_EPISODE_THRESHOLD && consecutiveFailCount >= 2);
+
     return {
       sourceId: srcId,
       baselineScore,
-      maturity,
+      classification,
+      controllableCount,
+      calculatedCount,
       controllableRatio,
       spatialBudget,
       spatialBudgetReason,
       transformBudget,
       branchBudget: 1,
-      allowMultiMonster: maturity === 'WEAK' || singleOpFailCount >= SINGLE_OP_ESCALATION_LIMIT,
-      singleOpFailCount,
+      allowMultiMonster,
+      singleOpAttempts,
+      consecutiveFailCount,
       weakestSideScore: null,
       weakestSide: null,
     };
@@ -139,7 +161,7 @@ export function generateAdaptiveCandidatesForSource(opts: {
     candidates.push(entry);
   };
 
-  // 1. spatial_local (根据 spatialBudget)
+  // 1. spatial_local (严格根据 spatialBudget)
   if (policy.spatialBudget > 0) {
     const controllable = getControllablePlacements(parentEvol, new Set());
     if (controllable.length > 0) {
@@ -182,7 +204,7 @@ export function generateAdaptiveCandidatesForSource(opts: {
                 },
                 evol: clone,
               });
-              break; // 只要生成 1 个有效的即可
+              break;
             }
           }
         }
@@ -192,7 +214,6 @@ export function generateAdaptiveCandidatesForSource(opts: {
 
   // 2. formation_transform (变换算子)
   if (policy.transformBudget > 0) {
-    // 尝试垂直翻转 (y' = 4 - y)
     const clone = cloneEvolFormation(parentEvol);
     let transformValid = true;
     const mapping: Array<{ nodeId: string; monsterId: number; fromX: number; fromY: number; toX: number; toY: number }> = [];
@@ -244,18 +265,15 @@ export function generateAdaptiveCandidatesForSource(opts: {
   // 3. strategy_schedule_branch (真实生成策略分支)
   if (policy.branchBudget > 0) {
     const clone = cloneEvolFormation(parentEvol);
-    // 寻找根节点 (round 1)
     const r1Node = walkEvolNodes(clone.root).find(n => n.round === 1);
     if (r1Node && r1Node.placements.length > 0) {
-      // 构造一个新的 R1 分支节点：side-aware (例如 side: 2) 或 fullrush 对手响应
       const branchMask: FeatureMask = { side: 2, main: null, subs: [], keys: [] };
-      // 检查是否已有同 mask 分支
       const existingBranch = r1Node.children?.find(c => c.condition.side === 2);
       if (!existingBranch) {
         const branchPlacement = r1Node.placements.map(p => ({
           monsterId: p.monsterId,
           x: p.x,
-          y: Math.min(4, p.y + 1), // 放置微调
+          y: Math.min(4, p.y + 1),
         }));
         const newBranchNode: EvolNode = {
           id: `b_side2_${r1Node.id}_c${cycleOrdinal}`,
@@ -300,7 +318,6 @@ export function generateAdaptiveCandidatesForSource(opts: {
     const clone = cloneEvolFormation(parentEvol);
     const controllable = getControllablePlacements(clone, new Set());
     if (controllable.length >= 2) {
-      // 确定性选取 2 个怪物进行协同位置微调 (2 atomic moves)
       const p1 = controllable[0];
       const p2 = controllable[1];
       const atomicChanges: Array<{ type: string; nodeId?: string; monsterId?: number; description: string }> = [];
@@ -348,8 +365,8 @@ export function generateAdaptiveCandidatesForSource(opts: {
           rollbackParentFingerprint: parentFp,
           changeCount: changed,
           atomicChanges,
-          escalationReason: `SINGLE_OP_FAIL_THRESHOLD_REACHED: failCount=${policy.singleOpFailCount}`,
-          failedSingleOperatorCount: policy.singleOpFailCount,
+          escalationReason: `EPISODE_ESCALATION: attempts=${policy.singleOpAttempts}, failCount=${policy.consecutiveFailCount}`,
+          failedSingleOperatorCount: policy.consecutiveFailCount,
         };
 
         addCandidateIfValid({
@@ -441,7 +458,9 @@ export interface CycleDecisionRecord {
   cycleId: string;
   cycleOrdinal: number;
   sourceId: string;
-  maturity: SourceMaturity;
+  classification: SourceClassification;
+  controllableCount: number;
+  calculatedCount: number;
   controllableRatio: number;
   spatialBudget: number;
   spatialBudgetReason: string;
@@ -451,7 +470,8 @@ export interface CycleDecisionRecord {
   bestCandidateRel: number | null;
   isExperimentalFrontier: boolean;
   candidatesScreened: number;
-  singleOpFailCount: number;
+  singleOpAttempts: number;
+  consecutiveFailCount: number;
   escalatedToMultiMonster: boolean;
   escalationReason: string | null;
   decidedAt: string;

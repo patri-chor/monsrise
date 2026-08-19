@@ -29,6 +29,7 @@ export interface SourceRecord {
   calculatedUnitRatio: number;
   calculatedCount: number;
   controllableCount: number;
+  controllableRatio: number;
   sourceMetadata?: {
     sourceId: string;
     repairKind: string;
@@ -85,18 +86,25 @@ export function loadProductSources(): LoadedSources {
   const executable = all.filter((s: any) => !s.isLegacyBaseline);
   const legacy = all.filter((s: any) => s.isLegacyBaseline);
 
-  const records: SourceRecord[] = raw.map((s: any) => ({
-    sourceIndex: s.sourceIndex,
-    id: s.id,
-    name: s.name,
-    archetype: s.archetype,
-    isLegacyBaseline: s.isLegacyBaseline,
-    fingerprint: s.fingerprint,
-    calculatedUnitRatio: s.calculatedUnitRatio ?? 0,
-    calculatedCount: s.calculatedCount ?? 0,
-    controllableCount: s.controllableCount ?? 0,
-    sourceMetadata: s.sourceMetadata,
-  }));
+  const records: SourceRecord[] = raw.map((s: any) => {
+    const teamSize = Array.isArray(s.team) ? s.team.length : 8;
+    const calcCount = s.calculatedCount ?? Math.round(teamSize * (s.calculatedUnitRatio ?? 0));
+    const ctrlCount = s.controllableCount ?? (teamSize - calcCount);
+    const controllableRatio = ctrlCount / teamSize;
+    return {
+      sourceIndex: s.sourceIndex,
+      id: s.id,
+      name: s.name,
+      archetype: s.archetype,
+      isLegacyBaseline: s.isLegacyBaseline,
+      fingerprint: s.fingerprint,
+      calculatedUnitRatio: s.calculatedUnitRatio ?? 0,
+      calculatedCount: calcCount,
+      controllableCount: ctrlCount,
+      controllableRatio,
+      sourceMetadata: s.sourceMetadata,
+    };
+  });
 
   return {
     all,

@@ -164,10 +164,11 @@ check('each entity observation has totalCells=14', () => {
   assert(errors.length === 0, errors.join('; '));
 });
 
-check('each entity observation has totalGames=140', () => {
+check('each T037 entity observation has totalGames=140', () => {
   const errors: string[] = [];
-  for (const obs of obsLines) {
-    if (obs.totalGames !== 140) errors.push(`${obs.entityId}: totalGames=${obs.totalGames}`);
+  for (const eid of entityIds) {
+    const obs = obsLines.find((o: any) => o.entityId === eid);
+    if (obs && obs.totalGames !== 140) errors.push(`${eid}: totalGames=${obs.totalGames}`);
   }
   assert(errors.length === 0, errors.join('; '));
 });

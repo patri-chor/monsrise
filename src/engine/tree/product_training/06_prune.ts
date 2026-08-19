@@ -25,8 +25,8 @@ export const PRUNE_REGRESSION_TOLERANCE = 0.05;
 /** 单侧最弱侧 regression 超过此值则拒绝 */
 export const PRUNE_WEAKEST_SIDE_TOLERANCE = 0.07;
 
-/** 剪枝验证局数（轻量采样） */
-export const PRUNE_GAMES_PER_CELL = 5;
+/** 剪枝验证局数（Stage B 采样：3 games/cell = 42 games/candidate） */
+export const PRUNE_GAMES_PER_CELL = 3;
 
 export interface PruneTrialRecord {
   recordId: string;

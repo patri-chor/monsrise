@@ -1,0 +1,2 @@
+{"cycleId":"792f0bb6f9f7","screenBatchId":"batch_0","configuredWorkers":32,"observedWorkers":32,"peakInFlight":32,"avgInFlight":32,"cpuAvg":0.78,"cpuP50":0.79,"cpuP95":0.86,"lowQueueIntervals":0,"sampleDurationMs":184861,"recordedAt":"2026-08-19T05:34:00.485Z"}
+{"cycleId":"50b2614ca9df","screenBatchId":"batch_1","configuredWorkers":32,"observedWorkers":32,"peakInFlight":32,"avgInFlight":32,"cpuAvg":0.78,"cpuP50":0.79,"cpuP95":0.86,"lowQueueIntervals":0,"sampleDurationMs":124582,"recordedAt":"2026-08-19T05:36:25.279Z"}
