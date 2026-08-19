@@ -175,13 +175,14 @@ export function evaluateStageTransition(opts: {
   const relScore = overallScore - baselineScore;
 
   // 寻找最弱对手与最弱侧
-  let weakestOpponentId = '';
+  const oppEntries = Object.entries(oppScores);
+  let weakestOpponentId = oppEntries.length > 0 ? oppEntries[0][0] : 'opp_0';
   let weakestOpponentScore = 1.0;
-  for (const [oppId, stat] of Object.entries(oppScores)) {
+  for (const [oppId, stat] of oppEntries) {
     const oppTotal = stat.w + stat.d + stat.l;
     const oppScore = oppTotal > 0 ? (stat.w + 0.5 * stat.d) / oppTotal : 0;
     stat.score = oppScore;
-    if (oppScore < weakestOpponentScore) {
+    if (oppScore <= weakestOpponentScore) {
       weakestOpponentScore = oppScore;
       weakestOpponentId = oppId;
     }
@@ -209,12 +210,14 @@ export function evaluateStageTransition(opts: {
   // 阶梯跃迁状态机
   if (currentStage === 'STAGE_3_EARLY_BUNDLE') {
     // Stage 3 -> Stage 2：Early Bundle 8 向量达标 (relScore >= -0.05 且 overallScore >= 0.70)
-    if (relScore >= -0.05 && overallScore >= 0.70) {
+    const meetsRel = relScore >= -0.05;
+    const meetsAbs = overallScore >= 0.70;
+    if (meetsRel && meetsAbs) {
       return {
         nextStage: 'STAGE_2_STRONG_POOL',
         decision: 'STAGE_PROMOTED',
         isSpecialist: false,
-        reason: `Early Bundle 8 qualified: overallScore=${overallScore.toFixed(3)}, rel=${relScore.toFixed(3)} >= -0.05 -> Advance to Stage 2`,
+        reason: `Early Bundle 8 qualified: overallScore=${overallScore.toFixed(3)} >= 0.70, rel=${relScore.toFixed(3)} >= -0.05 -> Advance to Stage 2`,
         overallScore,
         relScore,
         weakestOpponentId,
@@ -222,11 +225,14 @@ export function evaluateStageTransition(opts: {
         weakestSide,
       };
     } else {
+      const failReason = !meetsRel
+        ? `relScore=${relScore.toFixed(3)} < -0.05`
+        : `overallScore=${overallScore.toFixed(3)} < 0.70`;
       return {
         nextStage: 'STAGE_3_EARLY_BUNDLE',
         decision: 'STAGE_RETAINED',
         isSpecialist: false,
-        reason: `Early Bundle 8 not qualified: rel=${relScore.toFixed(3)} < -0.05 -> Retained at Stage 3`,
+        reason: `Early Bundle 8 not qualified: ${failReason} -> Retained at Stage 3`,
         overallScore,
         relScore,
         weakestOpponentId,
@@ -266,13 +272,13 @@ export function evaluateStageTransition(opts: {
   }
 
   if (currentStage === 'STAGE_1_STRONG_EPISODE') {
-    // Stage 1 -> Melee：完成 Stage-1 focused episode (>= 1 次专注调优且整体稳定)
-    if (stage1EpisodesCompleted >= 1 && relScore >= 0.000) {
+    // 必须完成完整的 Stage-1 聚焦优化 episode (至少 3 次实际针对性优化记录) 且保持稳定 (relScore >= 0.000)
+    if (stage1EpisodesCompleted >= 3 && relScore >= 0.000) {
       return {
         nextStage: 'MELEE',
         decision: 'STAGE_PROMOTED',
         isSpecialist: false,
-        reason: `Stage 1 focused episode complete (${stage1EpisodesCompleted} episodes, rel=${relScore.toFixed(3)}) -> Advance to Melee mixed pool`,
+        reason: `Stage 1 focused episode complete (${stage1EpisodesCompleted} >= 3 attempts, rel=${relScore.toFixed(3)} >= 0.000) -> Advance to Melee probabilistic sampling`,
         overallScore,
         relScore,
         weakestOpponentId,
@@ -280,11 +286,14 @@ export function evaluateStageTransition(opts: {
         weakestSide,
       };
     } else {
+      const failReason = stage1EpisodesCompleted < 3
+        ? `episode incomplete (${stage1EpisodesCompleted}/3 attempts)`
+        : `relScore=${relScore.toFixed(3)} < 0.000`;
       return {
         nextStage: 'STAGE_1_STRONG_EPISODE',
         decision: 'STAGE_RETAINED',
         isSpecialist: false,
-        reason: `Stage 1 focused episode continuing (episodes=${stage1EpisodesCompleted}, targeting ${weakestOpponentId}/side${weakestSide})`,
+        reason: `Stage 1 focused episode continuing: ${failReason} (targeting ${weakestOpponentId}/side${weakestSide})`,
         overallScore,
         relScore,
         weakestOpponentId,
@@ -302,7 +311,7 @@ export function evaluateStageTransition(opts: {
         nextStage: 'EXPERIMENTAL_FRONTIER',
         decision: 'STAGE_PROMOTED',
         isSpecialist: false,
-        reason: `Melee mixed pool stability verified (score=${overallScore.toFixed(3)}, rel=${relScore.toFixed(3)}, weakestMatchup=${weakestOpponentId}@${weakestOpponentScore.toFixed(3)}) -> EXPERIMENTAL_FRONTIER`,
+        reason: `Melee probabilistic sampling stability verified (score=${overallScore.toFixed(3)}, rel=${relScore.toFixed(3)} >= 0.000, weakestMatchup=${weakestOpponentId}@${weakestOpponentScore.toFixed(3)}) -> EXPERIMENTAL_FRONTIER`,
         overallScore,
         relScore,
         weakestOpponentId,

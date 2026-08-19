@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "T041_MELEE_SAMPLING_MANIFEST_V1",
+  "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+  "meleeRevision": "v1.0.0-t041-lineage",
+  "baseSeed": 41000,
+  "eligibleArchetypes": [
+    "springsword",
+    "nutsavior",
+    "all2rush",
+    "classicsavior",
+    "all2prayer",
+    "suqing",
+    "laddersel",
+    "spade_multi",
+    "gift_savior",
+    "golden_boom",
+    "gift_jungle"
+  ],
+  "archetypeCount": 11,
+  "topLevelArchetypeProbability": 0.09090909090909091,
+  "minimumPairsPerArchetype": 1,
+  "samplePairBudget": 16,
+  "members": [
+    {
+      "memberId": "springsword",
+      "formationSnapshotFingerprint": "199220465e46",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "lineageProof": "direct_root_source:springsword",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "prayer"
+      ],
+      "selectionReason": "Primary T1 representative for archetype springsword"
+    },
+    {
+      "memberId": "nutsavior",
+      "formationSnapshotFingerprint": "adf84ded3b73",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "lineageProof": "direct_root_source:nutsavior",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "half_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype nutsavior"
+    },
+    {
+      "memberId": "all2rush",
+      "formationSnapshotFingerprint": "157be1f9b219",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "lineageProof": "direct_root_source:all2rush",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "full_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype all2rush"
+    },
+    {
+      "memberId": "classicsavior",
+      "formationSnapshotFingerprint": "471c28e13f11",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "lineageProof": "direct_root_source:classicsavior",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "full_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype classicsavior"
+    },
+    {
+      "memberId": "all2prayer",
+      "formationSnapshotFingerprint": "5e0600c16478",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "lineageProof": "direct_root_source:all2prayer",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "prayer"
+      ],
+      "selectionReason": "Primary T1 representative for archetype all2prayer"
+    },
+    {
+      "memberId": "suqing",
+      "formationSnapshotFingerprint": "681905685e85",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "lineageProof": "direct_root_source:suqing",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "half_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype suqing"
+    },
+    {
+      "memberId": "laddersel",
+      "formationSnapshotFingerprint": "06dbc598758a",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "lineageProof": "direct_root_source:laddersel",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "full_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype laddersel"
+    },
+    {
+      "memberId": "spade_multi",
+      "formationSnapshotFingerprint": "42b95f0e2f20",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "lineageProof": "direct_root_source:spade_multi",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "prayer"
+      ],
+      "selectionReason": "Primary T1 representative for archetype spade_multi"
+    },
+    {
+      "memberId": "gift_savior",
+      "formationSnapshotFingerprint": "14e946358ffd",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "lineageProof": "direct_root_source:gift_savior",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "half_rush"
+      ],
+      "selectionReason": "Primary T1 representative for archetype gift_savior"
+    },
+    {
+      "memberId": "golden_boom",
+      "formationSnapshotFingerprint": "ef0c73839d7e",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "lineageProof": "direct_root_source:golden_boom",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "prayer"
+      ],
+      "selectionReason": "Primary T1 representative for archetype golden_boom"
+    },
+    {
+      "memberId": "gift_jungle",
+      "formationSnapshotFingerprint": "1f7554a84e29",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "lineageProof": "direct_root_source:gift_jungle",
+      "rawStrengthScore": 0.85,
+      "smoothedWeight": 1,
+      "auxiliaryTags": [
+        "archetype_root",
+        "prayer"
+      ],
+      "selectionReason": "Primary T1 representative for archetype gift_jungle"
+    }
+  ],
+  "manifestHash": "815cf41f330c5a4d",
+  "createdAt": "2026-08-19T06:51:33.193Z"
+}

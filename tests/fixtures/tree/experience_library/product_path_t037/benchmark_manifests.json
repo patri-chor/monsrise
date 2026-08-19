@@ -1,7 +1,7 @@
 {
   "schemaVersion": "T040_BENCHMARK_MANIFEST_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "createdAt": "2026-08-19T06:19:05.429Z",
+  "createdAt": "2026-08-19T06:51:33.187Z",
   "earlyBundleStage3": {
     "poolName": "STAGE_3_EARLY_BUNDLE_8",
     "revision": "v1.0.0-t040",

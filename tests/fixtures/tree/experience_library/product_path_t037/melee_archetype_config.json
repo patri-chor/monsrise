@@ -1,0 +1,251 @@
+{
+  "schemaVersion": "T041_ARCHETYPE_CONFIG_V1",
+  "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+  "revision": "v1.0.0-t041-lineage",
+  "totalArchetypes": 11,
+  "totalMembers": 11,
+  "archetypes": [
+    {
+      "archetypeId": "springsword",
+      "rootSourceId": "springsword",
+      "archetypeName": "泉水剑",
+      "description": "Root T1 archetype governed by source springsword",
+      "members": [
+        {
+          "memberId": "springsword",
+          "formationSnapshotFingerprint": "199220465e46",
+          "primaryArchetype": "springsword",
+          "rootSourceId": "springsword",
+          "lineageProof": "direct_root_source:springsword",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "prayer"
+          ],
+          "selectionReason": "Primary T1 representative for archetype springsword"
+        }
+      ]
+    },
+    {
+      "archetypeId": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "archetypeName": "坚果救星",
+      "description": "Root T1 archetype governed by source nutsavior",
+      "members": [
+        {
+          "memberId": "nutsavior",
+          "formationSnapshotFingerprint": "adf84ded3b73",
+          "primaryArchetype": "nutsavior",
+          "rootSourceId": "nutsavior",
+          "lineageProof": "direct_root_source:nutsavior",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "half_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype nutsavior"
+        }
+      ]
+    },
+    {
+      "archetypeId": "all2rush",
+      "rootSourceId": "all2rush",
+      "archetypeName": "全二冲",
+      "description": "Root T1 archetype governed by source all2rush",
+      "members": [
+        {
+          "memberId": "all2rush",
+          "formationSnapshotFingerprint": "157be1f9b219",
+          "primaryArchetype": "all2rush",
+          "rootSourceId": "all2rush",
+          "lineageProof": "direct_root_source:all2rush",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "full_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype all2rush"
+        }
+      ]
+    },
+    {
+      "archetypeId": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "archetypeName": "经典救星",
+      "description": "Root T1 archetype governed by source classicsavior",
+      "members": [
+        {
+          "memberId": "classicsavior",
+          "formationSnapshotFingerprint": "471c28e13f11",
+          "primaryArchetype": "classicsavior",
+          "rootSourceId": "classicsavior",
+          "lineageProof": "direct_root_source:classicsavior",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "full_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype classicsavior"
+        }
+      ]
+    },
+    {
+      "archetypeId": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "archetypeName": "全二永平",
+      "description": "Root T1 archetype governed by source all2prayer",
+      "members": [
+        {
+          "memberId": "all2prayer",
+          "formationSnapshotFingerprint": "5e0600c16478",
+          "primaryArchetype": "all2prayer",
+          "rootSourceId": "all2prayer",
+          "lineageProof": "direct_root_source:all2prayer",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "prayer"
+          ],
+          "selectionReason": "Primary T1 representative for archetype all2prayer"
+        }
+      ]
+    },
+    {
+      "archetypeId": "suqing",
+      "rootSourceId": "suqing",
+      "archetypeName": "肃清",
+      "description": "Root T1 archetype governed by source suqing",
+      "members": [
+        {
+          "memberId": "suqing",
+          "formationSnapshotFingerprint": "681905685e85",
+          "primaryArchetype": "suqing",
+          "rootSourceId": "suqing",
+          "lineageProof": "direct_root_source:suqing",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "half_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype suqing"
+        }
+      ]
+    },
+    {
+      "archetypeId": "laddersel",
+      "rootSourceId": "laddersel",
+      "archetypeName": "梯子塞雷",
+      "description": "Root T1 archetype governed by source laddersel",
+      "members": [
+        {
+          "memberId": "laddersel",
+          "formationSnapshotFingerprint": "06dbc598758a",
+          "primaryArchetype": "laddersel",
+          "rootSourceId": "laddersel",
+          "lineageProof": "direct_root_source:laddersel",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "full_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype laddersel"
+        }
+      ]
+    },
+    {
+      "archetypeId": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "archetypeName": "铲土多核",
+      "description": "Root T1 archetype governed by source spade_multi",
+      "members": [
+        {
+          "memberId": "spade_multi",
+          "formationSnapshotFingerprint": "42b95f0e2f20",
+          "primaryArchetype": "spade_multi",
+          "rootSourceId": "spade_multi",
+          "lineageProof": "direct_root_source:spade_multi",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "prayer"
+          ],
+          "selectionReason": "Primary T1 representative for archetype spade_multi"
+        }
+      ]
+    },
+    {
+      "archetypeId": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "archetypeName": "礼物救星",
+      "description": "Root T1 archetype governed by source gift_savior",
+      "members": [
+        {
+          "memberId": "gift_savior",
+          "formationSnapshotFingerprint": "14e946358ffd",
+          "primaryArchetype": "gift_savior",
+          "rootSourceId": "gift_savior",
+          "lineageProof": "direct_root_source:gift_savior",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "half_rush"
+          ],
+          "selectionReason": "Primary T1 representative for archetype gift_savior"
+        }
+      ]
+    },
+    {
+      "archetypeId": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "archetypeName": "壕炸金猴",
+      "description": "Root T1 archetype governed by source golden_boom",
+      "members": [
+        {
+          "memberId": "golden_boom",
+          "formationSnapshotFingerprint": "ef0c73839d7e",
+          "primaryArchetype": "golden_boom",
+          "rootSourceId": "golden_boom",
+          "lineageProof": "direct_root_source:golden_boom",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "prayer"
+          ],
+          "selectionReason": "Primary T1 representative for archetype golden_boom"
+        }
+      ]
+    },
+    {
+      "archetypeId": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "archetypeName": "礼物丛林",
+      "description": "Root T1 archetype governed by source gift_jungle",
+      "members": [
+        {
+          "memberId": "gift_jungle",
+          "formationSnapshotFingerprint": "1f7554a84e29",
+          "primaryArchetype": "gift_jungle",
+          "rootSourceId": "gift_jungle",
+          "lineageProof": "direct_root_source:gift_jungle",
+          "rawStrengthScore": 0.85,
+          "smoothedWeight": 1,
+          "auxiliaryTags": [
+            "archetype_root",
+            "prayer"
+          ],
+          "selectionReason": "Primary T1 representative for archetype gift_jungle"
+        }
+      ]
+    }
+  ]
+}
