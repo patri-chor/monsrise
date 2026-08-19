@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "T044_TIER_POLICY_V1",
+  "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+  "policyRevision": "v1.0.0-t044-two-axis",
+  "hysteresisThresholds": {
+    "t3ToT2GateL3": 0.55,
+    "t2ToT1GateL2": 0.6,
+    "t1ToT2DemoteL2": 0.55,
+    "hysteresisBandL2": [
+      0.55,
+      0.6
+    ]
+  },
+  "learningLevels": {
+    "L3": {
+      "name": "Early Bundle 8",
+      "opponentCount": 8,
+      "description": "Early 7 bundles + historical Gift Jungle"
+    },
+    "L2": {
+      "name": "Frozen T0 11",
+      "opponentCount": 11,
+      "description": "Original frozen 11 root formations benchmark"
+    },
+    "L1": {
+      "name": "Lineage Probabilistic Melee",
+      "description": "T042 Root-Lineage Melee Catalog sampling"
+    }
+  },
+  "permissionRules": {
+    "T3": {
+      "allowedLevels": [
+        "L3"
+      ],
+      "canDispatchL2": false,
+      "canDispatchL1": false
+    },
+    "T2": {
+      "allowedLevels": [
+        "L3",
+        "L2"
+      ],
+      "canDispatchL2": true,
+      "canDispatchL1": false
+    },
+    "T1": {
+      "allowedLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "canDispatchL2": true,
+      "canDispatchL1": true,
+      "l1EligibilityRequiresL2Attempts": 3
+    },
+    "T0": {
+      "immutable": true,
+      "role": "ANCHOR_ROOT_SOURCE_AND_L2_BENCHMARK"
+    }
+  }
+}

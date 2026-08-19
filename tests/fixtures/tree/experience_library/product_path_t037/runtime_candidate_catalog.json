@@ -1,26 +1,26 @@
 {
   "schemaVersion": "T038_CATALOG_V1",
-  "protocol": "PRODUCT_PATH_T042_V1",
+  "protocol": "PRODUCT_PATH_T044_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
   "integrationStatus": "EXPERIMENTAL_UNVERIFIED_NOT_FOR_AUTO_INTEGRATION",
   "formalPromotionStatus": "NOT_EVALUATED",
   "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE",
-  "cycleId": "ce71b2b500b2",
+  "cycleId": "06354fa94c9f",
   "cycleOrdinal": 1,
-  "parentCatalogHash": "615e504537238358",
-  "exportedAt": "2026-08-19T07:26:48.592Z",
+  "parentCatalogHash": "8f033d9308892219",
+  "exportedAt": "2026-08-19T08:02:01.014Z",
   "totalSources": 11,
   "totalEntries": 11,
-  "experimentalFrontierCount": 5,
-  "catalogHash": "eecb5c53d6f41d07",
+  "experimentalFrontierCount": 3,
+  "catalogHash": "149c429e0bb1d99b",
   "entries": [
     {
       "sourceId": "springsword",
       "candidateId": "cand:springsword:formation_transform:c1_flip",
       "operatorFamily": "formation_transform",
       "canonicalFingerprint": "398067d0e3de36366f1d59d8",
-      "trainingScore": 1,
-      "sourceRelativeScore": 0,
+      "trainingScore": 0.9545454545454546,
+      "sourceRelativeScore": -0.045454545454545414,
       "baselineScore": 1,
       "classification": "PANEL_SATURATED",
       "controllableRatio": 0.75,
@@ -28,9 +28,9 @@
       "branchesPruned": 0,
       "pruneTrials": 0,
       "finalFingerprint": "398067d0e3de36366f1d59d8",
-      "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "isExperimentalFrontier": true,
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "nutsavior",
@@ -47,16 +47,16 @@
       "pruneTrials": 0,
       "finalFingerprint": "8e194c28d733ed5f6d806627",
       "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "all2rush",
       "candidateId": "cand:all2rush:formation_transform:c1_flip",
       "operatorFamily": "formation_transform",
       "canonicalFingerprint": "3be86bcc85837cf70b2b0a26",
-      "trainingScore": 0.625,
-      "sourceRelativeScore": 0.125,
+      "trainingScore": 0.6363636363636364,
+      "sourceRelativeScore": 0.13636363636363635,
       "baselineScore": 0.5,
       "classification": "PANEL_UNDERPERFORMER",
       "controllableRatio": 0.25,
@@ -65,8 +65,8 @@
       "pruneTrials": 0,
       "finalFingerprint": "3be86bcc85837cf70b2b0a26",
       "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "classicsavior",
@@ -80,19 +80,19 @@
       "controllableRatio": 0.375,
       "spatialBudget": 1,
       "branchesPruned": 0,
-      "pruneTrials": 2,
+      "pruneTrials": 0,
       "finalFingerprint": "1d7f53659e49d33920ae4140",
-      "isExperimentalFrontier": true,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "isExperimentalFrontier": false,
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "all2prayer",
       "candidateId": "cand:all2prayer:formation_transform:c1_flip",
       "operatorFamily": "formation_transform",
       "canonicalFingerprint": "5b12180eb316ecf4287830ea",
-      "trainingScore": 0.8636363636363636,
-      "sourceRelativeScore": 0.07792207792207795,
+      "trainingScore": 0.8522727272727273,
+      "sourceRelativeScore": 0.0665584415584416,
       "baselineScore": 0.7857142857142857,
       "classification": "PANEL_MID",
       "controllableRatio": 0.625,
@@ -101,34 +101,34 @@
       "pruneTrials": 0,
       "finalFingerprint": "5b12180eb316ecf4287830ea",
       "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "suqing",
       "candidateId": "cand:suqing:spatial_local:c1_124",
       "operatorFamily": "spatial_local",
       "canonicalFingerprint": "d379b67e12ce971828aed0e3",
-      "trainingScore": 1,
-      "sourceRelativeScore": 0.1071428571428571,
+      "trainingScore": 0.9318181818181818,
+      "sourceRelativeScore": 0.03896103896103886,
       "baselineScore": 0.8928571428571429,
       "classification": "PANEL_MID",
       "controllableRatio": 0.5,
       "spatialBudget": 2,
       "branchesPruned": 0,
-      "pruneTrials": 1,
+      "pruneTrials": 0,
       "finalFingerprint": "d379b67e12ce971828aed0e3",
-      "isExperimentalFrontier": true,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "isExperimentalFrontier": false,
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "laddersel",
       "candidateId": "cand:laddersel:strategy_schedule_branch:c1_side2",
       "operatorFamily": "strategy_schedule_branch",
       "canonicalFingerprint": "c952bae8bff6b6538b0c1e0f",
-      "trainingScore": 0.8636363636363636,
-      "sourceRelativeScore": 0.006493506493506551,
+      "trainingScore": 0.75,
+      "sourceRelativeScore": -0.1071428571428571,
       "baselineScore": 0.8571428571428571,
       "classification": "PANEL_MID",
       "controllableRatio": 0.125,
@@ -137,8 +137,8 @@
       "pruneTrials": 0,
       "finalFingerprint": "c952bae8bff6b6538b0c1e0f",
       "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "spade_multi",
@@ -154,27 +154,27 @@
       "branchesPruned": 0,
       "pruneTrials": 0,
       "finalFingerprint": "504207a42df9fe32e0f6cace",
-      "isExperimentalFrontier": true,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "isExperimentalFrontier": false,
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "gift_savior",
-      "candidateId": "cand:gift_savior:spatial_local:c1_116",
-      "operatorFamily": "spatial_local",
-      "canonicalFingerprint": "3865970cb04411f46d48d5e6",
-      "trainingScore": 0.875,
-      "sourceRelativeScore": -0.125,
+      "candidateId": "cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "operatorFamily": "strategy_schedule_branch",
+      "canonicalFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
+      "trainingScore": 0.8409090909090909,
+      "sourceRelativeScore": -0.15909090909090906,
       "baselineScore": 1,
       "classification": "PANEL_SATURATED",
       "controllableRatio": 0.75,
       "spatialBudget": 2,
       "branchesPruned": 0,
       "pruneTrials": 0,
-      "finalFingerprint": "3865970cb04411f46d48d5e6",
+      "finalFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
       "isExperimentalFrontier": false,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "golden_boom",
@@ -191,8 +191,8 @@
       "pruneTrials": 1,
       "finalFingerprint": "2008f84a374567252b35f7cd",
       "isExperimentalFrontier": true,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     },
     {
       "sourceId": "gift_jungle",
@@ -209,8 +209,8 @@
       "pruneTrials": 1,
       "finalFingerprint": "f713471a3b7b62a17b9bf5b6",
       "isExperimentalFrontier": true,
-      "cycleId": "ce71b2b500b2",
-      "exportedAt": "2026-08-19T07:26:48.592Z"
+      "cycleId": "06354fa94c9f",
+      "exportedAt": "2026-08-19T08:02:01.014Z"
     }
   ]
 }

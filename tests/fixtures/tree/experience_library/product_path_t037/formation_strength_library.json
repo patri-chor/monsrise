@@ -1,0 +1,853 @@
+{
+  "schemaVersion": "T044_FORMATION_STRENGTH_LIBRARY_V1",
+  "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+  "policyRevision": "v1.0.0-t044-two-axis",
+  "updatedAt": "2026-08-19T08:01:55.678Z",
+  "counts": {
+    "T0Count": 11,
+    "T1Count": 29,
+    "T2Count": 0,
+    "T3Count": 2,
+    "T1L1EligibleCount": 0,
+    "T1L1StableCount": 4,
+    "T1L1DiagnoseRequiredCount": 25
+  },
+  "formations": [
+    {
+      "formationId": "t0:springsword",
+      "canonicalFingerprint": "199220465e46",
+      "rootT0SourceId": "springsword",
+      "lineageProof": "immutable_root_t0:springsword",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:nutsavior",
+      "canonicalFingerprint": "adf84ded3b73",
+      "rootT0SourceId": "nutsavior",
+      "lineageProof": "immutable_root_t0:nutsavior",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:all2rush",
+      "canonicalFingerprint": "157be1f9b219",
+      "rootT0SourceId": "all2rush",
+      "lineageProof": "immutable_root_t0:all2rush",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.5,
+      "l1Score": 0.5,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:classicsavior",
+      "canonicalFingerprint": "471c28e13f11",
+      "rootT0SourceId": "classicsavior",
+      "lineageProof": "immutable_root_t0:classicsavior",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.7142857142857143,
+      "l1Score": 0.7142857142857143,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:all2prayer",
+      "canonicalFingerprint": "5e0600c16478",
+      "rootT0SourceId": "all2prayer",
+      "lineageProof": "immutable_root_t0:all2prayer",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.7857142857142857,
+      "l1Score": 0.7857142857142857,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:suqing",
+      "canonicalFingerprint": "681905685e85",
+      "rootT0SourceId": "suqing",
+      "lineageProof": "immutable_root_t0:suqing",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.8928571428571429,
+      "l1Score": 0.8928571428571429,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:laddersel",
+      "canonicalFingerprint": "06dbc598758a",
+      "rootT0SourceId": "laddersel",
+      "lineageProof": "immutable_root_t0:laddersel",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.8571428571428571,
+      "l1Score": 0.8571428571428571,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:spade_multi",
+      "canonicalFingerprint": "42b95f0e2f20",
+      "rootT0SourceId": "spade_multi",
+      "lineageProof": "immutable_root_t0:spade_multi",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.7857142857142857,
+      "l1Score": 0.7857142857142857,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:gift_savior",
+      "canonicalFingerprint": "14e946358ffd",
+      "rootT0SourceId": "gift_savior",
+      "lineageProof": "immutable_root_t0:gift_savior",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:golden_boom",
+      "canonicalFingerprint": "ef0c73839d7e",
+      "rootT0SourceId": "golden_boom",
+      "lineageProof": "immutable_root_t0:golden_boom",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "t0:gift_jungle",
+      "canonicalFingerprint": "1f7554a84e29",
+      "rootT0SourceId": "gift_jungle",
+      "lineageProof": "immutable_root_t0:gift_jungle",
+      "currentTier": "T0",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.8571428571428571,
+      "l1Score": 0.8571428571428571,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T07:59:23.735Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:springsword:spatial_local:c1_105",
+      "canonicalFingerprint": "7d5624c130a2adaba75d56e3",
+      "rootT0SourceId": "springsword",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:springsword:spatial_local:c1_105",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.84375,
+      "l2Score": 0.8409090909090909,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:28.088Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:springsword:formation_transform:c1_flip",
+      "canonicalFingerprint": "398067d0e3de36366f1d59d8",
+      "rootT0SourceId": "springsword",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:springsword:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.9545454545454546,
+      "l1Score": 0.96875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:32.557Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:springsword:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "ae995f93d5914195733156ad",
+      "rootT0SourceId": "springsword",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:springsword:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.96875,
+      "l2Score": 0.9090909090909091,
+      "l1Score": 0.9375,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:37.173Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:nutsavior:spatial_local:c1_105",
+      "canonicalFingerprint": "88f5235af3b6a455c513201a",
+      "rootT0SourceId": "nutsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:nutsavior:spatial_local:c1_105",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.9375,
+      "l2Score": 0.7727272727272727,
+      "l1Score": 0.71875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:41.388Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:nutsavior:formation_transform:c1_flip",
+      "canonicalFingerprint": "736cdea02147142f34157f85",
+      "rootT0SourceId": "nutsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:nutsavior:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.9375,
+      "l2Score": 0.9318181818181818,
+      "l1Score": 0.921875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:47.774Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:nutsavior:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "8e194c28d733ed5f6d806627",
+      "rootT0SourceId": "nutsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:nutsavior:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.9772727272727273,
+      "l1Score": 0.921875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T07:59:58.355Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2rush:formation_transform:c1_flip",
+      "canonicalFingerprint": "3be86bcc85837cf70b2b0a26",
+      "rootT0SourceId": "all2rush",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2rush:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.625,
+      "l2Score": 0.6363636363636364,
+      "l1Score": 0.5625,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:05.804Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2rush:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "ecf31434e77b72f6fed4a007",
+      "rootT0SourceId": "all2rush",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2rush:strategy_schedule_branch:c1_side2",
+      "currentTier": "T3",
+      "l1Status": "L1_NOT_YET_EVALUATED",
+      "allowedLearningLevels": [
+        "L3"
+      ],
+      "l3Score": 0.5,
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T08:00:07.151Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2rush:multi_monster_exploration:c1_coor",
+      "canonicalFingerprint": "44e3fc54f51006e3c41848b7",
+      "rootT0SourceId": "all2rush",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2rush:multi_monster_exploration:c1_coor",
+      "currentTier": "T3",
+      "l1Status": "L1_NOT_YET_EVALUATED",
+      "allowedLearningLevels": [
+        "L3"
+      ],
+      "l3Score": 0.5,
+      "l2Score": null,
+      "l1Score": null,
+      "l2AttemptsCount": 0,
+      "lastEvaluatedAt": "2026-08-19T08:00:08.636Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:classicsavior:spatial_local:c1_117",
+      "canonicalFingerprint": "1d7f53659e49d33920ae4140",
+      "rootT0SourceId": "classicsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:spatial_local:c1_117",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.96875,
+      "l2Score": 0.8863636363636364,
+      "l1Score": 0.84375,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:15.600Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:classicsavior:formation_transform:c1_flip",
+      "canonicalFingerprint": "f8660505538028353e218c78",
+      "rootT0SourceId": "classicsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.7272727272727273,
+      "l1Score": 0.875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:21.510Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:classicsavior:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "7fd39e5bca1d8667b52bd3ab",
+      "rootT0SourceId": "classicsavior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:classicsavior:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.75,
+      "l2Score": 0.7727272727272727,
+      "l1Score": 0.78125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:27.965Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2prayer:spatial_local:c1_116",
+      "canonicalFingerprint": "fb6ca370fca3099db7b942ad",
+      "rootT0SourceId": "all2prayer",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:spatial_local:c1_116",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.65625,
+      "l2Score": 0.7272727272727273,
+      "l1Score": 0.625,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:44.067Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2prayer:formation_transform:c1_flip",
+      "canonicalFingerprint": "5b12180eb316ecf4287830ea",
+      "rootT0SourceId": "all2prayer",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.84375,
+      "l2Score": 0.8522727272727273,
+      "l1Score": 0.671875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:00:59.169Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:all2prayer:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "63f43e23dbc31e945488a9fd",
+      "rootT0SourceId": "all2prayer",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:all2prayer:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.75,
+      "l2Score": 0.7272727272727273,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:05.048Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:suqing:spatial_local:c1_124",
+      "canonicalFingerprint": "d379b67e12ce971828aed0e3",
+      "rootT0SourceId": "suqing",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:suqing:spatial_local:c1_124",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.9318181818181818,
+      "l1Score": 0.953125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:07.876Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:suqing:formation_transform:c1_flip",
+      "canonicalFingerprint": "9600ca544c9eec75e604ad55",
+      "rootT0SourceId": "suqing",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:suqing:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.9090909090909091,
+      "l1Score": 0.6875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:10.836Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:suqing:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "b024e88f121e66b85bd638be",
+      "rootT0SourceId": "suqing",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:suqing:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.90625,
+      "l2Score": 0.8409090909090909,
+      "l1Score": 0.84375,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:13.892Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:laddersel:formation_transform:c1_flip",
+      "canonicalFingerprint": "a685caff9ea59739e98023bd",
+      "rootT0SourceId": "laddersel",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:laddersel:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.84375,
+      "l2Score": 0.7045454545454546,
+      "l1Score": 0.734375,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:16.828Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:laddersel:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "c952bae8bff6b6538b0c1e0f",
+      "rootT0SourceId": "laddersel",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:laddersel:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.8125,
+      "l2Score": 0.75,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:19.671Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:spade_multi:spatial_local:c1_108",
+      "canonicalFingerprint": "abbc49efdb6f2efef316f180",
+      "rootT0SourceId": "spade_multi",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:spatial_local:c1_108",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.84375,
+      "l2Score": 0.8181818181818182,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:22.960Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:spade_multi:formation_transform:c1_flip",
+      "canonicalFingerprint": "504207a42df9fe32e0f6cace",
+      "rootT0SourceId": "spade_multi",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.8409090909090909,
+      "l1Score": 0.796875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:26.144Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:spade_multi:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "8ca2469f2934bd82159ce478",
+      "rootT0SourceId": "spade_multi",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:spade_multi:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.78125,
+      "l2Score": 0.7727272727272727,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:29.519Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:gift_savior:spatial_local:c1_116",
+      "canonicalFingerprint": "3865970cb04411f46d48d5e6",
+      "rootT0SourceId": "gift_savior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:gift_savior:spatial_local:c1_116",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.7272727272727273,
+      "l1Score": 0.75,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:32.046Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:gift_savior:formation_transform:c1_flip",
+      "canonicalFingerprint": "691faad5e3a980582edb2f74",
+      "rootT0SourceId": "gift_savior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:gift_savior:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.8181818181818182,
+      "l1Score": 0.875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:34.331Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
+      "rootT0SourceId": "gift_savior",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.8409090909090909,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:37.108Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:golden_boom:spatial_local:c1_105",
+      "canonicalFingerprint": "0d75942adf49341695510ac2",
+      "rootT0SourceId": "golden_boom",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:golden_boom:spatial_local:c1_105",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.84375,
+      "l2Score": 0.8409090909090909,
+      "l1Score": 0.890625,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:40.961Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:golden_boom:formation_transform:c1_flip",
+      "canonicalFingerprint": "ef75738e3a43cd2ba24df208",
+      "rootT0SourceId": "golden_boom",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:golden_boom:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.7727272727272727,
+      "l1Score": 0.71875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:44.334Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:golden_boom:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "510f4c266210dcc89cec186d",
+      "rootT0SourceId": "golden_boom",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:golden_boom:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 1,
+      "l1Score": 1,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:47.401Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:gift_jungle:formation_transform:c1_flip",
+      "canonicalFingerprint": "f713471a3b7b62a17b9bf5b6",
+      "rootT0SourceId": "gift_jungle",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:gift_jungle:formation_transform:c1_flip",
+      "currentTier": "T1",
+      "l1Status": "L1_STABLE",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 1,
+      "l2Score": 0.9545454545454546,
+      "l1Score": 0.96875,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:51.260Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    },
+    {
+      "formationId": "cand:gift_jungle:strategy_schedule_branch:c1_side2",
+      "canonicalFingerprint": "8b1fa85bf92585456e4278af",
+      "rootT0SourceId": "gift_jungle",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#cand:gift_jungle:strategy_schedule_branch:c1_side2",
+      "currentTier": "T1",
+      "l1Status": "L1_DIAGNOSE_REQUIRED",
+      "allowedLearningLevels": [
+        "L3",
+        "L2",
+        "L1"
+      ],
+      "l3Score": 0.875,
+      "l2Score": 0.8636363636363636,
+      "l1Score": 0.8125,
+      "l2AttemptsCount": 3,
+      "lastEvaluatedAt": "2026-08-19T08:01:55.678Z",
+      "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
+      "noApplyConfirmation": "NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE"
+    }
+  ]
+}

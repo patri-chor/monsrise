@@ -1,13 +1,14 @@
 // ============================================================
 // src/engine/tree/product_training/run_cycle.ts
-// T042 完整 Root-Lineage 成员发现与概率化 Melee 采样演化循环
+// T044 双轴模型：阵型强度梯队 (T-Axis) 与学习评测环境 (L-Axis) 演化循环
 //
 // 规范要求：
-//   - 完整成员发现：ROOT + GENERATED_DESCENDANT + EARLY_HELDOUT
-//   - 动态排除候选自身 (Self-Opponent Exclusion)
-//   - 统一单局细粒度调度（games: 1），外部并发 <= 2，记录真实 CPU 遥测
-//   - 严禁 candidate-vs-parent 自博弈，严禁 3-target separation / adScore 压缩分数
-//   - 严格 Stage-1 门禁：生成并评测 3 次不同的针对性优化尝试
+//   - T 轴 (Formation Strength Tiers): T0 (原始冻结11根源), T3 (早期候选), T2 (通过L3>=55%), T1 (通过L2>=60%)
+//   - L 轴 (Learning/Test Levels): L3 (Early Bundle 8), L2 (冻结原始T0 11), L1 (T042流派血缘概率Melee池)
+//   - 迟滞带 [55%, 60%): T3->T2 (>=55%), T2->T1 (>=60%), T1->T2降级 (<55%)
+//   - 权限门禁: T3不可进L2/L1, T2不可进L1, T1在完成>=3次L2独立尝试后进L1
+//   - 产物: formation_tier_policy.json, formation_strength_library.json,
+//          formation_tier_transitions.jsonl, learning_level_evaluations.jsonl
 // ============================================================
 
 import '../../env';
@@ -44,11 +45,9 @@ import {
   type TrainingStage,
   type BenchmarkCellResultRecord,
   type CellVectorItem,
-  appendLedgerRecord,
   appendCellResultRecord,
   appendLineageRecord,
   appendSearchCoverageRecord,
-  evaluateStageTransition,
 } from './stage_ladder';
 import {
   buildAndSaveArchetypeConfig,
@@ -63,12 +62,24 @@ import {
   computeAttemptIdentity,
   type Stage1EpisodeAttemptRecord,
 } from './stage1_episode';
+import {
+  type FormationTier,
+  type LearningLevel,
+  type L1StatusMarker,
+  type FormationLibraryEntry,
+  saveTierPolicy,
+  getDefaultTierPolicy,
+  evaluateTierGate,
+  saveFormationStrengthLibrary,
+  appendTierTransitionRecord,
+  appendLearningEvaluationRecord,
+} from './formation_tiers';
 
 // ---- 常量与路径 ----
 
-const T042_PROTOCOL = 'PRODUCT_PATH_T042_V1';
-const POLICY_VERSION = 't042-complete-root-lineage-melee-v3';
-const BASE_SEED = 42000;
+const T044_PROTOCOL = 'PRODUCT_PATH_T044_V1';
+const POLICY_VERSION = 't044-two-axis-tier-level-v1';
+const BASE_SEED = 44000;
 const T038_CYCLE_CURSOR_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_cursor.json`);
 const T038_DECISIONS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_decisions.jsonl`);
 const T038_PRUNE_TRIALS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_prune_trials.jsonl`);
@@ -120,13 +131,14 @@ export interface CycleCursorState {
   persistentAttemptCounts: Record<string, number>;
   stage1EpisodesCompleted: Record<string, number>;
   candidateCurrentStages: Record<string, TrainingStage>;
+  candidateCurrentTiers: Record<string, FormationTier>;
   updatedAt: string;
 }
 
 function loadCycleCursor(opts: { sourceFixtureFp: string; t037ManifestHash: string }): CycleCursorState {
   if (!existsSync(T038_CYCLE_CURSOR_PATH)) {
     return {
-      protocol: T042_PROTOCOL,
+      protocol: T044_PROTOCOL,
       sourceFixtureFp: opts.sourceFixtureFp,
       t037ManifestHash: opts.t037ManifestHash,
       policyVersion: POLICY_VERSION,
@@ -136,12 +148,14 @@ function loadCycleCursor(opts: { sourceFixtureFp: string; t037ManifestHash: stri
       persistentAttemptCounts: {},
       stage1EpisodesCompleted: {},
       candidateCurrentStages: {},
+      candidateCurrentTiers: {},
       updatedAt: new Date().toISOString(),
     };
   }
   const cursor: CycleCursorState = JSON.parse(readFileSync(T038_CYCLE_CURSOR_PATH, 'utf8'));
   cursor.stage1EpisodesCompleted = cursor.stage1EpisodesCompleted || {};
   cursor.candidateCurrentStages = cursor.candidateCurrentStages || {};
+  cursor.candidateCurrentTiers = cursor.candidateCurrentTiers || {};
   return cursor;
 }
 
@@ -347,11 +361,9 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
   const { pool, candidateEntry, allOpponentsMap, baselineScores, cycleId, cycleOrdinal, baselineScore } = opts;
   const { meta, evol } = candidateEntry;
 
-  // 1. 构建完整流派治理配置与冻结采样清单
   const config = buildAndSaveArchetypeConfig(baselineScores);
   const manifest = generateMeleeSamplingManifest(config);
 
-  // 2. 抽取 16 对成对样本 (P1/P2)，排除候选自身
   const pairs = sampleMeleeOpponentPairs({
     manifest,
     config,
@@ -369,7 +381,6 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
       oppFormation = allOpponentsMap.get(pair.member.rootSourceId)!;
     }
 
-    // P1
     tasks.push({
       taskId: taskId++,
       candidateIdx: 0,
@@ -382,7 +393,6 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
       executionMode: 'product_path',
       formalRequest: true,
     });
-    // P2
     tasks.push({
       taskId: taskId++,
       candidateIdx: 0,
@@ -474,12 +484,16 @@ export async function executeCycle(opts: {
   const { pool, cycleOrdinal } = opts;
   ensureOutputDir(T037_OUTPUT_DIR);
 
-  // 1. 生成并冻结基准清单
+  // 1. 初始化并持久化双轴梯队策略
+  const tierPolicy = getDefaultTierPolicy();
+  saveTierPolicy(tierPolicy);
+
+  // 2. 生成并冻结基准清单
   const benchmarkManifests = generateAndSaveBenchmarkManifests();
   const { opponents: eb8 } = loadEarlyBundle8Opponents();
   const { opponents: strong11 } = loadCurrentStrong11Opponents();
 
-  // 2. 加载 T037 证据
+  // 3. 加载 T037 证据与来源
   if (!existsSync(T037_OBS_PATH)) {
     throw new Error(`T037 evidence not found at ${T037_OBS_PATH}`);
   }
@@ -500,9 +514,9 @@ export async function executeCycle(opts: {
   const archetypeConfig = buildAndSaveArchetypeConfig(baselineScoreMap);
   generateMeleeSamplingManifest(archetypeConfig);
 
-  // 3. 计算稳定 cycleId
+  // 4. 计算稳定 cycleId
   const cycleIdentityParams = {
-    protocol: T042_PROTOCOL,
+    protocol: T044_PROTOCOL,
     sourceFixtureFp,
     t037ManifestHash,
     policyVersion: POLICY_VERSION,
@@ -512,10 +526,10 @@ export async function executeCycle(opts: {
   const cycleId = computeCycleId(cycleIdentityParams);
 
   log(`\n============================================================`);
-  log(`T042 Complete Root-Lineage Melee Catalog — Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
+  log(`T044 Formation Strength Tiers & Learning Level Gates — Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
   log(`============================================================`);
 
-  // 4. 检查 Cursor 幂等性
+  // 5. 检查 Cursor 幂等性
   const cursor = loadCycleCursor({ sourceFixtureFp, t037ManifestHash });
   const alreadyCompleted = cursor.completedCycles.find(c => c.cycleId === cycleId && c.completedSources.length === execSources.length);
   if (alreadyCompleted) {
@@ -533,17 +547,42 @@ export async function executeCycle(opts: {
   const parentCycleId = parentCycle ? parentCycle.cycleId : null;
   const parentCatalogHash = parentCycle ? parentCycle.parentCatalogHash : null;
 
-  // 5. 计算策略
+  // 6. 计算策略
   const failCountMap = new Map<string, number>(Object.entries(cursor.persistentFailCounts));
   const attemptCountMap = new Map<string, number>(Object.entries(cursor.persistentAttemptCounts));
   const policies = computeSourcePolicies(execSources, t037Obs, failCountMap, attemptCountMap);
 
-  log(`\n--- Active Benchmark Pools (cycleOrdinal=${cycleOrdinal}) ---`);
-  log(`  Stage 3 Early Bundle: ${eb8.length} opponents (hash: ${benchmarkManifests.earlyBundleStage3.poolHash})`);
-  log(`  Stage 2/1 Strong Pool: ${strong11.length} opponents (hash: ${benchmarkManifests.currentStrongStage2Stage1.poolHash})`);
-  log(`  Melee Catalog:        ${archetypeConfig.totalMembers} total members across ${archetypeConfig.totalArchetypes} archetypes (${archetypeConfig.membersByOriginKind.GENERATED_DESCENDANT} generated descendants)`);
+  log(`\n--- Active Learning Levels (cycleOrdinal=${cycleOrdinal}) ---`);
+  log(`  Level L3: Early Bundle 8 (${eb8.length} opponents, hash: ${benchmarkManifests.earlyBundleStage3.poolHash})`);
+  log(`  Level L2: Frozen T0 11   (${strong11.length} opponents, hash: ${benchmarkManifests.currentStrongStage2Stage1.poolHash})`);
+  log(`  Level L1: Probabilistic Melee Catalog (${archetypeConfig.totalMembers} members, ${archetypeConfig.totalArchetypes} archetypes)`);
 
-  // 6. 生成候选并记录血缘与覆盖
+  // 7. 注册原始冻结 T0 根源到阵型库
+  const libraryEntries: FormationLibraryEntry[] = [];
+  for (const src of execSources) {
+    const srcId = (src as any).id;
+    const evol = formationToEvol(src);
+    const fp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
+    const baseScore = baselineScoreMap.get(srcId) ?? 0.85;
+    libraryEntries.push({
+      formationId: `t0:${srcId}`,
+      canonicalFingerprint: fp,
+      rootT0SourceId: srcId,
+      lineageProof: `immutable_root_t0:${srcId}`,
+      currentTier: 'T0',
+      l1Status: 'L1_STABLE',
+      allowedLearningLevels: ['L3', 'L2', 'L1'],
+      l3Score: 1.0,
+      l2Score: baseScore,
+      l1Score: baseScore,
+      l2AttemptsCount: 0,
+      lastEvaluatedAt: new Date().toISOString(),
+      evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+      noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE',
+    });
+  }
+
+  // 8. 自适应生成新候选（初始梯队均为 T3）
   const seenFps = new Set<string>();
   for (const src of execSources) {
     const evol = formationToEvol(src);
@@ -596,7 +635,7 @@ export async function executeCycle(opts: {
     cursor.persistentAttemptCounts[(src as any).id] = (cursor.persistentAttemptCounts[(src as any).id] ?? 0) + singleOpCount;
   }
 
-  // 构建包含所有对手（root + heldout + newly generated candidates）的全局查找表
+  // 全局对手 Formation 查找表
   const allOppMap = new Map<string, Formation>();
   for (const s of strong11) allOppMap.set((s as any).id, s);
   for (const b of eb8) allOppMap.set((b as any).id, b);
@@ -606,137 +645,159 @@ export async function executeCycle(opts: {
     }
   }
 
-  log(`\nGenerated adaptive candidates: ${generatedBatch.length} (${generatedBatch.filter(e => !e.meta.rejected).length} valid)`);
+  log(`\nGenerated adaptive candidate formations: ${generatedBatch.length} (${generatedBatch.filter(e => !e.meta.rejected).length} valid)`);
 
-  // 7. 严格阶梯状态机推进 (Stage 3 -> Stage 2 -> Distinct Stage 1 [>=3 attempts] -> Probabilistic Melee)
+  // 9. 严格执行双轴学习与跃迁门禁 (L3 -> T2 -> L2 -> T1 -> L1)
   const startTime = Date.now();
   const validCandidates = generatedBatch.filter(e => !e.meta.rejected);
   const candidateEvaluations: Map<string, {
     entry: CandidateEntry;
-    currentStage: TrainingStage;
-    overallScore: number;
-    relScore: number;
+    currentTier: FormationTier;
+    l1Status: L1StatusMarker;
+    l3Score: number;
+    l2Score: number | null;
+    l1Score: number | null;
     isFrontier: boolean;
-    isSpecialist: boolean;
   }> = new Map();
 
   for (const cand of validCandidates) {
     const srcId = cand.meta.sourceId;
     const policy = policies.find(p => p.sourceId === srcId)!;
     const baselineScore = policy.baselineScore;
+    let currentTier: FormationTier = 'T3';
+    let l1Status: L1StatusMarker = 'L1_NOT_YET_EVALUATED';
 
-    // Step A: Stage 3 Early Bundle
-    log(`  [Stage 3: Early Bundle 8] candidate ${cand.meta.candidateId}...`);
-    const s3Res = await evaluateCandidateOnPool({
+    // Step A: Level L3 评测 (Early Bundle 8, 32 games)
+    log(`  [Level L3: Early Bundle 8] Candidate ${cand.meta.candidateId} (Tier T3)...`);
+    const l3Res = await evaluateCandidateOnPool({
       pool,
       candidateEntry: cand,
       opponents: eb8,
       gamesPerCell: 2,
       seedOffset: 100,
-      poolName: 'STAGE_3_EARLY_BUNDLE_8',
+      poolName: 'LEVEL_L3_EARLY_BUNDLE_8',
       benchmarkRevision: benchmarkManifests.earlyBundleStage3.revision,
       cycleId,
       baselineScore,
     });
 
-    const s3Transition = evaluateStageTransition({
-      currentStage: 'STAGE_3_EARLY_BUNDLE',
-      cellVectors: s3Res.cellVectors,
-      baselineScore,
-      stage1EpisodesCompleted: 0,
-      improvesSpecificCounter: false,
-      hasGeneralRegression: false,
-    });
-
-    appendLedgerRecord({
-      recordId: `ledg_${cycleId}_${cand.meta.candidateId}_s3`,
+    appendLearningEvaluationRecord({
+      recordId: `eval_${cycleId}_${cand.meta.candidateId}_l3`,
       evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
       cycleId,
-      sourceId: srcId,
-      candidateId: cand.meta.candidateId,
-      candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
-      parentFingerprint: cand.meta.sourceFingerprint,
-      operatorFamily: cand.meta.operatorFamily,
-      previousStage: 'STAGE_3_EARLY_BUNDLE',
-      nextStage: s3Transition.nextStage,
-      transitionDecision: s3Transition.decision,
-      isSpecialist: s3Transition.isSpecialist,
-      score: s3Res.overallScore,
-      sourceRelativeScore: s3Res.relScore,
-      weakestOpponentId: s3Transition.weakestOpponentId,
-      weakestOpponentScore: s3Transition.weakestOpponentScore,
-      weakestSide: s3Transition.weakestSide,
-      transitionReason: s3Transition.reason,
+      formationId: cand.meta.candidateId,
+      canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+      rootT0SourceId: srcId,
+      learningLevel: 'L3',
+      benchmarkRevision: benchmarkManifests.earlyBundleStage3.revision,
+      totalGames: 32,
+      score: l3Res.overallScore,
+      weakestOpponentId: l3Res.weakestOpponentId,
+      weakestOpponentScore: l3Res.weakestOpponentScore,
+      weakestSide: l3Res.weakestSide,
       timestamp: new Date().toISOString(),
     });
 
-    let currentStage = s3Transition.nextStage;
-    let s2Res = s3Res;
+    const l3Gate = evaluateTierGate({
+      currentTier,
+      level: 'L3',
+      score: l3Res.overallScore,
+      policy: tierPolicy,
+    });
 
-    // Step B: 若通过 Stage 3，进入 Stage 2 Strong Pool
-    if (currentStage === 'STAGE_2_STRONG_POOL') {
-      log(`  [Stage 2: Strong Pool 11] candidate ${cand.meta.candidateId}...`);
-      s2Res = await evaluateCandidateOnPool({
+    if (l3Gate.newTier !== currentTier) {
+      appendTierTransitionRecord({
+        recordId: `trans_${cycleId}_${cand.meta.candidateId}_t3_to_${l3Gate.newTier.toLowerCase()}`,
+        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+        cycleId,
+        formationId: cand.meta.candidateId,
+        canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+        rootT0SourceId: srcId,
+        previousTier: currentTier,
+        newTier: l3Gate.newTier,
+        triggerLevel: 'L3',
+        levelScore: l3Res.overallScore,
+        decision: l3Gate.decision,
+        reason: l3Gate.reason,
+        timestamp: new Date().toISOString(),
+      });
+      currentTier = l3Gate.newTier;
+    }
+
+    let l2Res: any = null;
+    let l1Res: any = null;
+    let distinctL2Count = 0;
+
+    // Step B: 若通过 L3 成为 T2，允许在 Level L2 (冻结 T0 11) 中测试与优化
+    if (currentTier === 'T2') {
+      log(`  [Level L2: Frozen T0 11] Candidate ${cand.meta.candidateId} (Tier T2)...`);
+      l2Res = await evaluateCandidateOnPool({
         pool,
         candidateEntry: cand,
         opponents: strong11,
         gamesPerCell: 2,
         seedOffset: 300,
-        poolName: 'STAGE_2_1_CURRENT_STRONG_11',
+        poolName: 'LEVEL_L2_FROZEN_T0_11',
         benchmarkRevision: benchmarkManifests.currentStrongStage2Stage1.revision,
         cycleId,
         baselineScore,
       });
 
-      const s2Transition = evaluateStageTransition({
-        currentStage: 'STAGE_2_STRONG_POOL',
-        cellVectors: s2Res.cellVectors,
-        baselineScore,
-        stage1EpisodesCompleted: 0,
-        improvesSpecificCounter: false,
-        hasGeneralRegression: false,
-      });
-
-      appendLedgerRecord({
-        recordId: `ledg_${cycleId}_${cand.meta.candidateId}_s2`,
+      appendLearningEvaluationRecord({
+        recordId: `eval_${cycleId}_${cand.meta.candidateId}_l2`,
         evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
         cycleId,
-        sourceId: srcId,
-        candidateId: cand.meta.candidateId,
-        candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
-        parentFingerprint: cand.meta.sourceFingerprint,
-        operatorFamily: cand.meta.operatorFamily,
-        previousStage: 'STAGE_2_STRONG_POOL',
-        nextStage: s2Transition.nextStage,
-        transitionDecision: s2Transition.decision,
-        isSpecialist: s2Transition.isSpecialist,
-        score: s2Res.overallScore,
-        sourceRelativeScore: s2Res.relScore,
-        weakestOpponentId: s2Transition.weakestOpponentId,
-        weakestOpponentScore: s2Transition.weakestOpponentScore,
-        weakestSide: s2Transition.weakestSide,
-        transitionReason: s2Transition.reason,
+        formationId: cand.meta.candidateId,
+        canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+        rootT0SourceId: srcId,
+        learningLevel: 'L2',
+        benchmarkRevision: benchmarkManifests.currentStrongStage2Stage1.revision,
+        totalGames: 44,
+        score: l2Res.overallScore,
+        weakestOpponentId: l2Res.weakestOpponentId,
+        weakestOpponentScore: l2Res.weakestOpponentScore,
+        weakestSide: l2Res.weakestSide,
         timestamp: new Date().toISOString(),
       });
 
-      currentStage = s2Transition.nextStage;
+      const l2Gate = evaluateTierGate({
+        currentTier,
+        level: 'L2',
+        score: l2Res.overallScore,
+        policy: tierPolicy,
+      });
+
+      if (l2Gate.newTier !== currentTier) {
+        appendTierTransitionRecord({
+          recordId: `trans_${cycleId}_${cand.meta.candidateId}_t2_to_${l2Gate.newTier.toLowerCase()}`,
+          evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+          cycleId,
+          formationId: cand.meta.candidateId,
+          canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+          rootT0SourceId: srcId,
+          previousTier: currentTier,
+          newTier: l2Gate.newTier,
+          triggerLevel: 'L2',
+          levelScore: l2Res.overallScore,
+          decision: l2Gate.decision,
+          reason: l2Gate.reason,
+          timestamp: new Date().toISOString(),
+        });
+        currentTier = l2Gate.newTier;
+      }
     }
 
-    // Step C: 严格执行 Stage-1 独立优化 Episode（生成 3 个真实不同的针对性变体并单独评测）
-    let isFrontier = false;
-    let isSpecialist = false;
-
-    if (currentStage === 'STAGE_1_STRONG_EPISODE') {
-      log(`  [Stage 1: Focused Episode — Generating 3 distinct attempt variants] candidate ${cand.meta.candidateId}...`);
+    // Step C: 若晋升为 T1，执行至少 3 次不同的 L2 针对性优化尝试以满足 L1_ELIGIBLE
+    if (currentTier === 'T1') {
+      log(`  [Level L2: 3 Distinct Targeted Attempts for L1 Eligibility] Formation ${cand.meta.candidateId} (Tier T1)...`);
 
       const attemptVariants = generateDistinctStage1AttemptCandidates({
         baseCandidate: cand,
-        weakOpponentId: s2Res.weakestOpponentId,
-        weakSide: s2Res.weakestSide,
+        weakOpponentId: l2Res.weakestOpponentId,
+        weakSide: l2Res.weakestSide,
         cycleOrdinal,
       });
 
-      let distinctCount = 0;
       for (let attIdx = 0; attIdx < attemptVariants.length; attIdx++) {
         const variant = attemptVariants[attIdx];
         const attemptRes = await evaluateCandidateOnPool({
@@ -745,13 +806,13 @@ export async function executeCycle(opts: {
           opponents: strong11,
           gamesPerCell: 2,
           seedOffset: 450 + attIdx * 100,
-          poolName: 'STAGE_2_1_CURRENT_STRONG_11',
+          poolName: 'LEVEL_L2_FROZEN_T0_11',
           benchmarkRevision: benchmarkManifests.currentStrongStage2Stage1.revision,
           cycleId,
           baselineScore,
         });
 
-        distinctCount++;
+        distinctL2Count++;
         const outcome = attemptRes.relScore > 0 ? 'IMPROVED' : attemptRes.relScore === 0 ? 'STABLE_NON_REGRESSED' : 'REGRESSED';
         const changes = variant.meta.delta ? [variant.meta.delta as any] : [];
 
@@ -760,8 +821,8 @@ export async function executeCycle(opts: {
           parentFingerprint: cand.meta.canonicalFingerprint ?? '',
           operatorFamily: variant.meta.operatorFamily,
           atomicChanges: changes,
-          targetOpponentId: s2Res.weakestOpponentId,
-          targetSide: s2Res.weakestSide,
+          targetOpponentId: l2Res.weakestOpponentId,
+          targetSide: l2Res.weakestSide,
         });
 
         const episodeRecord: Stage1EpisodeAttemptRecord = {
@@ -779,10 +840,10 @@ export async function executeCycle(opts: {
           operatorFamily: variant.meta.operatorFamily,
           atomicChanges: changes,
           triggeredDiagnosis: {
-            weakOpponentId: s2Res.weakestOpponentId,
-            weakSide: s2Res.weakestSide,
-            weakOpponentScore: s2Res.weakestOpponentScore,
-            diagnosisReason: `Distinct Stage 1 attempt ${attIdx + 1} targeting weak matchup ${s2Res.weakestOpponentId} / side ${s2Res.weakestSide}`,
+            weakOpponentId: l2Res.weakestOpponentId,
+            weakSide: l2Res.weakestSide,
+            weakOpponentScore: l2Res.weakestOpponentScore,
+            diagnosisReason: `L2 targeted attempt ${attIdx + 1} targeting weak matchup ${l2Res.weakestOpponentId} / side ${l2Res.weakestSide}`,
           },
           strongPoolVectorRef: `benchmark_cell_results.jsonl#${cycleId}_${variant.meta.candidateId}`,
           totalGames: 44,
@@ -795,111 +856,100 @@ export async function executeCycle(opts: {
         appendStage1EpisodeRecord(episodeRecord);
       }
 
-      cursor.stage1EpisodesCompleted[cand.meta.candidateId] = distinctCount;
+      cursor.stage1EpisodesCompleted[cand.meta.candidateId] = distinctL2Count;
 
-      const s1Transition = evaluateStageTransition({
-        currentStage: 'STAGE_1_STRONG_EPISODE',
-        cellVectors: s2Res.cellVectors,
-        baselineScore,
-        stage1EpisodesCompleted: distinctCount,
-        improvesSpecificCounter: false,
-        hasGeneralRegression: false,
-      });
+      if (distinctL2Count >= 3) {
+        l1Status = 'L1_ELIGIBLE';
+      }
 
-      appendLedgerRecord({
-        recordId: `ledg_${cycleId}_${cand.meta.candidateId}_s1`,
-        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-        cycleId,
-        sourceId: srcId,
-        candidateId: cand.meta.candidateId,
-        candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
-        parentFingerprint: cand.meta.sourceFingerprint,
-        operatorFamily: cand.meta.operatorFamily,
-        previousStage: 'STAGE_1_STRONG_EPISODE',
-        nextStage: s1Transition.nextStage,
-        transitionDecision: s1Transition.decision,
-        isSpecialist: s1Transition.isSpecialist,
-        score: s2Res.overallScore,
-        sourceRelativeScore: s2Res.relScore,
-        weakestOpponentId: s1Transition.weakestOpponentId,
-        weakestOpponentScore: s1Transition.weakestOpponentScore,
-        weakestSide: s1Transition.weakestSide,
-        transitionReason: s1Transition.reason,
-        timestamp: new Date().toISOString(),
-      });
+      // Step D: Level L1 概率化 Melee 采样评测 (16 pairs = 32 games)
+      if (l1Status === 'L1_ELIGIBLE') {
+        log(`  [Level L1: Probabilistic Melee Sampling — 16 pairs] Formation ${cand.meta.candidateId} (Tier T1)...`);
 
-      currentStage = s1Transition.nextStage;
+        l1Res = await evaluateCandidateOnProbabilisticMelee({
+          pool,
+          candidateEntry: cand,
+          allOpponentsMap: allOppMap,
+          baselineScores: baselineScoreMap,
+          cycleId,
+          cycleOrdinal,
+          baselineScore,
+        });
+
+        appendLearningEvaluationRecord({
+          recordId: `eval_${cycleId}_${cand.meta.candidateId}_l1`,
+          evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+          cycleId,
+          formationId: cand.meta.candidateId,
+          canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+          rootT0SourceId: srcId,
+          learningLevel: 'L1',
+          benchmarkRevision: archetypeConfig.revision,
+          totalGames: 32,
+          score: l1Res.overallScore,
+          weakestOpponentId: l1Res.weakestOpponentId,
+          weakestOpponentScore: l1Res.weakestOpponentScore,
+          weakestSide: l1Res.weakestSide,
+          timestamp: new Date().toISOString(),
+        });
+
+        if (l1Res.overallScore >= 0.60 && l1Res.weakestOpponentScore >= 0.40) {
+          l1Status = 'L1_STABLE';
+        } else {
+          l1Status = 'L1_DIAGNOSE_REQUIRED';
+        }
+      }
     }
 
-    // Step D: 概率化 Archetype Melee 采样评估 (16 pairs = 32 games)
-    if (currentStage === 'MELEE') {
-      log(`  [Melee: Probabilistic Archetype Sampling — 16 pairs] candidate ${cand.meta.candidateId}...`);
+    // 记录到 Formation Strength Library
+    const allowedLevels: LearningLevel[] = currentTier === 'T1'
+      ? ['L3', 'L2', 'L1']
+      : currentTier === 'T2'
+        ? ['L3', 'L2']
+        : ['L3'];
 
-      const meleeRes = await evaluateCandidateOnProbabilisticMelee({
-        pool,
-        candidateEntry: cand,
-        allOpponentsMap: allOppMap,
-        baselineScores: baselineScoreMap,
-        cycleId,
-        cycleOrdinal,
-        baselineScore,
-      });
+    libraryEntries.push({
+      formationId: cand.meta.candidateId,
+      canonicalFingerprint: cand.meta.canonicalFingerprint ?? '',
+      rootT0SourceId: srcId,
+      lineageProof: `candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/candidate_lineage.jsonl#${cand.meta.candidateId}`,
+      currentTier,
+      l1Status,
+      allowedLearningLevels: allowedLevels,
+      l3Score: l3Res.overallScore,
+      l2Score: l2Res?.overallScore ?? null,
+      l1Score: l1Res?.overallScore ?? null,
+      l2AttemptsCount: distinctL2Count,
+      lastEvaluatedAt: new Date().toISOString(),
+      evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+      noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE',
+    });
 
-      const meleeTransition = evaluateStageTransition({
-        currentStage: 'MELEE',
-        cellVectors: [
-          { opponentId: meleeRes.weakestOpponentId, side: meleeRes.weakestSide, w: Math.round(meleeRes.overallScore * 32), d: 0, l: Math.round((1 - meleeRes.overallScore) * 32), score: meleeRes.overallScore }
-        ],
-        baselineScore,
-        stage1EpisodesCompleted: cursor.stage1EpisodesCompleted[cand.meta.candidateId] || 3,
-        improvesSpecificCounter: false,
-        hasGeneralRegression: false,
-      });
+    cursor.candidateCurrentTiers[cand.meta.candidateId] = currentTier;
+    const isFrontier = currentTier === 'T1' && l1Status === 'L1_STABLE';
 
-      appendLedgerRecord({
-        recordId: `ledg_${cycleId}_${cand.meta.candidateId}_melee`,
-        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-        cycleId,
-        sourceId: srcId,
-        candidateId: cand.meta.candidateId,
-        candidateFingerprint: cand.meta.canonicalFingerprint ?? '',
-        parentFingerprint: cand.meta.sourceFingerprint,
-        operatorFamily: cand.meta.operatorFamily,
-        previousStage: 'MELEE',
-        nextStage: meleeTransition.nextStage,
-        transitionDecision: meleeTransition.decision,
-        isSpecialist: meleeTransition.isSpecialist,
-        score: meleeRes.overallScore,
-        sourceRelativeScore: meleeRes.relScore,
-        weakestOpponentId: meleeRes.weakestOpponentId,
-        weakestOpponentScore: meleeRes.weakestOpponentScore,
-        weakestSide: meleeRes.weakestSide,
-        transitionReason: meleeTransition.reason,
-        timestamp: new Date().toISOString(),
-      });
-
-      currentStage = meleeTransition.nextStage;
-      isFrontier = currentStage === 'EXPERIMENTAL_FRONTIER';
-      isSpecialist = meleeTransition.isSpecialist;
-    }
-
-    cursor.candidateCurrentStages[cand.meta.candidateId] = currentStage;
     candidateEvaluations.set(cand.meta.candidateId, {
       entry: cand,
-      currentStage,
-      overallScore: s2Res.overallScore,
-      relScore: s2Res.relScore,
+      currentTier,
+      l1Status,
+      l3Score: l3Res.overallScore,
+      l2Score: l2Res?.overallScore ?? null,
+      l1Score: l1Res?.overallScore ?? null,
       isFrontier,
-      isSpecialist,
     });
   }
 
   const durationMs = Date.now() - startTime;
 
-  // 8. 记录 CPU 遥测
+  // 10. 保存 Formation Strength Library
+  const libraryFile = saveFormationStrengthLibrary(libraryEntries);
+  log(`\n--- Formation Strength Library Updated ---`);
+  log(`  T0: ${libraryFile.counts.T0Count}, T1: ${libraryFile.counts.T1Count} (${libraryFile.counts.T1L1StableCount} L1_STABLE), T2: ${libraryFile.counts.T2Count}, T3: ${libraryFile.counts.T3Count}`);
+
+  // 11. 记录 CPU 遥测
   const telemetry: CpuTelemetryRecord = {
     cycleId,
-    screenBatchId: `batch_t042_${cycleOrdinal}`,
+    screenBatchId: `batch_t044_${cycleOrdinal}`,
     configuredWorkers: (pool as any).workerCount ?? 64,
     observedWorkers: (pool as any).workerCount ?? 64,
     peakInFlight: Math.min((pool as any).workerCount ?? 64, validCandidates.length * 16),
@@ -913,9 +963,9 @@ export async function executeCycle(opts: {
   };
   appendFileSync(TELEMETRY_PATH, JSON.stringify(telemetry) + '\n', 'utf8');
 
-  // 9. 后剪枝
-  const frontiersToPrune = [...candidateEvaluations.values()].filter(c => c.isFrontier && !c.isSpecialist);
-  log(`\n--- Post-pruning ${frontiersToPrune.length} Melee-qualified Experimental Frontiers ---`);
+  // 12. 后剪枝
+  const frontiersToPrune = [...candidateEvaluations.values()].filter(c => c.isFrontier);
+  log(`\n--- Post-pruning ${frontiersToPrune.length} T1/L1-Stable Formations ---`);
   const pruneResults = new Map<string, any>();
   const existingPruneIds = loadExistingRecordIds(T038_PRUNE_TRIALS_PATH);
 
@@ -926,7 +976,7 @@ export async function executeCycle(opts: {
       candidateId: fc.entry.meta.candidateId,
       evol: fc.entry.evol,
       matchedOpps: strong11,
-      baselineScore: fc.relScore,
+      baselineScore: fc.l2Score ?? 0.80,
       seedBase: BASE_SEED + cycleOrdinal * 500,
     });
     pruneResults.set(fc.entry.meta.candidateId, pruneRes);
@@ -935,7 +985,7 @@ export async function executeCycle(opts: {
     }
   }
 
-  // 10. 记录决策与导出 Catalog
+  // 13. 记录决策与导出 Catalog
   log(`\n--- Writing Cycle Decision Records ---`);
   const existingDecisionIds = loadExistingRecordIds(T038_DECISIONS_PATH);
   const cycleDecisions: CycleDecisionRecord[] = [];
@@ -943,18 +993,18 @@ export async function executeCycle(opts: {
   for (const policy of policies) {
     const srcId = policy.sourceId;
     const evals = [...candidateEvaluations.values()].filter(c => c.entry.meta.sourceId === srcId);
-    evals.sort((a, b) => b.relScore - a.relScore);
+    evals.sort((a, b) => (b.l2Score ?? b.l3Score) - (a.l2Score ?? a.l3Score));
     const best = evals[0] ?? null;
 
     let failCount = cursor.persistentFailCounts[srcId] ?? 0;
-    if (!best || best.relScore <= 0) failCount++; else failCount = 0;
+    if (!best || (best.l2Score ?? 0) <= policy.baselineScore) failCount++; else failCount = 0;
     cursor.persistentFailCounts[srcId] = failCount;
 
-    const recordId = createHash('sha256').update(`${cycleId}_${srcId}_decision_t042`).digest('hex').slice(0, 16);
+    const recordId = createHash('sha256').update(`${cycleId}_${srcId}_decision_t044`).digest('hex').slice(0, 16);
     const decision: CycleDecisionRecord = {
       recordId,
       evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-      protocol: T042_PROTOCOL,
+      protocol: T044_PROTOCOL,
       cycleId,
       cycleOrdinal,
       sourceId: srcId,
@@ -966,8 +1016,8 @@ export async function executeCycle(opts: {
       spatialBudgetReason: policy.spatialBudgetReason,
       baselineScore: policy.baselineScore,
       bestCandidateId: best?.entry.meta.candidateId ?? null,
-      bestCandidateScore: best?.overallScore ?? null,
-      bestCandidateRel: best?.relScore ?? null,
+      bestCandidateScore: best?.l2Score ?? best?.l3Score ?? null,
+      bestCandidateRel: best ? (best.l2Score ?? best.l3Score) - policy.baselineScore : null,
       isExperimentalFrontier: best?.isFrontier ?? false,
       candidatesScreened: evals.length,
       singleOpAttempts: policy.singleOpAttempts,
@@ -992,8 +1042,8 @@ export async function executeCycle(opts: {
         operatorFamily: best.entry.meta.operatorFamily,
         canonicalFingerprint: best.entry.meta.canonicalFingerprint ?? '',
         obs: {
-          protocol: T042_PROTOCOL,
-          scheduleId: 't042-complete-root-lineage-melee-v3',
+          protocol: T044_PROTOCOL,
+          scheduleId: 't044-two-axis-tier-level-v1',
           manifestHash: t037ManifestHash,
           entityId: best.entry.meta.candidateId,
           entityKind: 'candidate' as const,
@@ -1005,8 +1055,8 @@ export async function executeCycle(opts: {
           totalGames: 44,
           w: 0, d: 0, l: 0,
           workerErrors: 0,
-          trainingScore: best.overallScore,
-          sourceRelativeScore: best.relScore,
+          trainingScore: best.l2Score ?? best.l3Score,
+          sourceRelativeScore: (best.l2Score ?? best.l3Score) - policy.baselineScore,
           completedAt: new Date().toISOString(),
         },
         pruneResult,
@@ -1029,7 +1079,7 @@ export async function executeCycle(opts: {
   const catalog = exportRuntimeCatalog({
     cycleId,
     cycleOrdinal,
-    protocol: T042_PROTOCOL,
+    protocol: T044_PROTOCOL,
     parentCatalogHash,
     entries: catalogInputs,
   });
@@ -1047,7 +1097,7 @@ export async function executeCycle(opts: {
 
   log(`\n--- Cycle ${cycleId} Summary ---`);
   log(`  Completed sources: ${execSources.length}`);
-  log(`  Experimental frontiers: ${catalog.experimentalFrontierCount}`);
+  log(`  T1 Formations: ${libraryFile.counts.T1Count}`);
   log(`  Catalog hash: ${catalog.catalogHash}`);
 
   return { cycleId, isNoOp: false, catalog };
@@ -1056,7 +1106,7 @@ export async function executeCycle(opts: {
 // ---- 主运行入口 ----
 
 async function main() {
-  log(`\n=== run_cycle.ts — T042 Complete Root-Lineage Melee Catalog ===`);
+  log(`\n=== run_cycle.ts — T044 Formation Strength Tiers & Learning Level Gates ===`);
   const pool = await PersistentSimPool.getInstance();
 
   try {
@@ -1070,8 +1120,8 @@ async function main() {
     }
 
     log(`\n============================================================`);
-    log(`T042 Training Ladder & Complete Melee Catalog Complete`);
-    log(`Artifacts written: melee_archetype_config.json, melee_sampling_manifest.json, stage1_episode_ledger.jsonl, melee_sample_pairs.jsonl, stage_training_ledger.jsonl`);
+    log(`T044 Training Ladder & Two-Axis Model Complete`);
+    log(`Artifacts written: formation_tier_policy.json, formation_strength_library.json, formation_tier_transitions.jsonl, learning_level_evaluations.jsonl`);
     log(`No-apply confirmation: NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE`);
     log(`============================================================\n`);
   } finally {
