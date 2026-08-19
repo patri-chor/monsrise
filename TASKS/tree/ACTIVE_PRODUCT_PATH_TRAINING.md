@@ -76,7 +76,7 @@ all entities have nonempty teams and actual deployments on both sides
 four-cost: 64/64 trace-backed PASS
 ```
 
-T035 is a one-schedule screen. It is sufficient for discovery and source-relative screening, not Tier 2 promotion.
+T035 is a strict trace-backed one-schedule screen for its fixed historical inventory. T037 is a later aggregate-only product-path screen that is sufficient for rapid exploration and source-relative ranking by direct user decision, but not Tier 2 promotion, automatic game integration, or publishing. Strict per-game trace evidence is deferred.
 
 ## Optimization Factors And Order
 

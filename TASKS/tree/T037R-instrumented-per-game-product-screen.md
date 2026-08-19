@@ -1,7 +1,9 @@
-STATUS: OPEN
+STATUS: RETRACTED_BY_USER
 DOMAIN: tree
 
 # T037R - Instrumented Per-Game Product-Path Screen Repair
+
+> Retracted before execution by direct user instruction. Retain as a future strict-evidence upgrade specification; do not execute it now.
 
 > Narrow repair for T037. Preserve its completed aggregate screen artifacts as `AGGREGATE_ONLY_UNADOPTED`; do not delete or overwrite them. T038 remains blocked until this task passes.
 

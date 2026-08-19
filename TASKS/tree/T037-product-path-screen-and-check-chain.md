@@ -1,7 +1,9 @@
-STATUS: BLOCKED_BY_T036
+STATUS: DONE_AGGREGATE_SCREEN_EXPLORATION
 DOMAIN: tree
 
 # T037 - Product-Path Screen and Check Chain
+
+> Completed as aggregate product-path exploration evidence. Its 3,640 games may drive rapid T038 exploration by direct user decision, but are not strict per-game audit evidence and must not support promotion, automatic game integration, or publishing.
 
 > Phase 2. Start only after T036 passes. This replaces the earlier unexecuted broad T037 specification.
 

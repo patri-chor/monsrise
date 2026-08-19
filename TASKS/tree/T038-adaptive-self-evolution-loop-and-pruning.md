@@ -1,13 +1,13 @@
-STATUS: BLOCKED_BY_T037
+STATUS: OPEN
 DOMAIN: tree
 
 # T038 - Adaptive Self-Evolution Loop, Transform Search, and Product-Path Pruning
 
-> Phase 3. Start only after T037 passes. This is the first unattended self-evolution loop, deliberately built after foundation and screen evidence are stable.
+> Phase 3. T036 and T036R passed. T037 is accepted only as aggregate product-path exploration evidence by direct user decision. This task may start now to deliver a rapid unattended self-evolution loop; strict per-game trace evidence is deferred to the retracted T037R specification and remains required before formal promotion, game integration, or publishing.
 
 ## Goal
 
-Implement one resumable `run_cycle.ts` that evolves candidates using product-path evidence, adapts search breadth to source maturity and controllability, performs product-path post-pruning, and exports a read-only candidate catalog for future game integration.
+Implement one resumable `run_cycle.ts` that evolves candidates using T037 aggregate product-path exploration evidence, adapts search breadth to source maturity and controllability, performs aggregate matched-sample post-pruning, and exports an explicitly experimental read-only candidate catalog for future game integration.
 
 ## Sole New Execution Entry
 
@@ -87,7 +87,7 @@ for each nonempty branch:
   prune only when removal has no material source-relative or weakest-side regression
 ```
 
-Persist each prune trial, seeds, raw cells/trace links, before/after fingerprints, branch condition, decision, and confidence. Do not call legacy `prune.ts` or `prune_branch.ts` because they use arena.
+Persist each prune trial, matched aggregate cells, seeds, before/after fingerprints, branch condition, decision, and confidence. Mark every such decision `AGGREGATE_HEURISTIC_UNVERIFIED`; do not claim trace-backed branch validation. Do not call legacy `prune.ts` or `prune_branch.ts` because they use arena.
 
 ## Cycle Steps
 
@@ -98,8 +98,8 @@ Persist each prune trial, seeds, raw cells/trace links, before/after fingerprint
 4. Screen through the Phase-2 product path.
 5. Rank by matched source-relative score, then weakest-side score, then coverage gain.
 6. Product-path post-prune selected conditional candidates.
-7. Keep one unique frontier per source and append a cycle decision record.
-8. Export read-only runtime_candidate_catalog.json.
+7. Keep one unique frontier per source and append a cycle decision record marked `AGGREGATE_EXPLORATION_ONLY`.
+8. Export `runtime_candidate_catalog.json` marked `EXPERIMENTAL_UNVERIFIED_NOT_FOR_AUTO_INTEGRATION`.
 ```
 
 Outputs append below `product_path_t037/` or a versioned `product_path_t038/` namespace, never overwrite T035 evidence.
@@ -111,8 +111,9 @@ Outputs append below `product_path_t037/` or a versioned `product_path_t038/` na
 - [ ] Multi-monster exploration occurs only after recorded single-operator failure threshold.
 - [ ] Calculated-unit-heavy sources have reduced/zero spatial allocation with reasons.
 - [ ] Transform candidates are separately labeled and validated.
-- [ ] R1 side-aware branch candidates and product-path post-pruning have trace-backed evidence.
-- [ ] Runtime catalog is read-only; no Tier/apply/deploy/publish change.
+- [ ] R1 side-aware branch candidates and post-pruning are clearly marked aggregate heuristic evidence, not trace-backed evidence.
+- [ ] Runtime catalog is read-only and `EXPERIMENTAL_UNVERIFIED_NOT_FOR_AUTO_INTEGRATION`; no Tier/apply/deploy/publish change.
+- [ ] T037R remains deferred before any formal promotion, game integration, or publishing.
 
 ## Delivery
 
