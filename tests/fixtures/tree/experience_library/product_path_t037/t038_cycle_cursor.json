@@ -1,19 +1,63 @@
 {
   "protocol": "PRODUCT_PATH_T038_V1",
-  "cycleId": "7b4d3b58",
-  "startedAt": "2026-08-19T04:20:50.075Z",
-  "completedSources": [
-    "springsword",
-    "nutsavior",
-    "all2rush",
-    "classicsavior",
-    "all2prayer",
-    "suqing",
-    "laddersel",
-    "spade_multi",
-    "gift_savior",
-    "golden_boom",
-    "gift_jungle"
+  "sourceFixtureFp": "07bb1a55a1394ff1",
+  "t037ManifestHash": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+  "policyVersion": "t038r-adaptive-policy-v1",
+  "currentCycleOrdinal": 2,
+  "completedCycles": [
+    {
+      "cycleId": "de59489371bc",
+      "cycleOrdinal": 0,
+      "parentCycleId": null,
+      "parentCatalogHash": "3b00b11783e73e91",
+      "completedSources": [
+        "springsword",
+        "nutsavior",
+        "all2rush",
+        "classicsavior",
+        "all2prayer",
+        "suqing",
+        "laddersel",
+        "spade_multi",
+        "gift_savior",
+        "golden_boom",
+        "gift_jungle"
+      ],
+      "completedAt": "2026-08-19T04:42:56.979Z"
+    },
+    {
+      "cycleId": "ac9bbcfce2d2",
+      "cycleOrdinal": 1,
+      "parentCycleId": "de59489371bc",
+      "parentCatalogHash": "bcbd68ef2d349369",
+      "completedSources": [
+        "springsword",
+        "nutsavior",
+        "all2rush",
+        "classicsavior",
+        "all2prayer",
+        "suqing",
+        "laddersel",
+        "spade_multi",
+        "gift_savior",
+        "golden_boom",
+        "gift_jungle"
+      ],
+      "completedAt": "2026-08-19T04:53:24.441Z"
+    }
   ],
-  "updatedAt": "2026-08-19T04:22:00.504Z"
+  "persistentFailCounts": {
+    "springsword": 2,
+    "nutsavior": 2,
+    "all2rush": 0,
+    "classicsavior": 0,
+    "all2prayer": 0,
+    "suqing": 0,
+    "laddersel": 0,
+    "spade_multi": 0,
+    "gift_savior": 2,
+    "golden_boom": 2,
+    "gift_jungle": 0
+  },
+  "updatedAt": "2026-08-19T04:53:24.441Z"
 }

@@ -6,6 +6,7 @@ import { networkManager } from '../net/NetworkManager';
 import { music } from '../game/MusicManager';
 import { isIOSDevice, requestFullscreen } from './shared/fullscreen';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
+import { t } from '../game/LanguageManager';
 
 export class TeamEditorUI {
   private _container: HTMLDivElement;
@@ -197,7 +198,7 @@ export class TeamEditorUI {
       <div class="fullscreen-deco-frame">
         <!-- 玩家名牌：透明输入框，叠在 set.png 底部铭牌区域，临时用来设置自己的名字 -->
         <input id="playerNamePlate" class="player-name-plate" type="text" maxlength="12"
-          placeholder="输入你的名字" value="${localStorage.getItem('monsrise_nick') || ''}" />
+          placeholder="${t('输入你的名字', 'Enter your name')}" value="${localStorage.getItem('monsrise_nick') || ''}" />
       </div>
       ${modalsContent}
     `;
@@ -217,16 +218,17 @@ export class TeamEditorUI {
         this._container.appendChild(frame);
       }
       // 确保玩家名牌输入框存在（放入 set 容器内，作为其子元素显示在 set 之上）
-      if (!frame.querySelector('#playerNamePlate')) {
-        const plate = document.createElement('input');
+      let plate = frame.querySelector('#playerNamePlate') as HTMLInputElement | null;
+      if (!plate) {
+        plate = document.createElement('input');
         plate.id = 'playerNamePlate';
         plate.className = 'player-name-plate';
         plate.type = 'text';
         plate.maxLength = 12;
-        plate.placeholder = '输入你的名字';
         plate.value = localStorage.getItem('monsrise_nick') || '';
         frame.appendChild(plate);
       }
+      plate.placeholder = t('输入你的名字', 'Enter your name');
       // Replace modals
       this._container.querySelectorAll('.modal-overlay').forEach(m => m.remove());
       if (modalsContent.trim()) {
@@ -286,9 +288,9 @@ export class TeamEditorUI {
 
           <!-- Bottom Actions（归属于 left panel 内部） -->
           <div class="editor-actions-container">
-            <button id="lobbyExperimentalModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">实验模式</button>
-            <button id="lobbyAiModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">人机对战</button>
-            <button id="lobbyOnlineModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">联机模式</button>
+            <button id="lobbyExperimentalModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('实验模式', 'Sandbox Mode')}</button>
+            <button id="lobbyAiModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('人机对战', 'VS AI')}</button>
+            <button id="lobbyOnlineModeBtn" class="pixel-btn" style="width: 400px; height: 60px; font-size: 64px;">${t('联机模式', 'Online Mode')}</button>
           </div>
 
         </div>
@@ -687,13 +689,13 @@ export class TeamEditorUI {
             return `
               <div class="modal-monster-card ${activeClass}" data-monster-id="${m.id}">
                 ${renderSpriteImg(m.sx, m.sy, m.sw, m.sh, { transform: `scale(${0.72 * m.scale})`, extraStyle: 'margin-top: 10px; margin-bottom: 12px;' })}
-                <div class="modal-monster-name">${m.name}</div>
-                <div class="modal-monster-cost">${m.cost} 费</div>
+                <div class="modal-monster-name">${t(m.name, m.nameEn)}</div>
+                <div class="modal-monster-cost">${m.cost} ${t('费', 'Cost')}</div>
               </div>
             `;
           }).join('')}
         </div>
-        <button id="closeMonsterModalBtn" style="background: transparent; border: none; color: #ededed; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; left: 580px; top: 822px; width: 237px;">返回</button>
+        <button id="closeMonsterModalBtn" style="background: transparent; border: none; color: #ededed; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; left: 580px; top: 822px; width: 237px;">${t('返回', 'Back')}</button>
       </div>
     `;
   }
@@ -727,8 +729,8 @@ export class TeamEditorUI {
                 <div class="modal-badge-card${isSelected ? ' selected' : ''}" data-badge-id="${b.id}">
                   ${badgeHtml}
                   <div class="badge-tooltip">
-                    <div class="badge-tooltip-name">${b.name}</div>
-                    <div class="badge-tooltip-desc">${b.desc}</div>
+                    <div class="badge-tooltip-name">${t(b.name, b.nameEn)}</div>
+                    <div class="badge-tooltip-desc">${t(b.desc, b.descEn)}</div>
                   </div>
                 </div>
               `;
@@ -759,7 +761,7 @@ export class TeamEditorUI {
             return rows.join('');
           })()}
         </div>
-        <button id="closeBadgeModalBtn" style="background: transparent; border: none; color: #ffffff; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; top: 823px; left: 575px; width: 250px;">返回</button>
+        <button id="closeBadgeModalBtn" style="background: transparent; border: none; color: #ffffff; font-family: 'Zpix', monospace; font-size: 32px; cursor: pointer; padding: 16px 32px; position: absolute; top: 823px; left: 575px; width: 250px;">${t('返回', 'Back')}</button>
       </div>
     `;
   }

@@ -13,6 +13,7 @@ import { uiManager } from './ui/UIManager';
 import { vfx } from './game/VfxManager';
 import { registerAllBadges } from './game/BadgeSystem';
 import { networkManager } from './net/NetworkManager';
+import { languageManager } from './game/LanguageManager';
 import { computeWeaponPose, getAnimationClip } from './game/animation/AnimationAnimator';
 import { getCutoutTune, AIM_IDLE_WEAPONS, FRAME_SIZES, MUZZLE_TUNE, WEAPON_ROT_LIMIT, AIM_ROT_CENTER } from './game/animation/AnimTuning';
 import { music } from './game/MusicManager';
@@ -603,6 +604,23 @@ window.addEventListener('DOMContentLoaded', () => {
         applyVolume();
       });
       applyVolume();
+    }
+
+    // 右上角语言切换按钮，设置持久化在 localStorage，并实时重绘 UI Overlay
+    const langBtn = document.getElementById('languageToggleBtn');
+    const applyLanguage = () => {
+      if (langBtn) {
+        langBtn.textContent = languageManager.currentLanguage === 'zh' ? '🌐 EN' : '🌐 中文';
+      }
+    };
+    if (langBtn) {
+      langBtn.addEventListener('click', () => {
+        const nextLang = languageManager.currentLanguage === 'zh' ? 'en' : 'zh';
+        languageManager.setLanguage(nextLang);
+        applyLanguage();
+        uiManager.syncStateWithUI(); // 触发全屏 UI 重新渲染
+      });
+      applyLanguage();
     }
 
     // Auto-connect to WebSocket server

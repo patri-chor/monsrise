@@ -2069,6 +2069,29 @@ body {
 #soundToggleBtn:active { transform: scale(0.94); }
 #soundToggleBtn.muted { color: #9aa; border-color: #666; }
 
+#languageToggleBtn {
+  position: fixed;
+  top: 14px;
+  right: 110px; /* Offset to the left of soundToggleBtn */
+  z-index: 100;
+  font-family: 'Zpix', monospace;
+  font-size: 13px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+  background: rgba(11, 12, 16, 0.85);
+  border: 3px solid #e5c158;
+  border-radius: 0;
+  padding: 10px 14px 12px 14px;
+  cursor: pointer;
+  line-height: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  image-rendering: pixelated;
+  transition: transform 0.1s, filter 0.1s;
+}
+#languageToggleBtn:hover { filter: brightness(1.15); }
+#languageToggleBtn:active { transform: scale(0.94); }
+
 /* =============================================
    响应式：手机竖屏强制横屏
    ============================================= */

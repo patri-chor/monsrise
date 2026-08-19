@@ -80,8 +80,17 @@ export interface MultiMonsterExplorationMeta {
   seed: number;
   /** 父候选指纹 */
   parentFingerprint: string;
+  /** 回滚父指纹 */
+  rollbackParentFingerprint: string;
   /** 联合变更数（2-4） */
   changeCount: number;
+  /** 具体原子变更清单 */
+  atomicChanges: Array<{
+    type: string;
+    nodeId?: string;
+    monsterId?: number;
+    description: string;
+  }>;
   /** 上报单运算符失败次数（触发 escalation 的阈值记录） */
   escalationReason: string;
   failedSingleOperatorCount: number;

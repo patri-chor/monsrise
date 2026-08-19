@@ -1,6 +1,7 @@
 import { gameEngine } from '../game/GameEngine';
 import { networkManager } from '../net/NetworkManager';
 import { uiManager } from './UIManager';
+import { t } from '../game/LanguageManager';
 
 export class LobbyUI {
   private _container: HTMLDivElement;
@@ -19,9 +20,9 @@ export class LobbyUI {
       networkManager.on('poolUpdate', () => this.updatePool()),
       networkManager.on('roomCreated', () => this.render()),
       networkManager.on('matchFound', () => this.onMatchFound()),
-      networkManager.on('error', (data) => alert(data.msg || '服务器错误')),
+      networkManager.on('error', (data) => alert(data.msg || t('服务器错误', 'Server Error'))),
       networkManager.on('opponentDC', () => {
-        alert('对手已断开连接');
+        alert(t('对手已断开连接', 'Opponent disconnected'));
         networkManager.disconnect();
         gameEngine.state = 'TEAM_EDIT';
         gameEngine.mode = 'experimental';
@@ -52,7 +53,7 @@ export class LobbyUI {
     const connected = networkManager.connected;
     const roomId = networkManager.roomId;
     const pool = networkManager.matchPool;
-    const statusText = connected ? '已连接' : '未连接';
+    const statusText = connected ? t('已连接', 'Connected') : t('未连接', 'Disconnected');
 
     // 只替换联机面板自身，保留同容器中与其共存的队伍编辑界面等兄弟节点
     const prev = document.getElementById('lobbyView');
@@ -68,10 +69,10 @@ export class LobbyUI {
           font-family: 'Zpix', monospace; color: #fff;
         ">
           <div style="font-size: 36px; color: #4caf50; margin-bottom: 40px;">
-            ✓ 匹配成功
+            ✓ ${t('匹配成功', 'Match Found')}
           </div>
           <div style="font-size: 28px; color: #ccc; margin-bottom: 20px;">
-            对手：${networkManager.opponentNick}
+            ${t('对手：', 'Opponent: ')}${networkManager.opponentNick}
           </div>
         </div>
       `;
@@ -80,29 +81,29 @@ export class LobbyUI {
         <div id="lobbyView" class="net-lobby">
           <div class="net-panel">
             <!-- 顶部标题栏 -->
-            <div class="net-title">联机模式</div>
+            <div class="net-title">${t('联机模式', 'Online Mode')}</div>
 
             <!-- 创建房间 + 加入房间（居中） -->
             <div class="net-top-row">
-              <button id="lobbyCreateBtn" class="net-btn net-btn-green">创建房间</button>
-              <button id="lobbyJoinBtn" class="net-btn net-btn-blue">加入房间</button>
+              <button id="lobbyCreateBtn" class="net-btn net-btn-green">${t('创建房间', 'Create Room')}</button>
+              <button id="lobbyJoinBtn" class="net-btn net-btn-blue">${t('加入房间', 'Join Room')}</button>
             </div>
 
             <!-- 房间码：输入 / 显示 + 复制键 -->
             <div class="net-room-box">
-              <input id="lobbyRoomInput" type="text" maxlength="4" placeholder="4位房间码" value="${roomId}" />
-              <button id="lobbyCopyBtn" class="net-copy-btn${roomId ? '' : ' hidden'}">复制</button>
+              <input id="lobbyRoomInput" type="text" maxlength="4" placeholder="${t('4位房间码', '4-digit Code')}" value="${roomId}" />
+              <button id="lobbyCopyBtn" class="net-copy-btn${roomId ? '' : ' hidden'}">${t('复制', 'Copy')}</button>
             </div>
 
             <!-- 搜索对战（与创建房间左对齐） -->
-            <button id="lobbyMatchBtn" class="net-btn net-btn-purple">搜索对战</button>
+            <button id="lobbyMatchBtn" class="net-btn net-btn-purple">${t('搜索对战', 'Matchmaking')}</button>
 
             <!-- 对战池 -->
             <div class="net-pool-box">
-              <div class="net-pool-title" id="netPoolTitle">对战池（${pool.length}人等待）</div>
+              <div class="net-pool-title" id="netPoolTitle">${t('对战池', 'Matchmaking Pool')}（${pool.length} ${t('人等待', 'Waiting')}）</div>
               <div class="net-pool-list" id="netPoolList">
                 ${pool.length === 0
-                  ? '<div class="net-pool-empty">暂无玩家等待</div>'
+                  ? `<div class="net-pool-empty">${t('暂无玩家等待', 'No waiting players')}</div>`
                   : pool.map(p => `<div class="net-pool-item">${p.nick}</div>`).join('')}
               </div>
             </div>
@@ -110,10 +111,10 @@ export class LobbyUI {
             <!-- 底部栏（netp 问号所在高度的栏）：连接情况 + 返回 -->
             <div class="net-bottom-bar">
               <div class="net-status">
-                <span>连接情况：</span>
+                <span>${t('连接情况：', 'Connection: ')}</span>
                 <span class="net-status-val ${connected ? 'online' : 'offline'}">${statusText}</span>
               </div>
-              <button id="lobbyBackBtn" class="net-back-btn">返回</button>
+              <button id="lobbyBackBtn" class="net-back-btn">${t('返回', 'Back')}</button>
             </div>
           </div>
         </div>
@@ -142,9 +143,9 @@ export class LobbyUI {
     const titleEl = document.getElementById('netPoolTitle');
     if (!listEl || !titleEl) return;
     const pool = networkManager.matchPool;
-    titleEl.textContent = `对战池（${pool.length}人等待）`;
+    titleEl.textContent = `${t('对战池', 'Matchmaking Pool')}（${pool.length} ${t('人等待', 'Waiting')}）`;
     listEl.innerHTML = pool.length === 0
-      ? '<div class="net-pool-empty">暂无玩家等待</div>'
+      ? `<div class="net-pool-empty">${t('暂无玩家等待', 'No waiting players')}</div>`
       : pool.map(p => `<div class="net-pool-item">${p.nick}</div>`).join('');
   }
 
@@ -154,11 +155,11 @@ export class LobbyUI {
     if (!valEl) return;
     const connected = networkManager.connected;
     valEl.className = `net-status-val ${connected ? 'online' : 'offline'}`;
-    valEl.textContent = connected ? '已连接' : '未连接';
+    valEl.textContent = connected ? t('已连接', 'Connected') : t('未连接', 'Disconnected');
   }
 
   private bindButtons(): void {
-    const nick = () => this._nick || '玩家';
+    const nick = () => this._nick || t('玩家', 'Player');
 
     document.getElementById('lobbyCreateBtn')?.addEventListener('click', () => {
       networkManager.createRoom(nick());
@@ -167,7 +168,7 @@ export class LobbyUI {
     document.getElementById('lobbyJoinBtn')?.addEventListener('click', () => {
       const input = document.getElementById('lobbyRoomInput') as HTMLInputElement;
       const code = input?.value.trim() || '';
-      if (code.length !== 4) { alert('请输入4位房间号'); return; }
+      if (code.length !== 4) { alert(t('请输入4位房间号', 'Please enter a 4-digit room code')); return; }
       networkManager.joinRoom(code, nick());
     });
 
@@ -175,8 +176,8 @@ export class LobbyUI {
       const btn = e.currentTarget as HTMLButtonElement;
       if (!networkManager.roomId) return;
       navigator.clipboard?.writeText(networkManager.roomId).catch(() => {});
-      btn.textContent = '已复制';
-      setTimeout(() => { btn.textContent = '复制'; }, 1200);
+      btn.textContent = t('已复制', 'Copied');
+      setTimeout(() => { btn.textContent = t('复制', 'Copy'); }, 1200);
     });
 
     document.getElementById('lobbyMatchBtn')?.addEventListener('click', () => {

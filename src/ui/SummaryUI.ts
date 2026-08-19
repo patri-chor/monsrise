@@ -1,6 +1,7 @@
 import { gameEngine } from '../game/GameEngine';
 import { DB_MONSTERS } from '../game/Database';
 import { uiManager } from './UIManager';
+import { t } from '../game/LanguageManager';
 
 // Determine which team is "mine" for display ordering
 function getTeamOrder(): { myTeam: 1 | 2; oppTeam: 1 | 2 } {
@@ -56,14 +57,14 @@ export class SummaryUI {
     const total = gameEngine.perRoundStats.length;
 
     // Title
-    let title = '平局';
+    let title = t('平局', 'Draw');
     if (gameEngine.state === 'GAME_OVER') {
-      if (gameEngine.p1Score > gameEngine.p2Score) title = '胜利';
-      else if (gameEngine.p2Score > gameEngine.p1Score) title = '失败';
+      if (gameEngine.p1Score > gameEngine.p2Score) title = t('胜利', 'Victory');
+      else if (gameEngine.p2Score > gameEngine.p1Score) title = t('失败', 'Defeat');
     } else {
       const r = gameEngine.roundResults[gameEngine.roundResults.length - 1];
-      if (r === 1) title = '胜利';
-      else if (r === 2) title = '失败';
+      if (r === 1) title = t('胜利', 'Victory');
+      else if (r === 2) title = t('失败', 'Defeat');
     }
 
     // Round selector overlays — B2 texture with #555650 tint
@@ -158,7 +159,7 @@ export class SummaryUI {
 
     const statsRows = allStats.length === 0
       ? `<div style="padding:80px 0;text-align:center;
-           font-family:'Zpix',monospace;font-size:${FS_HEADER}px;color:#666;">无战斗数据</div>`
+           font-family:'Zpix',monospace;font-size:${FS_HEADER}px;color:#666;">${t('无战斗数据', 'No battle data')}</div>`
       : [
           ...myStats.map(s => renderRow(s, true)),
           teamDivider,
@@ -202,8 +203,8 @@ export class SummaryUI {
           font-family:'Zpix',monospace; font-size:${FS_STATS}px; color:#ccc;
           pointer-events:none;
         ">
-          <span>战斗用时 &nbsp;${elapsed.toFixed(2)} 秒</span>
-          <span>伤害输出能力 &nbsp;${dps}/秒</span>
+          <span>${t('战斗用时', 'Duration')} &nbsp;${elapsed.toFixed(2)} ${t('秒', 's')}</span>
+          <span>${t('伤害输出能力', 'DPS')} &nbsp;${dps}/${t('秒', 's')}</span>
         </div>
 
         <!-- Table header — fixed just above dark table area -->
@@ -218,11 +219,11 @@ export class SummaryUI {
           pointer-events:none;
         ">
           <div style="flex:1;display:flex;justify-content:space-around;">
-            <div style="width:160px;text-align:center;">击败</div>
-            <div style="width:260px;text-align:center;">造成伤害</div>
-            <div style="width:260px;text-align:center;">承受伤害</div>
-            <div style="width:200px;text-align:center;">治疗</div>
-            <div style="width:260px;text-align:center;">接受治疗</div>
+            <div style="width:160px;text-align:center;">${t('击败', 'Kills')}</div>
+            <div style="width:260px;text-align:center;">${t('造成伤害', 'Dmg Dealt')}</div>
+            <div style="width:260px;text-align:center;">${t('承受伤害', 'Dmg Taken')}</div>
+            <div style="width:200px;text-align:center;">${t('治疗', 'Heal Out')}</div>
+            <div style="width:260px;text-align:center;">${t('接受治疗', 'Heal In')}</div>
           </div>
         </div>
 

@@ -2,6 +2,7 @@
  * 共享渲染工具函数 — 消除 TeamEditorUI / BattleUI / SummaryUI 中的重复 HTML 生成代码
  */
 import { BADGE_SPRITES } from '../../game/Database';
+import { t } from '../../game/LanguageManager';
 
 // ========== Spritesheet 图片渲染 ==========
 
@@ -83,13 +84,7 @@ export interface DetailCardOptions {
  * @param getSkillDesc 技能描述函数引用
  */
 export function renderDetailCard(
-  monster: {
-    sx: number; sy: number;
-    name: string; race: string; role: string;
-    hp: number; atk: number; ats: number;
-    range: number; speed: number;
-    skill: string; skillCd: number;
-  },
+  monster: any,
   options: DetailCardOptions = {},
   skillDescText: string = ''
 ): string {
@@ -101,6 +96,10 @@ export function renderDetailCard(
   } = options;
 
   const skillText = skillTextOverride || skillDescText;
+  const mName = t(monster.name, monster.nameEn || monster.name);
+  const mRace = t(monster.race, monster.raceEn || monster.race);
+  const mRole = t(monster.role, monster.roleEn || monster.role);
+  const sName = t(monster.skillName || monster.skill, monster.skillNameEn || monster.skill);
 
   return `
     <!-- Avatar -->
@@ -119,8 +118,8 @@ export function renderDetailCard(
     <div class="details-stars-container">★★★</div>
 
     <!-- Meta info -->
-    <div class="details-type-tag">[ ${monster.race} | ${monster.role} ]</div>
-    <div class="details-name-banner">${monster.name}</div>
+    <div class="details-type-tag">[ ${mRace} | ${mRole} ]</div>
+    <div class="details-name-banner">${mName}</div>
 
     <!-- Stats overlays -->
     <div class="details-val details-val-hp">${hp}/${maxHp}</div>
@@ -132,7 +131,7 @@ export function renderDetailCard(
     <!-- Skill Box -->
     <div class="details-skill-section">
       <div class="details-skill-desc-box">
-        <div style="color:#e5c158; font-size:32px; margin-bottom:4px;">${monster.skill} (CD: ${monster.skillCd}s)</div>
+        <div style="color:#e5c158; font-size:32px; margin-bottom:4px;">${sName} (CD: ${monster.skillCd}s)</div>
         <div style="font-size:22px;">${skillText}</div>
       </div>
     </div>

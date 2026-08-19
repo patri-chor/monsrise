@@ -1,9 +1,9 @@
 // ============================================================
-// T038 Phase-3 — 06_runtime_export.ts
-// 只读运行时候选目录导出（无 apply/deploy/publish/Tier 变更）
+// T038R — 06_runtime_export.ts
+// 只读运行时候选目录导出（严格聚合实验模式边界，无 apply/deploy/publish/Tier 变更）
 // ============================================================
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, renameSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import type { ScreenObservation } from './04_screen';
@@ -26,7 +26,7 @@ export interface CatalogEntry {
   branchesPruned: number;
   pruneTrials: number;
   finalFingerprint: string;
-  isPromotion: boolean;
+  isExperimentalFrontier: boolean;
   cycleId: string;
   exportedAt: string;
 }
@@ -34,19 +34,26 @@ export interface CatalogEntry {
 export interface RuntimeCandidateCatalog {
   schemaVersion: 'T038_CATALOG_V1';
   protocol: string;
+  evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
+  integrationStatus: 'EXPERIMENTAL_UNVERIFIED_NOT_FOR_AUTO_INTEGRATION';
+  formalPromotionStatus: 'NOT_EVALUATED';
+  noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE';
   cycleId: string;
+  cycleOrdinal: number;
+  parentCatalogHash: string | null;
   exportedAt: string;
   totalSources: number;
   totalEntries: number;
-  promotionCount: number;
+  experimentalFrontierCount: number;
   catalogHash: string;
   entries: CatalogEntry[];
-  noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE';
 }
 
 export function exportRuntimeCatalog(opts: {
   cycleId: string;
+  cycleOrdinal: number;
   protocol: string;
+  parentCatalogHash?: string | null;
   entries: Array<{
     policy: SourcePolicy;
     candidateId: string;
@@ -54,10 +61,10 @@ export function exportRuntimeCatalog(opts: {
     canonicalFingerprint: string;
     obs: ScreenObservation;
     pruneResult: PruneResult | null;
-    isPromotion: boolean;
+    isExperimentalFrontier: boolean;
   }>;
 }): RuntimeCandidateCatalog {
-  const { cycleId, protocol, entries } = opts;
+  const { cycleId, cycleOrdinal, protocol, parentCatalogHash = null, entries } = opts;
   const now = new Date().toISOString();
 
   const catalogEntries: CatalogEntry[] = entries.map(e => ({
@@ -74,34 +81,36 @@ export function exportRuntimeCatalog(opts: {
     branchesPruned: e.pruneResult?.totalBranchesPruned ?? 0,
     pruneTrials: e.pruneResult?.totalBranchesTested ?? 0,
     finalFingerprint: e.pruneResult?.finalFingerprint ?? e.canonicalFingerprint,
-    isPromotion: e.isPromotion,
+    isExperimentalFrontier: e.isExperimentalFrontier,
     cycleId,
     exportedAt: now,
   }));
 
-  const promotionCount = catalogEntries.filter(e => e.isPromotion).length;
+  const experimentalFrontierCount = catalogEntries.filter(e => e.isExperimentalFrontier).length;
 
   const catalog: RuntimeCandidateCatalog = {
     schemaVersion: 'T038_CATALOG_V1',
     protocol,
+    evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+    integrationStatus: 'EXPERIMENTAL_UNVERIFIED_NOT_FOR_AUTO_INTEGRATION',
+    formalPromotionStatus: 'NOT_EVALUATED',
+    noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE',
     cycleId,
+    cycleOrdinal,
+    parentCatalogHash,
     exportedAt: now,
     totalSources: new Set(catalogEntries.map(e => e.sourceId)).size,
     totalEntries: catalogEntries.length,
-    promotionCount,
+    experimentalFrontierCount,
     catalogHash: '',
     entries: catalogEntries,
-    noApplyConfirmation: 'NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE',
   };
 
-  // 计算 catalogHash（不含 catalogHash 自身）
   const forHash = { ...catalog, catalogHash: undefined };
   catalog.catalogHash = createHash('sha256').update(JSON.stringify(forHash)).digest('hex').slice(0, 16);
 
-  // 写出（atomic: tmp→rename）
   const tmp = `${CATALOG_PATH}.tmp`;
   writeFileSync(tmp, JSON.stringify(catalog, null, 2), 'utf8');
-  const { renameSync } = require('node:fs');
   renameSync(tmp, CATALOG_PATH);
 
   return catalog;

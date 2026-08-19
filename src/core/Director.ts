@@ -2,6 +2,7 @@ import { Node } from './Node';
 import { Sprite } from './Sprite';
 import { vfx } from '../game/VfxManager';
 import { uiManager } from '../ui/UIManager';
+import { gameEngine } from '../game/GameEngine';
 
 export class Director {
   private static _instance: Director | null = null;
@@ -78,6 +79,16 @@ export class Director {
     // Cap dt to prevent massive jumps during lag spikes
     if (dt > 0.1) dt = 0.1;
     this._lastTime = timestamp;
+
+    // 纯 DOM 界面（开始界面/队伍编辑/联机大厅）下 canvas 无可绘制内容：
+    // 跳过逻辑更新与渲染，只保留 rAF 心跳——避免 iOS 上长时间停留队伍界面时
+    // 每帧全量重绘 2556×1179 大 canvas 的持续 GPU/内存压力（触发 Safari 杀页刷新）
+    const domOnly = gameEngine.state === 'OPENING' || gameEngine.state === 'TEAM_EDIT' || gameEngine.state === 'MATCH_LOBBY';
+    if (domOnly) {
+      this._accumulator = 0; // 丢弃停留期间累积的时间，防止切回战斗时一次性回补
+      this._animationFrameId = requestAnimationFrame(this.loop.bind(this));
+      return;
+    }
 
     // ---- 固定逻辑步长（fixed-step）：战斗逻辑恒按 FIXED_DT 积分，消除显示器帧率
     // 对战斗结果的影响（60Hz/120Hz/144Hz 下 dt 不同 → 移动/攻击时序分叉 → 同阵容

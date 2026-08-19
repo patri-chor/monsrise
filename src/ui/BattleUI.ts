@@ -2,6 +2,7 @@ import { gameEngine, PlacedMonster } from '../game/GameEngine';
 import { DB_MONSTERS, DB_BADGES, getSkillDescription } from '../game/Database';
 import { renderAvatarHtml } from './shared/AvatarRenderer';
 import { renderDetailCard, renderBadgeImg, renderSpriteImg } from './shared/renderHelpers';
+import { t } from '../game/LanguageManager';
 import { battleSystem } from '../game/BattleSystem';
 import { gridToScreen } from '../game/Database';
 import { director } from '../core/Director';
@@ -108,14 +109,14 @@ export class BattleUI {
       'position:absolute;left:calc(50% + 131px);top:18px;z-index:9;');
 
     // Phase text and timer display
-    let phaseText = '准备阶段';
+    let phaseText = t('准备阶段', 'Prep Phase');
     let displayTime = remainingTime;
     if (isBattle) {
       phaseText = `${gameEngine.p1Score} - ${gameEngine.p2Score}`;
       displayTime = 40; // Freeze at 40 during combat
     } else {
-      if (gameEngine.state === 'ROUND_END') phaseText = '回合结束';
-      if (gameEngine.state === 'GAME_OVER') phaseText = '游戏结束';
+      if (gameEngine.state === 'ROUND_END') phaseText = t('回合结束', 'Round End');
+      if (gameEngine.state === 'GAME_OVER') phaseText = t('游戏结束', 'Game Over');
     }
 
     // Budgets and placement counts
@@ -236,7 +237,7 @@ export class BattleUI {
         <div class="battle-hud-bottom">
           <!-- Cost display absolute positioned at top-left -->
           <div class="bench-header-stat" style="position: absolute; left: 258px; top: 52px; z-index: 2;">
-            <span>当前预算: ${usedBudget} / ${currentBudgetLimit}</span>
+            <span>${t('当前预算：', 'Budget: ')}${usedBudget} / ${currentBudgetLimit}</span>
           </div>
 
           <!-- 8 bench slots -->
@@ -263,7 +264,7 @@ export class BattleUI {
                           extraStyle: 'pointer-events: none;'
                         })}
                       </div>
-                      <div class="bench-slot-cost">${dbMonster.cost}费</div>
+                      <div class="bench-slot-cost">${dbMonster.cost}${t('费', 'Cost')}</div>
                     ` : ''}
                   </div>
                 `;
@@ -1472,7 +1473,7 @@ export class BattleUI {
             data: dbMonster,
             badges: activeTeamSlot.badgeIds.map(id => {
               const realBadge = DB_BADGES.find(b => b.id === id);
-              return realBadge ? { ...realBadge } : { id, name: '未知', desc: '' };
+              return realBadge ? { ...realBadge } : { id, name: '未知', nameEn: 'Unknown', desc: '', descEn: '' };
             }),
             gridX: 0,
             gridY: 0,
@@ -1516,7 +1517,7 @@ export class BattleUI {
               data: dbMonster,
               badges: draftSlot.badgeIds.map(id => {
                 const realBadge = DB_BADGES.find(b => b.id === id);
-                return realBadge ? { ...realBadge } : { id, name: '未知', desc: '' };
+                return realBadge ? { ...realBadge } : { id, name: '未知', nameEn: 'Unknown', desc: '', descEn: '' };
               }),
               gridX: 0, gridY: 0,
               initialGridX: 0, initialGridY: 0,

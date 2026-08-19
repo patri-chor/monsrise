@@ -1,12 +1,14 @@
 // ============================================================
-// T038 Phase-3 — 06_prune.ts
+// T038R — 06_prune.ts
 // Product-path greedy post-pruning（纯产品路径，无 arena/legacy prune）
 //
 // 对每个非空条件分支逐一剪枝测试：
 //   candidate_with_branch vs candidate_without_branch
 //   仅当移除无 material regression 时才剪枝
+//   所有记录标注 AGGREGATE_EXPLORATION_ONLY 与 AGGREGATE_HEURISTIC_UNVERIFIED
 // ============================================================
 
+import { createHash } from 'node:crypto';
 import type { EvolFormation, EvolNode, FeatureMask } from '../evol_gene';
 import { cloneEvolFormation, walkEvolNodes } from '../evol_gene';
 import type { Formation } from '../../../ai/types';
@@ -27,6 +29,10 @@ export const PRUNE_WEAKEST_SIDE_TOLERANCE = 0.07;
 export const PRUNE_GAMES_PER_CELL = 5;
 
 export interface PruneTrialRecord {
+  recordId: string;
+  evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
+  heuristicStatus: 'AGGREGATE_HEURISTIC_UNVERIFIED';
+  cycleId: string;
   candidateId: string;
   branchNodeId: string;
   branchCondition: object;
@@ -60,18 +66,18 @@ export interface PruneResult {
  */
 export async function postPruneCandidate(opts: {
   pool: PersistentSimPool;
+  cycleId: string;
   candidateId: string;
   evol: EvolFormation;
   matchedOpps: Formation[];
   baselineScore: number;
   seedBase: number;
 }): Promise<PruneResult> {
-  const { pool, candidateId, matchedOpps, baselineScore, seedBase } = opts;
+  const { pool, cycleId, candidateId, matchedOpps, baselineScore, seedBase } = opts;
   let currentEvol = cloneEvolFormation(opts.evol);
   const trials: PruneTrialRecord[] = [];
   let totalPruned = 0;
 
-  // 找所有非空条件分支节点（有 condition.main 或 condition.side 的 round>=1 节点）
   const getBranchCandidates = (evol: EvolFormation): EvolNode[] => {
     return walkEvolNodes(evol.root).filter(n =>
       n.round >= 1 &&
@@ -100,9 +106,7 @@ export async function postPruneCandidate(opts: {
   const originalFingerprint = computeCandidateFingerprint(currentEvol);
   let seed = seedBase;
 
-  // 评估当前（before）分数
   let beforeResult = await scoreEvol(currentEvol, seed);
-
   const branchNodes = getBranchCandidates(currentEvol);
   const totalTested = branchNodes.length;
 
@@ -110,45 +114,69 @@ export async function postPruneCandidate(opts: {
     seed += 1000;
     const beforeFp = computeCandidateFingerprint(currentEvol);
 
-    // 构造移除该分支后的候选（将 placements 清空）
     const pruned = cloneEvolFormation(currentEvol);
     const prunedNode = walkEvolNodes(pruned.root).find(n => n.id === node.id);
     if (!prunedNode) continue;
 
-    // 合并放置到兜底分支（round 同级，condition 为空 mask 的节点）
-    // 简单策略：直接清空 placements（兜底分支已有放置）
     prunedNode.placements = [];
 
     const afterFp = computeCandidateFingerprint(pruned);
+    const recordId = createHash('sha256')
+      .update(`${cycleId}_${candidateId}_prune_${node.id}_${seed}`)
+      .digest('hex')
+      .slice(0, 16);
+
     if (afterFp === beforeFp) {
       trials.push({
-        candidateId, branchNodeId: node.id, branchCondition: node.condition,
-        beforeFingerprint: beforeFp, afterFingerprint: afterFp,
-        beforeScore: beforeResult.score, afterScore: beforeResult.score, scoreDelta: 0,
+        recordId,
+        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+        heuristicStatus: 'AGGREGATE_HEURISTIC_UNVERIFIED',
+        cycleId,
+        candidateId,
+        branchNodeId: node.id,
+        branchCondition: node.condition,
+        beforeFingerprint: beforeFp,
+        afterFingerprint: afterFp,
+        beforeScore: beforeResult.score,
+        afterScore: beforeResult.score,
+        scoreDelta: 0,
         beforeW: beforeResult.w, beforeD: beforeResult.d, beforeL: beforeResult.l,
         afterW: beforeResult.w, afterD: beforeResult.d, afterL: beforeResult.l,
-        decision: 'KEPT', decisionReason: 'NO_OP: fingerprint unchanged after removal',
-        seed, totalGames: 0, completedAt: new Date().toISOString(),
+        decision: 'KEPT',
+        decisionReason: 'NO_OP: fingerprint unchanged after removal',
+        seed,
+        totalGames: 0,
+        completedAt: new Date().toISOString(),
       });
       continue;
     }
 
-    // 验证合法性
     const validation = validateCandidateLegality(pruned);
     if (!validation.valid) {
       trials.push({
-        candidateId, branchNodeId: node.id, branchCondition: node.condition,
-        beforeFingerprint: beforeFp, afterFingerprint: afterFp,
-        beforeScore: beforeResult.score, afterScore: 0, scoreDelta: 0,
+        recordId,
+        evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+        heuristicStatus: 'AGGREGATE_HEURISTIC_UNVERIFIED',
+        cycleId,
+        candidateId,
+        branchNodeId: node.id,
+        branchCondition: node.condition,
+        beforeFingerprint: beforeFp,
+        afterFingerprint: afterFp,
+        beforeScore: beforeResult.score,
+        afterScore: 0,
+        scoreDelta: 0,
         beforeW: beforeResult.w, beforeD: beforeResult.d, beforeL: beforeResult.l,
         afterW: 0, afterD: 0, afterL: 0,
-        decision: 'KEPT', decisionReason: `LEGALITY_FAIL: ${validation.reasons.join('; ')}`,
-        seed, totalGames: 0, completedAt: new Date().toISOString(),
+        decision: 'KEPT',
+        decisionReason: `LEGALITY_FAIL: ${validation.reasons.join('; ')}`,
+        seed,
+        totalGames: 0,
+        completedAt: new Date().toISOString(),
       });
       continue;
     }
 
-    // 评估剪枝后分数
     const afterResult = await scoreEvol(pruned, seed);
     const delta = afterResult.score - beforeResult.score;
 
@@ -162,13 +190,24 @@ export async function postPruneCandidate(opts: {
       : `KEPT: regression delta=${delta.toFixed(3)} exceeds tolerance (${PRUNE_REGRESSION_TOLERANCE})`;
 
     trials.push({
-      candidateId, branchNodeId: node.id, branchCondition: node.condition,
-      beforeFingerprint: beforeFp, afterFingerprint: afterFp,
-      beforeScore: beforeResult.score, afterScore: afterResult.score, scoreDelta: delta,
+      recordId,
+      evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
+      heuristicStatus: 'AGGREGATE_HEURISTIC_UNVERIFIED',
+      cycleId,
+      candidateId,
+      branchNodeId: node.id,
+      branchCondition: node.condition,
+      beforeFingerprint: beforeFp,
+      afterFingerprint: afterFp,
+      beforeScore: beforeResult.score,
+      afterScore: afterResult.score,
+      scoreDelta: delta,
       beforeW: beforeResult.w, beforeD: beforeResult.d, beforeL: beforeResult.l,
       afterW: afterResult.w, afterD: afterResult.d, afterL: afterResult.l,
-      decision, decisionReason,
-      seed, totalGames: (afterResult.w + afterResult.d + afterResult.l),
+      decision,
+      decisionReason,
+      seed,
+      totalGames: (afterResult.w + afterResult.d + afterResult.l),
       completedAt: new Date().toISOString(),
     });
 
