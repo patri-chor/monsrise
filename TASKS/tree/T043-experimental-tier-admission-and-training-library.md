@@ -1,7 +1,9 @@
-STATUS: OPEN
+STATUS: REJECTED
 DOMAIN: tree
 
 # T043 - Experimental Tier Admission and Training Library
+
+> REJECTED: This specification incorrectly treated T1/T2/T3 as training-progress states and introduced an invalid independent Stage/Tier ladder. The user clarified that T0/T1/T2/T3 classify **formation strength**, while L1/L2/L3 classify **test/training environments**. Do not implement this task; a replacement specification will be written only after the strength thresholds and T3 -> T2 rule are explicitly decided.
 
 > Domain: `tree` | Executor branch: `agent/tree`
 > T042 is accepted as the current lineage-complete aggregate training catalog. Add durable, automatic **experimental training tier** admission so candidates that meet their stage gate visibly enter T3/T2 rather than remaining an undifferentiated candidate list. This does not replace, apply, deploy, publish, or mutate the frozen current T1 game library.
