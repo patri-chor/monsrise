@@ -97,7 +97,54 @@ heuristicStatus: AGGREGATE_HEURISTIC_UNVERIFIED
 
 Retain product path only. For selected branch candidates, compare the candidate and branch-removed candidate using matched aggregate samples. Persist trial identity, seeds, source-relative/weakest-side aggregate measures, and the mandatory heuristic marker. Do not claim trace-backed pruning and do not call arena prune modules.
 
-## E. Required Check Additions
+## E. CPU Saturation and Tiered Aggregate Sampling
+
+### 1. Fix task granularity before raising worker counts
+
+Current T037 task construction is too coarse:
+
+```text
+one entity = 7 opponents x 2 sides = 14 tasks
+one task loops 10 games serially
+with 32 workers, at most 14 workers can run
+```
+
+Replace this for T038 candidate screening with fine-grained one-game product tasks. Aggregate W/D/L only after the pool returns. Do not persist per-game traces or claim strict evidence; this remains aggregate exploration.
+
+### 2. Keep a sustained runnable queue
+
+- Preserve `PersistentSimPool`; do not cap it below available workers for formal product tasks.
+- Keep outer candidate concurrency <=2, but dispatch the two candidates' per-game task sets together so the queue has at least `2 x 7 x 2 x samples` runnable games.
+- Initial dispatch window must be at least `min(configuredWorkers, runnableTasks)`; do not wait for one completed aggregate cell before scheduling the next side/opponent/candidate.
+- `CpuLoadMonitor` remains a 80% target controller, but scheduler telemetry must record configured workers, peak in-flight tasks, average in-flight tasks, sampled average CPU, sampled p50/p95 CPU, and number of low-queue intervals.
+- Acceptance target: while runnable work is available for at least 10 seconds, observed average CPU must reach >=75% with p95 <=90%, or report a measured host-level blocker (for example VM quota, memory pressure, or host contention). Do not claim a literal guaranteed 80% on a host that cannot provide it.
+
+### 3. Tiered sample budget for rapid exploration
+
+Use a deterministic staged sample plan per candidate, per `opponent x side` cell:
+
+```text
+Stage A exploration: 1 game/cell = 14 games/candidate
+Stage B contender: extend to 3 games/cell = 42 games/candidate
+Stage C aggregate frontier: extend to 6 games/cell = 84 games/candidate
+```
+
+No default 10-game/cell screen for new T038 candidates. The old T037 10-game aggregate data remains a fixed starting reference.
+
+Promotion to the next sample stage is source-relative and deterministic:
+
+```text
+A -> B: candidate aggregate score is >= source baseline score - 0.05
+B -> C: candidate aggregate score is >= source baseline score
+```
+
+Record stage, games-per-cell, stage decision, source-relative criterion, parent score, and exact stage seed identity. A candidate failing a stage is retained as a rejected/exploration result, not silently discarded or converted to a loss.
+
+### 4. Match pruning to the same fast evidence tier
+
+Product-path aggregate pruning uses Stage B (3 games/cell) for before/after matched candidates. It remains `AGGREGATE_HEURISTIC_UNVERIFIED` and must record sample stage and task telemetry.
+
+## F. Required Check Additions
 
 Extend `check_cycle.ts` and focused tests to verify:
 
@@ -108,6 +155,9 @@ no duplicate decision/prune records
 actual strategy_schedule_branch candidate produced or a valid explicit rejection
 weak source reaches deterministic multi-monster escalation after configured persistent failure threshold
 all generated candidates legal/unique and screened via product path
+per-game task granularity and two-candidate queueing are used
+stage A/B/C sample counts and promotion criteria recompute correctly
+scheduler telemetry is present and CPU target is measured honestly
 all catalog/decision/prune records bear aggregate experimental labels
 no legacy promotion field/term remains in machine-readable catalog
 ```
