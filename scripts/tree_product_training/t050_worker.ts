@@ -1,12 +1,14 @@
 // ============================================================
 // scripts/tree_product_training/t050_worker.ts
-// Worker for evaluating a single target in T050 multi-threading
+// Worker for evaluating candidate targets with distinct EvolFormation & pools
 // ============================================================
 
 import '../../src/engine/env';
-import { parentPort, workerData } from 'node:worker_threads';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { FORMATION_LIBRARY } from '../../src/ai/formation_library';
-import { formationToEvol } from '../../src/engine/tree/evol_gene';
+import type { Formation } from '../../src/ai/types';
+import { formationToEvol, type EvolFormation } from '../../src/engine/tree/evol_gene';
 import { treeStrategyFor } from '../../src/engine/tree/product_tree_strategy';
 import { playFullGame } from '../../src/engine/play_full_game';
 
@@ -30,20 +32,67 @@ export interface TargetTaskResult {
   rawGames: any[];
 }
 
+// 加载全谱系 Web Challenge Catalog
+const WEB_CATALOG_PATH = resolve('public/data/l1_melee_challenge_catalog.json');
+let webCatalogMembers: Map<string, { name: string; team: any; evol: EvolFormation; archetypeId: string }> | null = null;
+let meleeOpponentsList: Array<{ id: string; name: string; team: any; evol: EvolFormation; archetypeId: string }> | null = null;
+
+function ensureCatalogLoaded() {
+  if (webCatalogMembers && meleeOpponentsList) return;
+  webCatalogMembers = new Map();
+  meleeOpponentsList = [];
+
+  const catalog = JSON.parse(readFileSync(WEB_CATALOG_PATH, 'utf8'));
+  for (const arch of catalog.archetypes) {
+    for (const mem of arch.members) {
+      const entry = {
+        name: mem.name,
+        team: mem.team,
+        evol: mem.evol,
+        archetypeId: arch.archetypeId,
+      };
+      webCatalogMembers.set(mem.canonicalFingerprint, entry);
+      webCatalogMembers.set(mem.memberId, entry);
+      if (mem.team && mem.evol) {
+        meleeOpponentsList.push({
+          id: mem.memberId,
+          name: mem.name,
+          team: mem.team,
+          evol: mem.evol,
+          archetypeId: arch.archetypeId,
+        });
+      }
+    }
+  }
+}
+
 export function runTargetEvaluation(data: TargetTaskData): TargetTaskResult {
-  const { targetIdx, formationId, rootT0SourceId, currentTier, levelsToRetest, seedBaseL2, seedBaseL1 } = data;
+  ensureCatalogLoaded();
 
-  const srcFormation = FORMATION_LIBRARY.find(f => f.id === rootT0SourceId) ?? FORMATION_LIBRARY[0];
-  const strong11Opponents = FORMATION_LIBRARY.slice(0, 11);
-  const evol = formationToEvol(srcFormation);
-  const strategy = treeStrategyFor(evol);
+  const { targetIdx, formationId, rootT0SourceId, canonicalFingerprint, levelsToRetest, seedBaseL2, seedBaseL1 } = data;
 
+  // 1. 获取目标候选专属的实际 team 与 EvolFormation
+  const catalogEntry = webCatalogMembers!.get(canonicalFingerprint) ?? webCatalogMembers!.get(formationId);
+  let myTeam: any[];
+  let myEvol: EvolFormation;
+
+  if (catalogEntry && catalogEntry.team && catalogEntry.evol) {
+    myTeam = catalogEntry.team;
+    myEvol = catalogEntry.evol;
+  } else {
+    const rootFormation = FORMATION_LIBRARY.find(f => f.id === rootT0SourceId) ?? FORMATION_LIBRARY[0];
+    myTeam = rootFormation.team;
+    myEvol = formationToEvol(rootFormation);
+  }
+
+  const strategy = treeStrategyFor(myEvol);
   const rawGames: any[] = [];
   let l2Vector: any | null = null;
   let l1Vector: any | null = null;
 
-  // L2 Retest
+  // 2. L2 重测：对战 11 套 Frozen T0 强阵 (11 对手 × 2 侧 × 10 局 = 220 局)
   if (levelsToRetest.includes('L2')) {
+    const strong11Opponents = FORMATION_LIBRARY.slice(0, 11);
     let l2W = 0, l2D = 0, l2L = 0;
     const oppVectors: Record<string, { w: number; d: number; l: number }> = {};
     const sideVectors: Record<1 | 2, { w: number; d: number; l: number }> = {
@@ -60,8 +109,8 @@ export function runTargetEvaluation(data: TargetTaskData): TargetTaskResult {
       for (const side of [1, 2] as (1 | 2)[]) {
         for (let g = 0; g < 10; g++) {
           const seed = seedBaseL2 + targetIdx * 10000 + oppIdx * 500 + side * 100 + g;
-          const teamA = side === 1 ? srcFormation.team : opp.team;
-          const teamB = side === 1 ? opp.team : srcFormation.team;
+          const teamA = side === 1 ? myTeam : opp.team;
+          const teamB = side === 1 ? opp.team : myTeam;
           const stratA = side === 1 ? strategy : oppStrategy;
           const stratB = side === 1 ? oppStrategy : strategy;
 
@@ -144,8 +193,14 @@ export function runTargetEvaluation(data: TargetTaskData): TargetTaskResult {
     };
   }
 
-  // L1 Retest
+  // 3. L1 重测：对战全谱系概率 Melee 对手池 (11 谱系中各抽取 2 个不同成员，共 22 套对手 × 双侧 × 5 局 = 220 局)
   if (levelsToRetest.includes('L1')) {
+    // 挑选排除自身的 22 套 Melee 对手
+    const eligibleMeleeOpponents = meleeOpponentsList!.filter(
+      opp => opp.id !== formationId && opp.name !== myEvol.name
+    );
+    const melee22 = eligibleMeleeOpponents.slice(0, 22);
+
     let l1W = 0, l1D = 0, l1L = 0;
     const oppVectors: Record<string, { w: number; d: number; l: number }> = {};
     const sideVectors: Record<1 | 2, { w: number; d: number; l: number }> = {
@@ -153,17 +208,17 @@ export function runTargetEvaluation(data: TargetTaskData): TargetTaskResult {
       2: { w: 0, d: 0, l: 0 },
     };
 
-    for (let oppIdx = 0; oppIdx < strong11Opponents.length; oppIdx++) {
-      const opp = strong11Opponents[oppIdx];
+    for (let oppIdx = 0; oppIdx < melee22.length; oppIdx++) {
+      const opp = melee22[oppIdx];
       const oppId = opp.id;
-      const oppStrategy = treeStrategyFor(formationToEvol(opp));
+      const oppStrategy = treeStrategyFor(opp.evol);
       oppVectors[oppId] = { w: 0, d: 0, l: 0 };
 
       for (const side of [1, 2] as (1 | 2)[]) {
-        for (let g = 0; g < 10; g++) {
+        for (let g = 0; g < 5; g++) { // 22 对手 × 2 侧 × 5 局 = 220 局
           const seed = seedBaseL1 + targetIdx * 10000 + oppIdx * 500 + side * 100 + g;
-          const teamA = side === 1 ? srcFormation.team : opp.team;
-          const teamB = side === 1 ? opp.team : srcFormation.team;
+          const teamA = side === 1 ? myTeam : opp.team;
+          const teamB = side === 1 ? opp.team : myTeam;
           const stratA = side === 1 ? strategy : oppStrategy;
           const stratB = side === 1 ? oppStrategy : strategy;
 
@@ -253,9 +308,4 @@ export function runTargetEvaluation(data: TargetTaskData): TargetTaskResult {
     l1Vector,
     rawGames,
   };
-}
-
-if (parentPort && workerData) {
-  const result = runTargetEvaluation(workerData);
-  parentPort.postMessage(result);
 }
