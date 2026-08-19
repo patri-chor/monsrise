@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "T041R_MELEE_SAMPLING_MANIFEST_V1",
+  "schemaVersion": "T042_MELEE_SAMPLING_MANIFEST_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "meleeRevision": "v2.0.0-t041r-lineage",
-  "baseSeed": 41001,
+  "meleeRevision": "v3.0.0-t042-complete-catalog",
+  "baseSeed": 42000,
   "eligibleArchetypes": [
     "springsword",
     "nutsavior",
@@ -26,11 +26,12 @@
       "formationSnapshotFingerprint": "199220465e46",
       "primaryArchetype": "springsword",
       "rootSourceId": "springsword",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:springsword",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 1,
-      "smoothedWeight": 0.5215,
+      "smoothedWeight": 0.1179,
       "auxiliaryTags": [
         "root_t1",
         "prayer"
@@ -42,11 +43,12 @@
       "formationSnapshotFingerprint": "06b65120d945b5913f24c53d",
       "primaryArchetype": "springsword",
       "rootSourceId": "springsword",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#springsword",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.92,
-      "smoothedWeight": 0.4785,
+      "smoothedWeight": 0.1082,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -54,15 +56,135 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype springsword"
     },
     {
+      "memberId": "cand:springsword:spatial_local:0",
+      "formationSnapshotFingerprint": "64c37c871c2ba5bb2f6803db",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8214285714285714,
+      "smoothedWeight": 0.0966,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via spatial_local"
+    },
+    {
+      "memberId": "cand:springsword:formation_transform:0",
+      "formationSnapshotFingerprint": "298958c452738ab7084442ad",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:formation_transform:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1092,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via formation_transform"
+    },
+    {
+      "memberId": "cand:springsword:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "398067d0e3de36366f1d59d8",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1179,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via formation_transform"
+    },
+    {
+      "memberId": "cand:springsword:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "7669c0c161540334f5a5f00f",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1179,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:springsword:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "ae995f93d5914195733156ad",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1179,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:springsword:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "51dd319f03f41d266e09fe3b",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1092,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via spatial_local"
+    },
+    {
+      "memberId": "cand:springsword:spatial_local:c1_105",
+      "formationSnapshotFingerprint": "7d5624c130a2adaba75d56e3",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:springsword:spatial_local:c1_105",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.105,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of springsword via spatial_local"
+    },
+    {
       "memberId": "nutsavior",
       "formationSnapshotFingerprint": "adf84ded3b73",
       "primaryArchetype": "nutsavior",
       "rootSourceId": "nutsavior",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:nutsavior",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 1,
-      "smoothedWeight": 0.5215,
+      "smoothedWeight": 0.1287,
       "auxiliaryTags": [
         "root_t1",
         "half_rush"
@@ -74,11 +196,12 @@
       "formationSnapshotFingerprint": "3ab91c2f7c067de6344be734",
       "primaryArchetype": "nutsavior",
       "rootSourceId": "nutsavior",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#nutsavior",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.92,
-      "smoothedWeight": 0.4785,
+      "smoothedWeight": 0.1181,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -86,15 +209,118 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype nutsavior"
     },
     {
+      "memberId": "cand:nutsavior:spatial_local:0",
+      "formationSnapshotFingerprint": "62432a3d43b95a3e24995283",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1287,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:nutsavior:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "fe14d73e9531479cb0d6fc78",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1287,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:nutsavior:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "736cdea02147142f34157f85",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1192,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via formation_transform"
+    },
+    {
+      "memberId": "cand:nutsavior:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "63e8f4669eb2d55e156b1add",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1287,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:nutsavior:spatial_local:c1_105",
+      "formationSnapshotFingerprint": "88f5235af3b6a455c513201a",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:spatial_local:c1_105",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1192,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:nutsavior:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "8e194c28d733ed5f6d806627",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:nutsavior:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1287,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of nutsavior via strategy_schedule_branch"
+    },
+    {
       "memberId": "all2rush",
       "formationSnapshotFingerprint": "157be1f9b219",
       "primaryArchetype": "all2rush",
       "rootSourceId": "all2rush",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:all2rush",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.5,
-      "smoothedWeight": 0.5306,
+      "smoothedWeight": 0.1165,
       "auxiliaryTags": [
         "root_t1",
         "full_rush"
@@ -106,11 +332,12 @@
       "formationSnapshotFingerprint": "691d5806b4a195a99cd1377e",
       "primaryArchetype": "all2rush",
       "rootSourceId": "all2rush",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#all2rush",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.42,
-      "smoothedWeight": 0.4694,
+      "smoothedWeight": 0.1031,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -118,15 +345,135 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype all2rush"
     },
     {
+      "memberId": "cand:all2rush:spatial_local:0",
+      "formationSnapshotFingerprint": "add44ee218b075d311e2dba7",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.42857142857142855,
+      "smoothedWeight": 0.1045,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via spatial_local"
+    },
+    {
+      "memberId": "cand:all2rush:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "9b732372c0e17c233566b043",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.42857142857142855,
+      "smoothedWeight": 0.1045,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via spatial_local"
+    },
+    {
+      "memberId": "cand:all2rush:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "3be86bcc85837cf70b2b0a26",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.5714285714285714,
+      "smoothedWeight": 0.1293,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via formation_transform"
+    },
+    {
+      "memberId": "cand:all2rush:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "38fcaf37f6c873df14059030",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.5,
+      "smoothedWeight": 0.1165,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:all2rush:multi_monster_exploration:c0_coor",
+      "formationSnapshotFingerprint": "44e3fc54f51006e3c41848b7",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:multi_monster_exploration:c0_coor",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.42857142857142855,
+      "smoothedWeight": 0.1045,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "multi_monster_exploration"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via multi_monster_exploration"
+    },
+    {
+      "memberId": "cand:all2rush:spatial_local:c1_117",
+      "formationSnapshotFingerprint": "7d98900fac15c681b77904f0",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:spatial_local:c1_117",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.42857142857142855,
+      "smoothedWeight": 0.1045,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via spatial_local"
+    },
+    {
+      "memberId": "cand:all2rush:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "ecf31434e77b72f6fed4a007",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2rush:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.5,
+      "smoothedWeight": 0.1165,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of all2rush via strategy_schedule_branch"
+    },
+    {
       "memberId": "classicsavior",
       "formationSnapshotFingerprint": "471c28e13f11",
       "primaryArchetype": "classicsavior",
       "rootSourceId": "classicsavior",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:classicsavior",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.7142857142857143,
-      "smoothedWeight": 0.5263,
+      "smoothedWeight": 0.1141,
       "auxiliaryTags": [
         "root_t1",
         "full_rush"
@@ -138,11 +485,12 @@
       "formationSnapshotFingerprint": "a8fd06e1c676fecc6f40dd32",
       "primaryArchetype": "classicsavior",
       "rootSourceId": "classicsavior",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#classicsavior",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.6342857142857143,
-      "smoothedWeight": 0.4737,
+      "smoothedWeight": 0.1027,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -150,15 +498,118 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype classicsavior"
     },
     {
+      "memberId": "cand:classicsavior:spatial_local:0",
+      "formationSnapshotFingerprint": "6dff9f23e7b470d9926eab6a",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1358,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:classicsavior:spatial_local:c0_108",
+      "formationSnapshotFingerprint": "ad83a5e41ff67addd8f792d2",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:spatial_local:c0_108",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8214285714285714,
+      "smoothedWeight": 0.1302,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:classicsavior:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "f8660505538028353e218c78",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1358,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via formation_transform"
+    },
+    {
+      "memberId": "cand:classicsavior:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "75f7e220a935f2dd90a12ac4",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7142857142857143,
+      "smoothedWeight": 0.1141,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:classicsavior:spatial_local:c1_117",
+      "formationSnapshotFingerprint": "1d7f53659e49d33920ae4140",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:spatial_local:c1_117",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9642857142857143,
+      "smoothedWeight": 0.153,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via spatial_local"
+    },
+    {
+      "memberId": "cand:classicsavior:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "7fd39e5bca1d8667b52bd3ab",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:classicsavior:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7142857142857143,
+      "smoothedWeight": 0.1141,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of classicsavior via strategy_schedule_branch"
+    },
+    {
       "memberId": "all2prayer",
       "formationSnapshotFingerprint": "5e0600c16478",
       "primaryArchetype": "all2prayer",
       "rootSourceId": "all2prayer",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:all2prayer",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.7857142857142857,
-      "smoothedWeight": 0.525,
+      "smoothedWeight": 0.1132,
       "auxiliaryTags": [
         "root_t1",
         "prayer"
@@ -170,11 +621,12 @@
       "formationSnapshotFingerprint": "fe777bac6e62ef4a8c362f09",
       "primaryArchetype": "all2prayer",
       "rootSourceId": "all2prayer",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#all2prayer",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.7057142857142857,
-      "smoothedWeight": 0.475,
+      "smoothedWeight": 0.1024,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -182,15 +634,135 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype all2prayer"
     },
     {
+      "memberId": "cand:all2prayer:spatial_local:0",
+      "formationSnapshotFingerprint": "64262d44baf4ac4b097b0b8e",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1232,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via spatial_local"
+    },
+    {
+      "memberId": "cand:all2prayer:formation_transform:0",
+      "formationSnapshotFingerprint": "242a1f8787cbedff15dfd777",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:formation_transform:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.6428571428571429,
+      "smoothedWeight": 0.0943,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via formation_transform"
+    },
+    {
+      "memberId": "cand:all2prayer:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "367ed3f223f14528de6f0b10",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.1132,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via spatial_local"
+    },
+    {
+      "memberId": "cand:all2prayer:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "5b12180eb316ecf4287830ea",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.1283,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via formation_transform"
+    },
+    {
+      "memberId": "cand:all2prayer:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "73a659c494e642c65c9c2195",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.1132,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:all2prayer:spatial_local:c1_116",
+      "formationSnapshotFingerprint": "fb6ca370fca3099db7b942ad",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:spatial_local:c1_116",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.6785714285714286,
+      "smoothedWeight": 0.0989,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via spatial_local"
+    },
+    {
+      "memberId": "cand:all2prayer:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "63f43e23dbc31e945488a9fd",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:all2prayer:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.1132,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of all2prayer via strategy_schedule_branch"
+    },
+    {
       "memberId": "suqing",
       "formationSnapshotFingerprint": "681905685e85",
       "primaryArchetype": "suqing",
       "rootSourceId": "suqing",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:suqing",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.8928571428571429,
-      "smoothedWeight": 0.5232,
+      "smoothedWeight": 0.1196,
       "auxiliaryTags": [
         "root_t1",
         "half_rush"
@@ -202,11 +774,12 @@
       "formationSnapshotFingerprint": "59ea644d8e9d99a6614f5c2e",
       "primaryArchetype": "suqing",
       "rootSourceId": "suqing",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#suqing",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.812857142857143,
-      "smoothedWeight": 0.4768,
+      "smoothedWeight": 0.109,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -214,15 +787,118 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype suqing"
     },
     {
+      "memberId": "cand:suqing:spatial_local:0",
+      "formationSnapshotFingerprint": "892e4de43e514b9c56d6a3e6",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9642857142857143,
+      "smoothedWeight": 0.1293,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via spatial_local"
+    },
+    {
+      "memberId": "cand:suqing:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "7d89475312e6803d590c4b23",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1343,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via spatial_local"
+    },
+    {
+      "memberId": "cand:suqing:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "9600ca544c9eec75e604ad55",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1343,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via formation_transform"
+    },
+    {
+      "memberId": "cand:suqing:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "6583ac7d62e2f06fff9e44e3",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.1196,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:suqing:spatial_local:c1_124",
+      "formationSnapshotFingerprint": "d379b67e12ce971828aed0e3",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:spatial_local:c1_124",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1343,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via spatial_local"
+    },
+    {
+      "memberId": "cand:suqing:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "b024e88f121e66b85bd638be",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:suqing:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.1196,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of suqing via strategy_schedule_branch"
+    },
+    {
       "memberId": "laddersel",
       "formationSnapshotFingerprint": "06dbc598758a",
       "primaryArchetype": "laddersel",
       "rootSourceId": "laddersel",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:laddersel",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.8571428571428571,
-      "smoothedWeight": 0.5237,
+      "smoothedWeight": 0.1289,
       "auxiliaryTags": [
         "root_t1",
         "full_rush"
@@ -234,11 +910,12 @@
       "formationSnapshotFingerprint": "0b8ca8e3e7142bfda0b79ecb",
       "primaryArchetype": "laddersel",
       "rootSourceId": "laddersel",
+      "originKind": "EARLY_HELDOUT",
       "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#laddersel",
       "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
       "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
       "rawStrengthScore": 0.7771428571428571,
-      "smoothedWeight": 0.4763,
+      "smoothedWeight": 0.1173,
       "auxiliaryTags": [
         "heldout_variant",
         "archetype_counter"
@@ -246,15 +923,118 @@
       "selectionReason": "Early Bundle held-out variant mapping to root archetype laddersel"
     },
     {
+      "memberId": "cand:laddersel:spatial_local:0",
+      "formationSnapshotFingerprint": "00dd55042587d79931a4dae4",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.6785714285714286,
+      "smoothedWeight": 0.1035,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via spatial_local"
+    },
+    {
+      "memberId": "cand:laddersel:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "88c2a571ebd0085cb7bed8d8",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8214285714285714,
+      "smoothedWeight": 0.1237,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via spatial_local"
+    },
+    {
+      "memberId": "cand:laddersel:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "a685caff9ea59739e98023bd",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1289,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via formation_transform"
+    },
+    {
+      "memberId": "cand:laddersel:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "04b174228019f9d8607eacf4",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1289,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:laddersel:spatial_local:c1_116",
+      "formationSnapshotFingerprint": "0446258c120e624ca677ee7b",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:spatial_local:c1_116",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1398,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via spatial_local"
+    },
+    {
+      "memberId": "cand:laddersel:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "c952bae8bff6b6538b0c1e0f",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:laddersel:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1289,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of laddersel via strategy_schedule_branch"
+    },
+    {
       "memberId": "spade_multi",
       "formationSnapshotFingerprint": "42b95f0e2f20",
       "primaryArchetype": "spade_multi",
       "rootSourceId": "spade_multi",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:spade_multi",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.7857142857142857,
-      "smoothedWeight": 1,
+      "smoothedWeight": 0.1135,
       "auxiliaryTags": [
         "root_t1",
         "prayer"
@@ -262,15 +1042,135 @@
       "selectionReason": "Primary T1 root source for archetype spade_multi"
     },
     {
+      "memberId": "cand:spade_multi:spatial_local:0",
+      "formationSnapshotFingerprint": "922dbcc3a61ea7a5698e0cb8",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8214285714285714,
+      "smoothedWeight": 0.1184,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via spatial_local"
+    },
+    {
+      "memberId": "cand:spade_multi:formation_transform:0",
+      "formationSnapshotFingerprint": "5013c8edc493c376b1ce8a0d",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:formation_transform:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.1286,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via formation_transform"
+    },
+    {
+      "memberId": "cand:spade_multi:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "504207a42df9fe32e0f6cace",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1235,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via formation_transform"
+    },
+    {
+      "memberId": "cand:spade_multi:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "bae67ed80e3f4990284f3398",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.1135,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:spade_multi:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "8ca2469f2934bd82159ce478",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.1135,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:spade_multi:spatial_local:c0_115",
+      "formationSnapshotFingerprint": "598d8635ae3a759d98992453",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:spatial_local:c0_115",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1445,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via spatial_local"
+    },
+    {
+      "memberId": "cand:spade_multi:spatial_local:c1_108",
+      "formationSnapshotFingerprint": "abbc49efdb6f2efef316f180",
+      "primaryArchetype": "spade_multi",
+      "rootSourceId": "spade_multi",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:spade_multi:spatial_local:c1_108",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1445,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of spade_multi via spatial_local"
+    },
+    {
       "memberId": "gift_savior",
       "formationSnapshotFingerprint": "14e946358ffd",
       "primaryArchetype": "gift_savior",
       "rootSourceId": "gift_savior",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:gift_savior",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 1,
-      "smoothedWeight": 1,
+      "smoothedWeight": 0.1475,
       "auxiliaryTags": [
         "root_t1",
         "half_rush"
@@ -278,15 +1178,118 @@
       "selectionReason": "Primary T1 root source for archetype gift_savior"
     },
     {
+      "memberId": "cand:gift_savior:spatial_local:0",
+      "formationSnapshotFingerprint": "d86b9530e39b8e58a019393f",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.126,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via spatial_local"
+    },
+    {
+      "memberId": "cand:gift_savior:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "691faad5e3a980582edb2f74",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1475,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via formation_transform"
+    },
+    {
+      "memberId": "cand:gift_savior:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "6c042d7a10fc7b36e64eaf50",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1475,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1475,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:gift_savior:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "383801000656735d498fcc81",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9285714285714286,
+      "smoothedWeight": 0.1366,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via spatial_local"
+    },
+    {
+      "memberId": "cand:gift_savior:spatial_local:c1_116",
+      "formationSnapshotFingerprint": "3865970cb04411f46d48d5e6",
+      "primaryArchetype": "gift_savior",
+      "rootSourceId": "gift_savior",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_savior:spatial_local:c1_116",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1475,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_savior via spatial_local"
+    },
+    {
       "memberId": "golden_boom",
       "formationSnapshotFingerprint": "ef0c73839d7e",
       "primaryArchetype": "golden_boom",
       "rootSourceId": "golden_boom",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:golden_boom",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 1,
-      "smoothedWeight": 1,
+      "smoothedWeight": 0.1504,
       "auxiliaryTags": [
         "root_t1",
         "prayer"
@@ -294,22 +1297,227 @@
       "selectionReason": "Primary T1 root source for archetype golden_boom"
     },
     {
+      "memberId": "cand:golden_boom:spatial_local:0",
+      "formationSnapshotFingerprint": "0d0ee483f5314397215528c7",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1504,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via spatial_local"
+    },
+    {
+      "memberId": "cand:golden_boom:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "ef75738e3a43cd2ba24df208",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1285,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via formation_transform"
+    },
+    {
+      "memberId": "cand:golden_boom:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "6f4149b78012969de189eb5e",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1504,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:golden_boom:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "510f4c266210dcc89cec186d",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1504,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:golden_boom:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "42b14c400d68c436a1de82a4",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9761904761904762,
+      "smoothedWeight": 0.1467,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via spatial_local"
+    },
+    {
+      "memberId": "cand:golden_boom:spatial_local:c1_105",
+      "formationSnapshotFingerprint": "0d75942adf49341695510ac2",
+      "primaryArchetype": "golden_boom",
+      "rootSourceId": "golden_boom",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:golden_boom:spatial_local:c1_105",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8214285714285714,
+      "smoothedWeight": 0.1232,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of golden_boom via spatial_local"
+    },
+    {
       "memberId": "gift_jungle",
       "formationSnapshotFingerprint": "1f7554a84e29",
       "primaryArchetype": "gift_jungle",
       "rootSourceId": "gift_jungle",
+      "originKind": "ROOT",
       "lineageProof": "direct_root_source:gift_jungle",
       "strengthEvidenceKind": "FROZEN_T037_BASELINE",
       "strengthEvidenceRevision": "T037_V1",
       "rawStrengthScore": 0.8571428571428571,
-      "smoothedWeight": 1,
+      "smoothedWeight": 0.1373,
       "auxiliaryTags": [
         "root_t1",
         "prayer"
       ],
       "selectionReason": "Primary T1 root source for archetype gift_jungle"
+    },
+    {
+      "memberId": "cand:gift_jungle:spatial_local:0",
+      "formationSnapshotFingerprint": "cabc5d74a92ed2d14dda3d09",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:spatial_local:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1373,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via spatial_local"
+    },
+    {
+      "memberId": "cand:gift_jungle:formation_transform:0",
+      "formationSnapshotFingerprint": "0dba60dd275be52ba493d567",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:formation_transform:0",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1373,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via formation_transform"
+    },
+    {
+      "memberId": "cand:gift_jungle:formation_transform:c0_flip",
+      "formationSnapshotFingerprint": "f713471a3b7b62a17b9bf5b6",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:formation_transform:c0_flip",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.1607,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "formation_transform"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via formation_transform"
+    },
+    {
+      "memberId": "cand:gift_jungle:strategy_schedule_branch:c0_side2",
+      "formationSnapshotFingerprint": "51d220a9fe68d6b4037397f6",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:strategy_schedule_branch:c0_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1373,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:gift_jungle:strategy_schedule_branch:c1_side2",
+      "formationSnapshotFingerprint": "8b1fa85bf92585456e4278af",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:strategy_schedule_branch:c1_side2",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.1373,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "strategy_schedule_branch"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via strategy_schedule_branch"
+    },
+    {
+      "memberId": "cand:gift_jungle:spatial_local:c0_110",
+      "formationSnapshotFingerprint": "77f3a1f31b72d91ffd0c08c5",
+      "primaryArchetype": "gift_jungle",
+      "rootSourceId": "gift_jungle",
+      "originKind": "GENERATED_DESCENDANT",
+      "lineageProof": "candidate_lineage:tests/fixtures/tree/experience_library/product_path_t037/screen_observations.jsonl#cand:gift_jungle:spatial_local:c0_110",
+      "strengthEvidenceKind": "SCREEN_OBSERVATION_EVAL",
+      "strengthEvidenceRevision": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
+      "rawStrengthScore": 0.9523809523809523,
+      "smoothedWeight": 0.1527,
+      "auxiliaryTags": [
+        "generated_descendant",
+        "spatial_local"
+      ],
+      "selectionReason": "Screened candidate descendant of gift_jungle via spatial_local"
     }
   ],
-  "manifestHash": "b4832b0f1549cbc3",
-  "createdAt": "2026-08-19T07:05:26.260Z"
+  "manifestHash": "de8f424960b2bd75",
+  "createdAt": "2026-08-19T07:26:48.618Z"
 }

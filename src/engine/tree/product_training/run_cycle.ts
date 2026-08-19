@@ -1,13 +1,13 @@
 // ============================================================
 // src/engine/tree/product_training/run_cycle.ts
-// T041R 严格 Stage-1 独立优化尝试与真实多成员概率化 Melee 采样
+// T042 完整 Root-Lineage 成员发现与概率化 Melee 采样演化循环
 //
 // 规范要求：
-//   - 训练阶段阶梯：STAGE_3_EARLY_BUNDLE -> STAGE_2_STRONG_POOL -> STAGE_1_STRONG_EPISODE -> MELEE -> EXPERIMENTAL_FRONTIER
-//   - 严格 Stage-1 门禁：必须生成并执行至少 3 次真实、不同的优化尝试 (distinct attempt identities)
-//   - 真实多成员 Melee 流派治理：11 个 T1 根流派包含 root + 可追溯衍生变体 (不含历史快照)，动态排除候选自身
-//   - 严禁 candidate-vs-parent 自博弈，严禁 3-target separation / adScore 压缩分数
+//   - 完整成员发现：ROOT + GENERATED_DESCENDANT + EARLY_HELDOUT
+//   - 动态排除候选自身 (Self-Opponent Exclusion)
 //   - 统一单局细粒度调度（games: 1），外部并发 <= 2，记录真实 CPU 遥测
+//   - 严禁 candidate-vs-parent 自博弈，严禁 3-target separation / adScore 压缩分数
+//   - 严格 Stage-1 门禁：生成并评测 3 次不同的针对性优化尝试
 // ============================================================
 
 import '../../env';
@@ -33,7 +33,7 @@ import {
 } from './05_select';
 import { postPruneCandidate } from './06_prune';
 import { exportRuntimeCatalog, CATALOG_PATH, type RuntimeCandidateCatalog } from './06_runtime_export';
-import { formationToEvol } from '../evol_gene';
+import { formationToEvol, evolToBundleFormation } from '../evol_gene';
 import { computeCandidateFingerprint } from './02_candidates';
 import {
   generateAndSaveBenchmarkManifests,
@@ -66,9 +66,9 @@ import {
 
 // ---- 常量与路径 ----
 
-const T041R_PROTOCOL = 'PRODUCT_PATH_T041R_V1';
-const POLICY_VERSION = 't041r-distinct-stage1-melee-v2';
-const BASE_SEED = 41500;
+const T042_PROTOCOL = 'PRODUCT_PATH_T042_V1';
+const POLICY_VERSION = 't042-complete-root-lineage-melee-v3';
+const BASE_SEED = 42000;
 const T038_CYCLE_CURSOR_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_cursor.json`);
 const T038_DECISIONS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_cycle_decisions.jsonl`);
 const T038_PRUNE_TRIALS_PATH = resolve(`${T037_OUTPUT_DIR}/t038_prune_trials.jsonl`);
@@ -126,7 +126,7 @@ export interface CycleCursorState {
 function loadCycleCursor(opts: { sourceFixtureFp: string; t037ManifestHash: string }): CycleCursorState {
   if (!existsSync(T038_CYCLE_CURSOR_PATH)) {
     return {
-      protocol: T041R_PROTOCOL,
+      protocol: T042_PROTOCOL,
       sourceFixtureFp: opts.sourceFixtureFp,
       t037ManifestHash: opts.t037ManifestHash,
       policyVersion: POLICY_VERSION,
@@ -347,7 +347,7 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
   const { pool, candidateEntry, allOpponentsMap, baselineScores, cycleId, cycleOrdinal, baselineScore } = opts;
   const { meta, evol } = candidateEntry;
 
-  // 1. 构建流派治理配置与冻结采样清单
+  // 1. 构建完整流派治理配置与冻结采样清单
   const config = buildAndSaveArchetypeConfig(baselineScores);
   const manifest = generateMeleeSamplingManifest(config);
 
@@ -364,7 +364,11 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
   let taskId = 0;
 
   for (const pair of pairs) {
-    const oppFormation = allOpponentsMap.get(pair.member.memberId) ?? allOpponentsMap.get(pair.member.rootSourceId)!;
+    let oppFormation = allOpponentsMap.get(pair.member.memberId);
+    if (!oppFormation) {
+      oppFormation = allOpponentsMap.get(pair.member.rootSourceId)!;
+    }
+
     // P1
     tasks.push({
       taskId: taskId++,
@@ -431,6 +435,7 @@ async function evaluateCandidateOnProbabilisticMelee(opts: {
       sampledArchetype: pair.archetypeId,
       sampledMemberId: pair.member.memberId,
       sampledMemberFingerprint: pair.member.formationSnapshotFingerprint,
+      originKind: pair.member.originKind,
       memberWeight: pair.member.smoothedWeight,
       p1Score,
       p2Score,
@@ -474,11 +479,6 @@ export async function executeCycle(opts: {
   const { opponents: eb8 } = loadEarlyBundle8Opponents();
   const { opponents: strong11 } = loadCurrentStrong11Opponents();
 
-  // 综合对手 Formation 查找表
-  const allOppMap = new Map<string, Formation>();
-  for (const s of strong11) allOppMap.set((s as any).id, s);
-  for (const b of eb8) allOppMap.set((b as any).id, b);
-
   // 2. 加载 T037 证据
   if (!existsSync(T037_OBS_PATH)) {
     throw new Error(`T037 evidence not found at ${T037_OBS_PATH}`);
@@ -502,7 +502,7 @@ export async function executeCycle(opts: {
 
   // 3. 计算稳定 cycleId
   const cycleIdentityParams = {
-    protocol: T041R_PROTOCOL,
+    protocol: T042_PROTOCOL,
     sourceFixtureFp,
     t037ManifestHash,
     policyVersion: POLICY_VERSION,
@@ -512,7 +512,7 @@ export async function executeCycle(opts: {
   const cycleId = computeCycleId(cycleIdentityParams);
 
   log(`\n============================================================`);
-  log(`T041R Distinct Stage-1 & Probabilistic Melee — Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
+  log(`T042 Complete Root-Lineage Melee Catalog — Cycle Ordinal ${cycleOrdinal} (cycleId: ${cycleId})`);
   log(`============================================================`);
 
   // 4. 检查 Cursor 幂等性
@@ -541,7 +541,7 @@ export async function executeCycle(opts: {
   log(`\n--- Active Benchmark Pools (cycleOrdinal=${cycleOrdinal}) ---`);
   log(`  Stage 3 Early Bundle: ${eb8.length} opponents (hash: ${benchmarkManifests.earlyBundleStage3.poolHash})`);
   log(`  Stage 2/1 Strong Pool: ${strong11.length} opponents (hash: ${benchmarkManifests.currentStrongStage2Stage1.poolHash})`);
-  log(`  Melee Archetypes:     ${archetypeConfig.archetypes.length} T1 root archetypes (${archetypeConfig.multiMemberArchetypeCount} multi-member lineages)`);
+  log(`  Melee Catalog:        ${archetypeConfig.totalMembers} total members across ${archetypeConfig.totalArchetypes} archetypes (${archetypeConfig.membersByOriginKind.GENERATED_DESCENDANT} generated descendants)`);
 
   // 6. 生成候选并记录血缘与覆盖
   const seenFps = new Set<string>();
@@ -594,6 +594,16 @@ export async function executeCycle(opts: {
 
     const singleOpCount = candidates.filter(c => !c.meta.rejected && c.meta.operatorFamily !== 'multi_monster_exploration').length;
     cursor.persistentAttemptCounts[(src as any).id] = (cursor.persistentAttemptCounts[(src as any).id] ?? 0) + singleOpCount;
+  }
+
+  // 构建包含所有对手（root + heldout + newly generated candidates）的全局查找表
+  const allOppMap = new Map<string, Formation>();
+  for (const s of strong11) allOppMap.set((s as any).id, s);
+  for (const b of eb8) allOppMap.set((b as any).id, b);
+  for (const cand of generatedBatch) {
+    if (!cand.meta.rejected) {
+      allOppMap.set(cand.meta.candidateId, evolToBundleFormation(cand.evol) as unknown as Formation);
+    }
   }
 
   log(`\nGenerated adaptive candidates: ${generatedBatch.length} (${generatedBatch.filter(e => !e.meta.rejected).length} valid)`);
@@ -889,7 +899,7 @@ export async function executeCycle(opts: {
   // 8. 记录 CPU 遥测
   const telemetry: CpuTelemetryRecord = {
     cycleId,
-    screenBatchId: `batch_t041r_${cycleOrdinal}`,
+    screenBatchId: `batch_t042_${cycleOrdinal}`,
     configuredWorkers: (pool as any).workerCount ?? 64,
     observedWorkers: (pool as any).workerCount ?? 64,
     peakInFlight: Math.min((pool as any).workerCount ?? 64, validCandidates.length * 16),
@@ -940,11 +950,11 @@ export async function executeCycle(opts: {
     if (!best || best.relScore <= 0) failCount++; else failCount = 0;
     cursor.persistentFailCounts[srcId] = failCount;
 
-    const recordId = createHash('sha256').update(`${cycleId}_${srcId}_decision_t041r`).digest('hex').slice(0, 16);
+    const recordId = createHash('sha256').update(`${cycleId}_${srcId}_decision_t042`).digest('hex').slice(0, 16);
     const decision: CycleDecisionRecord = {
       recordId,
       evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-      protocol: T041R_PROTOCOL,
+      protocol: T042_PROTOCOL,
       cycleId,
       cycleOrdinal,
       sourceId: srcId,
@@ -982,8 +992,8 @@ export async function executeCycle(opts: {
         operatorFamily: best.entry.meta.operatorFamily,
         canonicalFingerprint: best.entry.meta.canonicalFingerprint ?? '',
         obs: {
-          protocol: T041R_PROTOCOL,
-          scheduleId: 't041r-distinct-stage1-melee-v2',
+          protocol: T042_PROTOCOL,
+          scheduleId: 't042-complete-root-lineage-melee-v3',
           manifestHash: t037ManifestHash,
           entityId: best.entry.meta.candidateId,
           entityKind: 'candidate' as const,
@@ -1019,7 +1029,7 @@ export async function executeCycle(opts: {
   const catalog = exportRuntimeCatalog({
     cycleId,
     cycleOrdinal,
-    protocol: T041R_PROTOCOL,
+    protocol: T042_PROTOCOL,
     parentCatalogHash,
     entries: catalogInputs,
   });
@@ -1046,7 +1056,7 @@ export async function executeCycle(opts: {
 // ---- 主运行入口 ----
 
 async function main() {
-  log(`\n=== run_cycle.ts — T041R Distinct Stage-1 & Probabilistic Melee ===`);
+  log(`\n=== run_cycle.ts — T042 Complete Root-Lineage Melee Catalog ===`);
   const pool = await PersistentSimPool.getInstance();
 
   try {
@@ -1060,7 +1070,7 @@ async function main() {
     }
 
     log(`\n============================================================`);
-    log(`T041R Training Ladder & Probabilistic Melee Complete`);
+    log(`T042 Training Ladder & Complete Melee Catalog Complete`);
     log(`Artifacts written: melee_archetype_config.json, melee_sampling_manifest.json, stage1_episode_ledger.jsonl, melee_sample_pairs.jsonl, stage_training_ledger.jsonl`);
     log(`No-apply confirmation: NO_APPLY_NO_DEPLOY_NO_PUBLISH_NO_TIER_CHANGE`);
     log(`============================================================\n`);

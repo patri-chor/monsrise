@@ -1,15 +1,15 @@
 {
-  "protocol": "PRODUCT_PATH_T041R_V1",
+  "protocol": "PRODUCT_PATH_T042_V1",
   "sourceFixtureFp": "07bb1a55a1394ff1",
   "t037ManifestHash": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
-  "policyVersion": "t041r-distinct-stage1-melee-v2",
+  "policyVersion": "t042-complete-root-lineage-melee-v3",
   "currentCycleOrdinal": 2,
   "completedCycles": [
     {
-      "cycleId": "f097b6bf3f36",
+      "cycleId": "74904b54cb66",
       "cycleOrdinal": 0,
       "parentCycleId": null,
-      "parentCatalogHash": "760125dc6d8dc1ed",
+      "parentCatalogHash": "615e504537238358",
       "completedSources": [
         "springsword",
         "nutsavior",
@@ -23,13 +23,13 @@
         "golden_boom",
         "gift_jungle"
       ],
-      "completedAt": "2026-08-19T07:02:30.298Z"
+      "completedAt": "2026-08-19T07:23:11.265Z"
     },
     {
-      "cycleId": "838400fb21be",
+      "cycleId": "ce71b2b500b2",
       "cycleOrdinal": 1,
-      "parentCycleId": "f097b6bf3f36",
-      "parentCatalogHash": "325a0e8d755d3ca2",
+      "parentCycleId": "74904b54cb66",
+      "parentCatalogHash": "eecb5c53d6f41d07",
       "completedSources": [
         "springsword",
         "nutsavior",
@@ -43,7 +43,7 @@
         "golden_boom",
         "gift_jungle"
       ],
-      "completedAt": "2026-08-19T07:05:26.215Z"
+      "completedAt": "2026-08-19T07:26:48.594Z"
     }
   ],
   "persistentFailCounts": {
@@ -53,7 +53,7 @@
     "classicsavior": 0,
     "all2prayer": 0,
     "suqing": 0,
-    "laddersel": 2,
+    "laddersel": 0,
     "spade_multi": 0,
     "gift_savior": 2,
     "golden_boom": 2,
@@ -73,8 +73,6 @@
     "gift_jungle": 5
   },
   "stage1EpisodesCompleted": {
-    "cand:springsword:formation_transform:c0_flip": 3,
-    "cand:nutsavior:spatial_local:c0_110": 3,
     "cand:classicsavior:spatial_local:c0_108": 3,
     "cand:classicsavior:formation_transform:c0_flip": 3,
     "cand:classicsavior:strategy_schedule_branch:c0_side2": 3,
@@ -97,6 +95,7 @@
     "cand:suqing:spatial_local:c1_124": 3,
     "cand:suqing:formation_transform:c1_flip": 3,
     "cand:suqing:strategy_schedule_branch:c1_side2": 3,
+    "cand:laddersel:strategy_schedule_branch:c1_side2": 3,
     "cand:spade_multi:spatial_local:c1_108": 3,
     "cand:spade_multi:formation_transform:c1_flip": 3,
     "cand:golden_boom:strategy_schedule_branch:c1_side2": 3,
@@ -105,9 +104,9 @@
   },
   "candidateCurrentStages": {
     "cand:springsword:spatial_local:c0_110": "STAGE_3_EARLY_BUNDLE",
-    "cand:springsword:formation_transform:c0_flip": "STAGE_1_STRONG_EPISODE",
+    "cand:springsword:formation_transform:c0_flip": "STAGE_2_STRONG_POOL",
     "cand:springsword:strategy_schedule_branch:c0_side2": "STAGE_2_STRONG_POOL",
-    "cand:nutsavior:spatial_local:c0_110": "STAGE_1_STRONG_EPISODE",
+    "cand:nutsavior:spatial_local:c0_110": "STAGE_2_STRONG_POOL",
     "cand:nutsavior:formation_transform:c0_flip": "STAGE_3_EARLY_BUNDLE",
     "cand:nutsavior:strategy_schedule_branch:c0_side2": "STAGE_2_STRONG_POOL",
     "cand:all2rush:formation_transform:c0_flip": "STAGE_3_EARLY_BUNDLE",
@@ -116,15 +115,15 @@
     "cand:classicsavior:formation_transform:c0_flip": "EXPERIMENTAL_FRONTIER",
     "cand:classicsavior:strategy_schedule_branch:c0_side2": "EXPERIMENTAL_FRONTIER",
     "cand:all2prayer:spatial_local:c0_110": "STAGE_2_STRONG_POOL",
-    "cand:all2prayer:formation_transform:c0_flip": "STAGE_1_STRONG_EPISODE",
+    "cand:all2prayer:formation_transform:c0_flip": "EXPERIMENTAL_FRONTIER",
     "cand:all2prayer:strategy_schedule_branch:c0_side2": "STAGE_1_STRONG_EPISODE",
     "cand:suqing:spatial_local:c0_110": "STAGE_1_STRONG_EPISODE",
     "cand:suqing:formation_transform:c0_flip": "STAGE_1_STRONG_EPISODE",
     "cand:suqing:strategy_schedule_branch:c0_side2": "STAGE_1_STRONG_EPISODE",
     "cand:laddersel:formation_transform:c0_flip": "STAGE_2_STRONG_POOL",
     "cand:laddersel:strategy_schedule_branch:c0_side2": "STAGE_2_STRONG_POOL",
-    "cand:spade_multi:spatial_local:c0_115": "EXPERIMENTAL_FRONTIER",
-    "cand:spade_multi:formation_transform:c0_flip": "STAGE_1_STRONG_EPISODE",
+    "cand:spade_multi:spatial_local:c0_115": "STAGE_1_STRONG_EPISODE",
+    "cand:spade_multi:formation_transform:c0_flip": "EXPERIMENTAL_FRONTIER",
     "cand:spade_multi:strategy_schedule_branch:c0_side2": "STAGE_2_STRONG_POOL",
     "cand:gift_savior:spatial_local:c0_110": "STAGE_3_EARLY_BUNDLE",
     "cand:gift_savior:formation_transform:c0_flip": "STAGE_3_EARLY_BUNDLE",
@@ -145,18 +144,18 @@
     "cand:all2rush:strategy_schedule_branch:c1_side2": "STAGE_3_EARLY_BUNDLE",
     "cand:all2rush:multi_monster_exploration:c1_coor": "STAGE_3_EARLY_BUNDLE",
     "cand:classicsavior:spatial_local:c1_117": "EXPERIMENTAL_FRONTIER",
-    "cand:classicsavior:formation_transform:c1_flip": "STAGE_1_STRONG_EPISODE",
+    "cand:classicsavior:formation_transform:c1_flip": "EXPERIMENTAL_FRONTIER",
     "cand:classicsavior:strategy_schedule_branch:c1_side2": "EXPERIMENTAL_FRONTIER",
     "cand:all2prayer:spatial_local:c1_116": "STAGE_3_EARLY_BUNDLE",
     "cand:all2prayer:formation_transform:c1_flip": "STAGE_1_STRONG_EPISODE",
-    "cand:all2prayer:strategy_schedule_branch:c1_side2": "STAGE_1_STRONG_EPISODE",
+    "cand:all2prayer:strategy_schedule_branch:c1_side2": "EXPERIMENTAL_FRONTIER",
     "cand:suqing:spatial_local:c1_124": "EXPERIMENTAL_FRONTIER",
     "cand:suqing:formation_transform:c1_flip": "STAGE_1_STRONG_EPISODE",
     "cand:suqing:strategy_schedule_branch:c1_side2": "STAGE_1_STRONG_EPISODE",
     "cand:laddersel:formation_transform:c1_flip": "STAGE_2_STRONG_POOL",
-    "cand:laddersel:strategy_schedule_branch:c1_side2": "STAGE_2_STRONG_POOL",
+    "cand:laddersel:strategy_schedule_branch:c1_side2": "STAGE_1_STRONG_EPISODE",
     "cand:spade_multi:spatial_local:c1_108": "EXPERIMENTAL_FRONTIER",
-    "cand:spade_multi:formation_transform:c1_flip": "STAGE_1_STRONG_EPISODE",
+    "cand:spade_multi:formation_transform:c1_flip": "EXPERIMENTAL_FRONTIER",
     "cand:spade_multi:strategy_schedule_branch:c1_side2": "STAGE_2_STRONG_POOL",
     "cand:gift_savior:spatial_local:c1_116": "STAGE_3_EARLY_BUNDLE",
     "cand:gift_savior:formation_transform:c1_flip": "STAGE_3_EARLY_BUNDLE",
@@ -165,7 +164,7 @@
     "cand:golden_boom:formation_transform:c1_flip": "STAGE_3_EARLY_BUNDLE",
     "cand:golden_boom:strategy_schedule_branch:c1_side2": "EXPERIMENTAL_FRONTIER",
     "cand:gift_jungle:formation_transform:c1_flip": "EXPERIMENTAL_FRONTIER",
-    "cand:gift_jungle:strategy_schedule_branch:c1_side2": "EXPERIMENTAL_FRONTIER"
+    "cand:gift_jungle:strategy_schedule_branch:c1_side2": "STAGE_1_STRONG_EPISODE"
   },
-  "updatedAt": "2026-08-19T07:05:26.215Z"
+  "updatedAt": "2026-08-19T07:26:48.594Z"
 }

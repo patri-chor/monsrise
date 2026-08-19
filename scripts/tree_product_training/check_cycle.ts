@@ -1,27 +1,25 @@
 // ============================================================
 // scripts/tree_product_training/check_cycle.ts
-// T041R 独立 Stage-1 尝试、多成员血缘 Melee 与流派治理验证脚本（无仿真）
+// T042 完整 Root-Lineage Melee 目录、生成后代发现与概率化验证脚本（无仿真）
 //
 // 验证：
-//   1. 严格独立 Stage-1 门禁：进入 MELEE 前必须包含至少 3 次实际不同的优化尝试 (distinct attemptIdentity)
-//   2. Stage-1 尝试无虚假重复 (candidateFingerprint 与 atomicChanges 均有真实差异)
-//   3. Stage-1 记录包含独立强阵评测向量引用与 countable=true 标记
-//   4. 跃迁原因文本与实际数值比较 100% 吻合
-//   5. Melee 流派治理包含多成员 Root-Lineage 体系 (>= 1 multi-member archetype)
-//   6. 严禁在流派治理中加入历史快照 (HISTORICAL_SNAPSHOT)
-//   7. 采样时动态排除候选自身作为对手 (self-opponent exclusion)
-//   8. Top-level 流派等概率均匀采样，In-archetype 平滑权重非恒定且随强度单调不减
-//   9. Melee 采样对局严格满足 P1/P2 成对运行与最低配额
-//   10. Melee 失败精准返回 Stage 1（绝不退回 Stage 3）
-//   11. 周期幂等性、去重与无状态破坏
-//   12. 聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY）与无 apply 确认
+//   1. 完整 Melee 目录：包含真实已评测生成后代 (GENERATED_DESCENDANT)，非仅 Root+Early Heldout
+//   2. 成员谱系证明与强度证据完整可追溯
+//   3. 排除候选具备明确具体的原因 (DUPLICATE_FINGERPRINT, NO_PRODUCT_PATH_EVIDENCE 等)
+//   4. 严格独立 Stage-1 门禁：进入 MELEE 前必须包含至少 3 次实际不同的优化尝试 (distinct attemptIdentity)
+//   5. 采样时动态排除候选自身作为对手 (self-opponent exclusion)
+//   6. Top-level 流派等概率均匀采样，In-archetype 平滑权重非恒定且组内归一化
+//   7. Melee 采样对局严格满足 P1/P2 成对运行与最低配额
+//   8. Melee 失败精准返回 Stage 1（绝不退回 Stage 3）
+//   9. 周期幂等性、去重与无状态破坏
+//   10. 聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY）与无 apply 确认
 // ============================================================
 
 import '../../src/engine/env';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-console.log('=== check_cycle.ts — T041R Distinct Stage-1 & Multi-Member Melee Verification ===\n');
+console.log('=== check_cycle.ts — T042 Complete Root-Lineage Melee Catalog Verification ===\n');
 
 let passed = 0;
 let failed = 0;
@@ -56,7 +54,7 @@ const MELEE_PAIRS_PATH = resolve(`${T037_DIR}/melee_sample_pairs.jsonl`);
 
 // ---- 1. 文件存在性验证 ----
 
-check('all required T041R artifact files exist', () => {
+check('all required T042 artifact files exist', () => {
   assert(existsSync(ARCHETYPE_CONFIG_PATH), `Missing: ${ARCHETYPE_CONFIG_PATH}`);
   assert(existsSync(SAMPLING_MANIFEST_PATH), `Missing: ${SAMPLING_MANIFEST_PATH}`);
   assert(existsSync(STAGE1_EPISODE_PATH), `Missing: ${STAGE1_EPISODE_PATH}`);
@@ -85,23 +83,42 @@ const meleePairs = existsSync(MELEE_PAIRS_PATH)
   ? readFileSync(MELEE_PAIRS_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : [];
 
-// ---- 2. 流派治理与真实多成员验证 ----
+// ---- 2. 完整 Root-Lineage 成员发现与生成后代验证 ----
 
-check('Archetype config contains real root-lineage members with multi-member lineages and no historical snapshots', () => {
+check('Melee catalog contains real generated candidate descendants across all root archetypes', () => {
   assert(archetypeConfig?.archetypes && archetypeConfig.archetypes.length === 11, `Expected 11 archetypes, got ${archetypeConfig?.archetypes?.length}`);
-  assert(archetypeConfig.multiMemberArchetypeCount >= 1, `Expected multiMemberArchetypeCount >= 1, got ${archetypeConfig.multiMemberArchetypeCount}`);
-  assert(archetypeConfig.totalMembers > 11, `Expected totalMembers > 11, got ${archetypeConfig.totalMembers}`);
+  assert(archetypeConfig.schemaVersion === 'T042_MELEE_CATALOG_V1', `Expected T042_MELEE_CATALOG_V1, got ${archetypeConfig.schemaVersion}`);
+  assert(archetypeConfig.membersByOriginKind?.GENERATED_DESCENDANT > 0, `Expected >0 GENERATED_DESCENDANT, got ${archetypeConfig.membersByOriginKind?.GENERATED_DESCENDANT}`);
+  assert(archetypeConfig.totalMembers >= 25, `Expected >= 25 total members, got ${archetypeConfig.totalMembers}`);
 
+  console.log(`    Audited ${archetypeConfig.totalMembers} members: ` +
+    `ROOT=${archetypeConfig.membersByOriginKind.ROOT}, ` +
+    `GENERATED_DESCENDANT=${archetypeConfig.membersByOriginKind.GENERATED_DESCENDANT}, ` +
+    `EARLY_HELDOUT=${archetypeConfig.membersByOriginKind.EARLY_HELDOUT}`);
+});
+
+check('Every member has explicit root lineage proof, originKind, and frozen strength evidence', () => {
   for (const arch of archetypeConfig.archetypes) {
     assert(arch.archetypeId === arch.rootSourceId, `Mismatched root for archetype: ${arch.archetypeId}`);
     for (const m of arch.members) {
       assert(m.primaryArchetype === arch.archetypeId, `Member primaryArchetype mismatch`);
       assert(m.rootSourceId === arch.rootSourceId, `Member rootSourceId mismatch`);
+      assert(m.originKind, `Missing originKind in member: ${m.memberId}`);
+      assert(m.lineageProof, `Missing lineageProof in member: ${m.memberId}`);
+      assert(m.strengthEvidenceKind && m.strengthEvidenceRevision, `Missing strength evidence in member: ${m.memberId}`);
       assert(!m.memberId.includes('historical') && !m.selectionReason.includes('historical'), `ERROR: Historical snapshot found: ${m.memberId}`);
       assert(m.smoothedWeight > 0, `Member weight must be positive: ${m.smoothedWeight}`);
     }
   }
-  console.log(`    Audited ${archetypeConfig.totalMembers} members across 11 root archetypes (${archetypeConfig.multiMemberArchetypeCount} multi-member lineages)`);
+});
+
+check('Excluded candidates are explicitly recorded with concrete reasons', () => {
+  assert(archetypeConfig.totalExcludedCandidates > 0, `Expected recorded exclusions, got ${archetypeConfig.totalExcludedCandidates}`);
+  for (const exc of archetypeConfig.excludedCandidates) {
+    assert(exc.candidateId && exc.sourceId, `Missing candidateId/sourceId in exclusion record`);
+    assert(['DUPLICATE_FINGERPRINT', 'REJECTED_BY_SCHEMA', 'NO_PRODUCT_PATH_EVIDENCE', 'UNRESOLVED_ROOT'].includes(exc.exclusionReason), `Invalid exclusion reason: ${exc.exclusionReason}`);
+  }
+  console.log(`    Audited ${archetypeConfig.totalExcludedCandidates} explicitly excluded candidates with valid reasons`);
 });
 
 check('In-archetype weights derive from frozen strength and are non-constant for multi-member archetypes', () => {
@@ -126,15 +143,12 @@ check('No candidate enters MELEE without at least three distinct countable Stage
     const attempts = stage1Episodes.filter((e: any) => e.candidateId === ml.candidateId && e.countable);
     assert(attempts.length >= 3, `Candidate ${ml.candidateId} entered MELEE with only ${attempts.length} attempts (< 3)`);
 
-    // 验证 attemptIdentity 互不相同
     const distinctIdentities = new Set(attempts.map((a: any) => a.attemptIdentity));
-    assert(distinctIdentities.size >= 3, `Duplicate attempt identities detected for candidate ${ml.candidateId}: only ${distinctIdentities.size} distinct`);
+    assert(distinctIdentities.size >= 3, `Duplicate attempt identities detected for candidate ${ml.candidateId}`);
 
-    // 验证 candidateFingerprint 互不相同
     const distinctFps = new Set(attempts.map((a: any) => a.candidateFingerprint));
     assert(distinctFps.size >= 3, `Repeated candidate fingerprints in Stage-1 attempts for candidate ${ml.candidateId}`);
 
-    // 验证 vector 引用独立
     const distinctVecRefs = new Set(attempts.map((a: any) => a.strongPoolVectorRef));
     assert(distinctVecRefs.size >= 3, `Repeated strongPoolVectorRef in Stage-1 attempts for candidate ${ml.candidateId}`);
   }
@@ -168,11 +182,9 @@ check('Melee sampling records satisfy P1/P2 pairing and exclude candidate self-o
     const pairsForCand = meleePairs.filter((p: any) => p.candidateId === cid);
     assert(pairsForCand.length === 16, `Expected 16 sampled pairs for candidate ${cid}, got ${pairsForCand.length}`);
 
-    // 验证 11 个流派最低配额
     const coveredArchetypes = new Set(pairsForCand.map((p: any) => p.sampledArchetype));
     assert(coveredArchetypes.size === 11, `Candidate ${cid} did not cover all 11 archetypes in melee`);
 
-    // 验证无 self-opponent
     for (const p of pairsForCand) {
       assert(p.sampledMemberId !== cid, `Self-opponent detected: candidate ${cid} played against itself`);
     }
@@ -224,7 +236,7 @@ check('Catalog has strict aggregate boundaries and no promotion terms', () => {
 
 // ---- 8. 汇总打印 ----
 
-console.log('\n--- T041R Benchmark Ladder & Melee Summary ---');
+console.log('\n--- T042 Complete Root-Lineage Melee Catalog Summary ---');
 console.log('  Source ID            Classification         CtrlRatio  Spatial  Baseline  BestRel  ExpFrontier?');
 console.log('  ' + '-'.repeat(95));
 if (catalog?.entries) {
