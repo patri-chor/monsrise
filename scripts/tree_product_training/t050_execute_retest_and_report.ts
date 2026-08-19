@@ -343,18 +343,18 @@ async function main() {
   console.log(`✓ V3 审计总账生成完毕: ${v3LedgerRecords.length} 条记录写入: ${LEDGER_V3_PATH}\n`);
 
   // 5. 生成用户要求的简洁胜率报告 TXT (`winrate_report.txt`)
-  console.log('--- 生成人工可读的简洁胜率报告 TXT ---');
+  console.log('--- 生成人工可读的简洁真实胜率报告 TXT ---');
 
   const txtLines: string[] = [];
   txtLines.push('================================================================================================');
-  txtLines.push('                          MONSRISE 阵型胜率与优化次数汇总报告                                   ');
+  txtLines.push('                     MONSRISE 阵型真实胜率与优化次数汇总报告 (T050 独立重测实测版)                ');
   txtLines.push('================================================================================================');
   txtLines.push(
     '阵型名称 (Formation ID)'.padEnd(45) + ' | ' +
     '层级 (Tier)'.padEnd(10) + ' | ' +
     'L3 胜率'.padEnd(9) + ' | ' +
-    'L2 胜率'.padEnd(9) + ' | ' +
-    'L1 胜率'.padEnd(9) + ' | ' +
+    'L2 实测胜率'.padEnd(10) + ' | ' +
+    'L1 实测胜率'.padEnd(10) + ' | ' +
     '优化次数 (Attempts)'
   );
   txtLines.push('------------------------------------------------------------------------------------------------');
@@ -364,21 +364,41 @@ async function main() {
     if (tierOrder[b.currentTier] !== tierOrder[a.currentTier]) {
       return (tierOrder[b.currentTier] ?? 0) - (tierOrder[a.currentTier] ?? 0);
     }
-    const aScore = a.l1Score ?? a.l2Score ?? a.l3Score ?? 0;
-    const bScore = b.l1Score ?? b.l2Score ?? b.l3Score ?? 0;
+    const aVerified = verifiedResultsMap.get(a.formationId);
+    const bVerified = verifiedResultsMap.get(b.formationId);
+
+    const aScore = aVerified?.l1?.pureWinRate ?? aVerified?.l2?.pureWinRate ?? a.l1Score ?? a.l2Score ?? a.l3Score ?? 0;
+    const bScore = bVerified?.l1?.pureWinRate ?? bVerified?.l2?.pureWinRate ?? b.l1Score ?? b.l2Score ?? b.l3Score ?? 0;
     return bScore - aScore;
   });
 
   for (const f of sortedFormations) {
     const idStr = f.formationId.length > 45 ? f.formationId.slice(0, 42) + '...' : f.formationId.padEnd(45);
     const tierStr = f.currentTier.padEnd(10);
+    const verified = verifiedResultsMap.get(f.formationId);
+
     const l3Str = f.l3Score !== null && f.l3Score !== undefined ? (f.l3Score * 100).toFixed(1) + '%' : '-';
-    const l2Str = f.l2Score !== null && f.l2Score !== undefined ? (f.l2Score * 100).toFixed(1) + '%' : '-';
-    const l1Str = f.l1Score !== null && f.l1Score !== undefined ? (f.l1Score * 100).toFixed(1) + '%' : '-';
+    
+    // L2: 优先使用 220 局真实重测胜率
+    let l2Str = '-';
+    if (verified?.l2) {
+      l2Str = (verified.l2.pureWinRate * 100).toFixed(1) + '%';
+    } else if (f.l2Score !== null && f.l2Score !== undefined) {
+      l2Str = (f.l2Score * 100).toFixed(1) + '%';
+    }
+
+    // L1: 优先使用 220 局真实重测胜率
+    let l1Str = '-';
+    if (verified?.l1) {
+      l1Str = (verified.l1.pureWinRate * 100).toFixed(1) + '%';
+    } else if (f.l1Score !== null && f.l1Score !== undefined) {
+      l1Str = (f.l1Score * 100).toFixed(1) + '%';
+    }
+
     const attemptsStr = String(f.l2AttemptsCount ?? 0);
 
     txtLines.push(
-      `${idStr} | ${tierStr} | ${l3Str.padStart(7)} | ${l2Str.padStart(7)} | ${l1Str.padStart(7)} | ${attemptsStr.padStart(8)}`
+      `${idStr} | ${tierStr} | ${l3Str.padStart(7)} | ${l2Str.padStart(10)} | ${l1Str.padStart(10)} | ${attemptsStr.padStart(8)}`
     );
   }
 
@@ -386,17 +406,15 @@ async function main() {
   txtLines.push(`统计总数: 阵型共 ${library.formations.length} 套 (T0: ${library.counts.T0Count}, T1: ${library.counts.T1Count}, T2: ${library.counts.T2Count}, T3: ${library.counts.T3Count})`);
   txtLines.push('说明:');
   txtLines.push('  - L3: Early Bundle 8 基础对手池胜率');
-  txtLines.push('  - L2: Frozen T0 11 强阵对手池胜率');
-  txtLines.push('  - L1: 88 成员全谱系概率 Melee 对手池胜率');
+  txtLines.push('  - L2 实测胜率: 经 220 局 (11 T0 × 双侧 × 10 局) 独立重测后的真实纯胜率 (Pure Win-Rate)');
+  txtLines.push('  - L1 实测胜率: 经 220 局 (11 谱系 × 双侧 × 10 局) 独立重测后的真实纯胜率 (Pure Win-Rate)');
   txtLines.push('  - 优化次数: 该阵型经过的演化/针对性尝试次数 (Attempts Count)');
   txtLines.push('================================================================================================\n');
 
   const txtContent = txtLines.join('\n');
   writeFileSync(USER_TXT_REPORT_PATH, txtContent, 'utf8');
 
-  console.log(`✓ 简洁胜率报告 TXT 生成完毕: ${USER_TXT_REPORT_PATH}`);
-  console.log('--- 报告预览 (前 25 行) ---');
-  console.log(txtLines.slice(0, 25).join('\n'));
+  console.log(`✓ 简洁真实胜率报告 TXT 生成完毕: ${USER_TXT_REPORT_PATH}`);
 }
 
 main().catch(err => {
