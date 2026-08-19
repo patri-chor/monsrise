@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "T041_MELEE_SAMPLING_MANIFEST_V1",
+  "schemaVersion": "T041R_MELEE_SAMPLING_MANIFEST_V1",
   "evidenceClass": "AGGREGATE_EXPLORATION_ONLY",
-  "meleeRevision": "v1.0.0-t041-lineage",
-  "baseSeed": 41000,
+  "meleeRevision": "v2.0.0-t041r-lineage",
+  "baseSeed": 41001,
   "eligibleArchetypes": [
     "springsword",
     "nutsavior",
@@ -27,13 +27,31 @@
       "primaryArchetype": "springsword",
       "rootSourceId": "springsword",
       "lineageProof": "direct_root_source:springsword",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.5215,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "prayer"
       ],
-      "selectionReason": "Primary T1 representative for archetype springsword"
+      "selectionReason": "Primary T1 root source for archetype springsword"
+    },
+    {
+      "memberId": "springsword_heldout",
+      "formationSnapshotFingerprint": "06b65120d945b5913f24c53d",
+      "primaryArchetype": "springsword",
+      "rootSourceId": "springsword",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#springsword",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.92,
+      "smoothedWeight": 0.4785,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype springsword"
     },
     {
       "memberId": "nutsavior",
@@ -41,13 +59,31 @@
       "primaryArchetype": "nutsavior",
       "rootSourceId": "nutsavior",
       "lineageProof": "direct_root_source:nutsavior",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 1,
+      "smoothedWeight": 0.5215,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "half_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype nutsavior"
+      "selectionReason": "Primary T1 root source for archetype nutsavior"
+    },
+    {
+      "memberId": "nutsavior_heldout",
+      "formationSnapshotFingerprint": "3ab91c2f7c067de6344be734",
+      "primaryArchetype": "nutsavior",
+      "rootSourceId": "nutsavior",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#nutsavior",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.92,
+      "smoothedWeight": 0.4785,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype nutsavior"
     },
     {
       "memberId": "all2rush",
@@ -55,13 +91,31 @@
       "primaryArchetype": "all2rush",
       "rootSourceId": "all2rush",
       "lineageProof": "direct_root_source:all2rush",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.5,
+      "smoothedWeight": 0.5306,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "full_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype all2rush"
+      "selectionReason": "Primary T1 root source for archetype all2rush"
+    },
+    {
+      "memberId": "all2rush_heldout",
+      "formationSnapshotFingerprint": "691d5806b4a195a99cd1377e",
+      "primaryArchetype": "all2rush",
+      "rootSourceId": "all2rush",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#all2rush",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.42,
+      "smoothedWeight": 0.4694,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype all2rush"
     },
     {
       "memberId": "classicsavior",
@@ -69,13 +123,31 @@
       "primaryArchetype": "classicsavior",
       "rootSourceId": "classicsavior",
       "lineageProof": "direct_root_source:classicsavior",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.7142857142857143,
+      "smoothedWeight": 0.5263,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "full_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype classicsavior"
+      "selectionReason": "Primary T1 root source for archetype classicsavior"
+    },
+    {
+      "memberId": "classicsavior_heldout",
+      "formationSnapshotFingerprint": "a8fd06e1c676fecc6f40dd32",
+      "primaryArchetype": "classicsavior",
+      "rootSourceId": "classicsavior",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#classicsavior",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.6342857142857143,
+      "smoothedWeight": 0.4737,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype classicsavior"
     },
     {
       "memberId": "all2prayer",
@@ -83,13 +155,31 @@
       "primaryArchetype": "all2prayer",
       "rootSourceId": "all2prayer",
       "lineageProof": "direct_root_source:all2prayer",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.7857142857142857,
+      "smoothedWeight": 0.525,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "prayer"
       ],
-      "selectionReason": "Primary T1 representative for archetype all2prayer"
+      "selectionReason": "Primary T1 root source for archetype all2prayer"
+    },
+    {
+      "memberId": "all2prayer_heldout",
+      "formationSnapshotFingerprint": "fe777bac6e62ef4a8c362f09",
+      "primaryArchetype": "all2prayer",
+      "rootSourceId": "all2prayer",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#all2prayer",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.7057142857142857,
+      "smoothedWeight": 0.475,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype all2prayer"
     },
     {
       "memberId": "suqing",
@@ -97,13 +187,31 @@
       "primaryArchetype": "suqing",
       "rootSourceId": "suqing",
       "lineageProof": "direct_root_source:suqing",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.8928571428571429,
+      "smoothedWeight": 0.5232,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "half_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype suqing"
+      "selectionReason": "Primary T1 root source for archetype suqing"
+    },
+    {
+      "memberId": "suqing_heldout",
+      "formationSnapshotFingerprint": "59ea644d8e9d99a6614f5c2e",
+      "primaryArchetype": "suqing",
+      "rootSourceId": "suqing",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#suqing",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.812857142857143,
+      "smoothedWeight": 0.4768,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype suqing"
     },
     {
       "memberId": "laddersel",
@@ -111,13 +219,31 @@
       "primaryArchetype": "laddersel",
       "rootSourceId": "laddersel",
       "lineageProof": "direct_root_source:laddersel",
-      "rawStrengthScore": 0.85,
-      "smoothedWeight": 1,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.8571428571428571,
+      "smoothedWeight": 0.5237,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "full_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype laddersel"
+      "selectionReason": "Primary T1 root source for archetype laddersel"
+    },
+    {
+      "memberId": "laddersel_heldout",
+      "formationSnapshotFingerprint": "0b8ca8e3e7142bfda0b79ecb",
+      "primaryArchetype": "laddersel",
+      "rootSourceId": "laddersel",
+      "lineageProof": "heldout_variant:tests/fixtures/tree/early_seven_bundles.json#laddersel",
+      "strengthEvidenceKind": "EARLY_BUNDLE_HELDOUT_EVAL",
+      "strengthEvidenceRevision": "EARLY_BUNDLE_V1",
+      "rawStrengthScore": 0.7771428571428571,
+      "smoothedWeight": 0.4763,
+      "auxiliaryTags": [
+        "heldout_variant",
+        "archetype_counter"
+      ],
+      "selectionReason": "Early Bundle held-out variant mapping to root archetype laddersel"
     },
     {
       "memberId": "spade_multi",
@@ -125,13 +251,15 @@
       "primaryArchetype": "spade_multi",
       "rootSourceId": "spade_multi",
       "lineageProof": "direct_root_source:spade_multi",
-      "rawStrengthScore": 0.85,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.7857142857142857,
       "smoothedWeight": 1,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "prayer"
       ],
-      "selectionReason": "Primary T1 representative for archetype spade_multi"
+      "selectionReason": "Primary T1 root source for archetype spade_multi"
     },
     {
       "memberId": "gift_savior",
@@ -139,13 +267,15 @@
       "primaryArchetype": "gift_savior",
       "rootSourceId": "gift_savior",
       "lineageProof": "direct_root_source:gift_savior",
-      "rawStrengthScore": 0.85,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 1,
       "smoothedWeight": 1,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "half_rush"
       ],
-      "selectionReason": "Primary T1 representative for archetype gift_savior"
+      "selectionReason": "Primary T1 root source for archetype gift_savior"
     },
     {
       "memberId": "golden_boom",
@@ -153,13 +283,15 @@
       "primaryArchetype": "golden_boom",
       "rootSourceId": "golden_boom",
       "lineageProof": "direct_root_source:golden_boom",
-      "rawStrengthScore": 0.85,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 1,
       "smoothedWeight": 1,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "prayer"
       ],
-      "selectionReason": "Primary T1 representative for archetype golden_boom"
+      "selectionReason": "Primary T1 root source for archetype golden_boom"
     },
     {
       "memberId": "gift_jungle",
@@ -167,15 +299,17 @@
       "primaryArchetype": "gift_jungle",
       "rootSourceId": "gift_jungle",
       "lineageProof": "direct_root_source:gift_jungle",
-      "rawStrengthScore": 0.85,
+      "strengthEvidenceKind": "FROZEN_T037_BASELINE",
+      "strengthEvidenceRevision": "T037_V1",
+      "rawStrengthScore": 0.8571428571428571,
       "smoothedWeight": 1,
       "auxiliaryTags": [
-        "archetype_root",
+        "root_t1",
         "prayer"
       ],
-      "selectionReason": "Primary T1 representative for archetype gift_jungle"
+      "selectionReason": "Primary T1 root source for archetype gift_jungle"
     }
   ],
-  "manifestHash": "815cf41f330c5a4d",
-  "createdAt": "2026-08-19T06:51:33.193Z"
+  "manifestHash": "b4832b0f1549cbc3",
+  "createdAt": "2026-08-19T07:05:26.260Z"
 }

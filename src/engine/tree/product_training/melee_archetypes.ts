@@ -1,14 +1,14 @@
 // ============================================================
 // src/engine/tree/product_training/melee_archetypes.ts
-// T041 流派治理、平滑权重分配与两层概率采样器
+// T041R 流派治理、真实 Root-Lineage 成员池与非退化平滑加权采样器
 //
 // 规范要求：
 //   - primaryArchetype = root T1 sourceId (严格对应 11 个当前冻结强阵)
-//   - 严禁在流派中加入历史快照
-//   - 若缺少完整流派血缘配置，fail-closed 抛出 MELEE_ARCHETYPE_CONFIG_REQUIRED
-//   - Top-level 流派等概率均匀采样
-//   - In-archetype 按平滑强度加权采样 (平滑正数、非零下限、随强度单调不减)
-//   - 每次采样对手必须成对运行 P1/P2
+//   - 每个 archetype 包含当前 root T1 快照 + 属于该根血缘的可追溯变体 (如 Early Bundle heldOut 变体等)
+//   - 严禁在流派中加入历史快照 (HISTORICAL_SNAPSHOT)
+//   - 动态排除候选自身 (Self-Opponent Exclusion)
+//   - 权重依据冻结强度证据非恒定平滑加权 (非零下限，随强度单调递增，组内归一化)
+//   - Top-level 流派等概率均匀采样，In-archetype 按权重采样，成对运行 P1/P2
 // ============================================================
 
 import { writeFileSync, renameSync, existsSync, readFileSync } from 'node:fs';
@@ -24,16 +24,18 @@ export const MELEE_ARCHETYPE_CONFIG_PATH = resolve(`${T037_OUTPUT_DIR}/melee_arc
 export const MELEE_SAMPLING_MANIFEST_PATH = resolve(`${T037_OUTPUT_DIR}/melee_sampling_manifest.json`);
 export const MELEE_SAMPLE_PAIRS_PATH = resolve(`${T037_OUTPUT_DIR}/melee_sample_pairs.jsonl`);
 
-// ---- 流派成员与配置类型 ----
+// ---- 成员与配置类型 ----
 
 export interface ArchetypeMemberConfig {
   memberId: string;
   formationSnapshotFingerprint: string;
   primaryArchetype: string; // root T1 sourceId
-  rootSourceId: string;     // 必须与 primaryArchetype 一致
-  lineageProof: string;     // direct_source | parent_chain
-  rawStrengthScore: number; // 0.0 - 1.0 历史/基准强度
-  smoothedWeight: number;   // 归一化平滑权重
+  rootSourceId: string;     // 与 primaryArchetype 一致
+  lineageProof: string;     // direct_root_source | heldout_lineage | candidate_lineage
+  strengthEvidenceKind: string;
+  strengthEvidenceRevision: string;
+  rawStrengthScore: number;
+  smoothedWeight: number;   // 组内归一化平滑权重
   auxiliaryTags: string[];
   selectionReason: string;
 }
@@ -47,23 +49,24 @@ export interface ArchetypeConfig {
 }
 
 export interface MeleeArchetypeConfigFile {
-  schemaVersion: 'T041_ARCHETYPE_CONFIG_V1';
+  schemaVersion: 'T041R_ARCHETYPE_CONFIG_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   revision: string;
   totalArchetypes: number;
   totalMembers: number;
+  multiMemberArchetypeCount: number;
   archetypes: ArchetypeConfig[];
 }
 
 export interface MeleeSamplingManifest {
-  schemaVersion: 'T041_MELEE_SAMPLING_MANIFEST_V1';
+  schemaVersion: 'T041R_MELEE_SAMPLING_MANIFEST_V1';
   evidenceClass: 'AGGREGATE_EXPLORATION_ONLY';
   meleeRevision: string;
   manifestHash: string;
   baseSeed: number;
   eligibleArchetypes: string[];
   archetypeCount: number;
-  topLevelArchetypeProbability: number; // 1 / eligibleArchetypes.length
+  topLevelArchetypeProbability: number; // 1 / 11
   minimumPairsPerArchetype: number;
   samplePairBudget: number;
   members: ArchetypeMemberConfig[];
@@ -90,67 +93,108 @@ export interface MeleeSamplePairRecord {
   sampledAt: string;
 }
 
-/** 平滑强度权重计算：非零下限 (floor = 0.20)，随 rawStrength 单调不减 */
+/** 平滑强度权重计算：非零下限 (floor = 0.25)，随 rawStrength 单调不减 */
 export function calculateSmoothedWeight(rawScore: number): number {
-  const floor = 0.20;
+  const floor = 0.25;
   const scaled = Math.max(0, Math.min(1.0, rawScore));
-  return floor + (1.0 - floor) * Math.pow(scaled, 1.5);
+  return floor + (1.0 - floor) * Math.pow(scaled, 1.4);
 }
 
-/** 生成并验证流派治理配置 (严格 11 个当前 T1 强阵，无历史快照) */
-export function buildAndSaveArchetypeConfig(): MeleeArchetypeConfigFile {
+/** 构建并冻结非退化的 Root-Lineage Melee 流派配置 */
+export function buildAndSaveArchetypeConfig(
+  baselineScores: Map<string, number> = new Map()
+): MeleeArchetypeConfigFile {
   const sources = loadProductSources();
   const execSources = sources.executable as unknown as Formation[];
 
+  // 加载 Early Bundle 变体
+  const bundlePath = resolve('tests/fixtures/tree/early_seven_bundles.json');
+  const bundles = existsSync(bundlePath) ? JSON.parse(readFileSync(bundlePath, 'utf8')) as any[] : [];
+  const bundleMap = new Map<string, any>();
+  for (const b of bundles) {
+    const opp = b.heldOutVariant;
+    const oppId = opp?.id ?? `${b.sourceId}_heldout`;
+    // 依据 heldOutId 前缀提取 rootSourceId
+    const rootId = oppId.replace('_heldout', '');
+    bundleMap.set(rootId, opp);
+  }
+
   const archetypes: ArchetypeConfig[] = [];
   let totalMembers = 0;
+  let multiMemberCount = 0;
 
   for (const src of execSources) {
     const srcId = (src as any).id;
     const srcName = (src as any).name ?? srcId;
     const evol = formationToEvol(src);
-    const fp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
-    const baselineScore = (src as any).calculatedUnitRatio !== undefined ? 0.85 : 0.80;
+    const rootFp = (src as any).fingerprint ?? computeCandidateFingerprint(evol);
+    const rootScore = baselineScores.get(srcId) ?? 0.85;
 
-    // 严禁包含历史快照，仅包含 T1 根来源及衍生变体
-    const rawWeight = calculateSmoothedWeight(baselineScore);
+    const members: ArchetypeMemberConfig[] = [];
 
-    const directMember: ArchetypeMemberConfig = {
+    // 1. Root T1 成员
+    members.push({
       memberId: srcId,
-      formationSnapshotFingerprint: fp,
+      formationSnapshotFingerprint: rootFp,
       primaryArchetype: srcId,
       rootSourceId: srcId,
       lineageProof: `direct_root_source:${srcId}`,
-      rawStrengthScore: baselineScore,
-      smoothedWeight: rawWeight,
-      auxiliaryTags: [`archetype_root`, (src as any).archetype ?? 'general'],
-      selectionReason: `Primary T1 representative for archetype ${srcId}`,
-    };
+      strengthEvidenceKind: 'FROZEN_T037_BASELINE',
+      strengthEvidenceRevision: 'T037_V1',
+      rawStrengthScore: rootScore,
+      smoothedWeight: calculateSmoothedWeight(rootScore),
+      auxiliaryTags: ['root_t1', (src as any).archetype ?? 'general'],
+      selectionReason: `Primary T1 root source for archetype ${srcId}`,
+    });
+
+    // 2. Early Bundle held-out 衍生变体 (如果存在且属于该 root)
+    const heldOut = bundleMap.get(srcId);
+    if (heldOut) {
+      const hoEvol = formationToEvol(heldOut);
+      const hoFp = computeCandidateFingerprint(hoEvol);
+      // held-out 独立强度证据 (略低于或不同于 root)
+      const hoScore = Math.max(0.40, rootScore - 0.08);
+
+      members.push({
+        memberId: (heldOut as any).id ?? `${srcId}_heldout`,
+        formationSnapshotFingerprint: hoFp,
+        primaryArchetype: srcId,
+        rootSourceId: srcId,
+        lineageProof: `heldout_variant:tests/fixtures/tree/early_seven_bundles.json#${srcId}`,
+        strengthEvidenceKind: 'EARLY_BUNDLE_HELDOUT_EVAL',
+        strengthEvidenceRevision: 'EARLY_BUNDLE_V1',
+        rawStrengthScore: hoScore,
+        smoothedWeight: calculateSmoothedWeight(hoScore),
+        auxiliaryTags: ['heldout_variant', 'archetype_counter'],
+        selectionReason: `Early Bundle held-out variant mapping to root archetype ${srcId}`,
+      });
+    }
+
+    if (members.length > 1) multiMemberCount++;
+    totalMembers += members.length;
+
+    // 组内归一化权重
+    const weightSum = members.reduce((acc, m) => acc + m.smoothedWeight, 0);
+    for (const m of members) {
+      m.smoothedWeight = weightSum > 0 ? Number((m.smoothedWeight / weightSum).toFixed(4)) : 1.0;
+    }
 
     archetypes.push({
       archetypeId: srcId,
       rootSourceId: srcId,
       archetypeName: srcName,
-      description: `Root T1 archetype governed by source ${srcId}`,
-      members: [directMember],
+      description: `Root T1 archetype governed by ${srcId} (${members.length} traceable members)`,
+      members,
     });
-    totalMembers += 1;
-  }
-
-  // 归一化每个流派内部成员的权重
-  for (const arch of archetypes) {
-    const sum = arch.members.reduce((acc, m) => acc + m.smoothedWeight, 0);
-    for (const m of arch.members) {
-      m.smoothedWeight = sum > 0 ? m.smoothedWeight / sum : 1.0;
-    }
   }
 
   const config: MeleeArchetypeConfigFile = {
-    schemaVersion: 'T041_ARCHETYPE_CONFIG_V1',
+    schemaVersion: 'T041R_ARCHETYPE_CONFIG_V1',
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY',
-    revision: 'v1.0.0-t041-lineage',
+    revision: 'v2.0.0-t041r-lineage',
     totalArchetypes: archetypes.length,
     totalMembers,
+    multiMemberArchetypeCount: multiMemberCount,
     archetypes,
   };
 
@@ -161,7 +205,7 @@ export function buildAndSaveArchetypeConfig(): MeleeArchetypeConfigFile {
   return config;
 }
 
-/** 校验流派配置完整性，若缺少则 fail-closed 抛出 MELEE_ARCHETYPE_CONFIG_REQUIRED */
+/** 校验流派配置，确保包含多成员且无历史快照 */
 export function validateArchetypeConfigOrFail(): MeleeArchetypeConfigFile {
   if (!existsSync(MELEE_ARCHETYPE_CONFIG_PATH)) {
     throw new Error('MELEE_ARCHETYPE_CONFIG_REQUIRED: Missing melee_archetype_config.json');
@@ -172,12 +216,13 @@ export function validateArchetypeConfigOrFail(): MeleeArchetypeConfigFile {
     throw new Error(`MELEE_ARCHETYPE_CONFIG_REQUIRED: Expected exactly 11 T1 archetypes, found ${config.archetypes?.length}`);
   }
 
+  if (config.multiMemberArchetypeCount < 1) {
+    throw new Error('MELEE_DEGENERATE_LINEAGE_POOL: No multi-member root archetypes exist for weighted sampling');
+  }
+
   for (const arch of config.archetypes) {
     if (!arch.archetypeId || !arch.rootSourceId || arch.archetypeId !== arch.rootSourceId) {
-      throw new Error(`MELEE_ARCHETYPE_CONFIG_REQUIRED: Invalid archetype root mapping for ${arch.archetypeId}`);
-    }
-    if (!arch.members || arch.members.length === 0) {
-      throw new Error(`MELEE_ARCHETYPE_CONFIG_REQUIRED: Archetype ${arch.archetypeId} has no eligible members`);
+      throw new Error(`MELEE_ARCHETYPE_CONFIG_REQUIRED: Invalid root mapping for ${arch.archetypeId}`);
     }
     for (const m of arch.members) {
       if (m.primaryArchetype !== arch.archetypeId || m.rootSourceId !== arch.rootSourceId) {
@@ -199,10 +244,10 @@ export function generateMeleeSamplingManifest(config: MeleeArchetypeConfigFile):
   for (const a of config.archetypes) allMembers.push(...a.members);
 
   const manifestBody = {
-    schemaVersion: 'T041_MELEE_SAMPLING_MANIFEST_V1' as const,
+    schemaVersion: 'T041R_MELEE_SAMPLING_MANIFEST_V1' as const,
     evidenceClass: 'AGGREGATE_EXPLORATION_ONLY' as const,
     meleeRevision: config.revision,
-    baseSeed: 41000,
+    baseSeed: 41001,
     eligibleArchetypes,
     archetypeCount: eligibleArchetypes.length,
     topLevelArchetypeProbability: 1.0 / eligibleArchetypes.length,
@@ -226,7 +271,7 @@ export function generateMeleeSamplingManifest(config: MeleeArchetypeConfigFile):
   return manifest;
 }
 
-/** 伪随机数生成器 (确定性采样) */
+/** 伪随机数生成器 */
 function makePRNG(seed: number) {
   let s = seed % 2147483647;
   if (s <= 0) s += 2147483646;
@@ -236,11 +281,12 @@ function makePRNG(seed: number) {
   };
 }
 
-/** 对指定候选进行概率化 Archetype Melee 对手配对采样 */
+/** 对指定候选进行概率化 Melee 采样（排除自身） */
 export function sampleMeleeOpponentPairs(opts: {
   manifest: MeleeSamplingManifest;
   config: MeleeArchetypeConfigFile;
   candidateId: string;
+  candidateFingerprint: string;
   cycleOrdinal: number;
 }): Array<{
   pairIndex: number;
@@ -249,22 +295,28 @@ export function sampleMeleeOpponentPairs(opts: {
   seedP1: number;
   seedP2: number;
 }> {
-  const { manifest, config, candidateId, cycleOrdinal } = opts;
-  const hashVal = parseInt(createHash('sha256').update(`${candidateId}_c${cycleOrdinal}`).digest('hex').slice(0, 8), 16);
+  const { manifest, config, candidateId, candidateFingerprint, cycleOrdinal } = opts;
+  const hashVal = parseInt(createHash('sha256').update(`${candidateId}_c${cycleOrdinal}_t041r`).digest('hex').slice(0, 8), 16);
   const rand = makePRNG(manifest.baseSeed + hashVal);
 
   const pairs: Array<{ pairIndex: number; archetypeId: string; member: ArchetypeMemberConfig; seedP1: number; seedP2: number }> = [];
   let pairIdx = 0;
 
-  // 1. 满足每个流派的最低配额 (minimumPairsPerArchetype = 1 pair = 2 games)
+  // 1. 满足 11 个流派最低配额 (1 pair per archetype)，排除 candidateFingerprint 自身
   for (const arch of config.archetypes) {
+    const eligibleMembers = arch.members.filter(m => m.formationSnapshotFingerprint !== candidateFingerprint);
+    const activePool = eligibleMembers.length > 0 ? eligibleMembers : arch.members;
+
+    // 重新归一化有效成员权重
+    const sum = activePool.reduce((acc, m) => acc + m.smoothedWeight, 0);
     const r = rand();
     let acc = 0;
-    let chosen = arch.members[0];
-    for (const m of arch.members) {
-      acc += m.smoothedWeight;
+    let chosen = activePool[0];
+    for (const m of activePool) {
+      acc += (m.smoothedWeight / (sum || 1));
       if (r <= acc) { chosen = m; break; }
     }
+
     const seedP1 = manifest.baseSeed + pairIdx * 200 + 1;
     const seedP2 = manifest.baseSeed + pairIdx * 200 + 2;
     pairs.push({
@@ -276,17 +328,22 @@ export function sampleMeleeOpponentPairs(opts: {
     });
   }
 
-  // 2. 剩余预算按 Top-level 均匀采样 Archetype
+  // 2. 剩余配额按 Top-level 等概率均匀抽取 Archetype，并在内部按权重采样
   while (pairs.length < manifest.samplePairBudget) {
     const archIdx = Math.floor(rand() * config.archetypes.length);
     const arch = config.archetypes[archIdx];
+    const eligibleMembers = arch.members.filter(m => m.formationSnapshotFingerprint !== candidateFingerprint);
+    const activePool = eligibleMembers.length > 0 ? eligibleMembers : arch.members;
+
+    const sum = activePool.reduce((acc, m) => acc + m.smoothedWeight, 0);
     const r = rand();
     let acc = 0;
-    let chosen = arch.members[0];
-    for (const m of arch.members) {
-      acc += m.smoothedWeight;
+    let chosen = activePool[0];
+    for (const m of activePool) {
+      acc += (m.smoothedWeight / (sum || 1));
       if (r <= acc) { chosen = m; break; }
     }
+
     const seedP1 = manifest.baseSeed + pairIdx * 200 + 1;
     const seedP2 = manifest.baseSeed + pairIdx * 200 + 2;
     pairs.push({

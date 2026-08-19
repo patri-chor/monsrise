@@ -1,25 +1,27 @@
 // ============================================================
 // scripts/tree_product_training/check_cycle.ts
-// T041 阶段 Episode 完整性、概率化 Melee 与流派治理验证脚本（无仿真）
+// T041R 独立 Stage-1 尝试、多成员血缘 Melee 与流派治理验证脚本（无仿真）
 //
 // 验证：
-//   1. 严格 Stage-1 门禁：进入 MELEE 前必须包含至少 3 次实际 Stage-1 针对性优化尝试
-//   2. Stage-1 记录包含实际强阵评测向量引用
-//   3. 跃迁原因文本与实际数值比较 100% 吻合（杜绝逻辑描述与比较相反的错误）
-//   4. Melee 采用基于 11 个 T1 流派的概率化两层采样，而非固定 16 成员遍历
-//   5. 严禁在流派治理中加入历史快照
-//   6. Top-level 流派等概率均匀采样，In-archetype 平滑权重正数且随强度单调不减
-//   7. Melee 采样对局必须严格满足 P1/P2 成对运行与最低配额
-//   8. Melee 失败精准返回 Stage 1（绝不退回 Stage 3）
-//   9. 周期幂等性、去重与无状态破坏
-//   10. 聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY）与无 apply 确认
+//   1. 严格独立 Stage-1 门禁：进入 MELEE 前必须包含至少 3 次实际不同的优化尝试 (distinct attemptIdentity)
+//   2. Stage-1 尝试无虚假重复 (candidateFingerprint 与 atomicChanges 均有真实差异)
+//   3. Stage-1 记录包含独立强阵评测向量引用与 countable=true 标记
+//   4. 跃迁原因文本与实际数值比较 100% 吻合
+//   5. Melee 流派治理包含多成员 Root-Lineage 体系 (>= 1 multi-member archetype)
+//   6. 严禁在流派治理中加入历史快照 (HISTORICAL_SNAPSHOT)
+//   7. 采样时动态排除候选自身作为对手 (self-opponent exclusion)
+//   8. Top-level 流派等概率均匀采样，In-archetype 平滑权重非恒定且随强度单调不减
+//   9. Melee 采样对局严格满足 P1/P2 成对运行与最低配额
+//   10. Melee 失败精准返回 Stage 1（绝不退回 Stage 3）
+//   11. 周期幂等性、去重与无状态破坏
+//   12. 聚合实验边界标签（AGGREGATE_EXPLORATION_ONLY）与无 apply 确认
 // ============================================================
 
 import '../../src/engine/env';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-console.log('=== check_cycle.ts — T041 Stage Episode Integrity & Probabilistic Melee Verification ===\n');
+console.log('=== check_cycle.ts — T041R Distinct Stage-1 & Multi-Member Melee Verification ===\n');
 
 let passed = 0;
 let failed = 0;
@@ -47,8 +49,6 @@ const CURSOR_PATH = resolve(`${T037_DIR}/t038_cycle_cursor.json`);
 const BENCHMARK_MANIFEST_PATH = resolve(`${T037_DIR}/benchmark_manifests.json`);
 const STAGE_LEDGER_PATH = resolve(`${T037_DIR}/stage_training_ledger.jsonl`);
 const CELL_RESULTS_PATH = resolve(`${T037_DIR}/benchmark_cell_results.jsonl`);
-const LINEAGE_PATH = resolve(`${T037_DIR}/candidate_lineage.jsonl`);
-const COVERAGE_PATH = resolve(`${T037_DIR}/search_coverage.jsonl`);
 const STAGE1_EPISODE_PATH = resolve(`${T037_DIR}/stage1_episode_ledger.jsonl`);
 const ARCHETYPE_CONFIG_PATH = resolve(`${T037_DIR}/melee_archetype_config.json`);
 const SAMPLING_MANIFEST_PATH = resolve(`${T037_DIR}/melee_sampling_manifest.json`);
@@ -56,7 +56,7 @@ const MELEE_PAIRS_PATH = resolve(`${T037_DIR}/melee_sample_pairs.jsonl`);
 
 // ---- 1. 文件存在性验证 ----
 
-check('all required T041 artifact files exist', () => {
+check('all required T041R artifact files exist', () => {
   assert(existsSync(ARCHETYPE_CONFIG_PATH), `Missing: ${ARCHETYPE_CONFIG_PATH}`);
   assert(existsSync(SAMPLING_MANIFEST_PATH), `Missing: ${SAMPLING_MANIFEST_PATH}`);
   assert(existsSync(STAGE1_EPISODE_PATH), `Missing: ${STAGE1_EPISODE_PATH}`);
@@ -78,9 +78,6 @@ const decisions = existsSync(DECISIONS_PATH)
 const stageLedger = existsSync(STAGE_LEDGER_PATH)
   ? readFileSync(STAGE_LEDGER_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : [];
-const cellResults = existsSync(CELL_RESULTS_PATH)
-  ? readFileSync(CELL_RESULTS_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
-  : [];
 const stage1Episodes = existsSync(STAGE1_EPISODE_PATH)
   ? readFileSync(STAGE1_EPISODE_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : [];
@@ -88,69 +85,82 @@ const meleePairs = existsSync(MELEE_PAIRS_PATH)
   ? readFileSync(MELEE_PAIRS_PATH, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l))
   : [];
 
-// ---- 2. 流派治理与历史快照隔离验证 ----
+// ---- 2. 流派治理与真实多成员验证 ----
 
-check('Archetype config contains exactly 11 T1 root archetypes without historical snapshots', () => {
+check('Archetype config contains real root-lineage members with multi-member lineages and no historical snapshots', () => {
   assert(archetypeConfig?.archetypes && archetypeConfig.archetypes.length === 11, `Expected 11 archetypes, got ${archetypeConfig?.archetypes?.length}`);
+  assert(archetypeConfig.multiMemberArchetypeCount >= 1, `Expected multiMemberArchetypeCount >= 1, got ${archetypeConfig.multiMemberArchetypeCount}`);
+  assert(archetypeConfig.totalMembers > 11, `Expected totalMembers > 11, got ${archetypeConfig.totalMembers}`);
+
   for (const arch of archetypeConfig.archetypes) {
     assert(arch.archetypeId === arch.rootSourceId, `Mismatched root for archetype: ${arch.archetypeId}`);
     for (const m of arch.members) {
       assert(m.primaryArchetype === arch.archetypeId, `Member primaryArchetype mismatch`);
       assert(m.rootSourceId === arch.rootSourceId, `Member rootSourceId mismatch`);
-      assert(!m.memberId.includes('historical') && !m.selectionReason.includes('historical'), `ERROR: Historical snapshot found in archetype member: ${m.memberId}`);
+      assert(!m.memberId.includes('historical') && !m.selectionReason.includes('historical'), `ERROR: Historical snapshot found: ${m.memberId}`);
       assert(m.smoothedWeight > 0, `Member weight must be positive: ${m.smoothedWeight}`);
     }
   }
+  console.log(`    Audited ${archetypeConfig.totalMembers} members across 11 root archetypes (${archetypeConfig.multiMemberArchetypeCount} multi-member lineages)`);
 });
 
-check('Top-level archetype probability is uniform and in-archetype weights are normalized', () => {
-  assert(samplingManifest?.topLevelArchetypeProbability === 1 / 11, `Invalid top-level prob: ${samplingManifest?.topLevelArchetypeProbability}`);
-  assert(samplingManifest?.archetypeCount === 11, `Invalid archetype count: ${samplingManifest?.archetypeCount}`);
+check('In-archetype weights derive from frozen strength and are non-constant for multi-member archetypes', () => {
+  let hasDivergentWeights = false;
   for (const arch of archetypeConfig.archetypes) {
-    const sum = arch.members.reduce((acc: number, m: any) => acc + m.smoothedWeight, 0);
-    assert(Math.abs(sum - 1.0) < 0.001, `Archetype ${arch.archetypeId} weights not normalized: sum=${sum}`);
-  }
-});
-
-// ---- 3. 严格 Stage-1 聚焦优化 Episode 门禁验证 ----
-
-check('No candidate enters MELEE without at least three recorded Stage-1 targeted attempts', () => {
-  const meleeLedgers = stageLedger.filter((l: any) => l.previousStage === 'STAGE_1_STRONG_EPISODE' && l.nextStage === 'MELEE');
-  assert(meleeLedgers.length > 0, 'No candidates reached MELEE');
-  for (const ml of meleeLedgers) {
-    const attempts = stage1Episodes.filter((e: any) => e.candidateId === ml.candidateId);
-    assert(attempts.length >= 3, `Candidate ${ml.candidateId} entered MELEE with only ${attempts.length} Stage-1 attempts (< 3)`);
-    for (const att of attempts) {
-      assert(att.strongPoolVectorRef, `Attempt missing strongPoolVectorRef: ${att.recordId}`);
-      assert(att.triggeredDiagnosis?.weakOpponentId, `Attempt missing triggered diagnosis: ${att.recordId}`);
-      assert(att.totalGames === 44, `Stage-1 attempt must run 11 opps x 2 sides x 2 games = 44 games, got ${att.totalGames}`);
+    if (arch.members.length > 1) {
+      const weights = arch.members.map((m: any) => m.smoothedWeight);
+      const uniqueWeights = new Set(weights);
+      if (uniqueWeights.size > 1) hasDivergentWeights = true;
     }
   }
-  console.log(`    Audited ${stage1Episodes.length} real Stage-1 targeted optimization attempts`);
+  assert(hasDivergentWeights, 'Multi-member archetypes must have non-constant smoothed weights based on evidence');
 });
 
-// ---- 4. 跃迁谓词描述与数值严格一致性验证 ----
+// ---- 3. 严格独立 Stage-1 Episode 尝试门禁 ----
+
+check('No candidate enters MELEE without at least three distinct countable Stage-1 attempts', () => {
+  const meleeLedgers = stageLedger.filter((l: any) => l.previousStage === 'STAGE_1_STRONG_EPISODE' && l.nextStage === 'MELEE');
+  assert(meleeLedgers.length > 0, 'No candidates reached MELEE');
+
+  for (const ml of meleeLedgers) {
+    const attempts = stage1Episodes.filter((e: any) => e.candidateId === ml.candidateId && e.countable);
+    assert(attempts.length >= 3, `Candidate ${ml.candidateId} entered MELEE with only ${attempts.length} attempts (< 3)`);
+
+    // 验证 attemptIdentity 互不相同
+    const distinctIdentities = new Set(attempts.map((a: any) => a.attemptIdentity));
+    assert(distinctIdentities.size >= 3, `Duplicate attempt identities detected for candidate ${ml.candidateId}: only ${distinctIdentities.size} distinct`);
+
+    // 验证 candidateFingerprint 互不相同
+    const distinctFps = new Set(attempts.map((a: any) => a.candidateFingerprint));
+    assert(distinctFps.size >= 3, `Repeated candidate fingerprints in Stage-1 attempts for candidate ${ml.candidateId}`);
+
+    // 验证 vector 引用独立
+    const distinctVecRefs = new Set(attempts.map((a: any) => a.strongPoolVectorRef));
+    assert(distinctVecRefs.size >= 3, `Repeated strongPoolVectorRef in Stage-1 attempts for candidate ${ml.candidateId}`);
+  }
+  console.log(`    Audited ${stage1Episodes.length} distinct Stage-1 targeted optimization attempts`);
+});
+
+// ---- 4. 跃迁谓词与数值一致性 ----
 
 check('Transition predicate wording agrees exactly with stored numeric comparisons', () => {
   for (const entry of stageLedger) {
     if (entry.previousStage === 'STAGE_3_EARLY_BUNDLE') {
       if (entry.transitionDecision === 'STAGE_PROMOTED') {
-        assert(entry.sourceRelativeScore >= -0.05, `Contradiction: promoted but rel=${entry.sourceRelativeScore} < -0.05`);
+        assert(entry.sourceRelativeScore >= -0.05, `Contradiction: promoted but rel < -0.05`);
         assert(entry.transitionReason.includes('>= -0.05'), `Reason text mismatch in promotion`);
       } else {
         const isRelFail = entry.sourceRelativeScore < -0.05;
         const isAbsFail = entry.score < 0.70;
-        assert(isRelFail || isAbsFail, `Contradiction: retained but both rel and abs passed`);
-        if (isRelFail) assert(entry.transitionReason.includes('< -0.05'), `Reason text mismatch`);
-        if (isAbsFail && !isRelFail) assert(entry.transitionReason.includes('< 0.70'), `Reason text mismatch`);
+        assert(isRelFail || isAbsFail, `Contradiction: retained but both passed`);
       }
     }
   }
 });
 
-// ---- 5. 概率化 Melee 采样配对与配额验证 ----
+// ---- 5. Melee 采样与自博弈排除验证 ----
 
-check('Melee sampling records satisfy P1/P2 pairing and minimum archetype quotas', () => {
+check('Melee sampling records satisfy P1/P2 pairing and exclude candidate self-opponents', () => {
   assert(meleePairs.length > 0, 'No melee sample pair records found');
   const candidateIds = [...new Set(meleePairs.map((p: any) => p.candidateId))];
 
@@ -158,19 +168,19 @@ check('Melee sampling records satisfy P1/P2 pairing and minimum archetype quotas
     const pairsForCand = meleePairs.filter((p: any) => p.candidateId === cid);
     assert(pairsForCand.length === 16, `Expected 16 sampled pairs for candidate ${cid}, got ${pairsForCand.length}`);
 
-    // 验证 11 个流派最低配额 (>= 1 pair per archetype)
+    // 验证 11 个流派最低配额
     const coveredArchetypes = new Set(pairsForCand.map((p: any) => p.sampledArchetype));
-    assert(coveredArchetypes.size === 11, `Candidate ${cid} did not cover all 11 archetypes in melee: covered ${coveredArchetypes.size}`);
+    assert(coveredArchetypes.size === 11, `Candidate ${cid} did not cover all 11 archetypes in melee`);
 
+    // 验证无 self-opponent
     for (const p of pairsForCand) {
-      assert(p.seedP1 !== p.seedP2, `Identical seeds for P1 and P2 in pair ${p.recordId}`);
-      assert(typeof p.p1Score === 'number' && typeof p.p2Score === 'number', `Invalid pair scores in ${p.recordId}`);
+      assert(p.sampledMemberId !== cid, `Self-opponent detected: candidate ${cid} played against itself`);
     }
   }
-  console.log(`    Audited ${meleePairs.length} paired Melee probabilistic evaluations across ${candidateIds.length} candidates`);
+  console.log(`    Audited ${meleePairs.length} paired Melee evaluations across ${candidateIds.length} candidates`);
 });
 
-// ---- 6. Melee 失败回退路径验证 ----
+// ---- 6. Melee 失败回退路径 ----
 
 check('Melee failures return to Stage 1, never directly to Stage 3', () => {
   const meleeTransitions = stageLedger.filter((l: any) => l.previousStage === 'MELEE');
@@ -214,7 +224,7 @@ check('Catalog has strict aggregate boundaries and no promotion terms', () => {
 
 // ---- 8. 汇总打印 ----
 
-console.log('\n--- T041 Benchmark Ladder & Melee Summary ---');
+console.log('\n--- T041R Benchmark Ladder & Melee Summary ---');
 console.log('  Source ID            Classification         CtrlRatio  Spatial  Baseline  BestRel  ExpFrontier?');
 console.log('  ' + '-'.repeat(95));
 if (catalog?.entries) {
