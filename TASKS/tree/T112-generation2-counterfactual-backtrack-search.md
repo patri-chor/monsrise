@@ -1,165 +1,232 @@
 STATUS: OPEN
 DOMAIN: tree
-SUPERSEDES: T111-generation2-branch-coverage-and-conflict-resolution
+REISSUE: T112
+SUPERSEDES: prior T112 counterfactual-backtrack wording
 
-# T112 - Generation 2: Counterfactual Backtrack Search for All2Rush
+# T112 - Generation 2: Single-Round Counterfactual Battle Engine
 
-## Correct Local-Search Semantics
+## Objective
 
-T110's 33 improved trial count is not 33 independent improvements. Candidate generation used a fixed coordinate list and did not deduplicate actual behavior fingerprints before evaluation.
+Build the missing product **single-round battle engine** and use it for all2rush local search.
 
-T112 replaces that search semantics.
-
-The intended optimization is not to illegally move a monster after it is already on the R-round board. It is the counterfactual question:
-
-```text
-"If I had placed this already-deployed monster differently at its own earlier
- deployment round D, would the later adverse round R have been avoided?"
-```
-
-For an adverse round R and an already deployed target monster:
+The engine accepts the exact current round's pre-battle state. It does not require replaying from an earlier deployment round and it does not run R+1..end during ordinary candidate search.
 
 ```text
-find original deployment round D <= R
-capture/use exact pre-D checkpoint
-change only D..R-local strategy actions
-replay continuously from D through the end
+current round pre-battle board + current round deployment choices
+-> optional counterfactual repositioning of target-side monsters already on board
+-> one authoritative product battle round
+-> round winner, survivors, HP, score delta
 ```
 
-This is a local backtracking window, not global start-of-game search. A successful branch must fork at D, where the action is legal, rather than at R after the placement has already happened.
+This is the intended meaning of:
+
+```text
+"If I had put the monster already on the board here before this round,
+ could I win this point?"
+```
+
+It is a counterfactual pre-battle layout input, not an in-game second deployment or a new movement rule.
 
 ## Scope
 
 ```text
 all2rush only
-use Generation2PilotOrchestrator and existing generation2 modules
-no R0/global main/tier/L1/deployment changes
+use real product battle rules through existing authoritative battle path
 no arena.ts/playSpecVsSpec
+no R0/global main/tier/L1/deployment modification
 ```
 
-Do not discard T110 evidence. Reclassify its 33 count as raw improved trials and use only behavior-distinct results as input to this task.
+T110 historical full-continuation results remain evidence only. Do not treat its 33 raw improved trials as 33 unique local solutions.
 
-## 1. Unique Actual Candidate Contract
+## 1. Single-Round Input Contract
 
-A candidate counts against budget only after compiling it to a concrete executable evolution/action delta and obtaining a new behavior fingerprint.
+Introduce a named Generation 2 single-round API, for example:
 
-```text
-sample parameter proposal
--> compile actual D..R strategy delta
--> calculate behavior fingerprint
--> if fingerprint already seen for this case/window: discard without execution
--> otherwise validate legal replay action and execute
+```ts
+runCounterfactualRound(input: CounterfactualRoundInput): CounterfactualRoundResult
 ```
 
-Persist both proposal fingerprint and compiled behavior fingerprint. Rejected duplicates are recorded separately but do not consume 16/32 trial budget.
-
-An improved candidate is unique by behavior fingerprint, not by coordinate label or random draw index.
-
-## 2. Backtrack-Window Discovery
-
-For every selected target-side loss case:
-
-1. Identify relevant already-deployed target monsters at adverse round R from observable board/HP output and deployment history.
-2. For each candidate monster, identify original deployment round D and exact pre-D checkpoint.
-3. Build a bounded D..R action catalog, with legality enforced against each respective round:
+`CounterfactualRoundInput` must contain a complete current-round pre-battle state:
 
 ```text
-- change original placement x/y of monster deployed at D;
-- change same-round deployment order where more than one action exists;
-- move an already planned future deployment from D+1..R into an earlier legal
-  round, removing its old scheduled action;
-- defer an existing D action to a later legal round where appropriate;
-- adjust coordinated placements/order of up to three actions across D..R;
-- choose allowed calculator-policy values when relevant.
+round number and deterministic seed/RNG continuation
+both scores and current round budgets
+both teams/hands needed for current deployment validation
+current board monsters, including identity, team, badges, HP/max HP,
+  battle-relevant fields, and current x/y
+current-round target-side and opponent-side deployment intents in order
+optional target-side existing-board layout overrides keyed by stable monster ID
 ```
 
-Never place a monster twice. Never move a monster already on the D checkpoint board. Never add actions not legal under actual budget/team rules.
-
-For D = R this reduces to ordinary current-round local search. For D < R it is the required counterfactual “place it differently last round” search.
-
-## 3. Two Budget Experiments
-
-For each chosen `(loss case, D-window)` run both independently with fixed recorded seeds:
+The engine must:
 
 ```text
-Budget A: 16 unique behavior-fingerprint candidates
-Budget B: 32 unique behavior-fingerprint candidates
+- restore/build the supplied current pre-battle state;
+- apply only allowed target-side existing-board coordinate overrides before
+  the battle, then apply both sides' current-round deployment intents;
+- validate target-zone, collision, bounds and identity rules;
+- never duplicate, create, delete, or deploy an already-on-board monster;
+- execute exactly one authoritative normal product battle round;
+- return observable result only by default.
 ```
 
-Use the same candidate catalog and deterministic random stream; Budget A is the first 16 unique candidates of the Budget B stream. This makes marginal comparison meaningful.
-
-For each budget report:
+Observable result:
 
 ```text
-legal proposal count
+round winner
+p1/p2 score delta and cumulative score
+surviving units keyed by stable instance ID
+per-survivor HP/max HP
+per-side survivor count and total HP
+accepted/rejected current-round deployment actions
+canonical observable digest
+```
+
+Internal diagnostics are opt-in only on mismatch/failure.
+
+## 2. Product Equivalence Gate
+
+Use actual formation games to harvest current-round pre-battle inputs. For a broad sample of formations, sides, seeds and reachable rounds:
+
+```text
+original ProductGameSession.playRound
+== runCounterfactualRound with no board overrides and same deployment intents
+```
+
+Compare the complete observable result listed above. This is a single-round equivalence test, not full-match parity.
+
+Minimum coverage:
+
+```text
+all available exact formations, up to at least 4 distinct formations
+both sides
+at least 6 seeds
+all reachable rounds from each sampled match
+```
+
+Report actual input/round count. On a mismatch, write a diagnostic record containing the original input plus traces/internal fields required to explain it.
+
+## 3. Current-Round Local Search
+
+For each all2rush target-side adverse round R:
+
+1. Capture exact pre-R single-round input from the real baseline match.
+2. Build legal counterfactual variables from that input:
+
+```text
+A. target-side existing-board monster x/y override
+B. target-side current-round new placement x/y
+C. current-round target-side deployment order
+D. optionally one whitelisted calculator-policy choice if it changes current
+   round intents
+```
+
+A candidate modifies 1..3 variables. It may alter both existing-board placement and new deployment in the same current-round input.
+
+No candidate may:
+
+```text
+move opponent units
+move a target unit outside its target-side pre-battle legal board area
+place two units in one cell
+reposition a dead/nonexistent unit
+modify future rounds
+implicitly replay an earlier round
+```
+
+## 4. Unique Budget Experiments
+
+Use a persisted deterministic random search seed. Proposals may repeat; executed candidates may not.
+
+```text
+proposal
+-> canonicalize concrete complete single-round input
+-> calculate round-input behavior fingerprint
+-> duplicate fingerprint: record DUPLICATE_PROPOSAL, do not execute/count
+-> unique legal fingerprint: execute/count
+```
+
+Run both budgets on the same stream:
+
+```text
+Budget 16: first 16 unique legal single-round inputs
+Budget 32: first 32 unique legal single-round inputs
+```
+
+For each adverse round report:
+
+```text
+proposal count
+legal unique count
 compiled duplicate count
-unique executed count
-behavior-distinct improvements
-best result by W/D/L, score, adverse-round delay, and HP trajectory
-incremental unique improvements discovered by candidates 17..32
-runtime cost / continuation count
+16-result best candidate
+32-result best candidate
+new unique improvement from candidates 17..32
+round winner/score/HP outcome distribution
+runtime per candidate
 ```
 
-Stop only upon legal-space exhaustion or budget limit. Do not report a fixed template count as a budget.
+This counts distinct **actual round layouts and intents**, not different coordinate labels that canonicalize to the same behavior.
 
-## 4. Branch Recording and Forward Placement
+## 5. Local Solution and Forward Branch Semantics
 
-For each behavior-distinct improved candidate:
+Retain every behavior-distinct single-round improvement for each adverse case. Compare them before selecting a representative:
 
 ```text
-- retain it initially in a local solution set for its (case, D-window);
-- select a representative only after comparing all distinct results;
-- create an EXACT_CASE_BRANCH at actual fork round D;
-- condition derives solely from D-round legal visible observations;
-- action subtree captures the D..R change;
-- confirm source case replay from pre-D checkpoint across a fresh worker/pool boundary.
+round loss -> draw/win
+round draw -> win
+same round result but strictly better target total HP / survivor outcome
 ```
 
-A later label at R cannot be used to decide an action at D. If D-round visible facts cannot distinguish the target situation, the solution remains local evidence/warm-start only and is not an executable early branch.
+A selected local solution may be stored as a `ROUND_LOCAL_SOLUTION` immediately.
 
-## 5. Per-Case Selection and Non-Domination
-
-Do not use T110's “first improved candidate wins” behavior.
-
-For each case/window group:
+It becomes an executable forward strategy branch only if its coordinate/action changes can be expressed at a legal decision point visible before that round. If the solution relies on a counterfactual already-on-board layout whose original decision was earlier and cannot be distinguished with legal information then:
 
 ```text
-- retain all behavior-distinct improvements;
-- remove only an exact behavior duplicate;
-- mark a candidate dominated only when another candidate is at least as good on
-  all recorded observable metrics and strictly better on at least one;
-- choose an executable branch representative based on best observable result,
-  then simpler/earlier legal delta, then stable behavior fingerprint.
+retain it as local tactical evidence / warm-start
+DO NOT auto-apply it as runtime branch
 ```
 
-Non-selected distinct improvements are retained as warm-start/historical candidates with their evidence.
+Do not force full-match continuation evaluation for every candidate. For the best representative(s) only, run optional full product continuation as a separate validation column:
+
+```text
+CONTINUATION_IMPROVES
+CONTINUATION_NEUTRAL
+CONTINUATION_REGRESSES
+NOT_RUN
+```
+
+It does not change the primary single-round finding.
 
 ## Evidence
 
-Write append-only T112 evidence:
+Write append-only T112 artifacts through the Generation 2 evidence writer:
 
 ```text
-all2rush_g2_t112_backtrack_windows.jsonl
-all2rush_g2_t112_candidate_proposals.jsonl
-all2rush_g2_t112_unique_trials.jsonl
-all2rush_g2_t112_budget_comparison.jsonl
-all2rush_g2_t112_local_solution_sets.jsonl
-all2rush_g2_t112_forward_branches.jsonl
+all2rush_g2_t112_round_equivalence.jsonl
+all2rush_g2_t112_round_inputs.jsonl
+all2rush_g2_t112_round_proposals.jsonl
+all2rush_g2_t112_round_trials.jsonl
+all2rush_g2_t112_budget_16_vs_32.jsonl
+all2rush_g2_t112_local_solutions.jsonl
+all2rush_g2_t112_forward_branch_assessment.jsonl
+all2rush_g2_t112_mismatch_diagnostics.jsonl
 all2rush_g2_t112_summary.json
 ```
 
-Each unique trial includes loss case, R, D, selected target action/monster, pre-D checkpoint fingerprint, budget/run seed/draw index, exact D..R delta, compiled behavior fingerprint, W/D/L, score, roundResults, per-round HP digest, and classification.
+Each trial includes formation fingerprints, source match/case, round/side/seed, baseline input fingerprint, candidate input fingerprint, concrete board overrides, deployment intents/order, selected variables, round observable result and HP digest.
 
 ## Acceptance
 
-- [ ] Duplicate behavior fingerprints do not execute or consume candidate budget.
-- [ ] At least one D < R window is attempted where an adverse case has a prior target deployment; otherwise evidence explains why no such window exists.
-- [ ] No illegal move/redeployment of an already placed monster occurs.
-- [ ] Both 16 and 32 unique-candidate experiments run from the same deterministic stream and compare marginal result.
-- [ ] Every local improvement is behavior-distinct and retained/compared before representative selection.
-- [ ] Every executable forward branch forks at its actual legal decision round D and is confirmed from pre-D checkpoint.
+- [ ] A named single-round API accepts a complete pre-battle current-round input and returns one authoritative product round result.
+- [ ] No-override input is observably equivalent to normal product `playRound` across the stated real-battle coverage.
+- [ ] Existing-board repositioning is supported as a counterfactual input without duplicate deployment/movement game actions.
+- [ ] 16 and 32 experiments count only unique canonical round-input fingerprints.
+- [ ] At least one adverse all2rush round searches existing-board layout overrides where units are available; otherwise record why not.
+- [ ] All behavior-distinct single-round improvements are retained and compared.
+- [ ] Runtime branch conversion is explicitly separated from round-local tactical findings.
 - [ ] No global/tier/L1/deployment change.
 
 ## Delivery
 
-Write `TASKS/tree/T112.report.md` with T110 raw-vs-unique reconciliation; backtrack window table; 16 vs 32 comparison table; unique improvement/non-domination table; forward branch details and source confirmation; no-legal-window cases; evidence row counts; tests; no-apply confirmation; changed files. Commit/push only `agent/tree`.
+Write `TASKS/tree/T112.report.md` with API/input schema; equivalence coverage/pass count; candidate uniqueness reconciliation; 16-vs-32 table; existing-board override examples; per-case local solution table; optional continuation outcomes; branch-assessment decisions; artifact rows; tests; no-apply confirmation; changed files. Commit/push only `agent/tree`.
