@@ -151,10 +151,15 @@ export class CyclePilot {
           collectDiagnostics: true,
         });
 
-        // 真实依据策略轨迹判定分支是否触发 (Actual Deployment Trace Checking)
-        // 检查在 candMatch 中，指定 forkRound 是否真正执行了候选动作
-        const branchForkRound = cand.executableBranch.forkRound;
-        const isBranchSelected = candMatch.roundOutputs.some(ro => ro.round >= branchForkRound);
+        // 真实依据策略部署轨迹中记录的 branchId 判断分支是否被策略选中
+        // (Actual Deployment Trace Checking via intent/trace branch.branchId)
+        const targetBranchId = cand.executableBranch.branchId;
+        const traces = candMatch.diagnostics?.traces ?? [];
+        const isBranchSelected = traces.some(t => {
+          const isTargetSide = t.side === side;
+          const matchesBranch = t.branch?.branchId?.startsWith(targetBranchId);
+          return isTargetSide && matchesBranch;
+        });
 
         const baseOutcome = computeProductOutcomeFromMatch(baseMatch, side);
         const candOutcome = computeProductOutcomeFromMatch(candMatch, side);
