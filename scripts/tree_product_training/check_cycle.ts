@@ -300,10 +300,12 @@ if (library?.formations) {
     const l3 = f.l3Score !== null ? f.l3Score.toFixed(3) : '   -  ';
     const l2 = f.l2Score !== null ? f.l2Score.toFixed(3) : '   -  ';
     const l1 = f.l1Score !== null ? f.l1Score.toFixed(3) : '   -  ';
-    const role = (f.benchmarkRoles[0] || f.opponentCatalogRoles[0] || 'LEARNER').padEnd(28);
+    const role = (f.benchmarkRoles?.[0] || f.opponentCatalogRoles?.[0] || (f as any).activeRoles?.[0] || 'LEARNER').padEnd(28);
+    const tier = (f.currentTier || (f as any).currentDynamicTier || 'T3').padEnd(13);
+    const learnerStatus = (f.l1LearnerStatus || 'ACTIVE').padEnd(20);
     console.log(
-      `  ${f.formationId.padEnd(20)} ${f.rootT0SourceId.padEnd(12)} ${f.currentTier.padEnd(13)} ` +
-      `${role} ${f.l1LearnerStatus.padEnd(20)} ${l3.padStart(8)} ${l2.padStart(9)} ${l1.padStart(9)}`
+      `  ${f.formationId.padEnd(20)} ${f.rootT0SourceId.padEnd(12)} ${tier} ` +
+      `${role} ${learnerStatus} ${l3.padStart(8)} ${l2.padStart(9)} ${l1.padStart(9)}`
     );
   }
 }

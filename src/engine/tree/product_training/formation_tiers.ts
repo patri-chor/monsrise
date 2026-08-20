@@ -13,7 +13,7 @@ import { writeFileSync, renameSync, appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { T037_OUTPUT_DIR } from './04_screen';
 
-export type FormationTier = 'T0' | 'T1' | 'T2' | 'T3';
+export type FormationTier = 'T0' | 'T1' | 'T2' | 'T3' | 'T4';
 export type LearningLevel = 'L1' | 'L2' | 'L3';
 export type L1LearnerStatus = 'L1_NOT_YET_EVALUATED' | 'L1_ELIGIBLE' | 'L1_STABLE' | 'L1_DIAGNOSE_REQUIRED' | 'L1_NOT_PERMITTED' | 'NOT_APPLICABLE';
 export type BenchmarkRole = 'L2_FROZEN_T0_ANCHOR' | 'L3_BASELINE_ANCHOR';
@@ -336,18 +336,21 @@ export function autoGenerateWinrateReportTxt(entries: FormationLibraryEntry[]): 
     );
   }
 
-  const t0Count = entries.filter(x => x.currentTier === 'T0').length;
-  const t1Count = entries.filter(x => x.currentTier === 'T1').length;
-  const t2Count = entries.filter(x => x.currentTier === 'T2').length;
-  const t3Count = entries.filter(x => x.currentTier === 'T3').length;
+  const activeEntries = entries.filter(e => e.currentTier !== 'T4');
+  const t0Count = activeEntries.filter(x => x.currentTier === 'T0').length;
+  const t1Count = activeEntries.filter(x => x.currentTier === 'T1').length;
+  const t2Count = activeEntries.filter(x => x.currentTier === 'T2').length;
+  const t3Count = activeEntries.filter(x => x.currentTier === 'T3').length;
+  const t4Count = entries.filter(x => x.currentTier === 'T4').length;
 
   txtLines.push('========================================================================================================================');
-  txtLines.push(`统计总数: 阵型共 ${entries.length} 套 (T0: ${t0Count}, T1: ${t1Count}, T2: ${t2Count}, T3: ${t3Count})`);
+  txtLines.push(`统计总数: 活跃阵型共 ${activeEntries.length} 套 (T0: ${t0Count}, T1: ${t1Count}, T2: ${t2Count}, T3: ${t3Count}) [T4 淘汰归档池: ${t4Count} 套，不计入活跃总数]`);
   txtLines.push('说明:');
   txtLines.push('  - L3 胜率: Early Bundle 8 基础对手池胜率');
   txtLines.push('  - L2 胜率: 11 强阵对手池胜率');
   txtLines.push('  - L1 实测胜率: 全谱系 22 跨谱系 Melee 对手池真实胜率 (以 0.70 平局权重客观计分)');
-  txtLines.push('  - 全自动化同步: 本报告由训练 Pipeline 自动维护，每次训练评测与梯队变动自动刷新');
+  txtLines.push('  - 容量门禁: 活跃阵型 >= 100 时停止生成全新阵型，转为存量原位优化');
+  txtLines.push('  - T4 淘汰铁律: 经历 >= 20 次优化尝试仍处于 T3 (< 45.0%) 的劣质阵型，强制移入 T4 淘汰归档池');
   txtLines.push('========================================================================================================================\n');
 
   const content = txtLines.join('\n');

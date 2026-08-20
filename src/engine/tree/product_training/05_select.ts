@@ -137,12 +137,16 @@ export function generateAdaptiveCandidatesForSource(opts: {
   cycleOrdinal: number;
   seedBase: number;
   seenFingerprints: Set<string>;
+  activeFormationCount?: number;
 }): CandidateEntry[] {
-  const { source, parentEvol, policy, cycleOrdinal, seedBase, seenFingerprints } = opts;
+  const { source, parentEvol, policy, cycleOrdinal, seedBase, seenFingerprints, activeFormationCount = 0 } = opts;
   const srcId = (source as any).id;
   const srcName = (source as any).name ?? srcId;
   const parentFp = computeCandidateFingerprint(parentEvol);
   const candidates: CandidateEntry[] = [];
+
+  // 容量上限门禁：当活跃阵型数量 >= 100 时，停止生成大量新阵型，仅允许单算子原位微调
+  const isCapacitySaturated = activeFormationCount >= 100;
 
   const addCandidateIfValid = (entry: CandidateEntry) => {
     const fp = entry.meta.canonicalFingerprint;
@@ -213,7 +217,7 @@ export function generateAdaptiveCandidatesForSource(opts: {
   }
 
   // 2. formation_transform (变换算子)
-  if (policy.transformBudget > 0) {
+  if (!isCapacitySaturated && policy.transformBudget > 0) {
     const clone = cloneEvolFormation(parentEvol);
     let transformValid = true;
     const mapping: Array<{ nodeId: string; monsterId: number; fromX: number; fromY: number; toX: number; toY: number }> = [];
@@ -262,8 +266,8 @@ export function generateAdaptiveCandidatesForSource(opts: {
     }
   }
 
-  // 3. strategy_schedule_branch (真实生成策略分支)
-  if (policy.branchBudget > 0) {
+  // 3. strategy_schedule_branch (时序/分支算子)
+  if (!isCapacitySaturated && policy.branchBudget > 0) {
     const clone = cloneEvolFormation(parentEvol);
     const r1Node = walkEvolNodes(clone.root).find(n => n.round === 1);
     if (r1Node && r1Node.placements.length > 0) {

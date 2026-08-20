@@ -8,13 +8,14 @@ import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { T037_OUTPUT_DIR } from './04_screen';
 
-export type DynamicTier = 'T0' | 'T1' | 'T2' | 'T3';
+export type DynamicTier = 'T0' | 'T1' | 'T2' | 'T3' | 'T4';
 export type ActiveRole =
   | 'CURRENT_ROOT_MAIN'
   | 'ACTIVE_TRAINING_PARENT'
   | 'ACTIVE_COMPETITOR'
   | 'HISTORICAL_MAIN'
-  | 'ARCHIVED_EXPERIMENTAL';
+  | 'ARCHIVED_EXPERIMENTAL'
+  | 'ELIMINATED_COLD_ARCHIVE';
 
 export type VerificationState =
   | 'INDEPENDENT_VERIFIED'

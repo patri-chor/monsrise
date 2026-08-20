@@ -87,7 +87,7 @@ export class PersistentSimPool {
   private cpuMonitor: CpuLoadMonitor | null = null;
 
   constructor(options: PoolOptions = {}) {
-    const defaultWorkers = Math.min(64, Math.max(16, cpus().length * 2));
+    const defaultWorkers = Math.min(128, Math.max(32, cpus().length * 4));
     this.workerCount = options.workerCount ?? defaultWorkers;
 
     if (options.enableCpuMonitor !== false) {
@@ -310,6 +310,11 @@ export class PersistentSimPool {
         .catch((err: Error) => { errors.push(err); onChunkDone(); });
 
       inFlight.push(p);
+
+      // 平滑分发：每次分发暂停 0.1s (100ms)，避免瞬时瞬间塞爆 CPU
+      if (idx < chunks.length - 1) {
+        await new Promise(r => setTimeout(r, 100));
+      }
     }
 
     // 等待所有 in-flight chunk 完成

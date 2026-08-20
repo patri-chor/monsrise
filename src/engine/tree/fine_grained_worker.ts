@@ -98,8 +98,17 @@ function executeProductPathTask(task: SimTaskMessage): SimResultMessage {
   const cand = task.formationA;
   const candTeam = toTeamSlots((cand as any).team ?? []);
   const oppTeam = toTeamSlots(opp.team ?? []);
-  const strategy = isNativeA ? undefined : treeStrategyFor(cand as EvolFormation);
+  const candStrategy = isNativeA ? undefined : treeStrategyFor(cand as EvolFormation);
+  let oppStrategy: any = undefined;
+  if (opp) {
+    try {
+      oppStrategy = (opp as any).evol ? treeStrategyFor((opp as any).evol) : treeStrategyFor(formationToEvol(opp));
+    } catch {
+      oppStrategy = undefined;
+    }
+  }
   const candName = (cand as any).name ?? 'candidate';
+  const oppName = (opp as any).name ?? (opp as any).id ?? 'opponent';
 
   let w = 0, d = 0, l = 0;
   const traces: SimResultMessage['traces'] = task.collectObservations ? [] : undefined;
@@ -117,10 +126,10 @@ function executeProductPathTask(task: SimTaskMessage): SimResultMessage {
       task.side === 1 ? oppTeam : candTeam,
       {
         seed,
-        strategyA: task.side === 1 ? strategy : undefined,
-        strategyB: task.side === 2 ? strategy : undefined,
-        strategyIdentityA: task.side === 1 ? candName : undefined,
-        strategyIdentityB: task.side === 2 ? candName : undefined,
+        strategyA: task.side === 1 ? candStrategy : oppStrategy,
+        strategyB: task.side === 1 ? oppStrategy : candStrategy,
+        strategyIdentityA: task.side === 1 ? candName : oppName,
+        strategyIdentityB: task.side === 1 ? oppName : candName,
         onDeploymentTrace: collect
           ? (e: ProductDeploymentTrace) => {
               deploymentTraces.push({ seed, oppId: opp.id ?? opp.name, ...e });
