@@ -5,6 +5,7 @@ import { BranchLibrary, type ExecutableBranch } from './branch_library';
 import { EvidenceWriter } from './evidence_writer';
 import { treeStrategyFor } from '../../product_tree_strategy';
 import { RoundCheckpointService } from './round_checkpoint_service';
+import { SingleRoundOptimizer } from './single_round_optimizer';
 
 export * from './product_match_runner';
 export * from './round_checkpoint_service';
@@ -16,6 +17,9 @@ export * from './counterfactual_battle_engine';
 export * from './round_board_state';
 export * from './round_board_state_factory';
 export * from './single_round_engine';
+export * from './single_round_optimizer';
+
+export const runAll2RushSingleRoundOptimization = SingleRoundOptimizer.runAll2RushSingleRoundOptimization;
 
 export interface PilotOrchestrationOptions {
   targetFormationId?: string;
