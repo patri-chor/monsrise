@@ -1,14 +1,12 @@
 {
   "schemaVersion": "T051_FORMATION_LIBRARY_V4",
-  "libraryRevision": "v4.0.0-t051-dynamic-ladder",
-  "updatedAt": "2026-08-20T06:52:27.154Z",
-  "activeL2ManifestHash": "5f9556d0b3990743",
-  "policyRevision": "v4.0.0-t051-calibrated-score70-l1-primary",
+  "libraryRevision": "v4.3.0-t051-pool-strict-ladder",
+  "updatedAt": "2026-08-20T07:22:03.681Z",
   "counts": {
     "T0Count": 11,
-    "T1Count": 0,
-    "T2Count": 48,
-    "T3Count": 34
+    "T1Count": 6,
+    "T2Count": 51,
+    "T3Count": 25
   },
   "formations": [
     {
@@ -24,26 +22,13 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 20,
-        "d": 120,
-        "l": 80,
-        "n": 220,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
-      },
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+        "w": 11,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 11,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -51,10 +36,23 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
+      "l1Metrics": {
+        "w": 220,
+        "d": 0,
+        "l": 0,
+        "n": 220,
+        "primaryScore70": 1,
+        "winRate": 1,
+        "drawRate": 0,
+        "lossRate": 0,
+        "noLossRate": 1,
+        "legacyScore50": 1
+      },
+      "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.659Z"
     },
     {
       "formationId": "t0:nutsavior",
@@ -69,26 +67,13 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 100,
-        "d": 70,
-        "l": 50,
-        "n": 220,
-        "primaryScore70": 0.677273,
-        "winRate": 0.454545,
-        "drawRate": 0.318182,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.613636
-      },
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+        "w": 11,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 11,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -96,10 +81,23 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
+      "l1Metrics": {
+        "w": 220,
+        "d": 0,
+        "l": 0,
+        "n": 220,
+        "primaryScore70": 1,
+        "winRate": 1,
+        "drawRate": 0,
+        "lossRate": 0,
+        "noLossRate": 1,
+        "legacyScore50": 1
+      },
+      "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.666Z"
     },
     {
       "formationId": "t0:all2rush",
@@ -114,15 +112,25 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 6,
+        "d": 0,
+        "l": 6,
+        "n": 12,
+        "primaryScore70": 0.5,
+        "winRate": 0.5,
+        "drawRate": 0,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.5
+      },
+      "l1Metrics": {
+        "w": 220,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 220,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -130,10 +138,11 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:classicsavior",
@@ -148,26 +157,37 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
+      "activeL2Metrics": {
         "w": 8,
         "d": 0,
-        "l": 0,
-        "n": 8,
-        "primaryScore70": 1,
-        "winRate": 1,
+        "l": 3,
+        "n": 11,
+        "primaryScore70": 0.727273,
+        "winRate": 0.727273,
         "drawRate": 0,
-        "lossRate": 0,
-        "noLossRate": 1,
-        "legacyScore50": 1
+        "lossRate": 0.272727,
+        "noLossRate": 0.727273,
+        "legacyScore50": 0.727273
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l1Metrics": {
+        "w": 180,
+        "d": 0,
+        "l": 40,
+        "n": 220,
+        "primaryScore70": 0.818182,
+        "winRate": 0.818182,
+        "drawRate": 0,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.818182
+      },
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:all2prayer",
@@ -182,26 +202,37 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 9,
         "d": 0,
-        "l": 0,
-        "n": 8,
-        "primaryScore70": 1,
-        "winRate": 1,
+        "l": 2,
+        "n": 11,
+        "primaryScore70": 0.818182,
+        "winRate": 0.818182,
         "drawRate": 0,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.818182
+      },
+      "l1Metrics": {
+        "w": 190,
+        "d": 30,
+        "l": 0,
+        "n": 220,
+        "primaryScore70": 0.959091,
+        "winRate": 0.863636,
+        "drawRate": 0.136364,
         "lossRate": 0,
         "noLossRate": 1,
-        "legacyScore50": 1
+        "legacyScore50": 0.931818
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:suqing",
@@ -216,26 +247,37 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 10,
         "d": 0,
-        "l": 0,
-        "n": 8,
-        "primaryScore70": 1,
-        "winRate": 1,
+        "l": 1,
+        "n": 11,
+        "primaryScore70": 0.909091,
+        "winRate": 0.909091,
         "drawRate": 0,
-        "lossRate": 0,
-        "noLossRate": 1,
-        "legacyScore50": 1
+        "lossRate": 0.090909,
+        "noLossRate": 0.909091,
+        "legacyScore50": 0.909091
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l1Metrics": {
+        "w": 190,
+        "d": 15,
+        "l": 15,
+        "n": 220,
+        "primaryScore70": 0.911364,
+        "winRate": 0.863636,
+        "drawRate": 0.068182,
+        "lossRate": 0.068182,
+        "noLossRate": 0.931818,
+        "legacyScore50": 0.897727
+      },
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:laddersel",
@@ -250,15 +292,25 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 9,
+        "d": 0,
+        "l": 2,
+        "n": 11,
+        "primaryScore70": 0.818182,
+        "winRate": 0.818182,
+        "drawRate": 0,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.818182
+      },
+      "l1Metrics": {
+        "w": 220,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 220,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -266,10 +318,11 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:spade_multi",
@@ -284,15 +337,25 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 9,
+        "d": 0,
+        "l": 2,
+        "n": 11,
+        "primaryScore70": 0.818182,
+        "winRate": 0.818182,
+        "drawRate": 0,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.818182
+      },
+      "l1Metrics": {
+        "w": 220,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 220,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -300,10 +363,11 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:gift_savior",
@@ -318,26 +382,13 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 80,
-        "d": 30,
-        "l": 110,
-        "n": 220,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
-        "lossRate": 0.5,
-        "noLossRate": 0.5,
-        "legacyScore50": 0.431818
-      },
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+        "w": 11,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 11,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -345,10 +396,23 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
+      "l1Metrics": {
+        "w": 220,
+        "d": 0,
+        "l": 0,
+        "n": 220,
+        "primaryScore70": 1,
+        "winRate": 1,
+        "drawRate": 0,
+        "lossRate": 0,
+        "noLossRate": 1,
+        "legacyScore50": 1
+      },
+      "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:golden_boom",
@@ -363,26 +427,13 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 150,
-        "d": 30,
-        "l": 40,
-        "n": 220,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
-        "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
-      },
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+        "w": 11,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 11,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -390,10 +441,23 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
+      "l1Metrics": {
+        "w": 220,
+        "d": 0,
+        "l": 0,
+        "n": 220,
+        "primaryScore70": 1,
+        "winRate": 1,
+        "drawRate": 0,
+        "lossRate": 0,
+        "noLossRate": 1,
+        "legacyScore50": 1
+      },
+      "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "t0:gift_jungle",
@@ -408,15 +472,25 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
-      "l3Metrics": {
-        "w": 8,
+      "activeL2Metrics": {
+        "w": 9,
+        "d": 0,
+        "l": 2,
+        "n": 11,
+        "primaryScore70": 0.818182,
+        "winRate": 0.818182,
+        "drawRate": 0,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.818182
+      },
+      "l1Metrics": {
+        "w": 220,
         "d": 0,
         "l": 0,
-        "n": 8,
+        "n": 220,
         "primaryScore70": 1,
         "winRate": 1,
         "drawRate": 0,
@@ -424,10 +498,11 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "l3Metrics": null,
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Active T0 root anchor in Active-L2 manifest",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
+      "updatedAt": "2026-08-20T07:22:03.667Z"
     },
     {
       "formationId": "cand:springsword:spatial_local:0",
@@ -440,7 +515,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T2",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -456,10 +531,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:springsword:formation_transform:0",
@@ -472,7 +547,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -488,10 +563,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:nutsavior:spatial_local:0",
@@ -502,9 +577,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 110,
@@ -544,8 +619,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.755) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2rush:spatial_local:0",
@@ -558,7 +633,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -574,10 +649,10 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:classicsavior:spatial_local:0",
@@ -590,7 +665,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -606,10 +681,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2prayer:spatial_local:0",
@@ -622,7 +697,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -638,10 +713,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2prayer:formation_transform:0",
@@ -654,7 +729,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -670,10 +745,10 @@
         "noLossRate": 0.625,
         "legacyScore50": 0.625
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:suqing:spatial_local:0",
@@ -686,7 +761,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -702,10 +777,10 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (96.4%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:laddersel:spatial_local:0",
@@ -718,7 +793,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -734,10 +809,10 @@
         "noLossRate": 0.625,
         "legacyScore50": 0.625
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:spade_multi:spatial_local:0",
@@ -750,7 +825,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T2",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -766,10 +841,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:spade_multi:formation_transform:0",
@@ -782,7 +857,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -798,10 +873,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:gift_savior:spatial_local:0",
@@ -814,7 +889,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -830,10 +905,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:golden_boom:spatial_local:0",
@@ -844,9 +919,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 100,
@@ -886,8 +961,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.789) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Verified L1 Score70 (78.9%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:gift_jungle:spatial_local:0",
@@ -900,7 +975,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -916,10 +991,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:gift_jungle:formation_transform:0",
@@ -932,7 +1007,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -948,10 +1023,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:springsword:formation_transform:c0_flip",
@@ -964,7 +1039,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 70,
@@ -1004,8 +1079,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (37.0%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:springsword:strategy_schedule_branch:c0_side2",
@@ -1018,7 +1093,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 20,
@@ -1058,8 +1133,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (39.5%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:nutsavior:spatial_local:c0_110",
@@ -1072,7 +1147,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 70,
@@ -1112,8 +1187,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.661) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Verified L1 Score70 (66.1%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:nutsavior:formation_transform:c0_flip",
@@ -1126,7 +1201,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1142,10 +1217,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:nutsavior:strategy_schedule_branch:c0_side2",
@@ -1156,9 +1231,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 110,
@@ -1198,8 +1273,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.755) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2rush:spatial_local:c0_110",
@@ -1212,7 +1287,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1228,10 +1303,10 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2rush:formation_transform:c0_flip",
@@ -1244,7 +1319,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1260,10 +1335,10 @@
         "noLossRate": 0.625,
         "legacyScore50": 0.625
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2rush:strategy_schedule_branch:c0_side2",
@@ -1276,7 +1351,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1292,10 +1367,10 @@
         "noLossRate": 0.5,
         "legacyScore50": 0.5
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2rush:multi_monster_exploration:c0_coor",
@@ -1308,7 +1383,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1324,10 +1399,10 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:classicsavior:spatial_local:c0_108",
@@ -1340,7 +1415,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T2",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1356,10 +1431,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.153Z"
+      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:classicsavior:formation_transform:c0_flip",
@@ -1372,7 +1447,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1388,10 +1463,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:classicsavior:strategy_schedule_branch:c0_side2",
@@ -1404,7 +1479,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1420,10 +1495,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2prayer:spatial_local:c0_110",
@@ -1436,7 +1511,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1452,10 +1527,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.668Z"
     },
     {
       "formationId": "cand:all2prayer:formation_transform:c0_flip",
@@ -1468,7 +1543,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1484,10 +1559,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2prayer:strategy_schedule_branch:c0_side2",
@@ -1500,7 +1575,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1516,10 +1591,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:suqing:spatial_local:c0_110",
@@ -1532,7 +1607,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 60,
@@ -1572,8 +1647,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (40.7%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:suqing:formation_transform:c0_flip",
@@ -1584,9 +1659,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 80,
@@ -1626,8 +1701,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (46.8%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:suqing:strategy_schedule_branch:c0_side2",
@@ -1640,7 +1715,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1656,10 +1731,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:laddersel:spatial_local:c0_110",
@@ -1672,7 +1747,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T2",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1688,10 +1763,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:laddersel:formation_transform:c0_flip",
@@ -1704,7 +1779,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1720,10 +1795,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:laddersel:strategy_schedule_branch:c0_side2",
@@ -1736,7 +1811,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1752,10 +1827,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:spade_multi:formation_transform:c0_flip",
@@ -1768,7 +1843,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1784,10 +1859,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:spade_multi:strategy_schedule_branch:c0_side2",
@@ -1800,7 +1875,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1816,10 +1891,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:gift_savior:formation_transform:c0_flip",
@@ -1832,7 +1907,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 120,
@@ -1872,8 +1947,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.645) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (64.5%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:gift_savior:strategy_schedule_branch:c0_side2",
@@ -1884,9 +1959,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 80,
@@ -1926,8 +2001,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (53.4%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:golden_boom:formation_transform:c0_flip",
@@ -1940,7 +2015,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -1956,10 +2031,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:golden_boom:strategy_schedule_branch:c0_side2",
@@ -1970,9 +2045,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 150,
@@ -2012,8 +2087,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.786) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (78.6%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:gift_jungle:formation_transform:c0_flip",
@@ -2024,9 +2099,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 70,
@@ -2066,8 +2141,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (51.1%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:gift_jungle:strategy_schedule_branch:c0_side2",
@@ -2080,7 +2155,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2096,10 +2171,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:springsword:formation_transform:c1_flip",
@@ -2112,7 +2187,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 70,
@@ -2152,8 +2227,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (40.2%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:springsword:strategy_schedule_branch:c1_side2",
@@ -2166,7 +2241,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 20,
@@ -2206,8 +2281,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (39.5%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:nutsavior:spatial_local:c1_105",
@@ -2220,7 +2295,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2236,10 +2311,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:nutsavior:formation_transform:c1_flip",
@@ -2252,7 +2327,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2268,10 +2343,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:nutsavior:strategy_schedule_branch:c1_side2",
@@ -2282,9 +2357,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 110,
@@ -2324,8 +2399,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.755) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2rush:spatial_local:c1_117",
@@ -2338,7 +2413,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2354,10 +2429,10 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2rush:formation_transform:c1_flip",
@@ -2370,7 +2445,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2386,10 +2461,10 @@
         "noLossRate": 0.625,
         "legacyScore50": 0.625
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2rush:strategy_schedule_branch:c1_side2",
@@ -2402,7 +2477,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2418,10 +2493,10 @@
         "noLossRate": 0.5,
         "legacyScore50": 0.5
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2rush:multi_monster_exploration:c1_coor",
@@ -2434,7 +2509,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2450,10 +2525,10 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:classicsavior:spatial_local:c1_117",
@@ -2466,7 +2541,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2482,10 +2557,10 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (96.4%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:classicsavior:formation_transform:c1_flip",
@@ -2498,7 +2573,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2514,10 +2589,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:classicsavior:strategy_schedule_branch:c1_side2",
@@ -2530,7 +2605,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2546,10 +2621,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2prayer:spatial_local:c1_116",
@@ -2562,7 +2637,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2578,10 +2653,10 @@
         "noLossRate": 0.625,
         "legacyScore50": 0.625
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.669Z"
     },
     {
       "formationId": "cand:all2prayer:formation_transform:c1_flip",
@@ -2594,7 +2669,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2610,10 +2685,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:all2prayer:strategy_schedule_branch:c1_side2",
@@ -2626,7 +2701,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2642,10 +2717,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:suqing:spatial_local:c1_124",
@@ -2658,7 +2733,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 50,
@@ -2698,8 +2773,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "DOWNGRADE: Low L1 Score70 (30.5%) < 45.0%, strictly demoted to T3 reserve",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:suqing:formation_transform:c1_flip",
@@ -2710,9 +2785,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 80,
@@ -2752,8 +2827,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (46.8%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:suqing:strategy_schedule_branch:c1_side2",
@@ -2766,7 +2841,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2782,10 +2857,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:laddersel:spatial_local:c1_116",
@@ -2798,7 +2873,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2814,10 +2889,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:laddersel:formation_transform:c1_flip",
@@ -2830,7 +2905,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2846,10 +2921,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:laddersel:strategy_schedule_branch:c1_side2",
@@ -2862,7 +2937,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2878,10 +2953,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:spade_multi:formation_transform:c1_flip",
@@ -2894,7 +2969,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2910,10 +2985,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:spade_multi:strategy_schedule_branch:c1_side2",
@@ -2926,7 +3001,7 @@
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -2942,10 +3017,10 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Unverified candidate below threshold, assigned to T3",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_savior:formation_transform:c1_flip",
@@ -2958,7 +3033,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 120,
@@ -2998,8 +3073,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.645) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (64.5%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_savior:strategy_schedule_branch:c1_side2",
@@ -3010,9 +3085,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 80,
@@ -3052,8 +3127,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (53.4%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:golden_boom:formation_transform:c1_flip",
@@ -3066,7 +3141,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3082,10 +3157,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:golden_boom:strategy_schedule_branch:c1_side2",
@@ -3096,9 +3171,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 150,
@@ -3138,8 +3213,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Verified Score70 (L1: 0.786) qualifies for T2 main force",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (78.6%) >= 70.0% top elite",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_jungle:formation_transform:c1_flip",
@@ -3150,9 +3225,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 70,
@@ -3192,8 +3267,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (51.1%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_jungle:strategy_schedule_branch:c1_side2",
@@ -3206,7 +3281,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3222,10 +3297,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:springsword:spatial_local:c0_110",
@@ -3238,7 +3313,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3254,10 +3329,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:spade_multi:spatial_local:c0_115",
@@ -3268,9 +3343,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 60,
@@ -3310,8 +3385,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (48.4%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_savior:spatial_local:c0_110",
@@ -3324,7 +3399,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3340,10 +3415,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:golden_boom:spatial_local:c0_110",
@@ -3356,7 +3431,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3372,10 +3447,10 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (97.6%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:gift_jungle:spatial_local:c0_110",
@@ -3388,7 +3463,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3404,10 +3479,10 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (95.2%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:springsword:spatial_local:c1_105",
@@ -3420,7 +3495,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3436,10 +3511,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.670Z"
     },
     {
       "formationId": "cand:spade_multi:spatial_local:c1_108",
@@ -3450,9 +3525,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 50,
@@ -3492,8 +3567,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (46.1%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.671Z"
     },
     {
       "formationId": "cand:gift_savior:spatial_local:c1_116",
@@ -3504,9 +3579,9 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 90,
@@ -3546,8 +3621,8 @@
       },
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 3,
-      "regradeReason": "Score70 below T2 gate or pending evaluation, assigned to T3 exploration reserve",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "Verified L1 Score70 (59.3%) in [45.0%, 70.0%) main force",
+      "updatedAt": "2026-08-20T07:22:03.671Z"
     },
     {
       "formationId": "cand:golden_boom:spatial_local:c1_105",
@@ -3560,7 +3635,7 @@
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T2",
-      "activeLibraryRevision": "v4.0.0-t051-dynamic-ladder",
+      "activeLibraryRevision": "v4.3.0-t051-pool-strict-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": null,
       "l1Metrics": null,
@@ -3576,10 +3651,10 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "UNVERIFIED_AGGREGATE_ONLY",
+      "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "L3 Baseline score qualifies for T2 pending-L1 evaluation",
-      "updatedAt": "2026-08-20T06:52:27.154Z"
+      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "updatedAt": "2026-08-20T07:22:03.671Z"
     }
   ]
 }
