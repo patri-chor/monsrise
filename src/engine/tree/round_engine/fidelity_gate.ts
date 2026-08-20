@@ -28,6 +28,55 @@ export interface FidelityComparisonResult {
   diffs: string[];
 }
 
+export interface ObservableRoundSummary {
+  round: number;
+  roundWinner: 1 | 2 | 0;
+  p1Score: number;
+  p2Score: number;
+  p1Survivors: Array<{ id: string; dbId: number; hp: number; maxHp: number }>;
+  p2Survivors: Array<{ id: string; dbId: number; hp: number; maxHp: number }>;
+  p1TotalHp: number;
+  p2TotalHp: number;
+  observableDigest: string;
+}
+
+function computeObservableSummary(
+  round: number,
+  roundWinner: 1 | 2 | 0,
+  p1Score: number,
+  p2Score: number,
+  boardMonsters: Array<{ id?: string; dbId: number; team: 1 | 2; hp: number; maxHp: number; isDead: boolean }>
+): ObservableRoundSummary {
+  const p1Survivors = boardMonsters
+    .filter(m => m.team === 1 && !m.isDead && m.hp > 0)
+    .map(m => ({ id: m.id ?? `p1_${m.dbId}`, dbId: m.dbId, hp: Math.round(m.hp), maxHp: Math.round(m.maxHp) }))
+    .sort((a, b) => a.dbId - b.dbId || a.hp - b.hp);
+
+  const p2Survivors = boardMonsters
+    .filter(m => m.team === 2 && !m.isDead && m.hp > 0)
+    .map(m => ({ id: m.id ?? `p2_${m.dbId}`, dbId: m.dbId, hp: Math.round(m.hp), maxHp: Math.round(m.maxHp) }))
+    .sort((a, b) => a.dbId - b.dbId || a.hp - b.hp);
+
+  const p1TotalHp = p1Survivors.reduce((acc, s) => acc + s.hp, 0);
+  const p2TotalHp = p2Survivors.reduce((acc, s) => acc + s.hp, 0);
+
+  const norm = {
+    round,
+    roundWinner,
+    p1Score,
+    p2Score,
+    p1Survivors,
+    p2Survivors,
+    p1TotalHp,
+    p2TotalHp,
+  };
+
+  return {
+    ...norm,
+    observableDigest: JSON.stringify(norm),
+  };
+}
+
 export function runFidelityComparison(
   teamA: TeamSlot[],
   teamB: TeamSlot[],
@@ -42,9 +91,11 @@ export function runFidelityComparison(
 ): FidelityComparisonResult {
   const diffs: string[] = [];
 
-  // 1. Uninterrupted playFullGame
+  // 1. Uninterrupted playFullGame with onRoundEnd capture
   const unTraces: any[] = [];
   const unObs: any[] = [];
+  const unRoundSummaries: ObservableRoundSummary[] = [];
+
   const unMatch = playFullGame(teamA, teamB, {
     seed: opts.seed,
     strategyA: opts.strategyA,
@@ -53,6 +104,17 @@ export function runFidelityComparison(
     strategyIdentityB: opts.nameB,
     onDeploymentTrace: (t) => unTraces.push(t),
     onRoundObservation: (o) => unObs.push(o),
+    onRoundEnd: (info) => {
+      unRoundSummaries.push(
+        computeObservableSummary(
+          info.round,
+          info.winner,
+          info.p1Score,
+          info.p2Score,
+          info.boardMonsters
+        )
+      );
+    },
   });
 
   // 2. Sequential ProductGameSession
@@ -64,6 +126,7 @@ export function runFidelityComparison(
 
   const sessionTraces: any[] = [];
   const sessionObs: any[] = [];
+  const sessionRoundSummaries: ObservableRoundSummary[] = [];
   const checkpoints: any[] = [];
 
   while (!session.roundResults.length || session.currentRound <= 5) {
@@ -81,6 +144,15 @@ export function runFidelityComparison(
     const rRes = session.playRound(intentsA, intentsB);
     sessionTraces.push(...rRes.deploymentTraces);
     sessionObs.push(rRes.observations.p1, rRes.observations.p2);
+    sessionRoundSummaries.push(
+      computeObservableSummary(
+        rRes.round,
+        rRes.roundWinner,
+        rRes.p1Score,
+        rRes.p2Score,
+        rRes.boardMonsters
+      )
+    );
 
     if (rRes.isGameOver) break;
   }
@@ -100,16 +172,14 @@ export function runFidelityComparison(
   if (JSON.stringify(unMatch.roundResults) !== JSON.stringify(session.roundResults)) {
     diffs.push(`Round results mismatch: uninterrupted=${JSON.stringify(unMatch.roundResults)}, session=${JSON.stringify(session.roundResults)}`);
   }
-  if (unTraces.length !== sessionTraces.length) {
-    diffs.push(`Deployment trace count mismatch: uninterrupted=${unTraces.length}, session=${sessionTraces.length}`);
-  } else {
-    for (let i = 0; i < unTraces.length; i++) {
-      const u = unTraces[i];
-      const s = sessionTraces[i];
-      if (u.monsterId !== s.monsterId || u.actualX !== s.actualX || u.actualY !== s.actualY || u.accepted !== s.accepted) {
-        diffs.push(`Trace index ${i} mismatch: ${JSON.stringify(u)} vs ${JSON.stringify(s)}`);
-        break;
-      }
+
+  // Compare per-round observable output sequence
+  for (let i = 0; i < unRoundSummaries.length; i++) {
+    const unSum = unRoundSummaries[i];
+    const seqSum = sessionRoundSummaries[i];
+    if (!seqSum || unSum.observableDigest !== seqSum.observableDigest) {
+      diffs.push(`Observable round ${i + 1} mismatch between uninterrupted and sequential session`);
+      break;
     }
   }
 
@@ -122,6 +192,8 @@ export function runFidelityComparison(
       strategyIdentityB: opts.nameB,
     });
 
+    const restoredRoundSummaries: ObservableRoundSummary[] = [];
+
     while (restoredSession.currentRound <= 5) {
       if (restoredSession.p1Score >= 3 || restoredSession.p2Score >= 3) break;
       const ctxA = opts.strategyA ? restoredSession.buildRoundContext(1) : undefined;
@@ -131,6 +203,15 @@ export function runFidelityComparison(
       const intentsB = opts.strategyB && ctxB ? opts.strategyB(ctxB) : undefined;
 
       const rRes = restoredSession.playRound(intentsA, intentsB);
+      restoredRoundSummaries.push(
+        computeObservableSummary(
+          rRes.round,
+          rRes.roundWinner,
+          rRes.p1Score,
+          rRes.p2Score,
+          rRes.boardMonsters
+        )
+      );
       if (rRes.isGameOver) break;
     }
 

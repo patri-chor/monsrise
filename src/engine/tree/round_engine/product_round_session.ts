@@ -515,6 +515,16 @@ export class ProductGameSession {
     this.p2Score = gameEngine.p2Score;
     this.currentRngSeed = (gameEngine as any)._replaySeed;
 
+    // 捕获战斗结束瞬态（含死亡标记与最终血量），供可观测性比对
+    const endBattleMonsters = gameEngine.boardMonsters.map(m => ({
+      id: m.id,
+      dbId: m.dbId,
+      team: m.team,
+      hp: m.hp,
+      maxHp: m.maxHp,
+      isDead: m.isDead,
+    }));
+
     // 清空粒子
     vfx.particles.length = 0;
     vfx.backgroundParticles.length = 0;
@@ -538,7 +548,7 @@ export class ProductGameSession {
       isGameOver,
       deploymentTraces,
       observations: { p1: obsA, p2: obsB },
-      boardMonsters: gameEngine.boardMonsters,
+      boardMonsters: endBattleMonsters as any,
       preBattle,
     };
   }
