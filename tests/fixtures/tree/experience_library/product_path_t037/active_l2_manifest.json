@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "ACTIVE_L2_MANIFEST_V1",
+  "manifestRevision": "v1.0.0-t051-active-l2-baseline",
+  "createdAt": "2026-08-20T06:52:27.146Z",
+  "description": "Dynamic Active-L2 strength benchmark pool composed of current active T0 root mains",
+  "members": [
+    {
+      "r0SourceId": "springsword",
+      "formationId": "t0:springsword",
+      "name": "泉水剑",
+      "canonicalFingerprint": "06b65120d945b5913f24c53d",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.144Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "nutsavior",
+      "formationId": "t0:nutsavior",
+      "name": "坚果救星",
+      "canonicalFingerprint": "3ab91c2f7c067de6344be734",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "all2rush",
+      "formationId": "t0:all2rush",
+      "name": "全二冲",
+      "canonicalFingerprint": "691d5806b4a195a99cd1377e",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "classicsavior",
+      "formationId": "t0:classicsavior",
+      "name": "经典救星",
+      "canonicalFingerprint": "a8fd06e1c676fecc6f40dd32",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "all2prayer",
+      "formationId": "t0:all2prayer",
+      "name": "全二永平",
+      "canonicalFingerprint": "fe777bac6e62ef4a8c362f09",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "suqing",
+      "formationId": "t0:suqing",
+      "name": "肃清",
+      "canonicalFingerprint": "59ea644d8e9d99a6614f5c2e",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "laddersel",
+      "formationId": "t0:laddersel",
+      "name": "梯子塞雷",
+      "canonicalFingerprint": "0b8ca8e3e7142bfda0b79ecb",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "spade_multi",
+      "formationId": "t0:spade_multi",
+      "name": "铲土多核",
+      "canonicalFingerprint": "17c2ff72769fa780ebbb50ce",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "gift_savior",
+      "formationId": "t0:gift_savior",
+      "name": "礼物救星",
+      "canonicalFingerprint": "db858ed989c84a71af59fe6d",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "golden_boom",
+      "formationId": "t0:golden_boom",
+      "name": "壕炸金猴",
+      "canonicalFingerprint": "e63ae36a66cb55b2194d70c9",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    },
+    {
+      "r0SourceId": "gift_jungle",
+      "formationId": "t0:gift_jungle",
+      "name": "礼物丛林",
+      "canonicalFingerprint": "7969b175d9fb8583193fa8f9",
+      "calculatorPolicyFingerprint": "calc_pol_default_v1",
+      "selectedAt": "2026-08-20T06:52:27.146Z",
+      "selectionEvidenceId": "t050_product_path_verified_retest"
+    }
+  ],
+  "manifestHash": "5f9556d0b3990743"
+}

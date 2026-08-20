@@ -1,0 +1,709 @@
+[
+  {
+    "r0SourceId": "springsword",
+    "sourceName": "泉水剑",
+    "immutableFingerprint": "06b65120d945b5913f24c53d",
+    "archetypeId": "prayer",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          18
+        ]
+      },
+      {
+        "monsterId": 112,
+        "badgeIds": [
+          8,
+          6
+        ]
+      },
+      {
+        "monsterId": 102,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          8,
+          4
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          32,
+          24
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "nutsavior",
+    "sourceName": "坚果救星",
+    "immutableFingerprint": "3ab91c2f7c067de6344be734",
+    "archetypeId": "half_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          16
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 108,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 125,
+        "badgeIds": [
+          27,
+          9
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          27,
+          35
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          32
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "all2rush",
+    "sourceName": "全二冲",
+    "immutableFingerprint": "691d5806b4a195a99cd1377e",
+    "archetypeId": "full_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          30
+        ]
+      },
+      {
+        "monsterId": 117,
+        "badgeIds": [
+          8,
+          3
+        ]
+      },
+      {
+        "monsterId": 107,
+        "badgeIds": [
+          20,
+          1
+        ]
+      },
+      {
+        "monsterId": 113,
+        "badgeIds": [
+          3,
+          20
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          1
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          3,
+          4
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "classicsavior",
+    "sourceName": "经典救星",
+    "immutableFingerprint": "a8fd06e1c676fecc6f40dd32",
+    "archetypeId": "full_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 117,
+        "badgeIds": [
+          3,
+          9
+        ]
+      },
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          11,
+          28
+        ]
+      },
+      {
+        "monsterId": 108,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          1
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 107,
+        "badgeIds": [
+          20,
+          1
+        ]
+      },
+      {
+        "monsterId": 119,
+        "badgeIds": [
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "all2prayer",
+    "sourceName": "全二永平",
+    "immutableFingerprint": "fe777bac6e62ef4a8c362f09",
+    "archetypeId": "prayer",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          12
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          27,
+          35
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          8,
+          4
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          8,
+          3
+        ]
+      },
+      {
+        "monsterId": 112,
+        "badgeIds": [
+          8,
+          6
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "suqing",
+    "sourceName": "肃清",
+    "immutableFingerprint": "59ea644d8e9d99a6614f5c2e",
+    "archetypeId": "half_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 124,
+        "badgeIds": [
+          10,
+          25
+        ]
+      },
+      {
+        "monsterId": 101,
+        "badgeIds": [
+          23,
+          3,
+          2
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 107,
+        "badgeIds": [
+          20,
+          1
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "laddersel",
+    "sourceName": "梯子塞雷",
+    "immutableFingerprint": "0b8ca8e3e7142bfda0b79ecb",
+    "archetypeId": "full_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 117,
+        "badgeIds": [
+          8,
+          3
+        ]
+      },
+      {
+        "monsterId": 118,
+        "badgeIds": [
+          11,
+          28,
+          30
+        ]
+      },
+      {
+        "monsterId": 107,
+        "badgeIds": [
+          20,
+          1
+        ]
+      },
+      {
+        "monsterId": 113,
+        "badgeIds": [
+          3,
+          20
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          32
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "spade_multi",
+    "sourceName": "铲土多核",
+    "immutableFingerprint": "17c2ff72769fa780ebbb50ce",
+    "archetypeId": "prayer",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 115,
+        "badgeIds": [
+          23,
+          6,
+          10
+        ]
+      },
+      {
+        "monsterId": 108,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 112,
+        "badgeIds": [
+          8,
+          6
+        ]
+      },
+      {
+        "monsterId": 117,
+        "badgeIds": [
+          3,
+          22
+        ]
+      },
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          11,
+          28
+        ]
+      },
+      {
+        "monsterId": 101,
+        "badgeIds": [
+          3,
+          4,
+          2
+        ]
+      },
+      {
+        "monsterId": 124,
+        "badgeIds": [
+          10,
+          9
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "gift_savior",
+    "sourceName": "礼物救星",
+    "immutableFingerprint": "db858ed989c84a71af59fe6d",
+    "archetypeId": "half_rush",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          16
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          3,
+          5
+        ]
+      },
+      {
+        "monsterId": 119,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 108,
+        "badgeIds": [
+          23,
+          3,
+          22
+        ]
+      },
+      {
+        "monsterId": 109,
+        "badgeIds": [
+          24,
+          33
+        ]
+      },
+      {
+        "monsterId": 104,
+        "badgeIds": [
+          3,
+          4
+        ]
+      },
+      {
+        "monsterId": 114,
+        "badgeIds": [
+          3,
+          32
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "golden_boom",
+    "sourceName": "壕炸金猴",
+    "immutableFingerprint": "e63ae36a66cb55b2194d70c9",
+    "archetypeId": "prayer",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 125,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 120,
+        "badgeIds": [
+          3,
+          22,
+          21
+        ]
+      },
+      {
+        "monsterId": 124,
+        "badgeIds": [
+          8,
+          35
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          12
+        ]
+      },
+      {
+        "monsterId": 116,
+        "badgeIds": [
+          32,
+          24
+        ]
+      }
+    ]
+  },
+  {
+    "r0SourceId": "gift_jungle",
+    "sourceName": "礼物丛林",
+    "immutableFingerprint": "7969b175d9fb8583193fa8f9",
+    "archetypeId": "prayer",
+    "canonicalTeamSnapshot": [
+      {
+        "monsterId": 110,
+        "badgeIds": [
+          23,
+          8
+        ]
+      },
+      {
+        "monsterId": 105,
+        "badgeIds": [
+          8,
+          17
+        ]
+      },
+      {
+        "monsterId": 106,
+        "badgeIds": [
+          32,
+          24
+        ]
+      },
+      {
+        "monsterId": 122,
+        "badgeIds": [
+          8,
+          2
+        ]
+      },
+      {
+        "monsterId": 109,
+        "badgeIds": [
+          18,
+          33
+        ]
+      },
+      {
+        "monsterId": 124,
+        "badgeIds": [
+          25,
+          12
+        ]
+      },
+      {
+        "monsterId": 103,
+        "badgeIds": [
+          8,
+          6
+        ]
+      }
+    ]
+  }
+]

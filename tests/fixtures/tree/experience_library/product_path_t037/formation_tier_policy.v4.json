@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "T051_DYNAMIC_TIER_POLICY_V1",
+  "policyRevision": "v4.0.0-t051-calibrated-score70-l1-primary",
+  "scoreFunction": "Score70 = (W + 0.70 * D) / N",
+  "regradeGates": {
+    "t1GateScore70": 0.88,
+    "t2GateScore70": 0.6,
+    "t3GateScore70": 0
+  },
+  "capacityTargets": {
+    "t0MaxPerRoot": 2,
+    "t1TargetRatio": [
+      0.15,
+      0.25
+    ],
+    "t2TargetRatio": [
+      0.35,
+      0.5
+    ],
+    "t3TargetRatio": [
+      0.2,
+      0.35
+    ]
+  }
+}
