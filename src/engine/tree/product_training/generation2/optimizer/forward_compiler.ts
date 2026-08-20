@@ -8,7 +8,7 @@ export interface CompiledForwardCandidate {
   candidateId: string;
   caseId: string;
   isForwardExpressible: boolean;
-  classification: 'PILOT_ACTIVE' | 'FORWARD_REJECTED' | 'LOCAL_ONLY';
+  classification: 'COMPILED' | 'PILOT_ACTIVE' | 'FORWARD_REJECTED' | 'LOCAL_ONLY';
   executableBranch?: ExecutableBranch;
   rejectionReason?: string;
 }
@@ -81,7 +81,7 @@ export class ForwardCompiler {
       candidateId: rep.candidateId,
       caseId: rep.caseId,
       isForwardExpressible: true,
-      classification: 'PILOT_ACTIVE',
+      classification: 'COMPILED',
       executableBranch: execBranch,
     };
   }

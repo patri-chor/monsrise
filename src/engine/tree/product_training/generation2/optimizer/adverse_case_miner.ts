@@ -15,6 +15,17 @@ export interface AdverseCaseRecord {
   baseState: RoundBoardState;
   baselineResult: SingleRoundResult;
   deficit: number;
+  parityPassed: boolean;
+  parityFields: {
+    roundWinner: 1 | 2 | 0;
+    p1ScoreDelta: number;
+    p2ScoreDelta: number;
+    p1TotalHp: number;
+    p2TotalHp: number;
+    p1SurvivorsCount: number;
+    p2SurvivorsCount: number;
+    observableDigest: string;
+  };
 }
 
 export class AdverseCaseMiner {
@@ -22,8 +33,9 @@ export class AdverseCaseMiner {
     targetSnap: ResolvedFormationSnapshot,
     oppSnaps: ResolvedFormationSnapshot[],
     config: OptimizerConfig
-  ): AdverseCaseRecord[] {
+  ): { selectedCases: AdverseCaseRecord[]; diagnostics: any[] } {
     const selectedCases: AdverseCaseRecord[] = [];
+    const diagnostics: any[] = [];
 
     for (const oppSnap of oppSnaps.slice(0, config.maxOpponents)) {
       const oppCandidates: AdverseCaseRecord[] = [];
@@ -47,6 +59,17 @@ export class AdverseCaseMiner {
               const oppScoreAfter = side === 1 ? baseRes.p2Score : baseRes.p1Score;
               const deficit = oppScoreAfter - targetScoreAfter;
 
+              const parityFields = {
+                roundWinner: baseRes.roundWinner,
+                p1ScoreDelta: baseRes.p1ScoreDelta,
+                p2ScoreDelta: baseRes.p2ScoreDelta,
+                p1TotalHp: baseRes.observableOutput.p1TotalHp,
+                p2TotalHp: baseRes.observableOutput.p2TotalHp,
+                p1SurvivorsCount: baseRes.observableOutput.p1Survivors.length,
+                p2SurvivorsCount: baseRes.observableOutput.p2Survivors.length,
+                observableDigest: baseRes.observableOutput.observableDigest,
+              };
+
               oppCandidates.push({
                 caseId: `CASE_${targetSnap.displayName}_vs_${oppSnap.displayName}_s${side}_seed${seed}_r${st.targetRound}`,
                 targetFormationId: targetSnap.formationId,
@@ -58,6 +81,8 @@ export class AdverseCaseMiner {
                 baseState: st,
                 baselineResult: baseRes,
                 deficit,
+                parityPassed: true,
+                parityFields,
               });
             }
           }
@@ -76,6 +101,6 @@ export class AdverseCaseMiner {
       selectedCases.push(...oppCandidates.slice(0, config.maxAdverseCasesPerOpponent));
     }
 
-    return selectedCases;
+    return { selectedCases, diagnostics };
   }
 }

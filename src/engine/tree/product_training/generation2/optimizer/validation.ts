@@ -26,9 +26,14 @@ export class Validator {
     targetSnap: ResolvedFormationSnapshot,
     oppSnaps: ResolvedFormationSnapshot[],
     config: OptimizerConfig
-  ): { validations: ValidationRecord[]; activeBranches: CompiledForwardCandidate[] } {
+  ): {
+    validations: ValidationRecord[];
+    activeBranches: CompiledForwardCandidate[];
+    fullMatchEvaluationsCount: number;
+  } {
     const validations: ValidationRecord[] = [];
     const activeBranches: CompiledForwardCandidate[] = [];
+    let fullMatchEvaluationsCount = 0;
 
     for (const cand of candidates) {
       if (!cand.isForwardExpressible || !cand.executableBranch) continue;
@@ -51,6 +56,7 @@ export class Validator {
           strategyA: treeStrategyFor(isP1 ? targetSnap.evol : srcOppSnap.evol),
           strategyB: treeStrategyFor(isP1 ? srcOppSnap.evol : targetSnap.evol),
         });
+        fullMatchEvaluationsCount++;
 
         const branchRes = ProductMatchRunner.runFullMatch({
           teamA: isP1 ? targetSnap.team : srcOppSnap.team,
@@ -61,6 +67,7 @@ export class Validator {
           strategyA: treeStrategyFor(isP1 ? branchedEvol : srcOppSnap.evol),
           strategyB: treeStrategyFor(isP1 ? srcOppSnap.evol : branchedEvol),
         });
+        fullMatchEvaluationsCount++;
 
         const bScore = isP1 ? baseRes.p1Score : baseRes.p2Score;
         const brScore = isP1 ? branchRes.p1Score : branchRes.p2Score;
@@ -91,6 +98,6 @@ export class Validator {
       }
     }
 
-    return { validations, activeBranches };
+    return { validations, activeBranches, fullMatchEvaluationsCount };
   }
 }

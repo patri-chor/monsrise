@@ -12,6 +12,7 @@ export interface OptimizerConfig {
   allowForwardCompilation: boolean;
   dryRun: boolean;
   outputDirectory?: string;
+  stopAfterGeneration?: number; // Optional interruption hook for test / deterministic pause
 }
 
 export const DEFAULT_OPTIMIZER_CONFIG: OptimizerConfig = {
@@ -23,8 +24,8 @@ export const DEFAULT_OPTIMIZER_CONFIG: OptimizerConfig = {
   maxAdverseCasesPerOpponent: 2,
   populationSize: 16,
   uniqueCandidatesPerCase: 32,
-  maxGenerations: 2,
-  searchSeed: 118001,
+  maxGenerations: 3,
+  searchSeed: 119001,
   allowForwardCompilation: true,
   dryRun: false,
 };
