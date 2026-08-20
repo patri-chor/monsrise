@@ -6,6 +6,7 @@ import { EvidenceWriter } from './evidence_writer';
 import { treeStrategyFor } from '../../product_tree_strategy';
 import { RoundCheckpointService } from './round_checkpoint_service';
 import { SingleRoundOptimizer } from './single_round_optimizer';
+import { ForwardBranchValidator } from './forward_branch_validator';
 
 export * from './product_match_runner';
 export * from './round_checkpoint_service';
@@ -18,8 +19,10 @@ export * from './round_board_state';
 export * from './round_board_state_factory';
 export * from './single_round_engine';
 export * from './single_round_optimizer';
+export * from './forward_branch_validator';
 
 export const runAll2RushSingleRoundOptimization = SingleRoundOptimizer.runAll2RushSingleRoundOptimization;
+export const runForwardBranchValidation = ForwardBranchValidator.runValidation;
 
 export interface PilotOrchestrationOptions {
   targetFormationId?: string;
