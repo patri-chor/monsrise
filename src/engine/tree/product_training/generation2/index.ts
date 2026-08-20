@@ -12,6 +12,7 @@ export * from './loss_case_service';
 export * from './local_search_service';
 export * from './branch_library';
 export * from './evidence_writer';
+export * from './counterfactual_battle_engine';
 
 export interface PilotOrchestrationOptions {
   targetFormationId?: string;
