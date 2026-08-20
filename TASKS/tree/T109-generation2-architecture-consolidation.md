@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T108-generation2-all2rush-multicase-branch-optimization
 
