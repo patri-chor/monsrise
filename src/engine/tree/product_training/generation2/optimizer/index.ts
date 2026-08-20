@@ -13,14 +13,14 @@ export * from './validation';
 export * from './persistence';
 export * from './program';
 export * from './bulk_runner';
-export * from './iterative_config';
-export * from './iterative_runner';
+export * from './product_outcome';
+export * from './result_driven_runner';
 
 import { Generation2OptimizerProgram } from './program';
 import { BulkOptimizerRunner } from './bulk_runner';
-import { IterativePilotOptimizerRunner } from './iterative_runner';
+import { ResultDrivenIterativeRunner } from './result_driven_runner';
 
 export const runGeneration2Optimizer = Generation2OptimizerProgram.run.bind(Generation2OptimizerProgram);
 export const resumeGeneration2Optimizer = Generation2OptimizerProgram.resume.bind(Generation2OptimizerProgram);
 export const runBulkOptimizerValidation = BulkOptimizerRunner.runBulkOptimization.bind(BulkOptimizerRunner);
-export const runIterativePilotOptimizer = IterativePilotOptimizerRunner.run.bind(IterativePilotOptimizerRunner);
+export const runIterativePilotOptimizer = ResultDrivenIterativeRunner.run.bind(ResultDrivenIterativeRunner);
