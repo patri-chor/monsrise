@@ -183,12 +183,14 @@ export function buildAll2RushLossCaseInventory(
             }
           }
 
+          const deficit = isRushP1 ? session.p2Score - session.p1Score : session.p1Score - session.p2Score;
+
           const lossCase: LossCase = {
             caseId: `LOSSC_ALL2RUSH_${oppData.name.toUpperCase()}_S${side}_SEED${seed}_R${forkRound}`,
             targetId: 'all2rush',
             targetPayloadFingerprint: rushFp,
             targetCalculatorPolicyFingerprint: rushPolicyFp,
-            opponentId: oppData.name,
+            opponentId: oppData.id,
             opponentPayloadFingerprint: oppData.oppFp,
             opponentCalculatorPolicyFingerprint: oppData.oppPolicyFp,
             side,
@@ -198,7 +200,7 @@ export function buildAll2RushLossCaseInventory(
             preRObservation: observations[forkRound - 1],
             roundResultsThroughR: session.roundResults.slice(0, forkRound),
             finalGameOutcome: rushLost ? 'L' : 'D',
-            reason: `Earliest loss round R${forkRound} vs ${oppData.name} on side ${side} (seed=${seed})`,
+            reason: `Earliest loss round R${forkRound} vs ${oppData.name} on side ${side} (seed=${seed}, deficit=${deficit})`,
           };
 
           lossCases.push(lossCase);
@@ -208,6 +210,17 @@ export function buildAll2RushLossCaseInventory(
       }
     }
   }
+
+  // T108: 严重度优先级排序（Loss 优于 Draw，分差越大越优先，转折回合越早越优先）
+  lossCases.sort((a, b) => {
+    if (a.finalGameOutcome !== b.finalGameOutcome) {
+      return a.finalGameOutcome === 'L' ? -1 : 1;
+    }
+    if (a.forkRound !== b.forkRound) {
+      return a.forkRound - b.forkRound;
+    }
+    return a.seed - b.seed;
+  });
 
   return lossCases;
 }

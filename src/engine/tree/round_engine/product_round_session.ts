@@ -390,7 +390,22 @@ export class ProductGameSession {
     intentsB?: DeploymentIntent[],
   ): ProductRoundResult {
     if (gameEngine.isGameOver()) {
-      throw new Error(`Cannot play round ${this.currentRound}: game is already over`);
+      return {
+        round: this.currentRound,
+        roundWinner: 0,
+        p1ScoreDelta: 0,
+        p2ScoreDelta: 0,
+        p1Score: this.p1Score,
+        p2Score: this.p2Score,
+        isGameOver: true,
+        deploymentTraces: [],
+        observations: {
+          p1: { round: this.currentRound, side: 1, handIds: [], handBadges: [], boardIds: [] },
+          p2: { round: this.currentRound, side: 2, handIds: [], handBadges: [], boardIds: [] },
+        },
+        boardMonsters: gameEngine.boardMonsters,
+        preBattle: [],
+      };
     }
 
     gameEngine.currentRound = this.currentRound;

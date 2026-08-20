@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T107-generation2-bulk-observable-round-parity-and-all2rush-search
 
