@@ -1,0 +1,364 @@
+// ============================================================
+// src/engine/tree/round_engine/branch_first_optimizer.ts
+// T101: C, D, E, F - Generation 2 Multi-Variable Search, Branch Library, Merge & Prune
+// ============================================================
+
+import '../../env';
+import type { EvolFormation, EvolNode, FeatureMask } from '../evol_gene';
+import { cloneEvolFormation, cloneEvolNode, emptyMask, walkEvolNodes } from '../evol_gene';
+import { treeStrategyFor } from '../product_tree_strategy';
+import { ProductGameSession } from './product_round_session';
+import type { LossCase } from './loss_case_inventory';
+import { computeCandidateFingerprint } from '../product_training/02_candidates';
+import {
+  computeCalculatorPolicyFingerprint,
+  DEFAULT_CALCULATOR_POLICY,
+  type CalculatorContextPolicy,
+  type ChargeTargetPriority,
+  type SpellTargetPriority,
+  type TutuModePreference,
+  type DrillTargetPriority,
+} from '../calculator_policy';
+import { FORMATION_LIBRARY } from '../../../ai/formation_library';
+import { formationToEvol } from '../evol_gene';
+import { appendFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+export type BranchState =
+  | 'EXACT_CASE_BRANCH'
+  | 'GENERALIZING_BRANCH'
+  | 'MERGED_PREFIX_BRANCH'
+  | 'PRUNED_HISTORICAL';
+
+export interface BranchRecord {
+  branchId: string;
+  state: BranchState;
+  parentSnapshotFingerprint: string;
+  solutionBehaviorFingerprint: string;
+  forkRound: number;
+  condition: FeatureMask;
+  sourceLossCaseIds: string[];
+  actionSubtreeDelta: { round: number; placements: { monsterId: number; x: number; y: number }[] }[];
+  policyDelta?: CalculatorContextPolicy | null;
+  fixedCaseResult: 'W' | 'D' | 'L';
+  verifiedCoverageCount: number;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface CandidateVariation {
+  candidateId: string;
+  mutatedEvol: EvolFormation;
+  behaviorFingerprint: string;
+  modifiedVariablesCount: number;
+  descriptions: string[];
+}
+
+export const EVIDENCE_LOCAL_TRIALS_PATH = resolve('reports/tree-cycle/all2rush_g2_local_search_trials.jsonl');
+export const EVIDENCE_BRANCH_LIB_PATH = resolve('reports/tree-cycle/all2rush_g2_branch_library.jsonl');
+export const EVIDENCE_MERGE_PRUNE_PATH = resolve('reports/tree-cycle/all2rush_g2_branch_merge_prune_audit.jsonl');
+
+export function appendTrialEvidence(record: any): void {
+  appendFileSync(EVIDENCE_LOCAL_TRIALS_PATH, JSON.stringify({ recordKind: 'ALL2RUSH_G2_LOCAL_TRIAL_V1', timestamp: new Date().toISOString(), ...record }) + '\n', 'utf8');
+}
+
+export function appendBranchEvidence(record: BranchRecord): void {
+  appendFileSync(EVIDENCE_BRANCH_LIB_PATH, JSON.stringify({ recordKind: 'ALL2RUSH_G2_BRANCH_RECORD_V1', timestamp: new Date().toISOString(), ...record }) + '\n', 'utf8');
+}
+
+export function appendMergePruneAudit(record: any): void {
+  appendFileSync(EVIDENCE_MERGE_PRUNE_PATH, JSON.stringify({ recordKind: 'ALL2RUSH_G2_MERGE_PRUNE_AUDIT_V1', timestamp: new Date().toISOString(), ...record }) + '\n', 'utf8');
+}
+
+/**
+ * 针对一个确切的 LossCase 生成最多 48 个 1-3 变量组合变体
+ */
+export function generateFocusedCandidatesForCase(
+  lossCase: LossCase,
+  baseEvol: EvolFormation,
+  maxCandidates: number = 48
+): CandidateVariation[] {
+  const variations: CandidateVariation[] = [];
+  const seenFp = new Set<string>();
+
+  const forkR = lossCase.forkRound;
+  const targetNodes = walkEvolNodes(baseEvol.root).filter(n => n.round === forkR);
+  if (targetNodes.length === 0) return [];
+
+  const chargePriorities: ChargeTargetPriority[] = ['iron_first', 'tank_first', 'four_cost_first'];
+  const spellPriorities: SpellTargetPriority[] = ['four_cost_first', 'prayer_first', 'most_enemies'];
+  const tutuModes: TutuModePreference[] = ['voodoo_shield_first', 'imperial_front'];
+  const drillPriorities: DrillTargetPriority[] = ['spell_counter', 'prayer_first'];
+
+  let count = 0;
+
+  // 1. 单变量变体 (R 落子微调 / 顺序 / 单个 Policy 调整)
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      if (count >= maxCandidates) break;
+
+      const clone = cloneEvolFormation(baseEvol);
+      const rNodes = walkEvolNodes(clone.root).filter(n => n.round === forkR);
+      if (rNodes.length > 0 && rNodes[0].placements.length > 0) {
+        const p = rNodes[0].placements[0];
+        const newX = Math.max(6, Math.min(10, p.x + dx));
+        const newY = Math.max(0, Math.min(4, p.y + dy));
+        if (newX !== p.x || newY !== p.y) {
+          p.x = newX;
+          p.y = newY;
+          const fp = computeCandidateFingerprint(clone);
+          if (!seenFp.has(fp)) {
+            seenFp.add(fp);
+            variations.push({
+              candidateId: `cand_r${forkR}_shift_${dx}_${dy}_${count}`,
+              mutatedEvol: clone,
+              behaviorFingerprint: fp,
+              modifiedVariablesCount: 1,
+              descriptions: [`R${forkR} placement shift dx=${dx}, dy=${dy}`],
+            });
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  // 2. 双变量变体 (R 坐标 + 1个 Policy 参数)
+  for (const cp of chargePriorities) {
+    if (count >= maxCandidates) break;
+    const clone = cloneEvolFormation(baseEvol);
+    clone.calculatorPolicy = {
+      ...DEFAULT_CALCULATOR_POLICY,
+      special: {
+        ...DEFAULT_CALCULATOR_POLICY.special,
+        charge: { targetPriority: cp },
+      },
+    };
+    const rNodes = walkEvolNodes(clone.root).filter(n => n.round === forkR);
+    if (rNodes.length > 0 && rNodes[0].placements.length > 0) {
+      rNodes[0].placements[0].y = (rNodes[0].placements[0].y + 1) % 5;
+    }
+    const fp = computeCandidateFingerprint(clone);
+    if (!seenFp.has(fp)) {
+      seenFp.add(fp);
+      variations.push({
+        candidateId: `cand_r${forkR}_charge_${cp}_${count}`,
+        mutatedEvol: clone,
+        behaviorFingerprint: fp,
+        modifiedVariablesCount: 2,
+        descriptions: [`R${forkR} placement y+1`, `Charge policy=${cp}`],
+      });
+      count++;
+    }
+  }
+
+  // 3. 三变量变体 (R 坐标 + R+1 坐标 + Policy 参数)
+  for (const sp of spellPriorities) {
+    if (count >= maxCandidates) break;
+    const clone = cloneEvolFormation(baseEvol);
+    clone.calculatorPolicy = {
+      ...DEFAULT_CALCULATOR_POLICY,
+      special: {
+        ...DEFAULT_CALCULATOR_POLICY.special,
+        spell: { targetPriority: sp, preferXOffset: 6 },
+      },
+    };
+    const rNodes = walkEvolNodes(clone.root).filter(n => n.round === forkR);
+    if (rNodes.length > 0 && rNodes[0].placements.length > 0) {
+      rNodes[0].placements[0].x = rNodes[0].placements[0].x === 6 ? 7 : 6;
+    }
+    const nextNodes = walkEvolNodes(clone.root).filter(n => n.round === forkR + 1);
+    if (nextNodes.length > 0 && nextNodes[0].placements.length > 0) {
+      nextNodes[0].placements[0].y = (nextNodes[0].placements[0].y + 1) % 5;
+    }
+    const fp = computeCandidateFingerprint(clone);
+    if (!seenFp.has(fp)) {
+      seenFp.add(fp);
+      variations.push({
+        candidateId: `cand_r${forkR}_spell_${sp}_tri_${count}`,
+        mutatedEvol: clone,
+        behaviorFingerprint: fp,
+        modifiedVariablesCount: 3,
+        descriptions: [`R${forkR} x flip`, `R${forkR+1} y+1`, `Spell policy=${sp}`],
+      });
+      count++;
+    }
+  }
+
+  return variations;
+}
+
+/**
+ * 运行基于 pre-R checkpoint 的单局续玩搜索 (Focused Continuation Search)
+ */
+export function runFocusedSearchOnLossCase(
+  lossCase: LossCase,
+  baseEvol: EvolFormation,
+  candidates: CandidateVariation[]
+): {
+  improvedBranches: BranchRecord[];
+  allTrials: any[];
+} {
+  const improvedBranches: BranchRecord[] = [];
+  const allTrials: any[] = [];
+
+  const opp = FORMATION_LIBRARY.find(f => f.id === lossCase.opponentId || f.name === lossCase.opponentId);
+  const oppEvol = opp ? ((opp as any).evol ? (opp as any).evol : formationToEvol(opp)) : null;
+  if (!oppEvol) return { improvedBranches, allTrials };
+
+  const oppStrat = treeStrategyFor(oppEvol);
+  const isRushP1 = lossCase.side === 1;
+
+  for (const cand of candidates) {
+    // 关键点：每个 candidate 均从相同的 pre-R checkpoint 恢复，进行 1 局续玩评估
+    const session = ProductGameSession.restore(lossCase.preRCheckpoint, {
+      strategyIdentityA: isRushP1 ? 'all2rush_cand' : lossCase.opponentId,
+      strategyIdentityB: isRushP1 ? lossCase.opponentId : 'all2rush_cand',
+    });
+
+    const candStrat = treeStrategyFor(cand.mutatedEvol);
+
+    while (session.currentRound <= 5) {
+      if (session.p1Score >= 3 || session.p2Score >= 3) break;
+      const ctxA = session.buildRoundContext(1);
+      const ctxB = session.buildRoundContext(2);
+
+      const intentsA = isRushP1 ? candStrat(ctxA) : oppStrat(ctxA);
+      const intentsB = isRushP1 ? oppStrat(ctxB) : candStrat(ctxB);
+
+      const rRes = session.playRound(intentsA, intentsB);
+      if (rRes.isGameOver) break;
+    }
+
+    const matchWinner: 1 | 2 | 0 =
+      session.p1Score === session.p2Score ? 0 : session.p1Score > session.p2Score ? 1 : 2;
+
+    const candWon = (isRushP1 && matchWinner === 1) || (!isRushP1 && matchWinner === 2);
+    const candDraw = matchWinner === 0;
+    const outcome: 'W' | 'D' | 'L' = candWon ? 'W' : candDraw ? 'D' : 'L';
+
+    const isImproved = (lossCase.finalGameOutcome === 'L' && (outcome === 'W' || outcome === 'D')) ||
+                       (lossCase.finalGameOutcome === 'D' && outcome === 'W');
+
+    const trialRecord = {
+      lossCaseId: lossCase.caseId,
+      candidateId: cand.candidateId,
+      behaviorFingerprint: cand.behaviorFingerprint,
+      modifiedVariablesCount: cand.modifiedVariablesCount,
+      outcome,
+      baselineOutcome: lossCase.finalGameOutcome,
+      improved: isImproved,
+      p1Score: session.p1Score,
+      p2Score: session.p2Score,
+      roundResults: session.roundResults,
+    };
+    allTrials.push(trialRecord);
+    appendTrialEvidence(trialRecord);
+
+    if (isImproved) {
+      // 提取局部分支增量
+      const rNodes = walkEvolNodes(cand.mutatedEvol.root).filter(n => n.round >= lossCase.forkRound);
+      const actionSubtreeDelta = rNodes.map(n => ({
+        round: n.round,
+        placements: n.placements.map(p => ({ monsterId: p.monsterId, x: p.x, y: p.y })),
+      }));
+
+      // 构建合法的最窄特征掩码（基于 LossCase 的 pre-R observation）
+      const specificMask: FeatureMask = {
+        side: lossCase.side,
+        main: 'fullrush',
+        subs: [],
+        keys: lossCase.preRObservation.revealedEnemyHandIds.includes(116) ? ['drill'] : [],
+      };
+
+      const branch: BranchRecord = {
+        branchId: `BR_${lossCase.caseId}_${cand.behaviorFingerprint.slice(0, 8)}`,
+        state: 'EXACT_CASE_BRANCH',
+        parentSnapshotFingerprint: lossCase.targetPayloadFingerprint,
+        solutionBehaviorFingerprint: cand.behaviorFingerprint,
+        forkRound: lossCase.forkRound,
+        condition: specificMask,
+        sourceLossCaseIds: [lossCase.caseId],
+        actionSubtreeDelta,
+        policyDelta: cand.mutatedEvol.calculatorPolicy,
+        fixedCaseResult: outcome,
+        verifiedCoverageCount: 1,
+        createdAt: new Date().toISOString(),
+        notes: `Local continuation discovery: ${lossCase.finalGameOutcome} -> ${outcome}`,
+      };
+
+      improvedBranches.push(branch);
+      appendBranchEvidence(branch);
+    }
+  }
+
+  return { improvedBranches, allTrials };
+}
+
+/**
+ * 运行分支前缀合并与历史剪枝 (Merge & Prune)
+ */
+export function mergeAndPruneBranches(branches: BranchRecord[]): {
+  merged: BranchRecord[];
+  pruned: BranchRecord[];
+  activeLibrary: BranchRecord[];
+} {
+  const merged: BranchRecord[] = [];
+  const pruned: BranchRecord[] = [];
+  const activeLibrary: BranchRecord[] = [];
+
+  const seenExactFp = new Map<string, BranchRecord>();
+
+  for (const br of branches) {
+    if (seenExactFp.has(br.solutionBehaviorFingerprint)) {
+      const pBr: BranchRecord = {
+        ...br,
+        state: 'PRUNED_HISTORICAL',
+        notes: `Pruned as exact behavior duplicate of ${seenExactFp.get(br.solutionBehaviorFingerprint)!.branchId}`,
+      };
+      pruned.push(pBr);
+      appendMergePruneAudit({ action: 'PRUNE_DUPLICATE', branchId: br.branchId, duplicateOf: seenExactFp.get(br.solutionBehaviorFingerprint)!.branchId });
+      continue;
+    }
+
+    seenExactFp.set(br.solutionBehaviorFingerprint, br);
+    activeLibrary.push(br);
+  }
+
+  // 尝试合并共享前缀分支
+  if (activeLibrary.length >= 2) {
+    for (let i = 0; i < activeLibrary.length; i++) {
+      for (let j = i + 1; j < activeLibrary.length; j++) {
+        const b1 = activeLibrary[i];
+        const b2 = activeLibrary[j];
+        if (b1.forkRound === b2.forkRound && b1.actionSubtreeDelta.length > 0 && b2.actionSubtreeDelta.length > 0) {
+          const p1 = b1.actionSubtreeDelta[0];
+          const p2 = b2.actionSubtreeDelta[0];
+          if (JSON.stringify(p1.placements) === JSON.stringify(p2.placements)) {
+            // 共享 forkRound 执行前缀
+            const mergedRecord: BranchRecord = {
+              branchId: `MERGED_PREFIX_${b1.branchId.slice(0, 10)}_${b2.branchId.slice(0, 10)}`,
+              state: 'MERGED_PREFIX_BRANCH',
+              parentSnapshotFingerprint: b1.parentSnapshotFingerprint,
+              solutionBehaviorFingerprint: b1.solutionBehaviorFingerprint,
+              forkRound: b1.forkRound,
+              condition: emptyMask(), // 泛化条件
+              sourceLossCaseIds: Array.from(new Set([...b1.sourceLossCaseIds, ...b2.sourceLossCaseIds])),
+              actionSubtreeDelta: [p1],
+              policyDelta: b1.policyDelta,
+              fixedCaseResult: 'W',
+              verifiedCoverageCount: b1.verifiedCoverageCount + b2.verifiedCoverageCount,
+              createdAt: new Date().toISOString(),
+              notes: `Prefix merged from ${b1.branchId} and ${b2.branchId}`,
+            };
+            merged.push(mergedRecord);
+            appendMergePruneAudit({ action: 'MERGE_PREFIX', sourceBranches: [b1.branchId, b2.branchId], mergedBranchId: mergedRecord.branchId });
+          }
+        }
+      }
+    }
+  }
+
+  return { merged, pruned, activeLibrary };
+}
