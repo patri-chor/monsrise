@@ -23,7 +23,7 @@ import {
   type MatchupObservation,
   type CandidateEvaluationData,
   type Score70Outcome,
-} from '../src/engine/tree/product_training/t052_branch_routing';
+} from '../src/engine/tree/product_training/05_branch_routing';
 import { computeCandidateFingerprint } from '../src/engine/tree/product_training/02_candidates';
 import { FORMATION_LIBRARY } from '../src/ai/formation_library';
 

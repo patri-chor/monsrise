@@ -1,6 +1,6 @@
 // ============================================================
-// src/engine/tree/product_training/t052_branch_routing.ts
-// T052 统一爬山变异与条件分支归纳 (Unified Hill-Climb and Conditional-Branch Learning)
+// src/engine/tree/product_training/05_branch_routing.ts
+// Stage 05: 统一爬山变异与条件分支归纳 (Unified Hill-Climb and Conditional-Branch Learning)
 // ============================================================
 
 import { appendFileSync, existsSync, writeFileSync } from 'node:fs';

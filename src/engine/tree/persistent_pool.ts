@@ -180,67 +180,56 @@ export class PersistentSimPool {
 
     const requestId = randomUUID();
 
-    // 将每个 task 单独作为 1-element chunk，由滑动窗口控制真实并发度
-    // 这样 activeLimit 就直接等于同时在飞的 worker 调用数
-    const chunkSize = Math.max(1, Math.ceil(tasks.length / Math.min(this.workerCount * 4, tasks.length)));
-    const chunks: SimTaskMessage[][] = [];
-    for (let i = 0; i < tasks.length; i += chunkSize) {
-      chunks.push(tasks.slice(i, i + chunkSize));
-    }
+    // CPU feedback can only be stable when it controls work at game granularity.
+    // Batched chunks finish in bursts, which caused 95% spikes followed by long
+    // under-utilized tails while the controller waited for a whole batch.
+    const chunks = tasks.map(task => [task]);
 
-    // 初始并发限制：min(workerCount, chunks.length)
-    let activeLimit = Math.min(this.workerCount, chunks.length);
-    let activeSemaphore = 0;
     const results: SimResultMessage[][] = new Array(chunks.length);
+    const pendingChunks = new Map<string, {
+      resolve: () => void;
+      reject: (err: Error) => void;
+      worker: Worker;
+      messageHandler: (msg: any) => void;
+      errorHandler: (err: any) => void;
+    }>();
 
-    const dispatchChunk = (idx: number): Promise<void> => {
+    const dispatchChunk = (idx: number, workerIdx: number): Promise<void> => {
       const chunk = chunks[idx];
-      const workerIdx = idx % this.workers.length;
       const worker = this.workers[workerIdx];
+      const chunkRequestId = `${requestId}_chk_${idx}`;
 
       return new Promise<void>((resolveChunk, rejectChunk) => {
-        const handler = (msg: any) => {
-          if (msg.requestId !== requestId) return;
+        const messageHandler = (msg: any) => {
+          if (msg.requestId !== chunkRequestId) return;
+
+          worker.off('message', messageHandler);
+          worker.off('error', errorHandler);
+          pendingChunks.delete(chunkRequestId);
 
           if (msg.type === 'batch_result') {
-            cleanup();
-            if (!Array.isArray(msg.results)) {
-              rejectChunk(new StructuredSimError('Worker returned non-array results payload', {
-                requestId,
-                expectedCount: chunk.length,
-                receivedCount: 0,
-                candidateIdentity,
-              }));
+            if (!Array.isArray(msg.results) || msg.results.length !== chunk.length) {
+              rejectChunk(new StructuredSimError(
+                `Worker result count mismatch: expected ${chunk.length}, received ${msg.results?.length ?? 0}`,
+                { requestId: chunkRequestId, expectedCount: chunk.length, receivedCount: msg.results?.length ?? 0, candidateIdentity }
+              ));
               return;
             }
-            if (msg.results.length !== chunk.length) {
-              rejectChunk(new StructuredSimError(`Worker result count mismatch: expected ${chunk.length}, received ${msg.results.length}`, {
-                requestId,
-                expectedCount: chunk.length,
-                receivedCount: msg.results.length,
-                candidateIdentity,
-              }));
-              return;
-            }
-            // 严格非空校验
-            for (let rIdx = 0; rIdx < msg.results.length; rIdx++) {
-              const res = msg.results[rIdx];
-              if (!res || typeof res.w !== 'number' || typeof res.d !== 'number' || typeof res.l !== 'number') {
-                rejectChunk(new StructuredSimError(`Worker result contains undefined or invalid W/D/L at index ${rIdx}`, {
-                  requestId,
-                  expectedCount: chunk.length,
-                  receivedCount: msg.results.length,
-                  candidateIdentity,
-                }));
+            for (let resultIndex = 0; resultIndex < msg.results.length; resultIndex++) {
+              const result = msg.results[resultIndex];
+              if (!result || typeof result.w !== 'number' || typeof result.d !== 'number' || typeof result.l !== 'number') {
+                rejectChunk(new StructuredSimError(
+                  `Worker result contains invalid W/D/L at index ${resultIndex}`,
+                  { requestId: chunkRequestId, expectedCount: chunk.length, receivedCount: msg.results.length, candidateIdentity }
+                ));
                 return;
               }
             }
             results[idx] = msg.results;
             resolveChunk();
           } else if (msg.type === 'error') {
-            cleanup();
-            rejectChunk(new StructuredSimError(msg.error || 'Worker unknown error', {
-              requestId,
+            rejectChunk(new StructuredSimError(msg.error || 'Worker execution error', {
+              requestId: chunkRequestId,
               expectedCount: chunk.length,
               receivedCount: 0,
               candidateIdentity,
@@ -249,78 +238,76 @@ export class PersistentSimPool {
         };
 
         const errorHandler = (err: any) => {
-          cleanup();
+          worker.off('message', messageHandler);
+          worker.off('error', errorHandler);
+          pendingChunks.delete(chunkRequestId);
           rejectChunk(new StructuredSimError(err?.message || String(err), {
-            requestId,
+            requestId: chunkRequestId,
             expectedCount: chunk.length,
             receivedCount: 0,
             candidateIdentity,
           }));
         };
 
-        const cleanup = () => {
-          worker.off('message', handler);
-          worker.off('error', errorHandler);
-        };
+        pendingChunks.set(chunkRequestId, {
+          resolve: resolveChunk,
+          reject: rejectChunk,
+          worker,
+          messageHandler,
+          errorHandler,
+        });
 
-        worker.on('message', handler);
+        worker.on('message', messageHandler);
         worker.on('error', errorHandler);
-        worker.postMessage({ type: 'batch', requestId, tasks: chunk });
+        worker.postMessage({ type: 'batch', requestId: chunkRequestId, tasks: chunk });
       });
     };
 
-    // 滑动窗口调度：动态 CPU 反馈控制并发度
-    // 使用 notification promise 避免 Promise.race 传播 reject 错误
-    const errors: Error[] = [];
-    let notifySlotFree: (() => void) | null = null;
-    let slotFreePromise: Promise<void> = Promise.resolve();
+    // Keep a bounded number of chunks in flight. Previously every chunk was
+    // posted at once, so the monitor never had an opportunity to lower load.
+    // Keep runnable work near hardware capacity even when the persistent pool
+    // intentionally has many more workers for queueing/reuse.
+    const maxLimit = Math.min(this.workers.length, chunks.length, cpus().length);
+    // Start conservatively enough for the first monitor sample to be useful.
+    // The controller then adjusts one game slot at a time around the 80% target.
+    const initialLimit = Math.floor(cpus().length * 0.60);
+    let activeLimit = Math.max(1, Math.min(maxLimit, initialLimit));
+    let nextChunkIndex = 0;
+    const freeWorkers = Array.from({ length: this.workers.length }, (_, index) => index);
+    const inFlightByWorker = new Map<number, Promise<number>>();
 
-    const resetSlotWait = () => {
-      slotFreePromise = new Promise<void>(r => { notifySlotFree = r; });
+    const startNextChunk = () => {
+      const chunkIndex = nextChunkIndex++;
+      const workerIndex = freeWorkers.shift();
+      if (workerIndex === undefined) {
+        throw new Error('No free worker available for dispatch');
+      }
+      inFlightByWorker.set(workerIndex, dispatchChunk(chunkIndex, workerIndex).then(() => workerIndex));
     };
 
-    const onChunkDone = () => {
-      activeSemaphore--;
-      // CPU 自适应：每完成 1 个 chunk 重新采样
-      if (this.cpuMonitor) {
-        activeLimit = this.cpuMonitor.adaptConcurrency(
-          activeLimit,
-          Math.max(1, Math.min(4, this.workers.length)),   // minLimit
-          this.workers.length,                             // maxLimit = 实际 worker 数
-        );
+    try {
+      while (nextChunkIndex < chunks.length || inFlightByWorker.size > 0) {
+        while (nextChunkIndex < chunks.length && inFlightByWorker.size < activeLimit && freeWorkers.length > 0) {
+          startNextChunk();
+        }
+
+        if (inFlightByWorker.size === 0) break;
+        const completedWorkerIndex = await Promise.race(inFlightByWorker.values());
+        inFlightByWorker.delete(completedWorkerIndex);
+        freeWorkers.push(completedWorkerIndex);
+
+        if (this.cpuMonitor) {
+          activeLimit = this.cpuMonitor.adaptConcurrency(activeLimit, 1, maxLimit);
+        }
       }
-      // 通知等待中的 pump 有空位
-      if (notifySlotFree) { notifySlotFree(); notifySlotFree = null; }
-    };
-
-    const inFlight: Promise<void>[] = [];
-
-    resetSlotWait();
-
-    for (let idx = 0; idx < chunks.length; idx++) {
-      // 等待信号量空位
-      while (activeSemaphore >= activeLimit) {
-        await slotFreePromise;
-        resetSlotWait(); // 重置，防止上一次通知被重复消费
+    } catch (err) {
+      for (const [chkId, item] of pendingChunks.entries()) {
+        item.worker.off('message', item.messageHandler);
+        item.worker.off('error', item.errorHandler);
       }
-
-      activeSemaphore++;
-      const p = dispatchChunk(idx)
-        .then(() => { onChunkDone(); })
-        .catch((err: Error) => { errors.push(err); onChunkDone(); });
-
-      inFlight.push(p);
-
-      // 平滑分发：每次分发暂停 0.1s (100ms)，避免瞬时瞬间塞爆 CPU
-      if (idx < chunks.length - 1) {
-        await new Promise(r => setTimeout(r, 100));
-      }
+      pendingChunks.clear();
+      throw err;
     }
-
-    // 等待所有 in-flight chunk 完成
-    await Promise.all(inFlight);
-
-    if (errors.length > 0) throw errors[0];
 
     const flattened: SimResultMessage[] = [];
     for (const list of results) {

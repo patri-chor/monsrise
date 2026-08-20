@@ -47,7 +47,7 @@ import {
   type MatchupObservation,
   type CandidateEvaluationData,
   type Score70Outcome,
-} from './t052_branch_routing';
+} from './05_branch_routing';
 
 const T045_PROTOCOL = 'PRODUCT_PATH_T045_V1';
 const POLICY_VERSION = 't045-pyramid-tier-distribution-v1';
@@ -288,9 +288,13 @@ export async function executeCycle(opts: {
   const candidateParentMap = new Map<string, string>(); // candId -> parentFormationId
 
   if (isCapacitySaturated) {
-    // 爬山变异：为存量中待突破的 T2 / T3 阵型生成 Top-3 针对性微调变异
-    for (const f of currentLibFormations) {
-      if (f.currentDynamicTier === 'T0' || f.currentDynamicTier === 'T4') continue;
+    // 爬山变异：用户指示锁定最弱的 Top-3 待突破 T3/T2 阵型 (胜率 < 50%)
+    const pendingCandidates = currentLibFormations
+      .filter(f => f.currentDynamicTier === 'T3' || f.currentDynamicTier === 'T2')
+      .sort((a, b) => (a.l2AttemptsCount ?? 0) - (b.l2AttemptsCount ?? 0))
+      .slice(0, 3);
+
+    for (const f of pendingCandidates) {
       const rootSrc = execSources.find(s => (s as any).id === f.rootR0SourceId) ?? execSources[0];
       const evol = cloneEvolFormation(formationToEvol(rootSrc));
       evol.name = f.formationId;
@@ -341,18 +345,23 @@ export async function executeCycle(opts: {
     }
   }
 
-  // 同时将存量主干阵型加入对战池进行基准重测与战绩刷新
-  for (const f of currentLibFormations) {
-    if (!optimizeTargets.some(t => t.id === f.formationId)) {
-      const rootSrc = execSources.find(s => (s as any).id === f.rootR0SourceId) ?? execSources[0];
-      const evol = formationToEvol(rootSrc);
-      evol.name = f.formationId;
-      optimizeTargets.push({
-        id: f.formationId,
-        name: f.displayName || f.formationId,
-        team: (evol as any).team ?? (rootSrc as any).team ?? [],
-        evol,
-      });
+  // 仅将本轮选中的候选体及其亲本加入对战池
+  if (isCapacitySaturated) {
+    for (const [candId, parentId] of candidateParentMap.entries()) {
+      if (!optimizeTargets.some(t => t.id === parentId)) {
+        const parentF = currentLibFormations.find(f => f.formationId === parentId);
+        if (parentF) {
+          const rootSrc = execSources.find(s => (s as any).id === parentF.rootR0SourceId) ?? execSources[0];
+          const evol = formationToEvol(rootSrc);
+          evol.name = parentF.formationId;
+          optimizeTargets.push({
+            id: parentF.formationId,
+            name: parentF.displayName || parentF.formationId,
+            team: (evol as any).team ?? (rootSrc as any).team ?? [],
+            evol,
+          });
+        }
+      }
     }
   }
 
@@ -363,7 +372,7 @@ export async function executeCycle(opts: {
     pool,
     optimizeTargets,
     strong11Specs,
-    10, // 10 局/cell × 20 cells = 200 局
+    5, // 5 局/cell × 20 cells = 100 局 (极速置信度评测)
     BASE_SEED + cycleOrdinal * 1000 + 200,
     `Cycle_${cycleOrdinal}_L2_StrongPool`,
   );
@@ -611,10 +620,11 @@ async function main() {
   const cyclesArg = args.find(a => a.startsWith('--cycles='));
   const targetCycles = cyclesArg ? parseInt(cyclesArg.split('=')[1], 10) : 3;
 
+  const optimalWorkers = Math.min(64, Math.max(16, (typeof process !== 'undefined' && process.env.WORKER_COUNT ? parseInt(process.env.WORKER_COUNT, 10) : 32)));
   log(`\n=== run_cycle.ts — Product Training Multi-Cycle Standard Engine ===`);
-  log(`  Target Cycles: ${targetCycles} | Pool Capacity: 128 Workers | Target CPU Load: 80%`);
+  log(`  Target Cycles: ${targetCycles} | Dynamic Pool Capacity: ${optimalWorkers} Workers | Target CPU Load: 80%`);
 
-  const pool = await PersistentSimPool.getInstance({ workerCount: 128, targetCpuUsage: 0.80 });
+  const pool = await PersistentSimPool.getInstance({ workerCount: optimalWorkers, targetCpuUsage: 0.80 });
 
   try {
     for (let c = 0; c < targetCycles; c++) {

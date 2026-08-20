@@ -3,7 +3,7 @@
   "sourceFixtureFp": "07bb1a55a1394ff1",
   "t037ManifestHash": "fd0b2a99441ce036f97366c74fade7df0cc0d43078ea079f66a7f19bdeb04c85",
   "policyVersion": "t045-pyramid-tier-distribution-v1",
-  "currentCycleOrdinal": 3,
+  "currentCycleOrdinal": 1,
   "completedCycles": [
     {
       "cycleId": "023401370043",
@@ -144,6 +144,26 @@
         "gift_jungle"
       ],
       "completedAt": "2026-08-20T08:38:15.806Z"
+    },
+    {
+      "cycleId": "023401370043",
+      "cycleOrdinal": 0,
+      "parentCycleId": null,
+      "parentCatalogHash": null,
+      "completedSources": [
+        "springsword",
+        "nutsavior",
+        "all2rush",
+        "classicsavior",
+        "all2prayer",
+        "suqing",
+        "laddersel",
+        "spade_multi",
+        "gift_savior",
+        "golden_boom",
+        "gift_jungle"
+      ],
+      "completedAt": "2026-08-20T11:14:20.452Z"
     }
   ],
   "persistentFailCounts": {
@@ -262,5 +282,5 @@
     "cand:gift_jungle:formation_transform:c1_flip": "T1",
     "cand:gift_jungle:strategy_schedule_branch:c1_side2": "T1"
   },
-  "updatedAt": "2026-08-20T08:38:15.806Z"
+  "updatedAt": "2026-08-20T11:14:20.452Z"
 }

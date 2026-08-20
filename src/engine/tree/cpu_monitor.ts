@@ -68,19 +68,21 @@ export class CpuLoadMonitor {
     return this.currentUsage;
   }
 
-  public adaptConcurrency(currentLimit: number, minLimit: number = 8, maxLimit: number = 64): number {
+  public adaptConcurrency(currentLimit: number, minLimit: number = 1, maxLimit: number = 64): number {
     const usage = this.sample();
     const error = this.targetUsage - usage;
 
+    // Keep a narrow dead band around 80%. With one-game work units, a single
+    // slot per adjustment avoids oscillating between saturation and idle tails.
     let newLimit = currentLimit;
-    if (error > 0.10) {
-      newLimit += Math.ceil(currentLimit * 0.25) || 2;
-    } else if (error > 0.03) {
-      newLimit += 2;
-    } else if (error < -0.10) {
-      newLimit -= Math.ceil(currentLimit * 0.20) || 2;
-    } else if (error < -0.05) {
+    if (error < -0.08) {
       newLimit -= 2;
+    } else if (error < -0.02) {
+      newLimit -= 1;
+    } else if (error > 0.08) {
+      newLimit += 2;
+    } else if (error > 0.02) {
+      newLimit += 1;
     }
 
     return Math.max(minLimit, Math.min(maxLimit, newLimit));
