@@ -10,11 +10,16 @@ import { formationToEvol, type EvolFormation } from '../evol_gene';
 import { treeStrategyFor } from '../product_tree_strategy';
 import { playFullGame } from '../../play_full_game';
 
+import { computeCandidateFingerprint } from './02_candidates';
+
 export interface EvalTargetSpec {
   id: string;
   name: string;
   team: any[];
   evol: EvolFormation;
+  canonicalFingerprint?: string;
+  calculatorPolicyFingerprint?: string;
+  provenance?: string;
 }
 
 export interface EvalOpponentSpec {
@@ -22,6 +27,39 @@ export interface EvalOpponentSpec {
   name: string;
   team: any[];
   evol: EvolFormation;
+  canonicalFingerprint?: string;
+  calculatorPolicyFingerprint?: string;
+  provenance?: string;
+}
+
+export interface BatchPayloadGateResult {
+  valid: boolean;
+  expectedFingerprint: string;
+  resolvedSnapshotFingerprint: string;
+  preparedEvolFingerprint: string;
+  error?: string;
+}
+
+/**
+ * T053 C: 批次级 Payload 身份门禁 (Batch-Level Payload Identity Gate)
+ * 断言：expected active-library fingerprint == resolved snapshot fingerprint == computeCandidateFingerprint(prepared evol)
+ */
+export function verifyBatchPayloadIdentity(
+  expectedActiveLibraryFp: string,
+  resolvedSnapshot: { canonicalFingerprint: string; evol: EvolFormation },
+): BatchPayloadGateResult {
+  const preparedEvolFp = computeCandidateFingerprint(resolvedSnapshot.evol);
+  const valid =
+    expectedActiveLibraryFp === resolvedSnapshot.canonicalFingerprint &&
+    resolvedSnapshot.canonicalFingerprint === preparedEvolFp;
+
+  return {
+    valid,
+    expectedFingerprint: expectedActiveLibraryFp,
+    resolvedSnapshotFingerprint: resolvedSnapshot.canonicalFingerprint,
+    preparedEvolFingerprint: preparedEvolFp,
+    error: valid ? undefined : `Payload identity mismatch: library=${expectedActiveLibraryFp}, snapshot=${resolvedSnapshot.canonicalFingerprint}, prepared=${preparedEvolFp}`,
+  };
 }
 
 export interface OpponentMatchMetrics {

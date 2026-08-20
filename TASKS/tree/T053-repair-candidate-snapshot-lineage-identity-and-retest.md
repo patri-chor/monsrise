@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 
 # T053 - Repair Candidate Snapshot Lineage Identity and Retest

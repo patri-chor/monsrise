@@ -1,14 +1,15 @@
 {
   "schemaVersion": "T051_FORMATION_LIBRARY_V4",
   "libraryRevision": "v4.7.0-cycle-0",
-  "updatedAt": "2026-08-20T11:38:47.564Z",
+  "updatedAt": "2026-08-20T13:55:36.937Z",
   "counts": {
-    "activeTotal": 118,
+    "activeTotal": 75,
     "T0Count": 11,
-    "T1Count": 13,
-    "T2Count": 25,
-    "T3Count": 69,
-    "T4EliminatedCount": 0
+    "T1Count": 7,
+    "T2Count": 29,
+    "T3Count": 28,
+    "duplicatesCount": 0,
+    "quarantinedCount": 43
   },
   "formations": [
     {
@@ -28,33 +29,34 @@
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 10,
-        "d": 60,
+        "d": 50,
         "l": 40,
-        "n": 110,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "n": 100,
+        "primaryScore70": 0.45,
+        "winRate": 0.1,
+        "drawRate": 0.5,
+        "lossRate": 0.4,
+        "noLossRate": 0.6,
+        "legacyScore50": 0.35
       },
       "l1Metrics": {
-        "w": 20,
-        "d": 120,
-        "l": 80,
-        "n": 220,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "w": 35,
+        "d": 85,
+        "l": 70,
+        "n": 190,
+        "primaryScore70": 0.497368,
+        "winRate": 0.184211,
+        "drawRate": 0.447368,
+        "lossRate": 0.368421,
+        "noLossRate": 0.631579,
+        "legacyScore50": 0.407895
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.756Z"
+      "updatedAt": "2026-08-20T13:55:36.925Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:nutsavior",
@@ -72,34 +74,35 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 60,
+        "w": 55,
         "d": 25,
-        "l": 25,
-        "n": 110,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "l": 20,
+        "n": 100,
+        "primaryScore70": 0.725,
+        "winRate": 0.55,
+        "drawRate": 0.25,
+        "lossRate": 0.2,
+        "noLossRate": 0.8,
+        "legacyScore50": 0.675
       },
       "l1Metrics": {
-        "w": 120,
-        "d": 50,
-        "l": 50,
-        "n": 220,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "w": 105,
+        "d": 40,
+        "l": 45,
+        "n": 190,
+        "primaryScore70": 0.7,
+        "winRate": 0.552632,
+        "drawRate": 0.210526,
+        "lossRate": 0.236842,
+        "noLossRate": 0.763158,
+        "legacyScore50": 0.657895
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.928Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:all2rush",
@@ -117,40 +120,41 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
+        "w": 45,
         "d": 15,
-        "l": 45,
-        "n": 110,
-        "primaryScore70": 0.55,
-        "winRate": 0.454545,
-        "drawRate": 0.136364,
-        "lossRate": 0.409091,
-        "noLossRate": 0.590909,
-        "legacyScore50": 0.522727
+        "l": 40,
+        "n": 100,
+        "primaryScore70": 0.555,
+        "winRate": 0.45,
+        "drawRate": 0.15,
+        "lossRate": 0.4,
+        "noLossRate": 0.6,
+        "legacyScore50": 0.525
       },
       "l1Metrics": {
-        "w": 95,
-        "d": 30,
-        "l": 85,
-        "n": 210,
-        "primaryScore70": 0.552381,
-        "winRate": 0.452381,
-        "drawRate": 0.142857,
-        "lossRate": 0.404762,
-        "noLossRate": 0.595238,
-        "legacyScore50": 0.52381
+        "w": 90,
+        "d": 25,
+        "l": 75,
+        "n": 190,
+        "primaryScore70": 0.565789,
+        "winRate": 0.473684,
+        "drawRate": 0.131579,
+        "lossRate": 0.394737,
+        "noLossRate": 0.605263,
+        "legacyScore50": 0.539474
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.928Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:classicsavior",
       "rootR0SourceId": "classicsavior",
       "displayName": "t0:classicsavior",
-      "canonicalFingerprint": "a8fd06e1c676fecc6f40dd32",
+      "canonicalFingerprint": "6dff9f23e7b470d9926eab6a",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
         "CURRENT_ROOT_MAIN",
@@ -159,19 +163,19 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
+      "activeLibraryRevision": "v4.7.0-cycle-0",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 30,
+        "w": 40,
         "d": 20,
-        "l": 60,
+        "l": 50,
         "n": 110,
-        "primaryScore70": 0.4,
-        "winRate": 0.272727,
+        "primaryScore70": 0.490909,
+        "winRate": 0.363636,
         "drawRate": 0.181818,
-        "lossRate": 0.545455,
-        "noLossRate": 0.454545,
-        "legacyScore50": 0.363636
+        "lossRate": 0.454545,
+        "noLossRate": 0.545455,
+        "legacyScore50": 0.454545
       },
       "l1Metrics": {
         "w": 55,
@@ -188,14 +192,16 @@
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "regradeReason": "Global Improvement via c0 (L2: 49.1%)",
+      "updatedAt": "2026-08-20T13:55:36.930Z",
+      "totalAttemptsCount": 1,
+      "effectiveAttemptsCount": 1
     },
     {
       "formationId": "t0:all2prayer",
       "rootR0SourceId": "all2prayer",
       "displayName": "t0:all2prayer",
-      "canonicalFingerprint": "fe777bac6e62ef4a8c362f09",
+      "canonicalFingerprint": "64262d44baf4ac4b097b0b8e",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
         "CURRENT_ROOT_MAIN",
@@ -204,37 +210,39 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
+      "activeLibraryRevision": "v4.7.0-cycle-0",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 45,
-        "d": 50,
-        "l": 15,
+        "w": 60,
+        "d": 45,
+        "l": 5,
         "n": 110,
-        "primaryScore70": 0.727273,
-        "winRate": 0.409091,
-        "drawRate": 0.454545,
-        "lossRate": 0.136364,
-        "noLossRate": 0.863636,
-        "legacyScore50": 0.636364
+        "primaryScore70": 0.831818,
+        "winRate": 0.545455,
+        "drawRate": 0.409091,
+        "lossRate": 0.045455,
+        "noLossRate": 0.954545,
+        "legacyScore50": 0.75
       },
       "l1Metrics": {
-        "w": 85,
-        "d": 100,
+        "w": 90,
+        "d": 85,
         "l": 25,
-        "n": 210,
-        "primaryScore70": 0.738095,
-        "winRate": 0.404762,
-        "drawRate": 0.47619,
-        "lossRate": 0.119048,
-        "noLossRate": 0.880952,
-        "legacyScore50": 0.642857
+        "n": 200,
+        "primaryScore70": 0.7475,
+        "winRate": 0.45,
+        "drawRate": 0.425,
+        "lossRate": 0.125,
+        "noLossRate": 0.875,
+        "legacyScore50": 0.6625
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "regradeReason": "Global Improvement via c0 (L2: 83.2%)",
+      "updatedAt": "2026-08-20T13:55:36.931Z",
+      "totalAttemptsCount": 1,
+      "effectiveAttemptsCount": 1
     },
     {
       "formationId": "t0:suqing",
@@ -253,39 +261,40 @@
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 40,
-        "d": 35,
+        "d": 25,
         "l": 35,
-        "n": 110,
-        "primaryScore70": 0.586364,
-        "winRate": 0.363636,
-        "drawRate": 0.318182,
-        "lossRate": 0.318182,
-        "noLossRate": 0.681818,
-        "legacyScore50": 0.522727
+        "n": 100,
+        "primaryScore70": 0.575,
+        "winRate": 0.4,
+        "drawRate": 0.25,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.525
       },
       "l1Metrics": {
-        "w": 80,
-        "d": 70,
+        "w": 65,
+        "d": 55,
         "l": 70,
-        "n": 220,
-        "primaryScore70": 0.586364,
-        "winRate": 0.363636,
-        "drawRate": 0.318182,
-        "lossRate": 0.318182,
-        "noLossRate": 0.681818,
-        "legacyScore50": 0.522727
+        "n": 190,
+        "primaryScore70": 0.544737,
+        "winRate": 0.342105,
+        "drawRate": 0.289474,
+        "lossRate": 0.368421,
+        "noLossRate": 0.631579,
+        "legacyScore50": 0.486842
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.931Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:laddersel",
       "rootR0SourceId": "laddersel",
       "displayName": "t0:laddersel",
-      "canonicalFingerprint": "0b8ca8e3e7142bfda0b79ecb",
+      "canonicalFingerprint": "00dd55042587d79931a4dae4",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
         "CURRENT_ROOT_MAIN",
@@ -294,37 +303,39 @@
       ],
       "currentDynamicTier": "T0",
       "previousTier": "T0",
-      "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
+      "activeLibraryRevision": "v4.7.0-cycle-0",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 30,
-        "d": 25,
+        "w": 55,
+        "d": 0,
         "l": 55,
         "n": 110,
-        "primaryScore70": 0.431818,
-        "winRate": 0.272727,
-        "drawRate": 0.227273,
+        "primaryScore70": 0.5,
+        "winRate": 0.5,
+        "drawRate": 0,
         "lossRate": 0.5,
         "noLossRate": 0.5,
-        "legacyScore50": 0.386364
+        "legacyScore50": 0.5
       },
       "l1Metrics": {
-        "w": 60,
-        "d": 40,
-        "l": 110,
-        "n": 210,
-        "primaryScore70": 0.419048,
-        "winRate": 0.285714,
-        "drawRate": 0.190476,
-        "lossRate": 0.52381,
-        "noLossRate": 0.47619,
-        "legacyScore50": 0.380952
+        "w": 95,
+        "d": 10,
+        "l": 95,
+        "n": 200,
+        "primaryScore70": 0.51,
+        "winRate": 0.475,
+        "drawRate": 0.05,
+        "lossRate": 0.475,
+        "noLossRate": 0.525,
+        "legacyScore50": 0.5
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
-      "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "regradeReason": "Global Improvement via c0 (L2: 50.0%)",
+      "updatedAt": "2026-08-20T13:55:36.932Z",
+      "totalAttemptsCount": 1,
+      "effectiveAttemptsCount": 1
     },
     {
       "formationId": "t0:spade_multi",
@@ -342,34 +353,35 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 15,
+        "w": 10,
         "d": 30,
-        "l": 65,
-        "n": 110,
-        "primaryScore70": 0.327273,
-        "winRate": 0.136364,
-        "drawRate": 0.272727,
-        "lossRate": 0.590909,
-        "noLossRate": 0.409091,
-        "legacyScore50": 0.272727
+        "l": 60,
+        "n": 100,
+        "primaryScore70": 0.31,
+        "winRate": 0.1,
+        "drawRate": 0.3,
+        "lossRate": 0.6,
+        "noLossRate": 0.4,
+        "legacyScore50": 0.25
       },
       "l1Metrics": {
-        "w": 25,
-        "d": 60,
-        "l": 125,
-        "n": 210,
-        "primaryScore70": 0.319048,
-        "winRate": 0.119048,
-        "drawRate": 0.285714,
-        "lossRate": 0.595238,
-        "noLossRate": 0.404762,
-        "legacyScore50": 0.261905
+        "w": 40,
+        "d": 50,
+        "l": 100,
+        "n": 190,
+        "primaryScore70": 0.394737,
+        "winRate": 0.210526,
+        "drawRate": 0.263158,
+        "lossRate": 0.526316,
+        "noLossRate": 0.473684,
+        "legacyScore50": 0.342105
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.932Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:gift_savior",
@@ -387,34 +399,35 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 40,
+        "w": 35,
         "d": 15,
-        "l": 55,
-        "n": 110,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
+        "l": 50,
+        "n": 100,
+        "primaryScore70": 0.455,
+        "winRate": 0.35,
+        "drawRate": 0.15,
         "lossRate": 0.5,
         "noLossRate": 0.5,
-        "legacyScore50": 0.431818
+        "legacyScore50": 0.425
       },
       "l1Metrics": {
-        "w": 80,
-        "d": 30,
-        "l": 110,
-        "n": 220,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
+        "w": 70,
+        "d": 25,
+        "l": 95,
+        "n": 190,
+        "primaryScore70": 0.460526,
+        "winRate": 0.368421,
+        "drawRate": 0.131579,
         "lossRate": 0.5,
         "noLossRate": 0.5,
-        "legacyScore50": 0.431818
+        "legacyScore50": 0.434211
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.932Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:golden_boom",
@@ -432,34 +445,35 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 75,
+        "w": 70,
         "d": 15,
-        "l": 20,
-        "n": 110,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
-        "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
+        "l": 15,
+        "n": 100,
+        "primaryScore70": 0.805,
+        "winRate": 0.7,
+        "drawRate": 0.15,
+        "lossRate": 0.15,
+        "noLossRate": 0.85,
+        "legacyScore50": 0.775
       },
       "l1Metrics": {
-        "w": 150,
+        "w": 135,
         "d": 30,
-        "l": 40,
-        "n": 220,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
-        "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
+        "l": 25,
+        "n": 190,
+        "primaryScore70": 0.821053,
+        "winRate": 0.710526,
+        "drawRate": 0.157895,
+        "lossRate": 0.131579,
+        "noLossRate": 0.868421,
+        "legacyScore50": 0.789474
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "t0:gift_jungle",
@@ -477,34 +491,35 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
+        "w": 45,
         "d": 30,
-        "l": 30,
-        "n": 110,
-        "primaryScore70": 0.645455,
-        "winRate": 0.454545,
-        "drawRate": 0.272727,
-        "lossRate": 0.272727,
-        "noLossRate": 0.727273,
-        "legacyScore50": 0.590909
+        "l": 25,
+        "n": 100,
+        "primaryScore70": 0.66,
+        "winRate": 0.45,
+        "drawRate": 0.3,
+        "lossRate": 0.25,
+        "noLossRate": 0.75,
+        "legacyScore50": 0.6
       },
       "l1Metrics": {
-        "w": 100,
-        "d": 60,
-        "l": 60,
-        "n": 220,
-        "primaryScore70": 0.645455,
-        "winRate": 0.454545,
-        "drawRate": 0.272727,
-        "lossRate": 0.272727,
-        "noLossRate": 0.727273,
-        "legacyScore50": 0.590909
+        "w": 110,
+        "d": 45,
+        "l": 35,
+        "n": 190,
+        "primaryScore70": 0.744737,
+        "winRate": 0.578947,
+        "drawRate": 0.236842,
+        "lossRate": 0.184211,
+        "noLossRate": 0.815789,
+        "legacyScore50": 0.697368
       },
       "l3Metrics": null,
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 0,
       "regradeReason": "Current Root Lineage Anchor (Active T0 Main)",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:spatial_local:0",
@@ -520,28 +535,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 10,
-        "d": 60,
-        "l": 40,
+        "w": 15,
+        "d": 40,
+        "l": 55,
         "n": 110,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "primaryScore70": 0.390909,
+        "winRate": 0.136364,
+        "drawRate": 0.363636,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.318182
       },
       "l1Metrics": {
-        "w": 20,
-        "d": 120,
+        "w": 50,
+        "d": 60,
         "l": 80,
-        "n": 220,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "n": 190,
+        "primaryScore70": 0.484211,
+        "winRate": 0.263158,
+        "drawRate": 0.315789,
+        "lossRate": 0.421053,
+        "noLossRate": 0.578947,
+        "legacyScore50": 0.421053
       },
       "l3Metrics": {
         "w": 7,
@@ -558,7 +573,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 2,
       "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:formation_transform:0",
@@ -573,7 +589,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 20,
+        "d": 25,
+        "l": 65,
+        "n": 110,
+        "primaryScore70": 0.340909,
+        "winRate": 0.181818,
+        "drawRate": 0.227273,
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.295455
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -590,7 +617,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:nutsavior:spatial_local:0",
@@ -601,33 +629,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T1",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 60,
-        "d": 25,
-        "l": 25,
+        "w": 55,
+        "d": 15,
+        "l": 40,
         "n": 110,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "primaryScore70": 0.595455,
+        "winRate": 0.5,
+        "drawRate": 0.136364,
+        "lossRate": 0.363636,
+        "noLossRate": 0.636364,
+        "legacyScore50": 0.568182
       },
       "l1Metrics": {
-        "w": 120,
-        "d": 50,
-        "l": 50,
-        "n": 220,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "w": 100,
+        "d": 40,
+        "l": 60,
+        "n": 200,
+        "primaryScore70": 0.64,
+        "winRate": 0.5,
+        "drawRate": 0.2,
+        "lossRate": 0.3,
+        "noLossRate": 0.7,
+        "legacyScore50": 0.6
       },
       "l3Metrics": {
         "w": 8,
@@ -644,7 +672,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2rush:spatial_local:0",
@@ -655,33 +684,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T3",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
+        "w": 30,
         "d": 15,
-        "l": 45,
+        "l": 65,
         "n": 110,
-        "primaryScore70": 0.55,
-        "winRate": 0.454545,
+        "primaryScore70": 0.368182,
+        "winRate": 0.272727,
         "drawRate": 0.136364,
-        "lossRate": 0.409091,
-        "noLossRate": 0.590909,
-        "legacyScore50": 0.522727
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.340909
       },
       "l1Metrics": {
-        "w": 95,
+        "w": 60,
         "d": 30,
-        "l": 85,
-        "n": 210,
-        "primaryScore70": 0.552381,
-        "winRate": 0.452381,
-        "drawRate": 0.142857,
-        "lossRate": 0.404762,
-        "noLossRate": 0.595238,
-        "legacyScore50": 0.52381
+        "l": 100,
+        "n": 190,
+        "primaryScore70": 0.426316,
+        "winRate": 0.315789,
+        "drawRate": 0.157895,
+        "lossRate": 0.526316,
+        "noLossRate": 0.473684,
+        "legacyScore50": 0.394737
       },
       "l3Metrics": {
         "w": 3,
@@ -698,7 +727,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:spatial_local:0",
@@ -709,11 +739,22 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 40,
+        "d": 20,
+        "l": 50,
+        "n": 110,
+        "primaryScore70": 0.490909,
+        "winRate": 0.363636,
+        "drawRate": 0.181818,
+        "lossRate": 0.454545,
+        "noLossRate": 0.545455,
+        "legacyScore50": 0.454545
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -730,7 +771,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:spatial_local:0",
@@ -741,12 +783,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 60,
+        "d": 45,
+        "l": 5,
+        "n": 110,
+        "primaryScore70": 0.831818,
+        "winRate": 0.545455,
+        "drawRate": 0.409091,
+        "lossRate": 0.045455,
+        "noLossRate": 0.954545,
+        "legacyScore50": 0.75
+      },
+      "l1Metrics": {
+        "w": 90,
+        "d": 85,
+        "l": 25,
+        "n": 200,
+        "primaryScore70": 0.7475,
+        "winRate": 0.45,
+        "drawRate": 0.425,
+        "lossRate": 0.125,
+        "noLossRate": 0.875,
+        "legacyScore50": 0.6625
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -762,7 +826,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.757Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:formation_transform:0",
@@ -773,33 +838,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T1",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 45,
+        "w": 40,
         "d": 50,
-        "l": 15,
+        "l": 20,
         "n": 110,
-        "primaryScore70": 0.727273,
-        "winRate": 0.409091,
+        "primaryScore70": 0.681818,
+        "winRate": 0.363636,
         "drawRate": 0.454545,
-        "lossRate": 0.136364,
-        "noLossRate": 0.863636,
-        "legacyScore50": 0.636364
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.590909
       },
       "l1Metrics": {
-        "w": 90,
-        "d": 100,
-        "l": 30,
-        "n": 220,
-        "primaryScore70": 0.727273,
-        "winRate": 0.409091,
-        "drawRate": 0.454545,
-        "lossRate": 0.136364,
-        "noLossRate": 0.863636,
-        "legacyScore50": 0.636364
+        "w": 55,
+        "d": 90,
+        "l": 45,
+        "n": 190,
+        "primaryScore70": 0.621053,
+        "winRate": 0.289474,
+        "drawRate": 0.473684,
+        "lossRate": 0.236842,
+        "noLossRate": 0.763158,
+        "legacyScore50": 0.526316
       },
       "l3Metrics": {
         "w": 5,
@@ -816,7 +881,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:suqing:spatial_local:0",
@@ -827,12 +893,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 35,
+        "d": 35,
+        "l": 40,
+        "n": 110,
+        "primaryScore70": 0.540909,
+        "winRate": 0.318182,
+        "drawRate": 0.318182,
+        "lossRate": 0.363636,
+        "noLossRate": 0.636364,
+        "legacyScore50": 0.477273
+      },
+      "l1Metrics": {
+        "w": 65,
+        "d": 65,
+        "l": 70,
+        "n": 200,
+        "primaryScore70": 0.5525,
+        "winRate": 0.325,
+        "drawRate": 0.325,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.4875
+      },
       "l3Metrics": {
         "w": 8,
         "d": 0,
@@ -848,7 +936,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (96.4%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:laddersel:spatial_local:0",
@@ -859,23 +948,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 45,
-        "d": 5,
-        "l": 60,
+        "w": 55,
+        "d": 0,
+        "l": 55,
         "n": 110,
-        "primaryScore70": 0.440909,
-        "winRate": 0.409091,
-        "drawRate": 0.045455,
-        "lossRate": 0.545455,
-        "noLossRate": 0.454545,
-        "legacyScore50": 0.431818
+        "primaryScore70": 0.5,
+        "winRate": 0.5,
+        "drawRate": 0,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.5
       },
-      "l1Metrics": null,
+      "l1Metrics": {
+        "w": 95,
+        "d": 10,
+        "l": 95,
+        "n": 200,
+        "primaryScore70": 0.51,
+        "winRate": 0.475,
+        "drawRate": 0.05,
+        "lossRate": 0.475,
+        "noLossRate": 0.525,
+        "legacyScore50": 0.5
+      },
       "l3Metrics": {
         "w": 5,
         "d": 0,
@@ -891,7 +991,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 2,
       "regradeReason": "Global Improvement via c0 (L2: 44.1%)",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:spatial_local:0",
@@ -902,23 +1003,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T3",
       "previousTier": "T2",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 30,
-        "d": 30,
-        "l": 50,
+        "w": 5,
+        "d": 20,
+        "l": 85,
         "n": 110,
-        "primaryScore70": 0.463636,
-        "winRate": 0.272727,
-        "drawRate": 0.272727,
-        "lossRate": 0.454545,
-        "noLossRate": 0.545455,
-        "legacyScore50": 0.409091
+        "primaryScore70": 0.172727,
+        "winRate": 0.045455,
+        "drawRate": 0.181818,
+        "lossRate": 0.772727,
+        "noLossRate": 0.227273,
+        "legacyScore50": 0.136364
       },
-      "l1Metrics": null,
+      "l1Metrics": {
+        "w": 15,
+        "d": 45,
+        "l": 130,
+        "n": 190,
+        "primaryScore70": 0.244737,
+        "winRate": 0.078947,
+        "drawRate": 0.236842,
+        "lossRate": 0.684211,
+        "noLossRate": 0.315789,
+        "legacyScore50": 0.197368
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -934,7 +1046,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 2,
       "regradeReason": "Global Improvement via c0 (L2: 46.4%)",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:formation_transform:0",
@@ -949,7 +1062,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 0,
+        "d": 55,
+        "l": 55,
+        "n": 110,
+        "primaryScore70": 0.35,
+        "winRate": 0,
+        "drawRate": 0.5,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.25
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -966,7 +1090,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_savior:spatial_local:0",
@@ -981,7 +1106,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 35,
+        "d": 20,
+        "l": 55,
+        "n": 110,
+        "primaryScore70": 0.445455,
+        "winRate": 0.318182,
+        "drawRate": 0.181818,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.409091
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -998,7 +1134,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:golden_boom:spatial_local:0",
@@ -1009,33 +1146,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T1",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 75,
-        "d": 15,
-        "l": 20,
+        "w": 60,
+        "d": 20,
+        "l": 30,
         "n": 110,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
-        "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
+        "primaryScore70": 0.672727,
+        "winRate": 0.545455,
+        "drawRate": 0.181818,
+        "lossRate": 0.272727,
+        "noLossRate": 0.727273,
+        "legacyScore50": 0.636364
       },
       "l1Metrics": {
-        "w": 150,
-        "d": 30,
-        "l": 40,
-        "n": 220,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
-        "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
+        "w": 115,
+        "d": 35,
+        "l": 50,
+        "n": 200,
+        "primaryScore70": 0.6975,
+        "winRate": 0.575,
+        "drawRate": 0.175,
+        "lossRate": 0.25,
+        "noLossRate": 0.75,
+        "legacyScore50": 0.6625
       },
       "l3Metrics": {
         "w": 8,
@@ -1052,7 +1189,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (78.9%) >= 70.0% top elite",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_jungle:spatial_local:0",
@@ -1063,12 +1201,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 45,
+        "d": 30,
+        "l": 35,
+        "n": 110,
+        "primaryScore70": 0.6,
+        "winRate": 0.409091,
+        "drawRate": 0.272727,
+        "lossRate": 0.318182,
+        "noLossRate": 0.681818,
+        "legacyScore50": 0.545455
+      },
+      "l1Metrics": {
+        "w": 110,
+        "d": 50,
+        "l": 40,
+        "n": 200,
+        "primaryScore70": 0.725,
+        "winRate": 0.55,
+        "drawRate": 0.25,
+        "lossRate": 0.2,
+        "noLossRate": 0.8,
+        "legacyScore50": 0.675
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -1084,7 +1244,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_jungle:formation_transform:0",
@@ -1095,12 +1256,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 70,
+        "d": 40,
+        "l": 0,
+        "n": 110,
+        "primaryScore70": 0.890909,
+        "winRate": 0.636364,
+        "drawRate": 0.363636,
+        "lossRate": 0,
+        "noLossRate": 1,
+        "legacyScore50": 0.818182
+      },
+      "l1Metrics": {
+        "w": 130,
+        "d": 50,
+        "l": 20,
+        "n": 200,
+        "primaryScore70": 0.825,
+        "winRate": 0.65,
+        "drawRate": 0.25,
+        "lossRate": 0.1,
+        "noLossRate": 0.9,
+        "legacyScore50": 0.775
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -1116,7 +1299,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:formation_transform:c0_flip",
@@ -1132,28 +1316,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 10,
-        "d": 60,
-        "l": 40,
+        "w": 35,
+        "d": 30,
+        "l": 45,
         "n": 110,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "primaryScore70": 0.509091,
+        "winRate": 0.318182,
+        "drawRate": 0.272727,
+        "lossRate": 0.409091,
+        "noLossRate": 0.590909,
+        "legacyScore50": 0.454545
       },
       "l1Metrics": {
-        "w": 20,
-        "d": 120,
-        "l": 80,
-        "n": 220,
-        "primaryScore70": 0.472727,
-        "winRate": 0.090909,
-        "drawRate": 0.545455,
-        "lossRate": 0.363636,
-        "noLossRate": 0.636364,
-        "legacyScore50": 0.363636
+        "w": 55,
+        "d": 70,
+        "l": 75,
+        "n": 200,
+        "primaryScore70": 0.52,
+        "winRate": 0.275,
+        "drawRate": 0.35,
+        "lossRate": 0.375,
+        "noLossRate": 0.625,
+        "legacyScore50": 0.45
       },
       "l3Metrics": {
         "w": 8,
@@ -1170,7 +1354,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "STRICT DOWNGRADE: Low L1 Score70 (37.0%) < 45.0%, demoted to T3 reserve",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:strategy_schedule_branch:c0_side2",
@@ -1179,7 +1364,7 @@
       "canonicalFingerprint": "7669c0c161540334f5a5f00f",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
@@ -1221,9 +1406,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "STRICT DOWNGRADE: Low L1 Score70 (39.5%) < 45.0%, demoted to T3 reserve",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1235,33 +1420,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T1",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 60,
-        "d": 25,
-        "l": 25,
+        "w": 35,
+        "d": 35,
+        "l": 40,
         "n": 110,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "primaryScore70": 0.540909,
+        "winRate": 0.318182,
+        "drawRate": 0.318182,
+        "lossRate": 0.363636,
+        "noLossRate": 0.636364,
+        "legacyScore50": 0.477273
       },
       "l1Metrics": {
-        "w": 120,
-        "d": 50,
-        "l": 50,
-        "n": 220,
-        "primaryScore70": 0.704545,
-        "winRate": 0.545455,
-        "drawRate": 0.227273,
-        "lossRate": 0.227273,
-        "noLossRate": 0.772727,
-        "legacyScore50": 0.659091
+        "w": 75,
+        "d": 55,
+        "l": 70,
+        "n": 200,
+        "primaryScore70": 0.5675,
+        "winRate": 0.375,
+        "drawRate": 0.275,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.5125
       },
       "l3Metrics": {
         "w": 8,
@@ -1278,7 +1463,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (66.1%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:nutsavior:formation_transform:c0_flip",
@@ -1289,12 +1475,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 50,
+        "d": 15,
+        "l": 45,
+        "n": 110,
+        "primaryScore70": 0.55,
+        "winRate": 0.454545,
+        "drawRate": 0.136364,
+        "lossRate": 0.409091,
+        "noLossRate": 0.590909,
+        "legacyScore50": 0.522727
+      },
+      "l1Metrics": {
+        "w": 120,
+        "d": 25,
+        "l": 55,
+        "n": 200,
+        "primaryScore70": 0.6875,
+        "winRate": 0.6,
+        "drawRate": 0.125,
+        "lossRate": 0.275,
+        "noLossRate": 0.725,
+        "legacyScore50": 0.6625
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -1310,7 +1518,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:nutsavior:strategy_schedule_branch:c0_side2",
@@ -1319,7 +1528,7 @@
       "canonicalFingerprint": "63e8f4669eb2d55e156b1add",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T1",
@@ -1361,9 +1570,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1373,7 +1582,7 @@
       "canonicalFingerprint": "9b732372c0e17c233566b043",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T3",
@@ -1415,9 +1624,9 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 2,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 9b732372c0e17c233566b043)",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1434,28 +1643,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
+        "w": 40,
         "d": 15,
-        "l": 45,
+        "l": 55,
         "n": 110,
-        "primaryScore70": 0.55,
-        "winRate": 0.454545,
+        "primaryScore70": 0.459091,
+        "winRate": 0.363636,
         "drawRate": 0.136364,
-        "lossRate": 0.409091,
-        "noLossRate": 0.590909,
-        "legacyScore50": 0.522727
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.431818
       },
       "l1Metrics": {
-        "w": 100,
-        "d": 30,
-        "l": 90,
-        "n": 220,
-        "primaryScore70": 0.55,
-        "winRate": 0.454545,
-        "drawRate": 0.136364,
-        "lossRate": 0.409091,
-        "noLossRate": 0.590909,
-        "legacyScore50": 0.522727
+        "w": 85,
+        "d": 35,
+        "l": 80,
+        "n": 200,
+        "primaryScore70": 0.5475,
+        "winRate": 0.425,
+        "drawRate": 0.175,
+        "lossRate": 0.4,
+        "noLossRate": 0.6,
+        "legacyScore50": 0.5125
       },
       "l3Metrics": {
         "w": 5,
@@ -1472,7 +1681,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 2,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2rush:strategy_schedule_branch:c0_side2",
@@ -1481,7 +1691,7 @@
       "canonicalFingerprint": "38fcaf37f6c873df14059030",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -1501,9 +1711,9 @@
         "noLossRate": 0.5,
         "legacyScore50": 0.5
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1513,7 +1723,7 @@
       "canonicalFingerprint": "44e3fc54f51006e3c41848b7",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -1533,9 +1743,9 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 44e3fc54f51006e3c41848b7)",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1551,7 +1761,18 @@
       "previousTier": "T2",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 30,
+        "d": 15,
+        "l": 65,
+        "n": 110,
+        "primaryScore70": 0.368182,
+        "winRate": 0.272727,
+        "drawRate": 0.136364,
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.340909
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -1568,7 +1789,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:formation_transform:c0_flip",
@@ -1583,7 +1805,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 40,
+        "d": 5,
+        "l": 65,
+        "n": 110,
+        "primaryScore70": 0.395455,
+        "winRate": 0.363636,
+        "drawRate": 0.045455,
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.386364
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -1600,7 +1833,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:strategy_schedule_branch:c0_side2",
@@ -1609,7 +1843,7 @@
       "canonicalFingerprint": "75f7e220a935f2dd90a12ac4",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -1629,9 +1863,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1643,12 +1877,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 50,
+        "d": 45,
+        "l": 15,
+        "n": 110,
+        "primaryScore70": 0.740909,
+        "winRate": 0.454545,
+        "drawRate": 0.409091,
+        "lossRate": 0.136364,
+        "noLossRate": 0.863636,
+        "legacyScore50": 0.659091
+      },
+      "l1Metrics": {
+        "w": 75,
+        "d": 80,
+        "l": 45,
+        "n": 200,
+        "primaryScore70": 0.655,
+        "winRate": 0.375,
+        "drawRate": 0.4,
+        "lossRate": 0.225,
+        "noLossRate": 0.775,
+        "legacyScore50": 0.575
+      },
       "l3Metrics": {
         "w": 6,
         "d": 0,
@@ -1664,7 +1920,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:formation_transform:c0_flip",
@@ -1675,11 +1932,22 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 25,
+        "d": 35,
+        "l": 50,
+        "n": 110,
+        "primaryScore70": 0.45,
+        "winRate": 0.227273,
+        "drawRate": 0.318182,
+        "lossRate": 0.454545,
+        "noLossRate": 0.545455,
+        "legacyScore50": 0.386364
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -1696,7 +1964,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:strategy_schedule_branch:c0_side2",
@@ -1705,7 +1974,7 @@
       "canonicalFingerprint": "73a659c494e642c65c9c2195",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -1725,9 +1994,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1744,10 +2013,10 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 60,
-        "d": 40,
-        "l": 120,
-        "n": 220,
+        "w": 30,
+        "d": 20,
+        "l": 60,
+        "n": 110,
         "primaryScore70": 0.4,
         "winRate": 0.272727,
         "drawRate": 0.181818,
@@ -1782,7 +2051,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "STRICT DOWNGRADE: Low L1 Score70 (40.7%) < 45.0%, demoted to T3 reserve",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:suqing:formation_transform:c0_flip",
@@ -1798,28 +2068,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 40,
-        "d": 35,
-        "l": 35,
+        "w": 45,
+        "d": 15,
+        "l": 50,
         "n": 110,
-        "primaryScore70": 0.586364,
-        "winRate": 0.363636,
-        "drawRate": 0.318182,
-        "lossRate": 0.318182,
-        "noLossRate": 0.681818,
-        "legacyScore50": 0.522727
+        "primaryScore70": 0.504545,
+        "winRate": 0.409091,
+        "drawRate": 0.136364,
+        "lossRate": 0.454545,
+        "noLossRate": 0.545455,
+        "legacyScore50": 0.477273
       },
       "l1Metrics": {
-        "w": 80,
-        "d": 70,
-        "l": 70,
-        "n": 220,
-        "primaryScore70": 0.586364,
-        "winRate": 0.363636,
-        "drawRate": 0.318182,
-        "lossRate": 0.318182,
-        "noLossRate": 0.681818,
-        "legacyScore50": 0.522727
+        "w": 85,
+        "d": 30,
+        "l": 75,
+        "n": 190,
+        "primaryScore70": 0.557895,
+        "winRate": 0.447368,
+        "drawRate": 0.157895,
+        "lossRate": 0.394737,
+        "noLossRate": 0.605263,
+        "legacyScore50": 0.526316
       },
       "l3Metrics": {
         "w": 8,
@@ -1836,7 +2106,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (46.8%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:suqing:strategy_schedule_branch:c0_side2",
@@ -1845,7 +2116,7 @@
       "canonicalFingerprint": "6583ac7d62e2f06fff9e44e3",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -1865,9 +2136,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1877,7 +2148,7 @@
       "canonicalFingerprint": "88c2a571ebd0085cb7bed8d8",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T2",
@@ -1897,9 +2168,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 88c2a571ebd0085cb7bed8d8)",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1915,7 +2186,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 35,
+        "d": 0,
+        "l": 75,
+        "n": 110,
+        "primaryScore70": 0.318182,
+        "winRate": 0.318182,
+        "drawRate": 0,
+        "lossRate": 0.681818,
+        "noLossRate": 0.318182,
+        "legacyScore50": 0.318182
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -1932,7 +2214,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.933Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:laddersel:strategy_schedule_branch:c0_side2",
@@ -1941,7 +2224,7 @@
       "canonicalFingerprint": "04b174228019f9d8607eacf4",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -1961,9 +2244,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -1975,11 +2258,22 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 30,
+        "d": 30,
+        "l": 50,
+        "n": 110,
+        "primaryScore70": 0.463636,
+        "winRate": 0.272727,
+        "drawRate": 0.272727,
+        "lossRate": 0.454545,
+        "noLossRate": 0.545455,
+        "legacyScore50": 0.409091
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -1996,7 +2290,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:strategy_schedule_branch:c0_side2",
@@ -2005,7 +2300,7 @@
       "canonicalFingerprint": "bae67ed80e3f4990284f3398",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -2025,9 +2320,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2044,28 +2339,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 40,
-        "d": 15,
-        "l": 55,
+        "w": 60,
+        "d": 10,
+        "l": 40,
         "n": 110,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
-        "lossRate": 0.5,
-        "noLossRate": 0.5,
-        "legacyScore50": 0.431818
+        "primaryScore70": 0.609091,
+        "winRate": 0.545455,
+        "drawRate": 0.090909,
+        "lossRate": 0.363636,
+        "noLossRate": 0.636364,
+        "legacyScore50": 0.590909
       },
       "l1Metrics": {
-        "w": 75,
+        "w": 80,
         "d": 30,
-        "l": 105,
-        "n": 210,
-        "primaryScore70": 0.457143,
-        "winRate": 0.357143,
-        "drawRate": 0.142857,
-        "lossRate": 0.5,
-        "noLossRate": 0.5,
-        "legacyScore50": 0.428571
+        "l": 90,
+        "n": 200,
+        "primaryScore70": 0.505,
+        "winRate": 0.4,
+        "drawRate": 0.15,
+        "lossRate": 0.45,
+        "noLossRate": 0.55,
+        "legacyScore50": 0.475
       },
       "l3Metrics": {
         "w": 8,
@@ -2082,7 +2377,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (64.5%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_savior:strategy_schedule_branch:c0_side2",
@@ -2091,7 +2387,7 @@
       "canonicalFingerprint": "6c042d7a10fc7b36e64eaf50",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
@@ -2133,9 +2429,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (53.4%) in [45.0%, 70.0%) main force",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2147,12 +2443,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 70,
+        "d": 15,
+        "l": 25,
+        "n": 110,
+        "primaryScore70": 0.731818,
+        "winRate": 0.636364,
+        "drawRate": 0.136364,
+        "lossRate": 0.227273,
+        "noLossRate": 0.772727,
+        "legacyScore50": 0.704545
+      },
+      "l1Metrics": {
+        "w": 145,
+        "d": 30,
+        "l": 25,
+        "n": 200,
+        "primaryScore70": 0.83,
+        "winRate": 0.725,
+        "drawRate": 0.15,
+        "lossRate": 0.125,
+        "noLossRate": 0.875,
+        "legacyScore50": 0.8
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -2168,7 +2486,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:golden_boom:strategy_schedule_branch:c0_side2",
@@ -2177,7 +2496,7 @@
       "canonicalFingerprint": "6f4149b78012969de189eb5e",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T1",
@@ -2219,9 +2538,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (78.6%) >= 70.0% top elite",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2238,28 +2557,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
-        "d": 30,
-        "l": 30,
+        "w": 35,
+        "d": 40,
+        "l": 35,
         "n": 110,
-        "primaryScore70": 0.645455,
-        "winRate": 0.454545,
-        "drawRate": 0.272727,
-        "lossRate": 0.272727,
-        "noLossRate": 0.727273,
-        "legacyScore50": 0.590909
+        "primaryScore70": 0.572727,
+        "winRate": 0.318182,
+        "drawRate": 0.363636,
+        "lossRate": 0.318182,
+        "noLossRate": 0.681818,
+        "legacyScore50": 0.5
       },
       "l1Metrics": {
-        "w": 100,
+        "w": 70,
         "d": 60,
-        "l": 60,
-        "n": 220,
-        "primaryScore70": 0.645455,
-        "winRate": 0.454545,
-        "drawRate": 0.272727,
-        "lossRate": 0.272727,
-        "noLossRate": 0.727273,
-        "legacyScore50": 0.590909
+        "l": 70,
+        "n": 200,
+        "primaryScore70": 0.56,
+        "winRate": 0.35,
+        "drawRate": 0.3,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.5
       },
       "l3Metrics": {
         "w": 8,
@@ -2276,7 +2595,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (51.1%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_jungle:strategy_schedule_branch:c0_side2",
@@ -2285,7 +2605,7 @@
       "canonicalFingerprint": "51d220a9fe68d6b4037397f6",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -2305,9 +2625,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2371,7 +2691,7 @@
       "canonicalFingerprint": "ae995f93d5914195733156ad",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
@@ -2413,9 +2733,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "STRICT DOWNGRADE: Low L1 Score70 (39.5%) < 45.0%, demoted to T3 reserve",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2431,7 +2751,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 30,
+        "d": 25,
+        "l": 55,
+        "n": 110,
+        "primaryScore70": 0.431818,
+        "winRate": 0.272727,
+        "drawRate": 0.227273,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.386364
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -2448,7 +2779,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:nutsavior:formation_transform:c1_flip",
@@ -2489,7 +2821,7 @@
       "canonicalFingerprint": "8e194c28d733ed5f6d806627",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T1",
@@ -2531,9 +2863,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (75.5%) >= 70.0% top elite",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2543,7 +2875,7 @@
       "canonicalFingerprint": "7d98900fac15c681b77904f0",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -2563,9 +2895,9 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 7d98900fac15c681b77904f0)",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2607,7 +2939,7 @@
       "canonicalFingerprint": "ecf31434e77b72f6fed4a007",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -2627,9 +2959,9 @@
         "noLossRate": 0.5,
         "legacyScore50": 0.5
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2641,11 +2973,22 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 50,
+        "d": 5,
+        "l": 55,
+        "n": 110,
+        "primaryScore70": 0.486364,
+        "winRate": 0.454545,
+        "drawRate": 0.045455,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.477273
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 3,
@@ -2662,7 +3005,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:spatial_local:c1_117",
@@ -2677,7 +3021,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 20,
+        "d": 10,
+        "l": 80,
+        "n": 110,
+        "primaryScore70": 0.245455,
+        "winRate": 0.181818,
+        "drawRate": 0.090909,
+        "lossRate": 0.727273,
+        "noLossRate": 0.272727,
+        "legacyScore50": 0.227273
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 8,
@@ -2694,7 +3049,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (96.4%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:formation_transform:c1_flip",
@@ -2735,7 +3091,7 @@
       "canonicalFingerprint": "7fd39e5bca1d8667b52bd3ab",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -2755,9 +3111,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2769,12 +3125,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 45,
+        "d": 35,
+        "l": 30,
+        "n": 110,
+        "primaryScore70": 0.631818,
+        "winRate": 0.409091,
+        "drawRate": 0.318182,
+        "lossRate": 0.272727,
+        "noLossRate": 0.727273,
+        "legacyScore50": 0.568182
+      },
+      "l1Metrics": {
+        "w": 70,
+        "d": 75,
+        "l": 55,
+        "n": 200,
+        "primaryScore70": 0.6125,
+        "winRate": 0.35,
+        "drawRate": 0.375,
+        "lossRate": 0.275,
+        "noLossRate": 0.725,
+        "legacyScore50": 0.5375
+      },
       "l3Metrics": {
         "w": 5,
         "d": 0,
@@ -2790,7 +3168,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "Candidate below threshold, assigned to T3",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:formation_transform:c1_flip",
@@ -2831,7 +3210,7 @@
       "canonicalFingerprint": "63f43e23dbc31e945488a9fd",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -2851,9 +3230,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -2870,10 +3249,10 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
-        "d": 30,
-        "l": 140,
-        "n": 220,
+        "w": 25,
+        "d": 15,
+        "l": 70,
+        "n": 110,
         "primaryScore70": 0.322727,
         "winRate": 0.227273,
         "drawRate": 0.136364,
@@ -2908,7 +3287,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "STRICT DOWNGRADE: Low L1 Score70 (30.5%) < 45.0%, demoted to T3 reserve",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:suqing:formation_transform:c1_flip",
@@ -2971,7 +3351,7 @@
       "canonicalFingerprint": "b024e88f121e66b85bd638be",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -2991,9 +3371,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3003,7 +3383,7 @@
       "canonicalFingerprint": "0446258c120e624ca677ee7b",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -3023,9 +3403,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 0446258c120e624ca677ee7b)",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3067,7 +3447,7 @@
       "canonicalFingerprint": "c952bae8bff6b6538b0c1e0f",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -3087,9 +3467,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3131,7 +3511,7 @@
       "canonicalFingerprint": "8ca2469f2934bd82159ce478",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -3151,9 +3531,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 1,
-      "regradeReason": "Candidate below threshold, assigned to T3",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3217,7 +3597,7 @@
       "canonicalFingerprint": "6bb5ebb1e09e7a8e5da1a97e",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T1",
@@ -3259,9 +3639,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (53.4%) in [45.0%, 70.0%) main force",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3303,7 +3683,7 @@
       "canonicalFingerprint": "510f4c266210dcc89cec186d",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T1",
@@ -3345,9 +3725,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Verified L1 Score70 (78.6%) >= 70.0% top elite",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3411,7 +3791,7 @@
       "canonicalFingerprint": "8b1fa85bf92585456e4278af",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T1",
@@ -3431,9 +3811,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "L3 candidate score (85.7%) qualifies for T2",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T07:41:40.758Z"
     },
     {
@@ -3449,7 +3829,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 25,
+        "d": 20,
+        "l": 65,
+        "n": 110,
+        "primaryScore70": 0.354545,
+        "winRate": 0.227273,
+        "drawRate": 0.181818,
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.318182
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -3466,7 +3857,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:spatial_local:c0_115",
@@ -3482,16 +3874,16 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 15,
-        "d": 30,
-        "l": 65,
+        "w": 25,
+        "d": 25,
+        "l": 60,
         "n": 110,
-        "primaryScore70": 0.327273,
-        "winRate": 0.136364,
-        "drawRate": 0.272727,
-        "lossRate": 0.590909,
-        "noLossRate": 0.409091,
-        "legacyScore50": 0.272727
+        "primaryScore70": 0.386364,
+        "winRate": 0.227273,
+        "drawRate": 0.227273,
+        "lossRate": 0.545455,
+        "noLossRate": 0.454545,
+        "legacyScore50": 0.340909
       },
       "l1Metrics": {
         "w": 25,
@@ -3520,7 +3912,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (48.4%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_savior:spatial_local:c0_110",
@@ -3535,7 +3928,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 30,
+        "d": 10,
+        "l": 70,
+        "n": 110,
+        "primaryScore70": 0.336364,
+        "winRate": 0.272727,
+        "drawRate": 0.090909,
+        "lossRate": 0.636364,
+        "noLossRate": 0.363636,
+        "legacyScore50": 0.318182
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -3552,7 +3956,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (92.9%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:golden_boom:spatial_local:c0_110",
@@ -3563,12 +3968,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 75,
+        "d": 10,
+        "l": 25,
+        "n": 110,
+        "primaryScore70": 0.745455,
+        "winRate": 0.681818,
+        "drawRate": 0.090909,
+        "lossRate": 0.227273,
+        "noLossRate": 0.772727,
+        "legacyScore50": 0.727273
+      },
+      "l1Metrics": {
+        "w": 145,
+        "d": 20,
+        "l": 35,
+        "n": 200,
+        "primaryScore70": 0.795,
+        "winRate": 0.725,
+        "drawRate": 0.1,
+        "lossRate": 0.175,
+        "noLossRate": 0.825,
+        "legacyScore50": 0.775
+      },
       "l3Metrics": {
         "w": 8,
         "d": 0,
@@ -3584,7 +4011,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (97.6%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_jungle:spatial_local:c0_110",
@@ -3595,12 +4023,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 40,
+        "d": 25,
+        "l": 45,
+        "n": 110,
+        "primaryScore70": 0.522727,
+        "winRate": 0.363636,
+        "drawRate": 0.227273,
+        "lossRate": 0.409091,
+        "noLossRate": 0.590909,
+        "legacyScore50": 0.477273
+      },
+      "l1Metrics": {
+        "w": 105,
+        "d": 35,
+        "l": 60,
+        "n": 200,
+        "primaryScore70": 0.6475,
+        "winRate": 0.525,
+        "drawRate": 0.175,
+        "lossRate": 0.3,
+        "noLossRate": 0.7,
+        "legacyScore50": 0.6125
+      },
       "l3Metrics": {
         "w": 8,
         "d": 0,
@@ -3616,7 +4066,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (95.2%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:spatial_local:c1_105",
@@ -3631,7 +4082,18 @@
       "previousTier": "T1",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 10,
+        "d": 20,
+        "l": 80,
+        "n": 110,
+        "primaryScore70": 0.218182,
+        "winRate": 0.090909,
+        "drawRate": 0.181818,
+        "lossRate": 0.727273,
+        "noLossRate": 0.272727,
+        "legacyScore50": 0.181818
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 7,
@@ -3648,7 +4110,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "L3 candidate score (89.3%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:spatial_local:c1_108",
@@ -3664,16 +4127,16 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 15,
+        "w": 20,
         "d": 30,
-        "l": 65,
+        "l": 60,
         "n": 110,
-        "primaryScore70": 0.327273,
-        "winRate": 0.136364,
+        "primaryScore70": 0.372727,
+        "winRate": 0.181818,
         "drawRate": 0.272727,
-        "lossRate": 0.590909,
-        "noLossRate": 0.409091,
-        "legacyScore50": 0.272727
+        "lossRate": 0.545455,
+        "noLossRate": 0.454545,
+        "legacyScore50": 0.318182
       },
       "l1Metrics": {
         "w": 30,
@@ -3702,7 +4165,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (46.1%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_savior:spatial_local:c1_116",
@@ -3718,28 +4182,28 @@
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 40,
-        "d": 15,
-        "l": 55,
+        "w": 45,
+        "d": 20,
+        "l": 45,
         "n": 110,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
-        "lossRate": 0.5,
-        "noLossRate": 0.5,
-        "legacyScore50": 0.431818
+        "primaryScore70": 0.536364,
+        "winRate": 0.409091,
+        "drawRate": 0.181818,
+        "lossRate": 0.409091,
+        "noLossRate": 0.590909,
+        "legacyScore50": 0.5
       },
       "l1Metrics": {
-        "w": 80,
-        "d": 30,
-        "l": 110,
-        "n": 220,
-        "primaryScore70": 0.459091,
-        "winRate": 0.363636,
-        "drawRate": 0.136364,
-        "lossRate": 0.5,
-        "noLossRate": 0.5,
-        "legacyScore50": 0.431818
+        "w": 75,
+        "d": 40,
+        "l": 75,
+        "n": 190,
+        "primaryScore70": 0.542105,
+        "winRate": 0.394737,
+        "drawRate": 0.210526,
+        "lossRate": 0.394737,
+        "noLossRate": 0.605263,
+        "legacyScore50": 0.5
       },
       "l3Metrics": {
         "w": 8,
@@ -3756,7 +4220,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Verified L1 Score70 (59.3%) in [45.0%, 70.0%) main force",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.934Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:golden_boom:spatial_local:c1_105",
@@ -3767,12 +4232,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T1",
       "previousTier": "T2",
       "activeLibraryRevision": "v4.4.0-clean-eval-engine-ladder",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 75,
+        "d": 15,
+        "l": 20,
+        "n": 110,
+        "primaryScore70": 0.777273,
+        "winRate": 0.681818,
+        "drawRate": 0.136364,
+        "lossRate": 0.181818,
+        "noLossRate": 0.818182,
+        "legacyScore50": 0.75
+      },
+      "l1Metrics": {
+        "w": 160,
+        "d": 15,
+        "l": 25,
+        "n": 200,
+        "primaryScore70": 0.8525,
+        "winRate": 0.8,
+        "drawRate": 0.075,
+        "lossRate": 0.125,
+        "noLossRate": 0.875,
+        "legacyScore50": 0.8375
+      },
       "l3Metrics": {
         "w": 7,
         "d": 0,
@@ -3788,7 +4275,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 1,
       "regradeReason": "L3 candidate score (82.1%) qualifies for T2",
-      "updatedAt": "2026-08-20T07:41:40.758Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:multi_monster_exploration:c0_coor",
@@ -3797,7 +4285,7 @@
       "canonicalFingerprint": "449ae4f827c84f5d2fca6c5f",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -3817,9 +4305,9 @@
         "noLossRate": 0.1875,
         "legacyScore50": 0.1875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 0 Candidate Evaluation (L3: 17.5%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 449ae4f827c84f5d2fca6c5f)",
       "updatedAt": "2026-08-20T08:23:29.572Z"
     },
     {
@@ -3829,7 +4317,7 @@
       "canonicalFingerprint": "73e2dab7540bfd0cd9c702b0",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -3849,9 +4337,9 @@
         "noLossRate": 0.375,
         "legacyScore50": 0.375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 0 Candidate Evaluation (L3: 38.1%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 73e2dab7540bfd0cd9c702b0)",
       "updatedAt": "2026-08-20T08:23:34.224Z"
     },
     {
@@ -3861,7 +4349,7 @@
       "canonicalFingerprint": "52a79a2c579547b952916dda",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T3",
@@ -3903,9 +4391,9 @@
         "noLossRate": 0.84375,
         "legacyScore50": 0.84375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 0 Candidate Evaluation (L3: 84.4%, L2: 83.2%, L1: -)",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 52a79a2c579547b952916dda)",
       "updatedAt": "2026-08-20T08:24:30.499Z"
     },
     {
@@ -3915,7 +4403,7 @@
       "canonicalFingerprint": "dffa963a7e2209219f40f2dd",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -3935,9 +4423,9 @@
         "noLossRate": 0.5625,
         "legacyScore50": 0.5625
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 0 Candidate Evaluation (L3: 56.3%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: dffa963a7e2209219f40f2dd)",
       "updatedAt": "2026-08-20T08:24:34.175Z"
     },
     {
@@ -3947,7 +4435,7 @@
       "canonicalFingerprint": "78d4cd8e758ec16343be97d0",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -3967,9 +4455,9 @@
         "noLossRate": 0.53125,
         "legacyScore50": 0.53125
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 0 Candidate Evaluation (L3: 54.4%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: No valid lineage or exact snapshot recoverable (fp: 78d4cd8e758ec16343be97d0)",
       "updatedAt": "2026-08-20T08:24:38.454Z"
     },
     {
@@ -3998,16 +4486,16 @@
         "legacyScore50": 0.363636
       },
       "l1Metrics": {
-        "w": 20,
-        "d": 110,
-        "l": 80,
-        "n": 210,
-        "primaryScore70": 0.461905,
-        "winRate": 0.095238,
-        "drawRate": 0.52381,
-        "lossRate": 0.380952,
-        "noLossRate": 0.619048,
-        "legacyScore50": 0.357143
+        "w": 35,
+        "d": 95,
+        "l": 70,
+        "n": 200,
+        "primaryScore70": 0.5075,
+        "winRate": 0.175,
+        "drawRate": 0.475,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.4125
       },
       "l3Metrics": {
         "w": 32,
@@ -4024,7 +4512,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 97.3%, L1: 100.0%)",
-      "updatedAt": "2026-08-20T08:38:15.797Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:springsword:strategy_schedule_branch:c2_side2",
@@ -4033,7 +4522,7 @@
       "canonicalFingerprint": "811b0c2bd3dc92a75a56bc62",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T3",
@@ -4075,9 +4564,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 97.3%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.797Z"
     },
     {
@@ -4106,16 +4595,16 @@
         "legacyScore50": 0.659091
       },
       "l1Metrics": {
-        "w": 115,
-        "d": 50,
+        "w": 105,
+        "d": 40,
         "l": 45,
-        "n": 210,
-        "primaryScore70": 0.714286,
-        "winRate": 0.547619,
-        "drawRate": 0.238095,
-        "lossRate": 0.214286,
-        "noLossRate": 0.785714,
-        "legacyScore50": 0.666667
+        "n": 190,
+        "primaryScore70": 0.7,
+        "winRate": 0.552632,
+        "drawRate": 0.210526,
+        "lossRate": 0.236842,
+        "noLossRate": 0.763158,
+        "legacyScore50": 0.657895
       },
       "l3Metrics": {
         "w": 32,
@@ -4132,7 +4621,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 85.0%, L1: 100.0%)",
-      "updatedAt": "2026-08-20T08:38:15.797Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:nutsavior:strategy_schedule_branch:c2_side2",
@@ -4141,7 +4631,7 @@
       "canonicalFingerprint": "901f61f8b4cde1a5dafd4665",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T3",
@@ -4183,9 +4673,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 85.0%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.797Z"
     },
     {
@@ -4195,7 +4685,7 @@
       "canonicalFingerprint": "07eea728d393d7526859faec",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -4215,9 +4705,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.75
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 75.0%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.797Z"
     },
     {
@@ -4234,16 +4724,16 @@
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 30,
-        "d": 20,
-        "l": 60,
+        "w": 5,
+        "d": 10,
+        "l": 95,
         "n": 110,
-        "primaryScore70": 0.4,
-        "winRate": 0.272727,
-        "drawRate": 0.181818,
-        "lossRate": 0.545455,
-        "noLossRate": 0.454545,
-        "legacyScore50": 0.363636
+        "primaryScore70": 0.109091,
+        "winRate": 0.045455,
+        "drawRate": 0.090909,
+        "lossRate": 0.863636,
+        "noLossRate": 0.136364,
+        "legacyScore50": 0.090909
       },
       "l1Metrics": {
         "w": 60,
@@ -4272,7 +4762,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 81.3%, L2: 66.8%, L1: -)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:classicsavior:strategy_schedule_branch:c2_side2",
@@ -4281,7 +4772,7 @@
       "canonicalFingerprint": "c27173b7bcf28c058518eb43",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -4323,9 +4814,9 @@
         "noLossRate": 1,
         "legacyScore50": 0.96875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 98.1%, L2: 92.7%, L1: 95.9%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4337,12 +4828,34 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T3",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
-      "l1Metrics": null,
+      "activeL2Metrics": {
+        "w": 45,
+        "d": 30,
+        "l": 35,
+        "n": 110,
+        "primaryScore70": 0.6,
+        "winRate": 0.409091,
+        "drawRate": 0.272727,
+        "lossRate": 0.318182,
+        "noLossRate": 0.681818,
+        "legacyScore50": 0.545455
+      },
+      "l1Metrics": {
+        "w": 70,
+        "d": 60,
+        "l": 70,
+        "n": 200,
+        "primaryScore70": 0.56,
+        "winRate": 0.35,
+        "drawRate": 0.3,
+        "lossRate": 0.35,
+        "noLossRate": 0.65,
+        "legacyScore50": 0.5
+      },
       "l3Metrics": {
         "w": 18,
         "d": 4,
@@ -4358,7 +4871,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 65.0%, L2: -, L1: -)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:all2prayer:strategy_schedule_branch:c2_side2",
@@ -4367,7 +4881,7 @@
       "canonicalFingerprint": "62f7bf4fcbf161b288586cdf",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -4387,9 +4901,9 @@
         "noLossRate": 0.8125,
         "legacyScore50": 0.71875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 75.6%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4407,27 +4921,27 @@
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
         "w": 40,
-        "d": 35,
-        "l": 35,
+        "d": 15,
+        "l": 55,
         "n": 110,
-        "primaryScore70": 0.586364,
+        "primaryScore70": 0.459091,
         "winRate": 0.363636,
-        "drawRate": 0.318182,
-        "lossRate": 0.318182,
-        "noLossRate": 0.681818,
-        "legacyScore50": 0.522727
+        "drawRate": 0.136364,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.431818
       },
       "l1Metrics": {
-        "w": 80,
-        "d": 60,
-        "l": 70,
-        "n": 210,
-        "primaryScore70": 0.580952,
-        "winRate": 0.380952,
-        "drawRate": 0.285714,
-        "lossRate": 0.333333,
-        "noLossRate": 0.666667,
-        "legacyScore50": 0.52381
+        "w": 65,
+        "d": 35,
+        "l": 100,
+        "n": 200,
+        "primaryScore70": 0.4475,
+        "winRate": 0.325,
+        "drawRate": 0.175,
+        "lossRate": 0.5,
+        "noLossRate": 0.5,
+        "legacyScore50": 0.4125
       },
       "l3Metrics": {
         "w": 28,
@@ -4444,7 +4958,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 91.9%, L2: 85.5%, L1: 100.0%)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:suqing:strategy_schedule_branch:c2_side2",
@@ -4453,7 +4968,7 @@
       "canonicalFingerprint": "3b28e3037787791cb6ecaed8",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T3",
@@ -4495,9 +5010,9 @@
         "noLossRate": 1,
         "legacyScore50": 0.9375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 96.3%, L2: 79.1%, L1: -)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4507,7 +5022,7 @@
       "canonicalFingerprint": "f8ac388df96a38806a342905",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -4549,9 +5064,9 @@
         "noLossRate": 0.9375,
         "legacyScore50": 0.9375
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 93.8%, L2: 85.0%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4567,7 +5082,18 @@
       "previousTier": "T3",
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 10,
+        "d": 35,
+        "l": 65,
+        "n": 110,
+        "primaryScore70": 0.313636,
+        "winRate": 0.090909,
+        "drawRate": 0.318182,
+        "lossRate": 0.590909,
+        "noLossRate": 0.409091,
+        "legacyScore50": 0.25
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 22,
@@ -4584,7 +5110,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 77.5%, L2: -, L1: -)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:spade_multi:strategy_schedule_branch:c2_side2",
@@ -4593,7 +5120,7 @@
       "canonicalFingerprint": "8e3bda90b8da16224c418389",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T3",
       "previousTier": "T3",
@@ -4613,9 +5140,9 @@
         "noLossRate": 0.75,
         "legacyScore50": 0.71875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 73.1%, L2: -, L1: -)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4631,7 +5158,18 @@
       "previousTier": "T3",
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
-      "activeL2Metrics": null,
+      "activeL2Metrics": {
+        "w": 30,
+        "d": 20,
+        "l": 60,
+        "n": 110,
+        "primaryScore70": 0.4,
+        "winRate": 0.272727,
+        "drawRate": 0.181818,
+        "lossRate": 0.545455,
+        "noLossRate": 0.454545,
+        "legacyScore50": 0.363636
+      },
       "l1Metrics": null,
       "l3Metrics": {
         "w": 24,
@@ -4648,7 +5186,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 75.0%, L2: -, L1: -)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_savior:strategy_schedule_branch:c2_side2",
@@ -4657,7 +5196,7 @@
       "canonicalFingerprint": "4639a78dda279190a2e17b5d",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T3",
@@ -4699,9 +5238,9 @@
         "noLossRate": 0.875,
         "legacyScore50": 0.875
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 87.5%, L2: 86.8%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4713,33 +5252,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T1",
+      "currentDynamicTier": "T2",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 75,
+        "w": 55,
         "d": 15,
-        "l": 20,
+        "l": 40,
         "n": 110,
-        "primaryScore70": 0.777273,
-        "winRate": 0.681818,
+        "primaryScore70": 0.595455,
+        "winRate": 0.5,
         "drawRate": 0.136364,
-        "lossRate": 0.181818,
-        "noLossRate": 0.818182,
-        "legacyScore50": 0.75
+        "lossRate": 0.363636,
+        "noLossRate": 0.636364,
+        "legacyScore50": 0.568182
       },
       "l1Metrics": {
-        "w": 145,
-        "d": 30,
-        "l": 35,
-        "n": 210,
-        "primaryScore70": 0.790476,
-        "winRate": 0.690476,
-        "drawRate": 0.142857,
-        "lossRate": 0.166667,
-        "noLossRate": 0.833333,
-        "legacyScore50": 0.761905
+        "w": 110,
+        "d": 20,
+        "l": 60,
+        "n": 190,
+        "primaryScore70": 0.652632,
+        "winRate": 0.578947,
+        "drawRate": 0.105263,
+        "lossRate": 0.315789,
+        "noLossRate": 0.684211,
+        "legacyScore50": 0.631579
       },
       "l3Metrics": {
         "w": 30,
@@ -4756,7 +5295,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 98.1%, L2: 98.6%, L1: 100.0%)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:golden_boom:strategy_schedule_branch:c2_side2",
@@ -4765,7 +5305,7 @@
       "canonicalFingerprint": "276a8c013dd534b088418d15",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T1",
       "previousTier": "T3",
@@ -4807,9 +5347,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 100.0%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     },
     {
@@ -4821,33 +5361,33 @@
       "activeRoles": [
         "ACTIVE_COMPETITOR"
       ],
-      "currentDynamicTier": "T2",
+      "currentDynamicTier": "T3",
       "previousTier": "T3",
       "activeLibraryRevision": "v4.7.0-cycle-2",
       "activeL2ManifestHash": "5f9556d0b3990743",
       "activeL2Metrics": {
-        "w": 50,
-        "d": 30,
-        "l": 30,
+        "w": 10,
+        "d": 15,
+        "l": 85,
         "n": 110,
-        "primaryScore70": 0.645455,
-        "winRate": 0.454545,
-        "drawRate": 0.272727,
-        "lossRate": 0.272727,
-        "noLossRate": 0.727273,
-        "legacyScore50": 0.590909
+        "primaryScore70": 0.186364,
+        "winRate": 0.090909,
+        "drawRate": 0.136364,
+        "lossRate": 0.772727,
+        "noLossRate": 0.227273,
+        "legacyScore50": 0.159091
       },
       "l1Metrics": {
-        "w": 95,
-        "d": 60,
-        "l": 55,
-        "n": 210,
-        "primaryScore70": 0.652381,
-        "winRate": 0.452381,
-        "drawRate": 0.285714,
-        "lossRate": 0.261905,
-        "noLossRate": 0.738095,
-        "legacyScore50": 0.595238
+        "w": 25,
+        "d": 30,
+        "l": 135,
+        "n": 190,
+        "primaryScore70": 0.242105,
+        "winRate": 0.131579,
+        "drawRate": 0.157895,
+        "lossRate": 0.710526,
+        "noLossRate": 0.289474,
+        "legacyScore50": 0.210526
       },
       "l3Metrics": {
         "w": 26,
@@ -4864,7 +5404,8 @@
       "verificationState": "INDEPENDENT_VERIFIED",
       "l2AttemptsCount": 4,
       "regradeReason": "Cycle 2 Evaluation (L3: 94.4%, L2: 93.2%, L1: 100.0%)",
-      "updatedAt": "2026-08-20T08:38:15.798Z"
+      "updatedAt": "2026-08-20T13:55:36.935Z",
+      "totalAttemptsCount": 1
     },
     {
       "formationId": "cand:gift_jungle:strategy_schedule_branch:c2_side2",
@@ -4873,7 +5414,7 @@
       "canonicalFingerprint": "ef6f8fd813b518daadc70ea3",
       "calculatorPolicyFingerprint": "calc_pol_default_v1",
       "activeRoles": [
-        "ACTIVE_COMPETITOR"
+        "SNAPSHOT_IDENTITY_INVALID_PRE_T053"
       ],
       "currentDynamicTier": "T2",
       "previousTier": "T3",
@@ -4915,9 +5456,9 @@
         "noLossRate": 1,
         "legacyScore50": 1
       },
-      "verificationState": "INDEPENDENT_VERIFIED",
+      "verificationState": "SNAPSHOT_IDENTITY_INVALID",
       "l2AttemptsCount": 4,
-      "regradeReason": "Cycle 2 Evaluation (L3: 100.0%, L2: 97.3%, L1: 100.0%)",
+      "regradeReason": "Quarantined by T053: Missing exact AST branch node specification; generic synthetic reconstruction is forbidden",
       "updatedAt": "2026-08-20T08:38:15.798Z"
     }
   ]

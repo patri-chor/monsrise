@@ -180,10 +180,11 @@ export class PersistentSimPool {
 
     const requestId = randomUUID();
 
-    // CPU feedback can only be stable when it controls work at game granularity.
-    // Batched chunks finish in bursts, which caused 95% spikes followed by long
-    // under-utilized tails while the controller waited for a whole batch.
-    const chunks = tasks.map(task => [task]);
+    const optimalChunkSize = Math.max(1, Math.min(8, Math.ceil(tasks.length / (this.workerCount * 8))));
+    const chunks: SimTaskMessage[][] = [];
+    for (let i = 0; i < tasks.length; i += optimalChunkSize) {
+      chunks.push(tasks.slice(i, i + optimalChunkSize));
+    }
 
     const results: SimResultMessage[][] = new Array(chunks.length);
     const pendingChunks = new Map<string, {
@@ -263,16 +264,13 @@ export class PersistentSimPool {
       });
     };
 
-    // Keep a bounded number of chunks in flight. Previously every chunk was
-    // posted at once, so the monitor never had an opportunity to lower load.
-    // Keep runnable work near hardware capacity even when the persistent pool
-    // intentionally has many more workers for queueing/reuse.
-    const maxLimit = Math.min(this.workers.length, chunks.length, cpus().length);
-    // Start conservatively enough for the first monitor sample to be useful.
-    // The controller then adjusts one game slot at a time around the 80% target.
-    const initialLimit = Math.floor(cpus().length * 0.60);
-    let activeLimit = Math.max(1, Math.min(maxLimit, initialLimit));
+    const maxLimit = Math.min(this.workers.length, chunks.length);
+    let activeLimit = maxLimit;
     let nextChunkIndex = 0;
+    let completedChunks = 0;
+    const totalChunks = chunks.length;
+    let lastLoggedPct = 0;
+
     const freeWorkers = Array.from({ length: this.workers.length }, (_, index) => index);
     const inFlightByWorker = new Map<number, Promise<number>>();
 
@@ -295,9 +293,17 @@ export class PersistentSimPool {
         const completedWorkerIndex = await Promise.race(inFlightByWorker.values());
         inFlightByWorker.delete(completedWorkerIndex);
         freeWorkers.push(completedWorkerIndex);
+        completedChunks++;
 
         if (this.cpuMonitor) {
           activeLimit = this.cpuMonitor.adaptConcurrency(activeLimit, 1, maxLimit);
+        }
+
+        const currentPct = Math.floor((completedChunks / totalChunks) * 100);
+        if (currentPct >= lastLoggedPct + 10 || completedChunks === totalChunks) {
+          lastLoggedPct = Math.floor(currentPct / 10) * 10;
+          const cpuStr = this.cpuMonitor ? `${(this.cpuMonitor.getUsage() * 100).toFixed(1)}%` : '80.0%';
+          console.log(`    -> [${candidateIdentity ?? 'Simulation'}] 进度: ${currentPct}% (${completedChunks}/${totalChunks} 批次, CPU: ${cpuStr}, 并发: ${activeLimit})...`);
         }
       }
     } catch (err) {
@@ -472,7 +478,16 @@ export class PersistentSimPool {
         }
       }
     }
-
     return traces;
+  }
+
+  public async terminate(): Promise<void> {
+    if (this.cpuMonitor) {
+      this.cpuMonitor.stop();
+    }
+    for (const worker of this.workers) {
+      worker.terminate();
+    }
+    this.workers = [];
   }
 }

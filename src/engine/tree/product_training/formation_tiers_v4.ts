@@ -15,12 +15,16 @@ export type ActiveRole =
   | 'ACTIVE_COMPETITOR'
   | 'HISTORICAL_MAIN'
   | 'ARCHIVED_EXPERIMENTAL'
-  | 'ELIMINATED_COLD_ARCHIVE';
+  | 'ELIMINATED_COLD_ARCHIVE'
+  | 'DUPLICATE_BEHAVIOR_FINGERPRINT_HISTORICAL'
+  | 'SNAPSHOT_IDENTITY_INVALID_PRE_T053';
 
 export type VerificationState =
   | 'INDEPENDENT_VERIFIED'
   | 'RAW_OUTCOMES_RECONCILED'
-  | 'UNVERIFIED_AGGREGATE_ONLY';
+  | 'UNVERIFIED_AGGREGATE_ONLY'
+  | 'SNAPSHOT_IDENTITY_INVALID'
+  | 'DUPLICATE_BEHAVIOR';
 
 export const FORMATION_TIER_POLICY_V4_PATH = resolve(`${T037_OUTPUT_DIR}/formation_tier_policy.v4.json`);
 export const FORMATION_STRENGTH_LIBRARY_V4_PATH = resolve(`${T037_OUTPUT_DIR}/formation_strength_library.v4.json`);
@@ -146,6 +150,54 @@ export interface ActiveFormationV4 {
   l2AttemptsCount: number;
   regradeReason: string;
   updatedAt: string;
+
+  // T053 优化计数与去重溯源字段
+  totalAttemptsCount?: number;
+  effectiveAttemptsCount?: number;
+  duplicateOfFormationId?: string;
+}
+
+/**
+ * T053 B: 按精确行为指纹去重（Deduplicate Active Formations by Behavior Fingerprint）
+ * 首个出现的保留为主候选，后续重复项归档为 DUPLICATE_BEHAVIOR_FINGERPRINT_HISTORICAL
+ */
+export function deduplicateActiveFormationsByBehavior(formations: ActiveFormationV4[]): {
+  activeUnique: ActiveFormationV4[];
+  duplicates: ActiveFormationV4[];
+  allUpdated: ActiveFormationV4[];
+} {
+  const seenFp = new Map<string, ActiveFormationV4>();
+  const activeUnique: ActiveFormationV4[] = [];
+  const duplicates: ActiveFormationV4[] = [];
+  const allUpdated: ActiveFormationV4[] = [];
+
+  for (const f of formations) {
+    if (f.activeRoles.includes('SNAPSHOT_IDENTITY_INVALID_PRE_T053')) {
+      allUpdated.push(f);
+      continue;
+    }
+
+    const fp = f.canonicalFingerprint;
+    const existing = seenFp.get(fp);
+
+    if (!existing) {
+      seenFp.set(fp, f);
+      activeUnique.push(f);
+      allUpdated.push(f);
+    } else {
+      const updatedDuplicate: ActiveFormationV4 = {
+        ...f,
+        activeRoles: ['DUPLICATE_BEHAVIOR_FINGERPRINT_HISTORICAL'],
+        verificationState: 'DUPLICATE_BEHAVIOR',
+        duplicateOfFormationId: existing.formationId,
+        regradeReason: `Exact behavior duplicate of canonical representative '${existing.formationId}' (fp: ${fp})`,
+      };
+      duplicates.push(updatedDuplicate);
+      allUpdated.push(updatedDuplicate);
+    }
+  }
+
+  return { activeUnique, duplicates, allUpdated };
 }
 
 // ---- V4 策略配置 ----
