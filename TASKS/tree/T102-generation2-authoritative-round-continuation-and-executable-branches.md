@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T101R-real-checkpoint-state-and-executable-branch-pilot
 

@@ -362,3 +362,36 @@ export function mergeAndPruneBranches(branches: BranchRecord[]): {
 
   return { merged, pruned, activeLibrary };
 }
+
+/**
+ * 将分支记录编译并挂载到基础 EvolFormation 上，生成具备分支执行能力的 EvolFormation
+ */
+export function attachExecutableBranchesToEvol(baseEvol: EvolFormation, branches: BranchRecord[]): EvolFormation {
+  const evolved = cloneEvolFormation(baseEvol);
+  
+  for (const br of branches) {
+    if (br.state === 'PRUNED_HISTORICAL') continue;
+
+    // 寻找 forkRound 对应的父节点
+    const parentRound = br.forkRound - 1;
+    const parentNodes = walkEvolNodes(evolved.root).filter(n => n.round === parentRound);
+    const parent = parentNodes.length > 0 ? parentNodes[0] : evolved.root;
+
+    // 构造分支子节点
+    let prevNode = parent;
+    for (const delta of br.actionSubtreeDelta) {
+      const newNode: EvolNode = {
+        id: `${br.branchId}_r${delta.round}`,
+        round: delta.round,
+        condition: delta.round === br.forkRound ? br.condition : emptyMask(),
+        placements: delta.placements.map(p => ({ monsterId: p.monsterId, x: p.x, y: p.y })),
+        children: [],
+      };
+      prevNode.children.push(newNode);
+      prevNode = newNode;
+    }
+  }
+
+  return evolved;
+}
+
