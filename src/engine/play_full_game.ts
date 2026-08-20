@@ -101,6 +101,15 @@ export interface ProductRoundObservation {
   boardIds: number[];
 }
 
+export interface ProductStrategyDecisionTrace {
+  round: number;
+  side: 1 | 2;
+  selectedNodeId?: string;
+  selectedBranchId?: string;
+  deploymentIntentIds: string[];
+  acceptedDeploymentIds: string[];
+}
+
 /** 确定性小 PRNG（mulberry32）—— 策略 rng 派生用 */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -221,6 +230,8 @@ export interface PlayOptions {
   onDeploymentTrace?: (e: ProductDeploymentTrace) => void;
   /** 产品回合观察回调（雾战：敌方前 4 手牌 + 场上已揭晓） */
   onRoundObservation?: (obs: ProductRoundObservation) => void;
+  /** 策略决策轨迹事件回调（树节点选择/分支决策） */
+  onStrategyDecisionTrace?: (trace: ProductStrategyDecisionTrace) => void;
 }
 
 /**
@@ -235,6 +246,7 @@ function deployStrategyIntents(
   team: TeamSlot[],
   snap: BoardSnapshot,
   emitTrace?: (e: ProductDeploymentTrace) => void,
+  emitStrategyTrace?: (trace: ProductStrategyDecisionTrace) => void,
 ): void {
   const zone = PRODUCT_ZONES[side];
   const isP1 = side === 1;
@@ -333,6 +345,18 @@ function deployStrategyIntents(
     } else {
       reject(intent, 'placeMonster_rejected', budgetBefore, budgetAfter);
     }
+  }
+
+  if (emitStrategyTrace) {
+    const selectedBranch = intents.find(i => i.branch)?.branch;
+    emitStrategyTrace({
+      round,
+      side,
+      selectedNodeId: selectedBranch?.branchId,
+      selectedBranchId: selectedBranch?.branchId,
+      deploymentIntentIds: intents.map(i => String(i.monsterId)),
+      acceptedDeploymentIds: Array.from(placedThisRound).map(String),
+    });
   }
 }
 
@@ -477,7 +501,7 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
     }
     // 部署：策略意图走产品部署（含搬迁/预算/轨迹）；默认计划保持原放置逻辑（仅附加轨迹记录）
     if (strategyIntentsA) {
-      deployStrategyIntents(1, round, opts.strategyIdentityA ?? 'default', strategyIntentsA, teamA, snapA, opts.onDeploymentTrace);
+      deployStrategyIntents(1, round, opts.strategyIdentityA ?? 'default', strategyIntentsA, teamA, snapA, opts.onDeploymentTrace, opts.onStrategyDecisionTrace);
     } else {
       for (let i = 0; i < planA.length; i++) {
         const p = planA[i];
@@ -488,7 +512,7 @@ export function playFullGame(teamA: TeamSlot[], teamB: TeamSlot[], opts: PlayOpt
       }
     }
     if (strategyIntentsB) {
-      deployStrategyIntents(2, round, opts.strategyIdentityB ?? 'default', strategyIntentsB, teamB, snapB, opts.onDeploymentTrace);
+      deployStrategyIntents(2, round, opts.strategyIdentityB ?? 'default', strategyIntentsB, teamB, snapB, opts.onDeploymentTrace, opts.onStrategyDecisionTrace);
     } else {
       for (let i = 0; i < planB.length; i++) {
         const p = planB[i];

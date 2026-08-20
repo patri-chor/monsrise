@@ -28,9 +28,11 @@ export interface ObservableMatchResult {
   roundResults: (1 | 2 | 0)[];
   roundOutputs: ObservableRoundOutput[];
   matchObservableDigest: string;
+  strategyDecisionTraces?: import('../../../play_full_game').ProductStrategyDecisionTrace[];
   diagnostics?: {
     traces?: ProductDeploymentTrace[];
     observations?: ProductRoundObservation[];
+    strategyDecisionTraces?: import('../../../play_full_game').ProductStrategyDecisionTrace[];
   };
 }
 
@@ -81,9 +83,11 @@ export class ProductMatchRunner {
     strategyA?: DeploymentStrategy;
     strategyB?: DeploymentStrategy;
     collectDiagnostics?: boolean;
+    collectStrategyTrace?: boolean;
   }): ObservableMatchResult {
     const traces: ProductDeploymentTrace[] = [];
     const observations: ProductRoundObservation[] = [];
+    const strategyDecisionTraces: import('../../../play_full_game').ProductStrategyDecisionTrace[] = [];
     const roundOutputs: ObservableRoundOutput[] = [];
 
     const fullRes = playFullGame(input.teamA, input.teamB, {
@@ -94,6 +98,7 @@ export class ProductMatchRunner {
       strategyIdentityB: input.nameB,
       onDeploymentTrace: input.collectDiagnostics ? (t) => traces.push(t) : undefined,
       onRoundObservation: input.collectDiagnostics ? (o) => observations.push(o) : undefined,
+      onStrategyDecisionTrace: (input.collectDiagnostics || input.collectStrategyTrace) ? (st) => strategyDecisionTraces.push(st) : undefined,
       onRoundEnd: (info) => {
         roundOutputs.push(
           computeObservableRoundSummary(
@@ -114,7 +119,8 @@ export class ProductMatchRunner {
       roundResults: fullRes.roundResults,
       roundOutputs,
       matchObservableDigest: JSON.stringify(roundOutputs.map(o => o.observableDigest)),
-      diagnostics: input.collectDiagnostics ? { traces, observations } : undefined,
+      strategyDecisionTraces: (input.collectDiagnostics || input.collectStrategyTrace) ? strategyDecisionTraces : undefined,
+      diagnostics: input.collectDiagnostics ? { traces, observations, strategyDecisionTraces } : undefined,
     };
   }
 

@@ -124,6 +124,7 @@ export class CyclePilot {
     const pairedValidations: PairedValidation[] = [];
     const selectedCandOutcomes: ProductOutcome[] = [];
     const selectedBaseOutcomes: ProductOutcome[] = [];
+    const candTracesAll: Array<import('../../../play_full_game').ProductStrategyDecisionTrace & { candidateId: string; opponentDisplayName: string; seed: number }> = [];
 
     for (const vSeed of config.validationSeeds) {
       for (const side of [1, 2] as const) {
@@ -149,17 +150,31 @@ export class CyclePilot {
           strategyA: treeStrategyFor(isP1 ? candEvol : oppSnap.evol),
           strategyB: treeStrategyFor(isP1 ? oppSnap.evol : candEvol),
           collectDiagnostics: true,
+          collectStrategyTrace: true,
         });
 
-        // 真实依据策略部署轨迹中记录的 branchId 判断分支是否被策略选中
-        // (Actual Deployment Trace Checking via intent/trace branch.branchId)
+        // 真实依据策略决策轨迹判定：
+        // trace.side == target side AND trace.round == candidate executableBranch.forkRound AND trace.selectedBranchId == candidate executableBranch.branchId
         const targetBranchId = cand.executableBranch.branchId;
-        const traces = candMatch.diagnostics?.traces ?? [];
-        const isBranchSelected = traces.some(t => {
+        const forkRound = cand.executableBranch.forkRound;
+        const traces = candMatch.strategyDecisionTraces ?? candMatch.diagnostics?.strategyDecisionTraces ?? [];
+        for (const t of traces) {
+          candTracesAll.push({
+            ...t,
+            candidateId: cand.candidateId,
+            opponentDisplayName: oppSnap.displayName,
+            seed: vSeed,
+          });
+        }
+
+        const matchingTrace = traces.find(t => {
           const isTargetSide = t.side === side;
-          const matchesBranch = t.branch?.branchId?.startsWith(targetBranchId);
-          return isTargetSide && matchesBranch;
+          const isForkRound = t.round === forkRound;
+          const matchesBranch = t.selectedBranchId?.startsWith(targetBranchId) || t.selectedNodeId?.startsWith(targetBranchId);
+          return isTargetSide && isForkRound && matchesBranch;
         });
+
+        const isBranchSelected = !!matchingTrace;
 
         const baseOutcome = computeProductOutcomeFromMatch(baseMatch, side);
         const candOutcome = computeProductOutcomeFromMatch(candMatch, side);
@@ -181,7 +196,7 @@ export class CyclePilot {
           candidateScore70: candOutcome.targetScore70,
           scoreDelta: candOutcome.targetScore70 - baseOutcome.targetScore70,
           branchSelected: isBranchSelected,
-          classification: comp > 0 ? 'IMPROVES' : comp < 0 ? 'REGRESSES' : 'NEUTRAL',
+          classification: !isBranchSelected ? 'NOT_SELECTED' : comp > 0 ? 'IMPROVES' : comp < 0 ? 'REGRESSES' : 'NEUTRAL',
         });
       }
     }
@@ -214,6 +229,6 @@ export class CyclePilot {
       branch: decisionType === 'PILOT_ACCEPTED' ? cand.executableBranch : undefined,
     };
 
-    return { decision, pairedValidations, selectedCandOutcomes, selectedBaseOutcomes };
+    return { decision, pairedValidations, selectedCandOutcomes, selectedBaseOutcomes, strategyTraces: candTracesAll };
   }
 }

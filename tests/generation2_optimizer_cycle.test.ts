@@ -48,6 +48,7 @@ test('T125: Generation 2 Consolidated Optimizer Cycle Audit', async () => {
     assert.ok(fs.existsSync(path.join(iterDir, 'adverse_cases.jsonl')));
     assert.ok(fs.existsSync(path.join(iterDir, 'candidate_trials.jsonl')));
     assert.ok(fs.existsSync(path.join(iterDir, 'candidate_archive.jsonl')));
+    assert.ok(fs.existsSync(path.join(iterDir, 'strategy_traces.jsonl')));
     assert.ok(fs.existsSync(path.join(iterDir, 'paired_validations.jsonl')));
     assert.ok(fs.existsSync(path.join(iterDir, 'pilot_decisions.jsonl')));
   }

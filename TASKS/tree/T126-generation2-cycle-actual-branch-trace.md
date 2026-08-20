@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T125-generation2-optimizer-cycle-consolidation
 

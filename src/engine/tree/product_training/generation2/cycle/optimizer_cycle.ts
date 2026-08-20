@@ -68,13 +68,14 @@ export class OptimizerCycleOrchestrator {
 
       const allPairedValidations = [];
       const allCandidateDecisions = [];
+      const allStrategyTraces = [];
       let acceptedThisIter: ExecutableBranch[] = [];
 
       for (const cand of forwardCandidates) {
         const baseCase = adverseCases.find(c => c.caseId === cand.caseId)!;
         const oppSnap = oppSnaps.find(o => o.displayName === baseCase.opponentDisplayName)!;
 
-        const { decision, pairedValidations } = CyclePilot.validateCandidateAgainstCurrentPilot(
+        const { decision, pairedValidations, strategyTraces } = CyclePilot.validateCandidateAgainstCurrentPilot(
           cand,
           baseCase,
           targetSnap,
@@ -86,6 +87,7 @@ export class OptimizerCycleOrchestrator {
 
         allPairedValidations.push(...pairedValidations);
         allCandidateDecisions.push(decision);
+        if (strategyTraces) allStrategyTraces.push(...strategyTraces);
 
         if (decision.decision === 'PILOT_ACCEPTED' && decision.branch) {
           acceptedThisIter.push(decision.branch);
@@ -96,6 +98,7 @@ export class OptimizerCycleOrchestrator {
         acceptedThisIter = acceptedThisIter.slice(0, fullConfig.maxNewPilotBranchesPerIteration);
       }
 
+      CycleEvidence.writeJsonl(path.join(iterDir, 'strategy_traces.jsonl'), allStrategyTraces);
       CycleEvidence.writeJsonl(path.join(iterDir, 'paired_validations.jsonl'), allPairedValidations);
       CycleEvidence.writeJsonl(path.join(iterDir, 'pilot_decisions.jsonl'), allCandidateDecisions);
 
