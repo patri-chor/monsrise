@@ -19,6 +19,7 @@ import {
   type TutuModePreference,
   type DrillTargetPriority,
 } from '../calculator_policy';
+import { sha256Hex } from '../sha256_pure';
 import { FormationSnapshotResolver } from '../product_training/snapshot_resolver';
 import { FORMATION_LIBRARY } from '../../../ai/formation_library';
 import { formationToEvol } from '../evol_gene';
@@ -232,6 +233,13 @@ export function runFocusedSearchOnLossCase(
 
     const candStrat = treeStrategyFor(cand.mutatedEvol);
 
+    const roundHpOutputs: Array<{
+      round: number;
+      survivors: Array<{ dbId: number; team: 1 | 2; hp: number; maxHp: number }>;
+      p1TotalHp: number;
+      p2TotalHp: number;
+    }> = [];
+
     while (session.currentRound <= 5) {
       if (session.p1Score >= 3 || session.p2Score >= 3) break;
       const ctxA = session.buildRoundContext(1);
@@ -241,6 +249,22 @@ export function runFocusedSearchOnLossCase(
       const intentsB = isRushP1 ? oppStrat(ctxB) : candStrat(ctxB);
 
       const rRes = session.playRound(intentsA, intentsB);
+
+      const survivors = (rRes.boardMonsters ?? [])
+        .filter((m: any) => !m.isDead && m.hp > 0)
+        .map((m: any) => ({ dbId: m.dbId, team: m.team, hp: Math.round(m.hp), maxHp: Math.round(m.maxHp) }))
+        .sort((a: any, b: any) => a.team - b.team || a.dbId - b.dbId);
+
+      const p1TotalHp = survivors.filter((s: any) => s.team === 1).reduce((acc: number, s: any) => acc + s.hp, 0);
+      const p2TotalHp = survivors.filter((s: any) => s.team === 2).reduce((acc: number, s: any) => acc + s.hp, 0);
+
+      roundHpOutputs.push({
+        round: rRes.round,
+        survivors,
+        p1TotalHp,
+        p2TotalHp,
+      });
+
       if (rRes.isGameOver) break;
     }
 
@@ -254,17 +278,27 @@ export function runFocusedSearchOnLossCase(
     const isImproved = (lossCase.finalGameOutcome === 'L' && (outcome === 'W' || outcome === 'D')) ||
                        (lossCase.finalGameOutcome === 'D' && outcome === 'W');
 
+    const hpOutputDigest = sha256Hex(JSON.stringify(roundHpOutputs)).slice(0, 16);
+
     const trialRecord = {
       lossCaseId: lossCase.caseId,
+      targetSide,
+      seed: lossCase.seed,
+      forkRound: lossCase.forkRound,
+      targetPayloadFingerprint: lossCase.targetPayloadFingerprint,
+      targetCalculatorPolicyFingerprint: lossCase.targetCalculatorPolicyFingerprint,
       candidateId: cand.candidateId,
       behaviorFingerprint: cand.behaviorFingerprint,
       modifiedVariablesCount: cand.modifiedVariablesCount,
+      concreteSelectedVariables: cand.descriptions,
       outcome,
       baselineOutcome: lossCase.finalGameOutcome,
       improved: isImproved,
       p1Score: session.p1Score,
       p2Score: session.p2Score,
       roundResults: session.roundResults,
+      roundHpOutputs,
+      hpOutputDigest,
     };
     allTrials.push(trialRecord);
     appendTrialEvidence(trialRecord);
