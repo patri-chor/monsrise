@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 REISSUE: T110
 SUPERSEDES: T109-generation2-architecture-consolidation

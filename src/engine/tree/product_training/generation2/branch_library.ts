@@ -10,7 +10,7 @@ export interface ExecutableBranch {
   branchId: string;
   sourceLossCaseIds: string[];
   forkRound: number;
-  featureMask: FeatureMask;
+  condition: FeatureMask;
   actionSubtreeDelta: Array<{
     round: number;
     placements: Array<{ monsterId: number; x: number; y: number }>;
@@ -38,15 +38,17 @@ export class BranchLibrary {
     });
 
     const branchMask: FeatureMask = {
-      requiredArchetype: rec.archetype !== 'unknown' ? rec.archetype : undefined,
-      requiredEnemyUnits: lossCase.preRObservation.revealedEnemyHandIds.slice(0, 2),
+      side: lossCase.side,
+      main: rec.main,
+      subs: rec.subs,
+      keys: rec.keys,
     };
 
     return {
       branchId: `BR_${lossCase.caseId}_${candidate.candidateId}`,
       sourceLossCaseIds: [lossCase.caseId],
       forkRound: lossCase.forkRound,
-      featureMask: branchMask,
+      condition: branchMask,
       actionSubtreeDelta,
       solutionBehaviorFingerprint: candidate.behaviorFingerprint,
       confirmationCount: 1,
@@ -101,41 +103,17 @@ export class BranchLibrary {
       const parentRound = b.forkRound - 1;
       const parentNode = walkEvolNodes(evol.root).find(n => n.round === parentRound) || evol.root;
 
-      if (b.actionSubtreeDelta.length > 0) {
-        const rootDelta = b.actionSubtreeDelta[0];
-        const branchNode: EvolNode = {
-          id: `${b.branchId}_r${b.forkRound}`,
-          round: b.forkRound,
-          placements: rootDelta.placements.map(p => ({
-            monsterId: p.monsterId,
-            x: p.x,
-            y: p.y,
-            tags: ['exact_case_branch'],
-          })),
-          featureMask: b.featureMask,
+      let prevNode = parentNode;
+      for (const delta of b.actionSubtreeDelta) {
+        const newNode: EvolNode = {
+          id: `${b.branchId}_r${delta.round}`,
+          round: delta.round,
+          condition: delta.round === b.forkRound ? b.condition : emptyMask(),
+          placements: delta.placements.map(p => ({ monsterId: p.monsterId, x: p.x, y: p.y })),
           children: [],
         };
-
-        let curr = branchNode;
-        for (let i = 1; i < b.actionSubtreeDelta.length; i++) {
-          const d = b.actionSubtreeDelta[i];
-          const childNode: EvolNode = {
-            id: `${b.branchId}_r${d.round}`,
-            round: d.round,
-            placements: d.placements.map(p => ({
-              monsterId: p.monsterId,
-              x: p.x,
-              y: p.y,
-              tags: ['exact_case_branch_child'],
-            })),
-            featureMask: emptyMask(),
-            children: [],
-          };
-          curr.children.push(childNode);
-          curr = childNode;
-        }
-
-        parentNode.children.push(branchNode);
+        prevNode.children.push(newNode);
+        prevNode = newNode;
       }
     }
 
