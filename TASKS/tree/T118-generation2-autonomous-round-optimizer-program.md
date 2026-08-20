@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T117-generation2-forward-branch-validation
 

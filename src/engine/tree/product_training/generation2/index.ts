@@ -20,6 +20,7 @@ export * from './round_board_state_factory';
 export * from './single_round_engine';
 export * from './single_round_optimizer';
 export * from './forward_branch_validator';
+export * from './optimizer';
 
 export const runAll2RushSingleRoundOptimization = SingleRoundOptimizer.runAll2RushSingleRoundOptimization;
 export const runForwardBranchValidation = ForwardBranchValidator.runValidation;
