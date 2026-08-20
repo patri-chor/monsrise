@@ -88,9 +88,9 @@ describe('T051: V4 Formation Library & Dynamic Ladder', () => {
     const lib = JSON.parse(readFileSync(FORMATION_LIBRARY_V4_PATH, 'utf8'));
     assert.equal(lib.schemaVersion, 'T051_FORMATION_LIBRARY_V4');
     assert.equal(lib.counts.T0Count, 11);
-    assert.equal(lib.counts.T1Count, 0); // No inflated fake T1
-    assert.equal(lib.counts.T2Count, 48); // Healthy main force
-    assert.equal(lib.counts.T3Count, 34); // Reserves
+    assert.equal(lib.counts.T1Count, 6); // Authentic verified top elite T1
+    assert.equal(lib.counts.T2Count, 51); // Verified main force
+    assert.equal(lib.counts.T3Count, 25); // Demoted low scores & reserves
   });
 
   it('formation_winrate_audit_ledger.v4.jsonl reconciles with 93 records', () => {
@@ -109,7 +109,7 @@ describe('T051: V4 Formation Library & Dynamic Ladder', () => {
   it('winrate_report.txt exists and contains human-readable report', () => {
     assert(existsSync(USER_TXT_REPORT_PATH), 'Missing winrate_report.txt');
     const content = readFileSync(USER_TXT_REPORT_PATH, 'utf8');
-    assert(content.includes('MONSRISE 动态战力天梯与 Score70 阵型胜率汇总报告'));
-    assert(content.includes('统计总数: 阵型共 93 套 (T0: 11, T1: 0, T2: 48, T3: 34)'));
+    assert(content.includes('MONSRISE 阵型胜率与优化次数汇总报告'));
+    assert(content.includes('统计总数: 阵型共 93 套 (T0: 11, T1: 6, T2: 51, T3: 25)'));
   });
 });
