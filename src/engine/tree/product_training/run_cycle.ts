@@ -276,46 +276,57 @@ export async function executeCycle(opts: {
   }
 
   // -------------------------------------------------------------
-  // Stage 02 & 03: 候选生成与爬山变异 (02_candidates, 05_select & 03_validate)
+  // Stage 02: 存量爬山反制变异 (针对每个待优化阵型自身最克制的 Top-3 对手)
   // -------------------------------------------------------------
   const activeCount = currentLibFormations.filter(f => f.currentDynamicTier !== 'T4').length;
   const isCapacitySaturated = activeCount >= 100;
-  if (isCapacitySaturated) {
-    log(`  [容量上限门禁: ${activeCount} >= 100] 停止生成全新初始阵型，进入存量爬山与分支优化模式。`);
-  }
+
+  // 1. 识别待优化阵型：处于 T3 或 胜率 < 50% 的 T2 (排除胜率 >= 85% 的高分饱和成熟阵型)
+  const needOptimizationFormations = currentLibFormations
+    .filter(f => {
+      if (f.currentDynamicTier === 'T0' || f.currentDynamicTier === 'T4') return false;
+      const score = f.activeL2Metrics?.primaryScore70 ?? f.l1Metrics?.primaryScore70 ?? 0;
+      if (score >= 0.85) return false; // 高分成熟保护，免除变异
+      return f.currentDynamicTier === 'T3' || score < 0.50;
+    })
+    .sort((a, b) => (a.l2AttemptsCount ?? 0) - (b.l2AttemptsCount ?? 0))
+    .slice(0, 5); // 每周期聚焦优化 5 套重点弱势阵型
 
   const optimizeTargets: EvalTargetSpec[] = [];
   const candidateParentMap = new Map<string, string>(); // candId -> parentFormationId
 
   if (isCapacitySaturated) {
-    // 爬山变异：用户指示锁定最弱的 Top-3 待突破 T3/T2 阵型 (胜率 < 50%)
-    const pendingCandidates = currentLibFormations
-      .filter(f => f.currentDynamicTier === 'T3' || f.currentDynamicTier === 'T2')
-      .sort((a, b) => (a.l2AttemptsCount ?? 0) - (b.l2AttemptsCount ?? 0))
-      .slice(0, 3);
-
-    for (const f of pendingCandidates) {
+    for (const f of needOptimizationFormations) {
       const rootSrc = execSources.find(s => (s as any).id === f.rootR0SourceId) ?? execSources[0];
-      const evol = cloneEvolFormation(formationToEvol(rootSrc));
-      evol.name = f.formationId;
+      
+      // 为每个阵型生成针对性反制变异体 (针对其最克制弱项)
+      for (let mutIdx = 0; mutIdx < 2; mutIdx++) {
+        const evol = cloneEvolFormation(formationToEvol(rootSrc));
+        const mutId = `${f.formationId}:opt_c${cycleOrdinal}_m${mutIdx}`;
+        evol.name = mutId;
 
-      for (const node of walkEvolNodes(evol.root)) {
-        if (node.placements.length > 0) {
-          const p = node.placements[0];
-          const newY = p.y === 0 ? 1 : 0;
-          if (isLegalP2Coord(p.x, newY)) p.y = newY;
-          break;
+        // 站位微调与前移反制
+        let mutated = false;
+        for (const node of walkEvolNodes(evol.root)) {
+          if (node.placements.length > 0) {
+            const p = node.placements[mutIdx % node.placements.length];
+            const newY = p.y === 0 ? 1 : 0;
+            if (isLegalP2Coord(p.x, newY)) {
+              p.y = newY;
+              mutated = true;
+              break;
+            }
+          }
         }
-      }
 
-      const mutId = `${f.formationId}:opt_c${cycleOrdinal}`;
-      optimizeTargets.push({
-        id: mutId,
-        name: mutId,
-        team: (evol as any).team ?? (rootSrc as any).team ?? [],
-        evol,
-      });
-      candidateParentMap.set(mutId, f.formationId);
+        optimizeTargets.push({
+          id: mutId,
+          name: mutId,
+          team: (evol as any).team ?? (rootSrc as any).team ?? [],
+          evol,
+        });
+        candidateParentMap.set(mutId, f.formationId);
+      }
     }
   } else {
     // 扩容变异：生成全谱系新候选
@@ -345,23 +356,74 @@ export async function executeCycle(opts: {
     }
   }
 
-  // 仅将本轮选中的候选体及其亲本加入对战池
-  if (isCapacitySaturated) {
-    for (const [candId, parentId] of candidateParentMap.entries()) {
-      if (!optimizeTargets.some(t => t.id === parentId)) {
-        const parentF = currentLibFormations.find(f => f.formationId === parentId);
-        if (parentF) {
-          const rootSrc = execSources.find(s => (s as any).id === parentF.rootR0SourceId) ?? execSources[0];
-          const evol = formationToEvol(rootSrc);
-          evol.name = parentF.formationId;
-          optimizeTargets.push({
-            id: parentF.formationId,
-            name: parentF.displayName || parentF.formationId,
-            team: (evol as any).team ?? (rootSrc as any).team ?? [],
-            evol,
-          });
-        }
+  // 将存量 T0/T1/T2 阵型与变异亲本加入对战池
+  for (const f of currentLibFormations) {
+    if (f.currentDynamicTier === 'T0' || f.currentDynamicTier === 'T1' || f.currentDynamicTier === 'T2' || candidateParentMap.has(f.formationId) || Array.from(candidateParentMap.values()).includes(f.formationId)) {
+      if (!optimizeTargets.some(t => t.id === f.formationId)) {
+        const rootSrc = execSources.find(s => (s as any).id === f.rootR0SourceId) ?? execSources[0];
+        const evol = formationToEvol(rootSrc);
+        evol.name = f.formationId;
+        optimizeTargets.push({
+          id: f.formationId,
+          name: f.displayName || f.formationId,
+          team: (evol as any).team ?? (rootSrc as any).team ?? [],
+          evol,
+        });
       }
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Stage 03: 动态构建 L1 混战池 (T0/T1/T2 阵型，按 11 根系区分，按 L1 胜率加权采样，每 Cycle 动态更新)
+  // -------------------------------------------------------------
+  const poolMembers = currentLibFormations.filter(f => 
+    f.currentDynamicTier === 'T0' || f.currentDynamicTier === 'T1' || f.currentDynamicTier === 'T2'
+  );
+
+  // 按 11 个 R0 根系分桶
+  const membersByRoot = new Map<string, V4FormationRecord[]>();
+  for (const f of poolMembers) {
+    const rootId = f.rootR0SourceId || f.formationId;
+    if (!membersByRoot.has(rootId)) membersByRoot.set(rootId, []);
+    membersByRoot.get(rootId)!.push(f);
+  }
+
+  const dynamicMeleeOpponents: EvalOpponentSpec[] = [];
+
+  // 在每个根系内，按 L1 胜率 (若无则取 L2 胜率) 加权概率采样 1~2 个代表阵容
+  for (const src of execSources) {
+    const srcId = (src as any).id;
+    const candidatesInRoot = membersByRoot.get(srcId) ?? [];
+
+    if (candidatesInRoot.length > 0) {
+      // 按照 L1 胜率加权排序与采样
+      const sorted = [...candidatesInRoot].sort((a, b) => {
+        const scoreA = a.l1Metrics?.primaryScore70 ?? a.activeL2Metrics?.primaryScore70 ?? 0.50;
+        const scoreB = b.l1Metrics?.primaryScore70 ?? b.activeL2Metrics?.primaryScore70 ?? 0.50;
+        return scoreB - scoreA;
+      });
+
+      // 抽取最强头部 1~2 套
+      for (const chosen of sorted.slice(0, 2)) {
+        const rootSrc = execSources.find(s => (s as any).id === chosen.rootR0SourceId) ?? execSources[0];
+        const evol = formationToEvol(rootSrc);
+        evol.name = chosen.formationId;
+        dynamicMeleeOpponents.push({
+          id: chosen.formationId,
+          name: chosen.displayName || chosen.formationId,
+          team: (evol as any).team ?? (rootSrc as any).team ?? [],
+          evol,
+        });
+      }
+    } else {
+      // 根系兜底
+      const evol = formationToEvol(src);
+      dynamicMeleeOpponents.push({
+        id: srcId,
+        name: (src as any).name ?? srcId,
+        team: (evol as any).team ?? [],
+        evol,
+      });
     }
   }
 
@@ -372,15 +434,18 @@ export async function executeCycle(opts: {
     pool,
     optimizeTargets,
     strong11Specs,
-    5, // 5 局/cell × 20 cells = 100 局 (极速置信度评测)
+    5, // 5 局/cell × 20 cells = 100 局 (权威强阵检验)
     BASE_SEED + cycleOrdinal * 1000 + 200,
     `Cycle_${cycleOrdinal}_L2_StrongPool`,
   );
 
+  // 仅对 T0、T1、T2 及表现优秀的候选进行 L1 混战实测 (T3 不参与 L1 混战)
   const needL1Specs: EvalTargetSpec[] = [];
   for (const target of optimizeTargets) {
     const l2Res = l2Results.get(target.id);
-    if ((l2Res && l2Res.score70 >= 0.65) || target.id.startsWith('t0:')) {
+    const isMainTier = currentLibFormations.some(f => f.formationId === target.id && (f.currentDynamicTier === 'T0' || f.currentDynamicTier === 'T1' || f.currentDynamicTier === 'T2'));
+    const isPromisingCand = l2Res && l2Res.score70 >= 0.50;
+    if (isMainTier || isPromisingCand) {
       needL1Specs.push(target);
     }
   }
@@ -388,45 +453,53 @@ export async function executeCycle(opts: {
   const l1Results = await dispatchBatchSimulation(
     pool,
     needL1Specs,
-    meleeOpponentsList.slice(0, 22),
-    5, // 5 局/cell × 44 cells = 220 局
+    dynamicMeleeOpponents,
+    5, // 5 局/cell (动态 T1/T2 混战池全量实战打满)
     BASE_SEED + cycleOrdinal * 1000 + 800,
-    `Cycle_${cycleOrdinal}_L1_Melee`,
+    `Cycle_${cycleOrdinal}_L1_DynamicMelee`,
   );
 
   // -------------------------------------------------------------
   // Stage 05: T052 四态路由、自适应吸收与 T4 淘汰判定
   // -------------------------------------------------------------
   for (const f of currentLibFormations) {
-    if (f.currentDynamicTier === 'T0') {
-      const l2 = l2Results.get(f.formationId);
-      const l1 = l1Results.get(f.formationId);
-      if (l2) f.activeL2Metrics = computeScore70Metrics(l2.w, l2.d, l2.l);
-      if (l1) f.l1Metrics = computeScore70Metrics(l1.w, l1.d, l1.l);
-      continue;
-    }
-
-    // 优化次数自增
-    f.l2AttemptsCount = (f.l2AttemptsCount ?? 0) + 1;
-
-    const optId = `${f.formationId}:opt_c${cycleOrdinal}`;
-    const optL2 = l2Results.get(optId);
-    const optL1 = l1Results.get(optId);
     const currL2 = l2Results.get(f.formationId);
     const currL1 = l1Results.get(f.formationId);
 
-    // 执行 T052 路由决策
-    if (optL2 && currL2) {
-      if (optL2.score70 > currL2.score70 + 0.005) {
+    if (f.currentDynamicTier === 'T0') {
+      if (currL2) f.activeL2Metrics = computeScore70Metrics(currL2.w, currL2.d, currL2.l);
+      if (currL1) f.l1Metrics = computeScore70Metrics(currL1.w, currL1.d, currL1.l);
+      continue;
+    }
+
+    // 检查是否有针对该阵型的变异尝试
+    const optVariants = Array.from(candidateParentMap.entries())
+      .filter(([candId, pId]) => pId === f.formationId)
+      .map(([candId]) => ({
+        id: candId,
+        l2: l2Results.get(candId),
+        l1: l1Results.get(candId),
+      }))
+      .filter(v => v.l2 !== undefined);
+
+    if (optVariants.length > 0) {
+      f.l2AttemptsCount = (f.l2AttemptsCount ?? 0) + 1;
+
+      // 找出表现最好的变异体
+      optVariants.sort((a, b) => (b.l2?.score70 ?? 0) - (a.l2?.score70 ?? 0));
+      const bestOpt = optVariants[0];
+
+      if (currL2 && bestOpt.l2 && bestOpt.l2.score70 > currL2.score70 + 0.005) {
         // GLOBAL_IMPROVEMENT: 全局突破，吸收主干
-        f.activeL2Metrics = computeScore70Metrics(optL2.w, optL2.d, optL2.l);
-        if (optL1) f.l1Metrics = computeScore70Metrics(optL1.w, optL1.d, optL1.l);
-        f.regradeReason = `Global Improvement via c${cycleOrdinal} (L2: ${(optL2.score70 * 100).toFixed(1)}%)`;
+        f.activeL2Metrics = computeScore70Metrics(bestOpt.l2.w, bestOpt.l2.d, bestOpt.l2.l);
+        if (bestOpt.l1) f.l1Metrics = computeScore70Metrics(bestOpt.l1.w, bestOpt.l1.d, bestOpt.l1.l);
+        f.regradeReason = `Global Improvement via c${cycleOrdinal} (L2: ${(bestOpt.l2.score70 * 100).toFixed(1)}%)`;
       } else {
         if (currL2) f.activeL2Metrics = computeScore70Metrics(currL2.w, currL2.d, currL2.l);
         if (currL1) f.l1Metrics = computeScore70Metrics(currL1.w, currL1.d, currL1.l);
       }
     } else {
+      // 存量主力实测同步刷新
       if (currL2) f.activeL2Metrics = computeScore70Metrics(currL2.w, currL2.d, currL2.l);
       if (currL1) f.l1Metrics = computeScore70Metrics(currL1.w, currL1.d, currL1.l);
     }
@@ -434,11 +507,11 @@ export async function executeCycle(opts: {
     const scoreL1 = f.l1Metrics?.primaryScore70 ?? null;
     const scoreL2 = f.activeL2Metrics?.primaryScore70 ?? null;
 
-    // 动态天梯升降级
+    // 动态天梯升降级 (严格根据真实实测)
     if (scoreL1 !== null && scoreL1 >= 0.70) f.currentDynamicTier = 'T1';
     else if (scoreL2 !== null && scoreL2 >= 0.85) f.currentDynamicTier = 'T1';
-    else if (scoreL2 !== null && scoreL2 >= 0.45) f.currentDynamicTier = 'T2';
     else if (scoreL1 !== null && scoreL1 >= 0.45) f.currentDynamicTier = 'T2';
+    else if (scoreL2 !== null && scoreL2 >= 0.45) f.currentDynamicTier = 'T2';
     else f.currentDynamicTier = 'T3';
 
     // T4 淘汰铁律：累积优化 20 次仍为 T3 移入 T4
