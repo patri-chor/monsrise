@@ -1,106 +1,106 @@
-================================================================================================
-                     MONSRISE 阵型真实胜率与优化次数汇总报告 (T050 独立重测实测版)                
-================================================================================================
-阵型名称 (Formation ID)                           | 层级 (Tier)  | L3 胜率     | L2 实测胜率    | L1 实测胜率    | 优化次数 (Attempts)
-------------------------------------------------------------------------------------------------
-t0:suqing                                     | T0         |  100.0% |      89.3% |          - |        0
-t0:laddersel                                  | T0         |  100.0% |      85.7% |          - |        0
-t0:gift_jungle                                | T0         |  100.0% |      85.7% |          - |        0
-t0:all2prayer                                 | T0         |  100.0% |      78.6% |          - |        0
-t0:spade_multi                                | T0         |  100.0% |      78.6% |          - |        0
-t0:classicsavior                              | T0         |  100.0% |      71.4% |          - |        0
-t0:golden_boom                                | T0         |  100.0% |      68.2% |          - |        0
-t0:all2rush                                   | T0         |  100.0% |      50.0% |          - |        0
-t0:nutsavior                                  | T0         |  100.0% |      45.5% |          - |        0
-t0:gift_savior                                | T0         |  100.0% |      36.4% |          - |        0
-t0:springsword                                | T0         |  100.0% |       9.1% |          - |        0
-cand:golden_boom:spatial_local:c0_110         | T1         |   97.6% |      97.6% |      97.6% |        3
-cand:suqing:spatial_local:0                   | T1         |   96.4% |      96.4% |      96.4% |        3
-cand:classicsavior:spatial_local:c1_117       | T1         |   96.4% |      96.4% |      96.4% |        3
-cand:gift_jungle:spatial_local:c0_110         | T1         |   95.2% |      95.2% |      95.2% |        3
-cand:springsword:formation_transform:0        | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:nutsavior:formation_transform:c0_flip    | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:nutsavior:spatial_local:c1_105           | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:nutsavior:formation_transform:c1_flip    | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:laddersel:spatial_local:c1_116           | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:springsword:spatial_local:c0_110         | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:gift_savior:spatial_local:c0_110         | T1         |   92.9% |      92.9% |      92.9% |        3
-cand:spade_multi:formation_transform:0        | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:all2prayer:formation_transform:c0_flip   | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:suqing:strategy_schedule_branch:c0_side2 | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:all2prayer:formation_transform:c1_flip   | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:suqing:strategy_schedule_branch:c1_side2 | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:springsword:spatial_local:c1_105         | T1         |   89.3% |      89.3% |      89.3% |        3
-cand:classicsavior:spatial_local:0            | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:all2prayer:spatial_local:0               | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:gift_savior:spatial_local:0              | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:gift_jungle:spatial_local:0              | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:gift_jungle:formation_transform:0        | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:classicsavior:formation_transform:c0_... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:laddersel:formation_transform:c0_flip    | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:laddersel:strategy_schedule_branch:c0... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:spade_multi:formation_transform:c0_flip  | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:golden_boom:formation_transform:c0_flip  | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:gift_jungle:strategy_schedule_branch:... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:classicsavior:formation_transform:c1_... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:laddersel:formation_transform:c1_flip    | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:laddersel:strategy_schedule_branch:c1... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:spade_multi:formation_transform:c1_flip  | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:golden_boom:formation_transform:c1_flip  | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:gift_jungle:strategy_schedule_branch:... | T1         |   85.7% |      85.7% |      85.7% |        3
-cand:nutsavior:spatial_local:0                | T1         |  100.0% |      50.0% |      65.9% |        3
-cand:nutsavior:strategy_schedule_branch:c0... | T1         |  100.0% |      50.0% |      65.9% |        3
-cand:golden_boom:strategy_schedule_branch:... | T1         |  100.0% |      68.2% |      65.9% |        3
-cand:nutsavior:strategy_schedule_branch:c1... | T1         |  100.0% |      50.0% |      65.9% |        3
-cand:golden_boom:strategy_schedule_branch:... | T1         |  100.0% |      68.2% |      65.9% |        3
-cand:golden_boom:spatial_local:0              | T1         |  100.0% |      45.5% |      61.4% |        3
-cand:gift_savior:formation_transform:c0_flip  | T1         |  100.0% |      54.5% |      61.4% |        3
-cand:gift_savior:formation_transform:c1_flip  | T1         |  100.0% |      54.5% |      61.4% |        3
-cand:gift_savior:spatial_local:c1_116         | T1         |  100.0% |      40.9% |      54.5% |        3
-cand:nutsavior:spatial_local:c0_110           | T1         |  100.0% |      31.8% |      45.5% |        3
-cand:gift_savior:strategy_schedule_branch:... | T1         |  100.0% |      36.4% |      45.5% |        3
-cand:gift_savior:strategy_schedule_branch:... | T1         |  100.0% |      36.4% |      45.5% |        3
-cand:suqing:formation_transform:c0_flip       | T1         |  100.0% |      36.4% |      34.1% |        3
-cand:suqing:formation_transform:c1_flip       | T1         |  100.0% |      36.4% |      34.1% |        3
-cand:spade_multi:spatial_local:c0_115         | T1         |  100.0% |      27.3% |      34.1% |        3
-cand:spade_multi:spatial_local:c1_108         | T1         |  100.0% |      22.7% |      31.8% |        3
-cand:suqing:spatial_local:c0_110              | T1         |  100.0% |      27.3% |      29.5% |        3
-cand:gift_jungle:formation_transform:c0_flip  | T1         |  100.0% |      31.8% |      27.3% |        3
-cand:gift_jungle:formation_transform:c1_flip  | T1         |  100.0% |      31.8% |      27.3% |        3
-cand:springsword:formation_transform:c0_flip  | T1         |  100.0% |      31.8% |      22.7% |        3
-cand:springsword:formation_transform:c1_flip  | T1         |  100.0% |      31.8% |      22.7% |        3
-cand:springsword:strategy_schedule_branch:... | T1         |  100.0% |       9.1% |      20.5% |        3
-cand:springsword:strategy_schedule_branch:... | T1         |  100.0% |       9.1% |      20.5% |        3
-cand:suqing:spatial_local:c1_124              | T1         |  100.0% |      22.7% |      11.4% |        3
-cand:springsword:spatial_local:0              | T2         |   82.1% |      82.1% |          - |        0
-cand:spade_multi:spatial_local:0              | T2         |   82.1% |      82.1% |          - |        0
-cand:classicsavior:spatial_local:c0_108       | T2         |   82.1% |      82.1% |          - |        0
-cand:laddersel:spatial_local:c0_110           | T2         |   82.1% |      82.1% |          - |        0
-cand:golden_boom:spatial_local:c1_105         | T2         |   82.1% |      82.1% |          - |        0
-cand:all2prayer:spatial_local:c0_110          | T3         |   78.6% |          - |          - |        0
-cand:all2prayer:strategy_schedule_branch:c... | T3         |   78.6% |          - |          - |        0
-cand:spade_multi:strategy_schedule_branch:... | T3         |   78.6% |          - |          - |        0
-cand:all2prayer:strategy_schedule_branch:c... | T3         |   78.6% |          - |          - |        0
-cand:spade_multi:strategy_schedule_branch:... | T3         |   78.6% |          - |          - |        0
-cand:classicsavior:strategy_schedule_branc... | T3         |   71.4% |          - |          - |        0
-cand:classicsavior:strategy_schedule_branc... | T3         |   71.4% |          - |          - |        0
-cand:laddersel:spatial_local:0                | T3         |   67.9% |          - |          - |        0
-cand:all2prayer:spatial_local:c1_116          | T3         |   67.9% |          - |          - |        0
-cand:all2prayer:formation_transform:0         | T3         |   64.3% |          - |          - |        0
-cand:all2rush:formation_transform:c0_flip     | T3         |   57.1% |          - |          - |        0
-cand:all2rush:formation_transform:c1_flip     | T3         |   57.1% |          - |          - |        0
-cand:all2rush:strategy_schedule_branch:c0_... | T3         |   50.0% |          - |          - |        0
-cand:all2rush:strategy_schedule_branch:c1_... | T3         |   50.0% |          - |          - |        0
-cand:all2rush:spatial_local:0                 | T3         |   42.9% |          - |          - |        0
-cand:all2rush:spatial_local:c0_110            | T3         |   42.9% |          - |          - |        0
-cand:all2rush:multi_monster_exploration:c0... | T3         |   42.9% |          - |          - |        0
-cand:all2rush:spatial_local:c1_117            | T3         |   42.9% |          - |          - |        0
-cand:all2rush:multi_monster_exploration:c1... | T3         |   42.9% |          - |          - |        0
-================================================================================================
+========================================================================================================================
+                          MONSRISE 阵型胜率与优化次数汇总报告 (训练全流程全自动实时同步版)                              
+========================================================================================================================
+阵型名称 (Formation ID)                        | R0 根谱系       | 层级 (Tier)  | L3 胜率      | L2 胜率      | L1 实测胜率        | 优化次数
+------------------------------------------------------------------------------------------------------------------------
+t0:suqing                                  | suqing       | T0         |   100.0%   |    89.3%   |          -   |        0
+t0:laddersel                               | laddersel    | T0         |   100.0%   |    85.7%   |          -   |        0
+t0:gift_jungle                             | gift_jungle  | T0         |   100.0%   |    85.7%   |          -   |        0
+t0:all2prayer                              | all2prayer   | T0         |   100.0%   |    78.6%   |          -   |        0
+t0:spade_multi                             | spade_multi  | T0         |   100.0%   |    78.6%   |          -   |        0
+t0:golden_boom                             | golden_boom  | T0         |   100.0%   |    77.7%   |          -   |        0
+t0:classicsavior                           | classicsavior | T0         |   100.0%   |    71.4%   |          -   |        0
+t0:nutsavior                               | nutsavior    | T0         |   100.0%   |    67.7%   |          -   |        0
+t0:all2rush                                | all2rush     | T0         |   100.0%   |    50.0%   |          -   |        0
+t0:springsword                             | springsword  | T0         |   100.0%   |    47.3%   |          -   |        0
+t0:gift_savior                             | gift_savior  | T0         |   100.0%   |    45.9%   |          -   |        0
+cand:golden_boom:spatial_local:c0_110      | golden_boom  | T1         |    97.6%   |    97.6%   |      97.6%   |        3
+cand:suqing:spatial_local:0                | suqing       | T1         |    96.4%   |    96.4%   |      96.4%   |        3
+cand:classicsavior:spatial_local:c1_117    | classicsavior | T1         |    96.4%   |    96.4%   |      96.4%   |        3
+cand:gift_jungle:spatial_local:c0_110      | gift_jungle  | T1         |    95.2%   |    95.2%   |      95.2%   |        3
+cand:springsword:formation_transform:0     | springsword  | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:nutsavior:formation_transform:c0_flip | nutsavior    | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:nutsavior:spatial_local:c1_105        | nutsavior    | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:nutsavior:formation_transform:c1_flip | nutsavior    | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:laddersel:spatial_local:c1_116        | laddersel    | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:springsword:spatial_local:c0_110      | springsword  | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:gift_savior:spatial_local:c0_110      | gift_savior  | T1         |    92.9%   |    92.9%   |      92.9%   |        3
+cand:spade_multi:formation_transform:0     | spade_multi  | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:all2prayer:formation_transform:c0_... | all2prayer   | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:suqing:strategy_schedule_branch:c0... | suqing       | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:all2prayer:formation_transform:c1_... | all2prayer   | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:suqing:strategy_schedule_branch:c1... | suqing       | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:springsword:spatial_local:c1_105      | springsword  | T1         |    89.3%   |    89.3%   |      89.3%   |        3
+cand:classicsavior:spatial_local:0         | classicsavior | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:all2prayer:spatial_local:0            | all2prayer   | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:gift_savior:spatial_local:0           | gift_savior  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:gift_jungle:spatial_local:0           | gift_jungle  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:gift_jungle:formation_transform:0     | gift_jungle  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:classicsavior:formation_transform:... | classicsavior | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:laddersel:formation_transform:c0_flip | laddersel    | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:laddersel:strategy_schedule_branch... | laddersel    | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:spade_multi:formation_transform:c0... | spade_multi  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:golden_boom:formation_transform:c0... | golden_boom  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:gift_jungle:strategy_schedule_bran... | gift_jungle  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:classicsavior:formation_transform:... | classicsavior | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:laddersel:formation_transform:c1_flip | laddersel    | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:laddersel:strategy_schedule_branch... | laddersel    | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:spade_multi:formation_transform:c1... | spade_multi  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:golden_boom:formation_transform:c1... | golden_boom  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:gift_jungle:strategy_schedule_bran... | gift_jungle  | T1         |    85.7%   |    85.7%   |      85.7%   |        3
+cand:golden_boom:spatial_local:0           | golden_boom  | T1         |   100.0%   |    85.7%   |      78.9%   |        3
+cand:golden_boom:strategy_schedule_bran... | golden_boom  | T1         |   100.0%   |    85.7%   |      78.6%   |        3
+cand:golden_boom:strategy_schedule_bran... | golden_boom  | T1         |   100.0%   |    85.7%   |      78.6%   |        3
+cand:nutsavior:spatial_local:0             | nutsavior    | T1         |   100.0%   |    85.7%   |      75.5%   |        3
+cand:nutsavior:strategy_schedule_branch... | nutsavior    | T1         |   100.0%   |    85.7%   |      75.5%   |        3
+cand:nutsavior:strategy_schedule_branch... | nutsavior    | T1         |   100.0%   |    85.7%   |      75.5%   |        3
+cand:nutsavior:spatial_local:c0_110        | nutsavior    | T1         |   100.0%   |    85.7%   |      66.1%   |        3
+cand:gift_savior:formation_transform:c0... | gift_savior  | T1         |   100.0%   |    60.9%   |      64.5%   |        3
+cand:gift_savior:formation_transform:c1... | gift_savior  | T1         |   100.0%   |    60.9%   |      64.5%   |        3
+cand:gift_savior:spatial_local:c1_116      | gift_savior  | T1         |   100.0%   |    50.5%   |      59.3%   |        3
+cand:gift_savior:strategy_schedule_bran... | gift_savior  | T1         |   100.0%   |    45.9%   |      53.4%   |        3
+cand:gift_savior:strategy_schedule_bran... | gift_savior  | T1         |   100.0%   |    45.9%   |      53.4%   |        3
+cand:gift_jungle:formation_transform:c0... | gift_jungle  | T1         |   100.0%   |    57.3%   |      51.1%   |        3
+cand:gift_jungle:formation_transform:c1... | gift_jungle  | T1         |   100.0%   |    57.3%   |      51.1%   |        3
+cand:spade_multi:spatial_local:c0_115      | spade_multi  | T1         |   100.0%   |    40.0%   |      48.4%   |        3
+cand:suqing:formation_transform:c0_flip    | suqing       | T1         |   100.0%   |    49.1%   |      46.8%   |        3
+cand:suqing:formation_transform:c1_flip    | suqing       | T1         |   100.0%   |    49.1%   |      46.8%   |        3
+cand:spade_multi:spatial_local:c1_108      | spade_multi  | T1         |   100.0%   |    38.6%   |      46.1%   |        3
+cand:suqing:spatial_local:c0_110           | suqing       | T1         |   100.0%   |    40.0%   |      40.7%   |        3
+cand:springsword:formation_transform:c1... | springsword  | T1         |   100.0%   |    50.9%   |      40.2%   |        3
+cand:springsword:strategy_schedule_bran... | springsword  | T1         |   100.0%   |    47.3%   |      39.5%   |        3
+cand:springsword:strategy_schedule_bran... | springsword  | T1         |   100.0%   |    47.3%   |      39.5%   |        3
+cand:springsword:formation_transform:c0... | springsword  | T1         |   100.0%   |    50.9%   |      37.0%   |        3
+cand:suqing:spatial_local:c1_124           | suqing       | T1         |   100.0%   |    32.3%   |      30.5%   |        3
+cand:springsword:spatial_local:0           | springsword  | T2         |    82.1%   |    82.1%   |          -   |        0
+cand:spade_multi:spatial_local:0           | spade_multi  | T2         |    82.1%   |    82.1%   |          -   |        0
+cand:classicsavior:spatial_local:c0_108    | classicsavior | T2         |    82.1%   |    82.1%   |          -   |        0
+cand:laddersel:spatial_local:c0_110        | laddersel    | T2         |    82.1%   |    82.1%   |          -   |        0
+cand:golden_boom:spatial_local:c1_105      | golden_boom  | T2         |    82.1%   |    82.1%   |          -   |        0
+cand:all2prayer:spatial_local:c0_110       | all2prayer   | T3         |    78.6%   |        -   |          -   |        0
+cand:all2prayer:strategy_schedule_branc... | all2prayer   | T3         |    78.6%   |        -   |          -   |        0
+cand:spade_multi:strategy_schedule_bran... | spade_multi  | T3         |    78.6%   |        -   |          -   |        0
+cand:all2prayer:strategy_schedule_branc... | all2prayer   | T3         |    78.6%   |        -   |          -   |        0
+cand:spade_multi:strategy_schedule_bran... | spade_multi  | T3         |    78.6%   |        -   |          -   |        0
+cand:classicsavior:strategy_schedule_br... | classicsavior | T3         |    71.4%   |        -   |          -   |        0
+cand:classicsavior:strategy_schedule_br... | classicsavior | T3         |    71.4%   |        -   |          -   |        0
+cand:laddersel:spatial_local:0             | laddersel    | T3         |    67.9%   |        -   |          -   |        0
+cand:all2prayer:spatial_local:c1_116       | all2prayer   | T3         |    67.9%   |        -   |          -   |        0
+cand:all2prayer:formation_transform:0      | all2prayer   | T3         |    64.3%   |        -   |          -   |        0
+cand:all2rush:formation_transform:c0_flip  | all2rush     | T3         |    57.1%   |        -   |          -   |        0
+cand:all2rush:formation_transform:c1_flip  | all2rush     | T3         |    57.1%   |        -   |          -   |        0
+cand:all2rush:strategy_schedule_branch:... | all2rush     | T3         |    50.0%   |        -   |          -   |        0
+cand:all2rush:strategy_schedule_branch:... | all2rush     | T3         |    50.0%   |        -   |          -   |        0
+cand:all2rush:spatial_local:0              | all2rush     | T3         |    42.9%   |        -   |          -   |        0
+cand:all2rush:spatial_local:c0_110         | all2rush     | T3         |    42.9%   |        -   |          -   |        0
+cand:all2rush:multi_monster_exploration... | all2rush     | T3         |    42.9%   |        -   |          -   |        0
+cand:all2rush:spatial_local:c1_117         | all2rush     | T3         |    42.9%   |        -   |          -   |        0
+cand:all2rush:multi_monster_exploration... | all2rush     | T3         |    42.9%   |        -   |          -   |        0
+========================================================================================================================
 统计总数: 阵型共 93 套 (T0: 11, T1: 58, T2: 5, T3: 19)
 说明:
-  - L3: Early Bundle 8 基础对手池胜率
-  - L2 实测胜率: 经 220 局 (11 T0 × 双侧 × 10 局) 独立重测后的真实纯胜率 (Pure Win-Rate)
-  - L1 实测胜率: 经 220 局 (11 谱系 × 双侧 × 10 局) 独立重测后的真实纯胜率 (Pure Win-Rate)
-  - 优化次数: 该阵型经过的演化/针对性尝试次数 (Attempts Count)
-================================================================================================
+  - L3 胜率: Early Bundle 8 基础对手池胜率
+  - L2 胜率: 11 强阵对手池胜率
+  - L1 实测胜率: 全谱系 22 跨谱系 Melee 对手池真实胜率 (以 0.70 平局权重客观计分)
+  - 全自动化同步: 本报告由训练 Pipeline 自动维护，每次训练评测与梯队变动自动刷新
+========================================================================================================================

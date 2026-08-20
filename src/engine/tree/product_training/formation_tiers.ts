@@ -271,7 +271,7 @@ export function saveFormationStrengthLibrary(entries: FormationLibraryEntry[]): 
     updatedAt: new Date().toISOString(),
     counts: {
       T0Count: t0,
-      T0L1OpponentMemberCount: t0Opp,
+      T0L1OpponentMemberCount: t0Opponent,
       T0L1LearnerCount: t0Learner,
       T1Count: t1,
       T2Count: t2,
@@ -287,5 +287,70 @@ export function saveFormationStrengthLibrary(entries: FormationLibraryEntry[]): 
   writeFileSync(tmp, JSON.stringify(file, null, 2), 'utf8');
   renameSync(tmp, FORMATION_STRENGTH_LIBRARY_PATH);
 
+  // 每次保存阵型库时自动同步生成并刷新 winrate_report.txt
+  autoGenerateWinrateReportTxt(entries);
+
   return file;
+}
+
+/** 训练全流程全自动胜率与梯队报告生成器 */
+export function autoGenerateWinrateReportTxt(entries: FormationLibraryEntry[]): string {
+  const reportPath = resolve('winrate_report.txt');
+  const txtLines: string[] = [];
+
+  txtLines.push('========================================================================================================================');
+  txtLines.push('                          MONSRISE 阵型胜率与优化次数汇总报告 (训练全流程全自动实时同步版)                              ');
+  txtLines.push('========================================================================================================================');
+  txtLines.push(
+    '阵型名称 (Formation ID)'.padEnd(42) + ' | ' +
+    'R0 根谱系'.padEnd(12) + ' | ' +
+    '层级 (Tier)'.padEnd(10) + ' | ' +
+    'L3 胜率'.padEnd(10) + ' | ' +
+    'L2 胜率'.padEnd(10) + ' | ' +
+    'L1 实测胜率'.padEnd(14) + ' | ' +
+    '优化次数'
+  );
+  txtLines.push('------------------------------------------------------------------------------------------------------------------------');
+
+  const sorted = [...entries].sort((a, b) => {
+    const tierOrder: Record<string, number> = { T0: 4, T1: 3, T2: 2, T3: 1 };
+    if (tierOrder[b.currentTier] !== tierOrder[a.currentTier]) {
+      return (tierOrder[b.currentTier] ?? 0) - (tierOrder[a.currentTier] ?? 0);
+    }
+    const aScore = a.l1Score ?? a.l2Score ?? a.l3Score ?? 0;
+    const bScore = b.l1Score ?? b.l2Score ?? b.l3Score ?? 0;
+    return bScore - aScore;
+  });
+
+  for (const f of sorted) {
+    const idStr = f.formationId.length > 42 ? f.formationId.slice(0, 39) + '...' : f.formationId.padEnd(42);
+    const r0Str = f.rootT0SourceId.padEnd(12);
+    const tierStr = f.currentTier.padEnd(10);
+    const l3Str = f.l3Score !== null && f.l3Score !== undefined ? (f.l3Score * 100).toFixed(1) + '%' : '-';
+    const l2Str = f.l2Score !== null && f.l2Score !== undefined ? (f.l2Score * 100).toFixed(1) + '%' : '-';
+    const l1Str = f.l1Score !== null && f.l1Score !== undefined ? (f.l1Score * 100).toFixed(1) + '%' : '-';
+    const attemptsStr = String(f.l2AttemptsCount ?? 0).padStart(8);
+
+    txtLines.push(
+      `${idStr} | ${r0Str} | ${tierStr} | ${l3Str.padStart(8)}   | ${l2Str.padStart(8)}   | ${l1Str.padStart(10)}   | ${attemptsStr}`
+    );
+  }
+
+  const t0Count = entries.filter(x => x.currentTier === 'T0').length;
+  const t1Count = entries.filter(x => x.currentTier === 'T1').length;
+  const t2Count = entries.filter(x => x.currentTier === 'T2').length;
+  const t3Count = entries.filter(x => x.currentTier === 'T3').length;
+
+  txtLines.push('========================================================================================================================');
+  txtLines.push(`统计总数: 阵型共 ${entries.length} 套 (T0: ${t0Count}, T1: ${t1Count}, T2: ${t2Count}, T3: ${t3Count})`);
+  txtLines.push('说明:');
+  txtLines.push('  - L3 胜率: Early Bundle 8 基础对手池胜率');
+  txtLines.push('  - L2 胜率: 11 强阵对手池胜率');
+  txtLines.push('  - L1 实测胜率: 全谱系 22 跨谱系 Melee 对手池真实胜率 (以 0.70 平局权重客观计分)');
+  txtLines.push('  - 全自动化同步: 本报告由训练 Pipeline 自动维护，每次训练评测与梯队变动自动刷新');
+  txtLines.push('========================================================================================================================\n');
+
+  const content = txtLines.join('\n');
+  writeFileSync(reportPath, content, 'utf8');
+  return content;
 }
