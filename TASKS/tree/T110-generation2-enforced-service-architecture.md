@@ -1,166 +1,123 @@
 STATUS: OPEN
 DOMAIN: tree
+REISSUE: T110
 SUPERSEDES: T109-generation2-architecture-consolidation
 
-# T110 - Generation 2: Enforced Service Architecture
+# T110 - Generation 2 All2Rush Pilot Orchestration
 
-## T109 Disposition
+## Result-Oriented Goal
 
-T109 created the requested directory and service names, but it does not yet enforce the declared architecture.
+Use the Generation 2 modules already created by T109 to run a clear, maintainable all2rush multi-case local-optimization pilot.
 
-Verified gaps:
+Do not spend this task chasing architectural purity. Retain and build on the working `generation2/` services. Refactor only where a real ambiguity blocks execution, produces incorrect observable results, loses evidence, or causes duplicate/competing pilot flows.
 
-```text
-- generation2/index.ts only re-exports modules; no single orchestration entry exists;
-- LossCaseService directly imports and uses ProductGameSession;
-- LocalSearchService directly restores/runs ProductGameSession via the checkpoint service result;
-- ProductMatchRunner exposes runFromSession, so callers can bypass its intended match boundary;
-- EvidenceWriter.writeJsonl overwrites files and does not supply schema/common metadata,
-  violating append-only evidence ownership;
-- architecture test is an integration smoke test and does not test prohibited imports,
-  direct filesystem writes, service boundaries, or the claimed orchestration order;
-- BranchLibrary confirmation marks success when a result exists, not when source-case
-  observable outcome and exact branch selection are reproduced;
-- local search candidate construction remains fixed-template, not the intended seeded
-  legal catalog. This search issue is deferred until architectural boundaries are real.
-```
-
-T110 is the single next integer task. It enforces the architecture before continuing T108 multi-case optimization.
-
-## Scope
+## Existing Assets to Reuse
 
 ```text
-all2rush optimization remains paused during refactor
-no R0/global main/tier/L1/deployment modification
-no battle-rule change in play_full_game.ts or src/game/**
-no arena.ts / 05_branch_routing.ts dependency in Generation 2
+product_match_runner.ts: normalized product observable results
+round_checkpoint_service.ts: checkpoint/session helpers
+loss_case_service.ts: loss-case queue and severity ranking
+local_search_service.ts: local candidate evaluation
+branch_library.ts: branch representation and attachment
+evidence_writer.ts: evidence output helper
 ```
 
-## Required Dependency Direction
+The target outcome is one understandable orchestration path, not a source-import audit exercise.
 
-Only this directed graph is permitted:
+## Minimal Flow
+
+Create or complete one callable pilot entry in `generation2/index.ts`:
 
 ```text
-index (orchestrator)
-  -> LossCaseService
-  -> RoundCheckpointService
-  -> LocalSearchService
-  -> BranchLibrary
-  -> EvidenceWriter
-
-ProductMatchRunner <- RoundCheckpointService and LocalSearchService
+pin selected all2rush + opponents
+-> build ranked loss queue
+-> for each queued loss case: sample/evaluate local candidates
+-> retain confirmed local improvements as exact branches
+-> evaluate source cases and a small holdout
+-> write evidence and return pilot summary
 ```
 
-Clarification: `ProductMatchRunner` is the only Generation 2 module allowed to directly call `playFullGame` or execute sequential session rounds. `RoundCheckpointService` is the only Generation 2 module allowed to import `ProductGameSession`.
+This entry must be the path used by the T110 test and artifacts. Existing helper exports may remain for compatibility.
 
-`LossCaseService` receives a small checkpoint/match facade injected from `RoundCheckpointService`; it must not import `ProductGameSession`, `playFullGame`, or `treeStrategyFor` execution machinery.
-
-`LocalSearchService` receives a continuation evaluation facade from `ProductMatchRunner` / `RoundCheckpointService`; it must not import `ProductGameSession`, invoke `playRound`, or write files.
-
-`BranchLibrary` receives confirmed local results and a branch confirmation callback. It must not create pools directly, generate candidates, execute games, or write files.
-
-`EvidenceWriter` is the sole Generation 2 module allowed to import node filesystem write APIs.
-
-## 1. One Real Orchestrator
-
-Replace export-only `generation2/index.ts` with a single named orchestration API, for example:
-
-```ts
-runGeneration2All2RushPilot(input): Generation2PilotResult
-```
-
-Its fixed flow:
+## Pilot Scope
 
 ```text
-resolve/pin caller-supplied snapshots
--> LossCaseService.buildLossQueue through supplied facade
--> for each case: build legal catalog and evaluate continuation through services
--> BranchLibrary creates/confirms only genuine improvements
--> EvidenceWriter appends artifacts
--> returns summary
+all2rush only
+up to 3 selected opponents
+up to 2 target-side loss/draw cases per opponent
+up to 48 unique legal candidates per case
 ```
 
-Exports of individual data types/helpers may remain, but no external caller may compose the internal pilot flow by calling services in arbitrary order.
+Use current selected snapshots where available. Reuse pinned T107/T108 snapshots only when their fingerprints still match selection; otherwise record the new selected snapshot fingerprint.
 
-## 2. Tight Service Interfaces
+No R0 mutation, global main replacement, tier/L1 change, or deployment is permitted.
 
-Introduce small typed interfaces in one `contracts.ts` file, such as:
+## Search Behavior
 
-```ts
-ObservableMatchRunner
-CheckpointFacade
-ContinuationEvaluator
-BranchConfirmationEvaluator
-Generation2EvidenceSink
-```
+For every queued case:
 
-Services depend only on these contracts, not concrete cross-layer internals. Avoid dependency injection frameworks or generic service locators.
-
-`ProductMatchRunner` returns normalized observable output. `RoundCheckpointService` owns capture/restore but must ask ProductMatchRunner to run all continuations.
-
-Do not expose public `runFromSession` or raw `ProductGameSession` from the public Generation 2 API. Keep any raw session adapter private to the checkpoint service implementation.
-
-## 3. Append-Only Evidence
-
-Replace overwrite-style trial/evidence writes with schema-versioned append-only records. `EvidenceWriter` must:
+1. Use the actual pre-adverse-round checkpoint.
+2. Generate distinct legal candidate changes from available existing local search machinery.
+3. Prefer broader variable coverage where cheaply available, but do not block on an ideal catalog rewrite. At a minimum record the actual variable choices and candidate behavior fingerprints.
+4. Compare candidates to baseline by observable output:
 
 ```text
-create parent directory
-append one JSONL row at a time
-include schemaVersion, timestamp, artifact kind, and shared pilot metadata
-support an explicit empty/header record when an artifact has no data
-never truncate a prior artifact during normal pilot operation
+final target W/D/L
+final score
+roundResults
+per-round survivor/HP digest
 ```
 
-A JSON manifest can be replaceable only when revision/hash is part of its filename. All event/trial/branch/evaluation records are JSONL append-only.
+5. A candidate is an improvement when it changes `L -> D/W` or `D -> W`.
+6. Same-outcome trajectory improvements may be saved only as warm-start evidence, not an executable exact branch.
 
-## 4. Branch Confirmation Contract
+A valid result is `NO_LOCAL_IMPROVEMENT_FOUND`; do not create a branch unless a real improvement exists.
 
-`BranchLibrary.confirmExactCaseBranch` receives an evaluator and only marks confirmed if it gets:
+## Branch Behavior
+
+For each improved candidate:
 
 ```text
-source case ID and target side
-exact selected branch ID
-baseline and branched observable final result
-per-round observable digest equality to the recorded candidate result
-fresh worker/pool boundary indicator
+create a narrow exact-case branch from legal visible observation
+confirm it once through a fresh worker/pool boundary
+prove source case selects the branch and reproduces improved observable result
 ```
 
-A non-error worker response is not confirmation. No branch is created/attached by orchestrator unless its candidate `improved === true`.
+Exact legal observation may execute a confirmed branch. Similar observation must not automatically execute it; it may be offered only as an explicit warm-start input to local candidate generation.
 
-## 5. Enforce Boundaries With Tests
+Do not merge branches unless two genuine improved branches have a shared executable prefix and source-case checks show no loss. Otherwise retain exact branches independently.
 
-Add tests that inspect the actual imports/source or use testable adapters to prove:
+## Evidence
+
+Use the existing EvidenceWriter where practical. Write T110 artifacts:
 
 ```text
-- index invokes the fixed service order through one public pilot call;
-- only ProductMatchRunner imports/calls playFullGame in generation2;
-- only RoundCheckpointService imports ProductGameSession in generation2;
-- only EvidenceWriter imports filesystem write APIs in generation2;
-- LossCaseService and LocalSearchService have no direct raw session/game execution;
-- BranchLibrary has no PersistentSimPool construction or filesystem writes;
-- no generation2 import reaches arena.ts or 05_branch_routing.ts;
-- append-only writer retains two sequential records;
-- a non-improved candidate cannot create/confirm/attach a branch;
-- a response with wrong branch ID or observable digest cannot confirm a branch.
+all2rush_g2_t110_pilot_manifest.json
+all2rush_g2_t110_loss_queue.jsonl
+all2rush_g2_t110_trials.jsonl
+all2rush_g2_t110_branch_library.jsonl
+all2rush_g2_t110_source_holdout_eval.jsonl
+all2rush_g2_t110_summary.json
 ```
 
-Add a regression: one known all2rush loss case flows through the single orchestrator and returns the same observable baseline result as the prior path.
+Every trial/branch row records:
 
-## Migration
-
-Preserve compatibility adapters only outside `generation2/`, document each, and ensure they cannot be reached by the new orchestrator. Do not delete historical evidence or old tests.
+```text
+case ID, target/opponent snapshot fingerprints, side, seed, fork round,
+candidate behavior fingerprint, selected variables, baseline/result W/D/L,
+score, roundResults, HP digest, and branch status where applicable.
+```
 
 ## Acceptance
 
-- [ ] One public Generation 2 orchestrator owns actual pilot flow.
-- [ ] Service dependency graph is enforced by tests.
-- [ ] Generation 2 raw game/session/filesystem ownership is singular as specified.
-- [ ] Evidence events are append-only with schema/common metadata.
-- [ ] Branch confirmation requires improved source-side observable reproduction.
-- [ ] One regression loss case has unchanged baseline observable result.
-- [ ] No optimization/global application occurs in this task.
+- [ ] T110 uses one documented Generation 2 orchestration call from `index.ts`.
+- [ ] A ranked multi-case all2rush queue is processed with recorded observable baselines.
+- [ ] Each processed case gets bounded distinct local trials or documented exhaustion.
+- [ ] Every branch represents an actual local improvement and has fresh-boundary confirmation.
+- [ ] Source and holdout observable results are reported.
+- [ ] No-improvement is recorded honestly if that is the result.
+- [ ] No R0/global/tier/L1/deployment modification.
 
 ## Delivery
 
-Write `TASKS/tree/T110.report.md` with before/after dependency table; public API and contracts; orchestration call path; forbidden-import test results; append-only evidence test result; branch-confirmation negative/positive cases; regression observable output; compatibility adapters; changed files. Commit/push only `agent/tree`.
+Write `TASKS/tree/T110.report.md` with the orchestration call path; selected fingerprints; loss queue; per-case trial/improvement counts; branch confirmation; source/holdout observable comparison; artifact row counts; test commands; no-apply confirmation; and changed files. Commit/push only `agent/tree`.
