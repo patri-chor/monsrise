@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T122-generation2-full-scale-bulk-optimizer-run
 
