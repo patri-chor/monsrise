@@ -19,6 +19,7 @@ import {
   type TutuModePreference,
   type DrillTargetPriority,
 } from '../calculator_policy';
+import { FormationSnapshotResolver } from '../product_training/snapshot_resolver';
 import { FORMATION_LIBRARY } from '../../../ai/formation_library';
 import { formationToEvol } from '../evol_gene';
 import { appendFileSync } from 'node:fs';
@@ -191,6 +192,7 @@ export function generateFocusedCandidatesForCase(
 
 /**
  * 运行基于 pre-R checkpoint 的单局续玩搜索 (Focused Continuation Search)
+ * 严格规则：目标侧 (targetSide) 必须与 lossCase.side 严格绑定，杜绝侧混淆
  */
 export function runFocusedSearchOnLossCase(
   lossCase: LossCase,
@@ -203,12 +205,23 @@ export function runFocusedSearchOnLossCase(
   const improvedBranches: BranchRecord[] = [];
   const allTrials: any[] = [];
 
-  const opp = FORMATION_LIBRARY.find(f => f.id === lossCase.opponentId || f.name === lossCase.opponentId);
-  const oppEvol = opp ? ((opp as any).evol ? (opp as any).evol : formationToEvol(opp)) : null;
+  const resolver = FormationSnapshotResolver.getInstance();
+  resolver.init();
+
+  let oppEvol: EvolFormation | null = null;
+  try {
+    const oppSnap = resolver.resolveFormationSnapshot({ formationId: lossCase.opponentId });
+    oppEvol = oppSnap.evol;
+  } catch {
+    const opp = FORMATION_LIBRARY.find(f => f.id === lossCase.opponentId || f.name === lossCase.opponentId);
+    oppEvol = opp ? ((opp as any).evol ? (opp as any).evol : formationToEvol(opp)) : null;
+  }
+
   if (!oppEvol) return { improvedBranches, allTrials };
 
   const oppStrat = treeStrategyFor(oppEvol);
-  const isRushP1 = lossCase.side === 1;
+  const targetSide = lossCase.side;
+  const isRushP1 = targetSide === 1;
 
   for (const cand of candidates) {
     // 关键点：每个 candidate 均从相同的 pre-R checkpoint 恢复，进行 1 局续玩评估
@@ -234,7 +247,7 @@ export function runFocusedSearchOnLossCase(
     const matchWinner: 1 | 2 | 0 =
       session.p1Score === session.p2Score ? 0 : session.p1Score > session.p2Score ? 1 : 2;
 
-    const candWon = (isRushP1 && matchWinner === 1) || (!isRushP1 && matchWinner === 2);
+    const candWon = (targetSide === 1 && matchWinner === 1) || (targetSide === 2 && matchWinner === 2);
     const candDraw = matchWinner === 0;
     const outcome: 'W' | 'D' | 'L' = candWon ? 'W' : candDraw ? 'D' : 'L';
 

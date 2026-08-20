@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T104-generation2-active-snapshot-worker-determinism-and-pilot-run
 

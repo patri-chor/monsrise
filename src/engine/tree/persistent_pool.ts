@@ -170,7 +170,11 @@ export class PersistentSimPool {
    *   - 若 CPU > target（默认 80%）则收窄 limit；若 CPU < target 则扩大 limit
    *   - 使用滑动窗口（Semaphore）保证同时在飞的 chunk 数 ≤ activeLimit
    */
-  public async dispatchTasks(tasks: SimTaskMessage[], candidateIdentity?: string): Promise<SimResultMessage[]> {
+  public async dispatchTasks(
+    tasks: SimTaskMessage[],
+    candidateIdentity?: string,
+    options?: { targetWorkerIndex?: number }
+  ): Promise<SimResultMessage[]> {
     // T032 C.4：正式请求若选择旧 arena 路径，在 worker 启动前 fail-closed
     failClosedArenaFormal(tasks);
 
@@ -179,6 +183,21 @@ export class PersistentSimPool {
     if (tasks.length === 0) return [];
 
     const requestId = randomUUID();
+
+    // 若指定了目标 workerIndex，直接定向分派给该 Worker
+    if (options?.targetWorkerIndex !== undefined && options.targetWorkerIndex >= 0 && options.targetWorkerIndex < this.workers.length) {
+      const targetWorker = this.workers[options.targetWorkerIndex];
+      return new Promise<SimResultMessage[]>((resolve, reject) => {
+        const handler = (msg: any) => {
+          if (msg.requestId !== requestId) return;
+          targetWorker.off('message', handler);
+          if (msg.type === 'batch_result') resolve(msg.results);
+          else reject(new Error(msg.error || 'Worker execution failed'));
+        };
+        targetWorker.on('message', handler);
+        targetWorker.postMessage({ type: 'batch', requestId, tasks });
+      });
+    }
 
     const optimalChunkSize = Math.max(1, Math.min(8, Math.ceil(tasks.length / (this.workerCount * 8))));
     const chunks: SimTaskMessage[][] = [];

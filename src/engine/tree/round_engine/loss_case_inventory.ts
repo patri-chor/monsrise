@@ -49,6 +49,17 @@ export function appendLossCaseEvidence(record: LossCase): void {
   appendFileSync(EVIDENCE_LOSS_CASE_PATH, line, 'utf8');
 }
 
+export const EVIDENCE_QUARANTINE_PATH = resolve('reports/tree-cycle/all2rush_g2_t105_quarantine.jsonl');
+
+export function appendQuarantineEvidence(record: any): void {
+  const line = JSON.stringify({
+    recordKind: 'ALL2RUSH_G2_QUARANTINE_V1',
+    timestamp: new Date().toISOString(),
+    ...record,
+  }) + '\n';
+  appendFileSync(EVIDENCE_QUARANTINE_PATH, line, 'utf8');
+}
+
 import {
   FormationSnapshotResolver,
   type ResolvedFormationSnapshot,
@@ -93,7 +104,13 @@ export function buildAll2RushLossCaseInventory(
         oppFp: oppSnap.canonicalFingerprint,
         oppPolicyFp,
       };
-    } catch {
+    } catch (err: any) {
+      appendQuarantineEvidence({
+        formationId: q.formationId,
+        query: q,
+        reason: 'SNAPSHOT_RESOLUTION_FAILED',
+        error: err?.message || String(err),
+      });
       return null;
     }
   }).filter(Boolean);

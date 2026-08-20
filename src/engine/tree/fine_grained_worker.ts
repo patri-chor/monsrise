@@ -6,8 +6,9 @@
 // T032 C.4：旧 arena 路径仅保留为 SANDBOX_ONLY_DEPRECATED（正式请求在 pool 层 fail-closed）
 // ============================================================
 
-import { parentPort } from 'node:worker_threads';
+import { parentPort, threadId } from 'node:worker_threads';
 import { readFileSync } from 'node:fs';
+import { sha256Hex } from './sha256_pure';
 import { FORMATION_LIBRARY } from '../../ai/formation_library';
 import { playSpecVsSpec, type SideSpec, type BranchDecision, type RoundObservation } from './arena';
 import { playFullGame, EXECUTION_SEMANTICS_VERSION } from '../play_full_game';
@@ -20,13 +21,17 @@ import type { ProductDeploymentTrace } from '../play_full_game';
 export type ExecutionMode = 'product_path' | 'arena_sandbox_deprecated';
 
 export interface SimTaskMessage {
-  taskId: number;
+  taskId: number | string;
   candidateIdx?: number;
   candidateFp?: string;
+  targetPayloadFp?: string;
+  targetPolicyFp?: string;
   formationA: EvolFormation | Formation;
   isNativeA?: boolean;
   opponentNameOrId: string;
   opponentFormation?: Formation;
+  opponentPayloadFp?: string;
+  opponentPolicyFp?: string;
   side: 1 | 2;
   seed: number;
   games: number;
@@ -39,12 +44,21 @@ export interface SimTaskMessage {
 }
 
 export interface SimResultMessage {
-  taskId: number;
+  taskId: number | string;
+  workerId?: string;
   candidateIdx?: number;
   candidateFp?: string;
+  targetPayloadFp?: string;
+  targetPolicyFp?: string;
+  opponentNameOrId?: string;
+  opponentPayloadFp?: string;
+  opponentPolicyFp?: string;
   w: number;
   d: number;
   l: number;
+  roundResults?: (1 | 2 | 0)[];
+  traceDigest?: string;
+  observationDigest?: string;
   error?: string;
   executionMode?: ExecutionMode;
   deploymentTraces?: any[];
@@ -111,6 +125,7 @@ function executeProductPathTask(task: SimTaskMessage): SimResultMessage {
   const oppName = (opp as any).name ?? (opp as any).id ?? 'opponent';
 
   let w = 0, d = 0, l = 0;
+  let roundResults: (1 | 2 | 0)[] | undefined = undefined;
   const traces: SimResultMessage['traces'] = task.collectObservations ? [] : undefined;
   const deploymentTraces: any[] = [];
 
@@ -185,13 +200,29 @@ function executeProductPathTask(task: SimTaskMessage): SimResultMessage {
         l: sourceLost ? 1 : 0,
       });
     }
+
+    if (task.games === 1) {
+      roundResults = [...match.roundResults];
+    }
   }
+
+  const traceDigest = deploymentTraces.length > 0
+    ? sha256Hex(JSON.stringify(deploymentTraces)).slice(0, 16)
+    : undefined;
 
   return {
     taskId: task.taskId,
+    workerId: `worker_tid_${threadId}`,
     candidateIdx: task.candidateIdx,
     candidateFp: task.candidateFp,
+    targetPayloadFp: task.targetPayloadFp ?? task.candidateFp,
+    targetPolicyFp: task.targetPolicyFp,
+    opponentNameOrId: task.opponentNameOrId,
+    opponentPayloadFp: task.opponentPayloadFp,
+    opponentPolicyFp: task.opponentPolicyFp,
     w, d, l,
+    roundResults,
+    traceDigest,
     executionMode: 'product_path',
     deploymentTraces: task.collectDeploymentTraces ? deploymentTraces : undefined,
     traces,
