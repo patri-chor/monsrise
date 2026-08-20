@@ -13,6 +13,9 @@ export * from './local_search_service';
 export * from './branch_library';
 export * from './evidence_writer';
 export * from './counterfactual_battle_engine';
+export * from './round_board_state';
+export * from './round_board_state_factory';
+export * from './single_round_engine';
 
 export interface PilotOrchestrationOptions {
   targetFormationId?: string;
