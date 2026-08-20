@@ -49,30 +49,53 @@ export function appendLossCaseEvidence(record: LossCase): void {
   appendFileSync(EVIDENCE_LOSS_CASE_PATH, line, 'utf8');
 }
 
+import {
+  FormationSnapshotResolver,
+  type ResolvedFormationSnapshot,
+} from '../product_training/snapshot_resolver';
+
 /**
- * 挖掘针对 all2rush 的典型 LossCase
+ * 挖掘针对 all2rush 的典型 LossCase（严格基于 SnapshotResolver 解析的确切快照）
  */
 export function buildAll2RushLossCaseInventory(
-  rushEvol: EvolFormation,
-  opponentNames: string[] = ['golden_boom', 'all2prayer', 'gift_jungle']
+  rushSnapshot: ResolvedFormationSnapshot,
+  opponentQueries: Array<{ formationId: string; canonicalFingerprint?: string }> = [
+    { formationId: 't0:golden_boom' },
+    { formationId: 't0:all2prayer' },
+    { formationId: 't0:gift_jungle' },
+  ]
 ): LossCase[] {
+  const resolver = FormationSnapshotResolver.getInstance();
+  resolver.init();
+
   const lossCases: LossCase[] = [];
+  const rushEvol = rushSnapshot.evol;
   const rushStrat = treeStrategyFor(rushEvol);
-  const rushFp = computeCandidateFingerprint(rushEvol);
+  const rushFp = rushSnapshot.canonicalFingerprint;
   const rushPolicyFp = rushEvol.calculatorPolicy
     ? computeCalculatorPolicyFingerprint(rushEvol.calculatorPolicy)
     : computeCalculatorPolicyFingerprint(DEFAULT_CALCULATOR_POLICY);
 
-  const candidateOpponents = opponentNames.map(name => {
-    const opp = FORMATION_LIBRARY.find(f => f.id === name || f.name === name);
-    if (!opp) return null;
-    const oppEvol = (opp as any).evol ? (opp as any).evol : formationToEvol(opp);
-    const oppStrat = treeStrategyFor(oppEvol);
-    const oppFp = computeCandidateFingerprint(oppEvol);
-    const oppPolicyFp = oppEvol.calculatorPolicy
-      ? computeCalculatorPolicyFingerprint(oppEvol.calculatorPolicy)
-      : computeCalculatorPolicyFingerprint(DEFAULT_CALCULATOR_POLICY);
-    return { name, opp, oppEvol, oppStrat, oppFp, oppPolicyFp };
+  const candidateOpponents = opponentQueries.map(q => {
+    try {
+      const oppSnap = resolver.resolveFormationSnapshot(q);
+      const oppEvol = oppSnap.evol;
+      const oppStrat = treeStrategyFor(oppEvol);
+      const oppPolicyFp = oppEvol.calculatorPolicy
+        ? computeCalculatorPolicyFingerprint(oppEvol.calculatorPolicy)
+        : computeCalculatorPolicyFingerprint(DEFAULT_CALCULATOR_POLICY);
+      return {
+        id: oppSnap.formationId,
+        name: oppSnap.displayName,
+        snap: oppSnap,
+        oppEvol,
+        oppStrat,
+        oppFp: oppSnap.canonicalFingerprint,
+        oppPolicyFp,
+      };
+    } catch {
+      return null;
+    }
   }).filter(Boolean);
 
   let caseCounter = 1;

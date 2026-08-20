@@ -3,7 +3,14 @@
 // 跨平台（Node / Browser 同构）无依赖 SHA-256 实现
 // ============================================================
 
+import { createHash } from 'node:crypto';
+
 export function sha256Hex(ascii: string): string {
+  try {
+    return createHash('sha256').update(ascii).digest('hex');
+  } catch {
+    // fallback
+  }
   function rightRotate(value: number, amount: number) {
     return (value >>> amount) | (value << (32 - amount));
   }

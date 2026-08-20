@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T102-generation2-authoritative-round-continuation-and-executable-branches
 

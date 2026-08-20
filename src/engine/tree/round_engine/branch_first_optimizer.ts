@@ -5,7 +5,7 @@
 
 import '../../env';
 import type { EvolFormation, EvolNode, FeatureMask } from '../evol_gene';
-import { cloneEvolFormation, cloneEvolNode, emptyMask, walkEvolNodes } from '../evol_gene';
+import { cloneEvolFormation, cloneEvolNode, emptyMask, walkEvolNodes, recognizeArchetype } from '../evol_gene';
 import { treeStrategyFor } from '../product_tree_strategy';
 import { ProductGameSession } from './product_round_session';
 import type { LossCase } from './loss_case_inventory';
@@ -264,12 +264,18 @@ export function runFocusedSearchOnLossCase(
         placements: n.placements.map(p => ({ monsterId: p.monsterId, x: p.x, y: p.y })),
       }));
 
-      // 构建合法的最窄特征掩码（基于 LossCase 的 pre-R observation）
+      // 动态推导合法特征掩码（严禁硬编码 main/keys/opponent）
+      const rec = recognizeArchetype({
+        handIds: new Set(lossCase.preRObservation.revealedEnemyHandIds),
+        handBadges: new Set(lossCase.preRObservation.revealedEnemyHandBadges),
+        boardIds: new Set(lossCase.preRObservation.revealedEnemyBoardIds),
+      });
+
       const specificMask: FeatureMask = {
         side: lossCase.side,
-        main: 'fullrush',
-        subs: [],
-        keys: lossCase.preRObservation.revealedEnemyHandIds.includes(116) ? ['drill'] : [],
+        main: rec.main,
+        subs: [...rec.subs],
+        keys: [...rec.keys],
       };
 
       const branch: BranchRecord = {
@@ -298,6 +304,7 @@ export function runFocusedSearchOnLossCase(
 
 /**
  * 运行分支前缀合并与历史剪枝 (Merge & Prune)
+ * 严格规则：严禁向空 mask (emptyMask) 盲目泛化，合并分支必须具备合法派生的非空约束条件
  */
 export function mergeAndPruneBranches(branches: BranchRecord[]): {
   merged: BranchRecord[];
@@ -326,7 +333,7 @@ export function mergeAndPruneBranches(branches: BranchRecord[]): {
     activeLibrary.push(br);
   }
 
-  // 尝试合并共享前缀分支
+  // 尝试合并共享前缀分支（仅当具备合法且非空的公共约束时）
   if (activeLibrary.length >= 2) {
     for (let i = 0; i < activeLibrary.length; i++) {
       for (let j = i + 1; j < activeLibrary.length; j++) {
@@ -336,6 +343,24 @@ export function mergeAndPruneBranches(branches: BranchRecord[]): {
           const p1 = b1.actionSubtreeDelta[0];
           const p2 = b2.actionSubtreeDelta[0];
           if (JSON.stringify(p1.placements) === JSON.stringify(p2.placements)) {
+            // 提取合法公共条件（求交集，绝不设为空 mask）
+            const commonSubs = b1.condition.subs.filter(s => b2.condition.subs.includes(s));
+            const commonKeys = b1.condition.keys.filter(k => b2.condition.keys.includes(k));
+            const commonMain = b1.condition.main === b2.condition.main ? b1.condition.main : null;
+            const commonSide = b1.condition.side === b2.condition.side ? b1.condition.side : null;
+
+            // 若公共条件完全为空，严禁合成（保持为独立精确分支）
+            if (commonMain === null && commonSide === null && commonSubs.length === 0 && commonKeys.length === 0) {
+              continue;
+            }
+
+            const generalizedCondition: FeatureMask = {
+              side: commonSide,
+              main: commonMain,
+              subs: commonSubs,
+              keys: commonKeys,
+            };
+
             // 共享 forkRound 执行前缀
             const mergedRecord: BranchRecord = {
               branchId: `MERGED_PREFIX_${b1.branchId.slice(0, 10)}_${b2.branchId.slice(0, 10)}`,
@@ -343,14 +368,14 @@ export function mergeAndPruneBranches(branches: BranchRecord[]): {
               parentSnapshotFingerprint: b1.parentSnapshotFingerprint,
               solutionBehaviorFingerprint: b1.solutionBehaviorFingerprint,
               forkRound: b1.forkRound,
-              condition: emptyMask(), // 泛化条件
+              condition: generalizedCondition,
               sourceLossCaseIds: Array.from(new Set([...b1.sourceLossCaseIds, ...b2.sourceLossCaseIds])),
               actionSubtreeDelta: [p1],
               policyDelta: b1.policyDelta,
               fixedCaseResult: 'W',
               verifiedCoverageCount: b1.verifiedCoverageCount + b2.verifiedCoverageCount,
               createdAt: new Date().toISOString(),
-              notes: `Prefix merged from ${b1.branchId} and ${b2.branchId}`,
+              notes: `Prefix merged from ${b1.branchId} and ${b2.branchId} under verified legal condition`,
             };
             merged.push(mergedRecord);
             appendMergePruneAudit({ action: 'MERGE_PREFIX', sourceBranches: [b1.branchId, b2.branchId], mergedBranchId: mergedRecord.branchId });

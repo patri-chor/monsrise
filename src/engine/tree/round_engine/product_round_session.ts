@@ -38,7 +38,7 @@ function ensureBadgesReady() {
   }
 }
 
-/** 序列化单只怪兽状态（用于 Checkpoint） */
+/** 序列化单只怪兽状态（权威包含所有运行时生命周期字段） */
 export interface SerializedPlacedMonster {
   id: string;
   dbId: number;
@@ -57,10 +57,19 @@ export interface SerializedPlacedMonster {
   speed: number;
   shield: number;
   skillCdProgress: number;
+  flashTime: number;
   isDead: boolean;
+  statusEffects: {
+    type: 'poison' | 'bleed' | 'stun' | 'chill' | 'freeze' | 'burn' | 'stealth' | 'invincible' | 'fortified';
+    duration: number;
+    value?: number;
+    tickTimer?: number;
+    stacks?: number;
+  }[];
+  state: 'idle' | 'walk' | 'attack' | 'skill';
 }
 
-/** 战前回合检查点（完全确定性与自包含） */
+/** 战前回合检查点（完全确定性与自包含，包含预算、分数、RNG与策略上下文） */
 export interface ProductRoundCheckpoint {
   round: number;
   seed: number;
@@ -73,6 +82,8 @@ export interface ProductRoundCheckpoint {
   roundResults: (1 | 2 | 0)[];
   p1RemainingBudget: number;
   p2RemainingBudget: number;
+  strategyIdentityA: string;
+  strategyIdentityB: string;
   checkpointFingerprint: string;
 }
 
@@ -124,10 +135,30 @@ function computeCheckpointFingerprint(cp: Omit<ProductRoundCheckpoint, 'checkpoi
     rngState: cp.rngState,
     p1Score: cp.p1Score,
     p2Score: cp.p2Score,
+    p1Budget: cp.p1RemainingBudget,
+    p2Budget: cp.p2RemainingBudget,
+    identityA: cp.strategyIdentityA,
+    identityB: cp.strategyIdentityB,
     teamA: cp.teamA.map(s => ({ m: s.monsterId, b: [...s.badgeIds].sort() })),
     teamB: cp.teamB.map(s => ({ m: s.monsterId, b: [...s.badgeIds].sort() })),
     boardMonsters: cp.boardMonsters
-      .map(m => ({ id: m.id, dbId: m.dbId, x: m.gridX, y: m.gridY, t: m.team, r: m.placedRound, b: [...m.badgeIds].sort() }))
+      .map(m => ({
+        id: m.id,
+        dbId: m.dbId,
+        x: m.gridX,
+        y: m.gridY,
+        ix: m.initialGridX,
+        iy: m.initialGridY,
+        t: m.team,
+        r: m.placedRound,
+        hp: m.hp,
+        shield: m.shield,
+        cd: m.skillCdProgress,
+        dead: m.isDead,
+        st: m.state,
+        se: m.statusEffects.map(e => ({ t: e.type, d: e.duration, v: e.value })),
+        b: [...m.badgeIds].sort(),
+      }))
       .sort((a, b) => a.id.localeCompare(b.id)),
     roundResults: cp.roundResults,
   };
@@ -192,7 +223,7 @@ export class ProductGameSession {
   }
 
   /**
-   * 将内部 Session 状态（分数/棋盘/RNG）同步到 GameEngine 单例
+   * 将内部 Session 状态（分数/棋盘/RNG）权威同步到 GameEngine 单例（绝不使用默认值替代或调用 reset 篡改）
    */
   private syncToGameEngine(board: SerializedPlacedMonster[]): void {
     gameEngine.currentRound = this.currentRound;
@@ -203,7 +234,7 @@ export class ProductGameSession {
     gameEngine.selectedTeamIndex = 0;
     gameEngine.setReplaySeed(this.currentRngSeed);
 
-    // 重构 boardMonsters
+    // 权威重构 boardMonsters
     gameEngine.boardMonsters = [];
     for (const sm of board) {
       const slot: TeamSlot = { monsterId: sm.dbId, badgeIds: [...sm.badgeIds] };
@@ -232,40 +263,48 @@ export class ProductGameSession {
         speed: sm.speed,
         shield: sm.shield,
         skillCdProgress: sm.skillCdProgress,
+        flashTime: sm.flashTime ?? 0,
         isDead: sm.isDead,
-        statusEffects: [],
-        state: 'idle',
+        statusEffects: sm.statusEffects.map(e => ({ ...e })),
+        state: sm.state,
       };
       gameEngine.boardMonsters.push(placed);
     }
-    // 恢复战前满血/清buff状态
-    gameEngine.resetBoardForNextRound();
   }
 
   /**
-   * 捕获当前回合开始前的完全独立检查点
+   * 捕获当前回合开始前的权威全状态检查点
    */
   public captureCheckpointBeforeRound(round: number): ProductRoundCheckpoint {
-    // 提取当前棋盘的序列化信息
+    // 提取当前棋盘全部未来影响字段
     const boardMonsters: SerializedPlacedMonster[] = gameEngine.boardMonsters.map(m => ({
       id: m.id,
       dbId: m.dbId,
       badgeIds: m.badges.map(b => b.id),
-      gridX: m.initialGridX, // 战前回合检查点必须以布阵原位为准
-      gridY: m.initialGridY,
+      gridX: m.gridX,
+      gridY: m.gridY,
       initialGridX: m.initialGridX,
       initialGridY: m.initialGridY,
       placedRound: m.placedRound,
       team: m.team,
-      hp: m.data.hp,
-      maxHp: m.data.hp,
-      atk: m.data.atk,
-      ats: m.data.ats,
-      range: m.data.range,
-      speed: m.data.speed,
-      shield: 0,
-      skillCdProgress: 0,
-      isDead: false,
+      hp: m.hp,
+      maxHp: m.maxHp,
+      atk: m.atk,
+      ats: m.ats,
+      range: m.range,
+      speed: m.speed,
+      shield: m.shield,
+      skillCdProgress: m.skillCdProgress,
+      flashTime: m.flashTime ?? 0,
+      isDead: m.isDead,
+      statusEffects: (m.statusEffects ?? []).map(e => ({
+        type: e.type,
+        duration: e.duration,
+        value: e.value,
+        tickTimer: e.tickTimer,
+        stacks: e.stacks,
+      })),
+      state: m.state,
     }));
 
     const rngState = (gameEngine as any)._replaySeed ?? this.currentRngSeed;
@@ -282,6 +321,8 @@ export class ProductGameSession {
       roundResults: [...this.roundResults],
       p1RemainingBudget: gameEngine.p1RemainingBudget,
       p2RemainingBudget: gameEngine.p2RemainingBudget,
+      strategyIdentityA: this.strategyIdentityA,
+      strategyIdentityB: this.strategyIdentityB,
     };
 
     return {
@@ -291,14 +332,14 @@ export class ProductGameSession {
   }
 
   /**
-   * 从检查点恢复一个全新的独立 Session（无状态泄漏）
+   * 从检查点恢复一个全新的独立 Session（权威无损失状态恢复）
    */
   public static restore(checkpoint: ProductRoundCheckpoint, opts: CreateProductSessionOptions = {}): ProductGameSession {
     const session = new ProductGameSession(checkpoint.teamA, checkpoint.teamB, {
       seed: checkpoint.seed,
       battleTimeoutSec: opts.battleTimeoutSec,
-      strategyIdentityA: opts.strategyIdentityA,
-      strategyIdentityB: opts.strategyIdentityB,
+      strategyIdentityA: checkpoint.strategyIdentityA ?? opts.strategyIdentityA,
+      strategyIdentityB: checkpoint.strategyIdentityB ?? opts.strategyIdentityB,
     });
     session.currentRound = checkpoint.round;
     session.p1Score = checkpoint.p1Score;
