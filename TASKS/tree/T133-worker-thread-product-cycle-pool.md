@@ -18,11 +18,51 @@ startup and process overhead; correct default for product cycle parallelism
 
 The repository already has `PersistentSimPool`/`arena_parallel` worker-thread patterns. Do not use their deprecated arena evaluation path. Reuse/adapt only the worker lifecycle, serializable-task, stable-result-order, timeout, and CPU-accounting patterns for formal product-path cycle work.
 
+## T132 Correctness Gate
+
+T132 cannot be treated as a valid D+S implementation until this task corrects two verified defects:
+
+```text
+- D+S currently changes a D catalog record but executes SingleRoundEngine against
+  the original `baseCase.baseState`; it does not rebuild/capture a RoundBoardState
+  from the D-modified exact snapshot.
+- its D catalog is placeholder data (badge toggle/monster IDs 1..8/first-last
+  slots), not constrained candidates derived from the actual dynamic snapshot.
+```
+
+Worker threads must parallelize correct work, never hide or accelerate those defects.
+
 ## Goal
 
-Add one worker-thread pool for independent S/D+S/backprop product work in the consolidated Generation 2 optimizer. Prove product-path result determinism and measure speed/memory before making worker-thread parallelism default.
+First make D+S snapshot-correct and constraint-derived, then add one worker-thread pool for independent S/D+S/backprop product work. Prove product-path result determinism and measure speed/memory before making worker-thread parallelism default.
 
 No child-process implementation. No same-isolate battle concurrency. No legacy arena runtime import. No new optimizer runner.
+
+## 0. Snapshot-Correct D+S Before Parallelism
+
+For every D candidate:
+
+```text
+exact D team + D evol
+-> product baseline replay/capture for that D snapshot
+-> D-specific RoundBoardState / adverse case
+-> up to 8 S trials against that D-specific state
+```
+
+Never reuse a parent snapshot `baseState` after D modifies team/evol/badges.
+
+Build D catalog from actual target snapshot and existing domain metadata, not fixed IDs:
+
+```text
+- badge variants from legal current badges / declared badge-switch patterns;
+- deck-internal reassignment only where deployment/order semantics can change;
+- external replacements from constrained role/cost/module-compatible candidates;
+- update every affected evol placement/branch consistently;
+- validate team size, uniqueness, cost, badge legality, module invariants, and
+  product deployability before D is eligible.
+```
+
+Evidence must show D parent fingerprint, D snapshot fingerprint, D-specific state fingerprint, catalog source and rejection reason. Add a direct test where a D team/badge change changes the captured product state and D+S trial input fingerprint.
 
 ## 1. One Pool Boundary
 
