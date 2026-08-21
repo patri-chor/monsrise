@@ -34,7 +34,36 @@ S
 D_PLUS_S
 ```
 
-No O/opening dependency. No event sourcing. No new runner. Keep current cycle/pool APIs and snapshot propagation.
+No O/opening dependency. No event sourcing. Keep current cycle/pool APIs and snapshot propagation.
+
+## Parallel Execution
+
+Product battles use mutable global engine state. Do not run `playFullGame`, `ProductMatchRunner`, or `SingleRoundEngine` concurrently inside one Node process.
+
+Add a small reusable process-worker adapter within the existing cycle boundary (for example `cycle/worker_pool.ts`, counting as the one allowed additional cycle module) and run independent work in child Node processes:
+
+```text
+parallel-safe unit: one source-case S search, one D attempt with <=8 S trials,
+or one lineage L1/L2 validation group
+main process: deterministic scheduling, result validation, lineage/archive merge
+```
+
+Rules:
+
+```text
+- workers receive serializable exact snapshots/config/seeds only;
+- worker count configurable; default min(logical CPU count - 1, 6), min 1;
+- never exceed configured worker cap;
+- all output records carry stable work IDs;
+- parent sorts by stable case/D/lineage ID before objective/frontier selection;
+- parallel timing must not change candidate stream, fingerprints, selected
+  lineage, or evidence ordering;
+- worker crash/timeout is recorded as failed work, never silently reseeded;
+- no artificial CPU spinning; record worker count, wall time and aggregate CPU
+  time for S/D+S/backprop stages.
+```
+
+The <120s test may use one worker for deterministic control flow. The three-T0 practical pilot should use configured process parallelism and report worker count, wall time, aggregate CPU time, and equivalent deterministic results.
 
 ## 1. Executable S Frontier Discovery
 
