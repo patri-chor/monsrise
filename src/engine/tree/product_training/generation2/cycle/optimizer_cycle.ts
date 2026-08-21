@@ -6,7 +6,7 @@ import { CycleBenchmark } from './benchmark';
 import { CycleSearch } from './search';
 import { CyclePilot, type CompiledForwardCandidate } from './pilot';
 import { CycleEvidence } from './evidence';
-import { LineageManager } from './lineage';
+import { LineageManager, type LocalLineage, type DCandidateCatalogRecord, type DSTrialRecord } from './lineage';
 import { BranchLibrary, type ExecutableBranch } from '../branch_library';
 
 export class OptimizerCycleOrchestrator {
@@ -75,11 +75,34 @@ export class OptimizerCycleOrchestrator {
         break;
       }
 
-      // 3. 局部搜索与代表解
+      // 3. 局部 S 搜索与代表解
       const searchRes = CycleSearch.runLocalSearch(adverseCases, fullConfig, sSeed);
       const { trials, representatives } = searchRes;
+      CycleEvidence.writeJsonl(path.join(iterDir, 's_trials.jsonl'), trials);
       CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_trials.jsonl'), trials);
       CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_archive.jsonl'), representatives);
+
+      const sLineages = LineageManager.buildSLineages(representatives, targetSnap.canonicalFingerprint);
+
+      // 3B. 判定 D+S 触发条件：L2 baseline Score70 < 0.70 且 S 搜索未产生有效局部提升谱系
+      const shouldTriggerDS = baselineBenchmark.targetScore70Average < 0.70 && sLineages.length === 0;
+      let dCatalog: DCandidateCatalogRecord[] = [];
+      let dsTrials: DSTrialRecord[] = [];
+      let dsLineages: LocalLineage[] = [];
+
+      if (shouldTriggerDS) {
+        dCatalog = LineageManager.generateDCatalog(targetSnap, sSeed);
+        const dsRes = LineageManager.executeDPlusSSearch(dCatalog, adverseCases, sSeed);
+        dsTrials = dsRes.dsTrials;
+        dsLineages = dsRes.retainedLineages;
+      }
+
+      CycleEvidence.writeJsonl(path.join(iterDir, 'd_catalog.jsonl'), dCatalog);
+      CycleEvidence.writeJsonl(path.join(iterDir, 'ds_trials.jsonl'), dsTrials);
+
+      // 合并保留谱系 (S + D+S)
+      const combinedLineages = [...sLineages, ...dsLineages];
+      CycleEvidence.writeJsonl(path.join(iterDir, 'local_lineages.jsonl'), combinedLineages);
 
       // 4. 前向编译与验证
       const forwardCandidates: CompiledForwardCandidate[] = [];
@@ -121,12 +144,19 @@ export class OptimizerCycleOrchestrator {
         acceptedThisIter = acceptedThisIter.slice(0, fullConfig.maxNewPilotBranchesPerIteration);
       }
 
-      const localLineages = LineageManager.buildSLineages(representatives, targetSnap.canonicalFingerprint);
-      CycleEvidence.writeJsonl(path.join(iterDir, 'local_lineages.jsonl'), localLineages);
-
       CycleEvidence.writeJsonl(path.join(iterDir, 'strategy_traces.jsonl'), allStrategyTraces);
       CycleEvidence.writeJsonl(path.join(iterDir, 'paired_validations.jsonl'), allPairedValidations);
+      CycleEvidence.writeJsonl(path.join(iterDir, 'backprop_validations.jsonl'), allPairedValidations);
       CycleEvidence.writeJsonl(path.join(iterDir, 'pilot_decisions.jsonl'), allCandidateDecisions);
+
+      CycleEvidence.writeJson(path.join(iterDir, 'lineage_selection.json'), {
+        iteration: iter,
+        retainedLocalLineagesCount: combinedLineages.length,
+        sLineagesCount: sLineages.length,
+        dsLineagesCount: dsLineages.length,
+        acceptedBranchesCount: acceptedThisIter.length,
+        decisions: allCandidateDecisions,
+      });
 
       // 5. 更新 Pilot 库并运行 Post-Benchmark
       const initialCount = currentPilotLibrary.length;
@@ -151,6 +181,12 @@ export class OptimizerCycleOrchestrator {
         rejectedPilotBranchesCount: allCandidateDecisions.filter(d => d.decision === 'PILOT_REJECTED').length,
         newAcceptedBranches: acceptedThisIter,
         searchMetrics: searchRes.metrics,
+        dPlusSMetrics: {
+          triggered: shouldTriggerDS,
+          dCatalogSize: dCatalog.length,
+          dsTrialsCount: dsTrials.length,
+          retainedDSLineagesCount: dsLineages.length,
+        },
       };
 
       iterationSummaries.push(iterSum);
@@ -166,31 +202,30 @@ export class OptimizerCycleOrchestrator {
       }
     }
 
-    CycleEvidence.writeJson(path.join(outBaseDir, 'pilot_library.json'), currentPilotLibrary);
-    CycleEvidence.writeJsonl(path.join(outBaseDir, 'iterations.jsonl'), iterationSummaries);
-
-    const summary = {
-      runId,
-      totalIterations: iterationSummaries.length,
-      initialPilotBranchesCount: 0,
-      finalPilotBranchesCount: currentPilotLibrary.length,
-      totalAdverseCasesMined: iterationSummaries.reduce((s, r) => s + r.adverseCasesMined, 0),
-      totalUniqueCandidatesEvaluated: iterationSummaries.reduce((s, r) => s + r.uniqueCandidatesEvaluated, 0),
-      totalAcceptedBranches: currentPilotLibrary.length,
-      totalRejectedBranches: iterationSummaries.reduce((s, r) => s + r.rejectedPilotBranchesCount, 0),
-      stopReason,
-    };
-
-    CycleEvidence.writeJson(path.join(outBaseDir, 'summary.json'), summary);
-
-    return {
+    const report: OptimizerCycleReport = {
       runId,
       config: fullConfig,
       totalIterationsExecuted: iterationSummaries.length,
       stopReason,
       pilotLibrary: currentPilotLibrary,
       iterations: iterationSummaries,
-      summary,
+      summary: {
+        runId,
+        totalIterations: iterationSummaries.length,
+        initialPilotBranchesCount: 0,
+        finalPilotBranchesCount: currentPilotLibrary.length,
+        totalAdverseCasesMined: iterationSummaries.reduce((s, it) => s + it.adverseCasesMined, 0),
+        totalUniqueCandidatesEvaluated: iterationSummaries.reduce((s, it) => s + it.uniqueCandidatesEvaluated, 0),
+        totalAcceptedBranches: iterationSummaries.reduce((s, it) => s + it.acceptedPilotBranchesCount, 0),
+        totalRejectedBranches: iterationSummaries.reduce((s, it) => s + it.rejectedPilotBranchesCount, 0),
+        stopReason,
+      },
     };
+
+    CycleEvidence.writeJson(path.join(outBaseDir, 'summary.json'), report);
+    CycleEvidence.writeJson(path.join(outBaseDir, 'pilot_library.json'), currentPilotLibrary);
+    CycleEvidence.writeJsonl(path.join(outBaseDir, 'iterations.jsonl'), iterationSummaries);
+
+    return report;
   }
 }

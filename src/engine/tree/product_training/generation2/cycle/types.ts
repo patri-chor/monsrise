@@ -42,7 +42,7 @@ export const DEFAULT_CYCLE_CONFIG: OptimizerCycleConfig = {
   maxIterations: 3,
   maxOpponents: 3,
   maxAdverseCasesPerOpponent: 2,
-  uniqueCandidatesPerCase: 16,
+  uniqueCandidatesPerCase: 32, // T132 默认 32 unique trials per case
   populationSize: 8,
   maxGenerations: 2,
   maxNewPilotBranchesPerIteration: 2,
@@ -116,6 +116,7 @@ export interface IterationSummary {
   rejectedPilotBranchesCount: number;
   newAcceptedBranches: ExecutableBranch[];
   searchMetrics?: any;
+  dPlusSMetrics?: any;
 }
 
 export interface OptimizerCycleReport {
