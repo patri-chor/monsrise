@@ -5,6 +5,7 @@ export * from './search';
 export * from './pilot';
 export * from './evidence';
 export * from './lineage';
+export * from './product_worker_pool';
 export * from './optimizer_cycle';
 
 import { OptimizerCycleOrchestrator } from './optimizer_cycle';

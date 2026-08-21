@@ -92,7 +92,7 @@ export class OptimizerCycleOrchestrator {
 
       if (shouldTriggerDS) {
         dCatalog = LineageManager.generateDCatalog(targetSnap, sSeed);
-        const dsRes = LineageManager.executeDPlusSSearch(dCatalog, adverseCases, sSeed);
+        const dsRes = await LineageManager.executeDPlusSSearch(dCatalog, adverseCases, sSeed);
         dsTrials = dsRes.dsTrials;
         dsLineages = dsRes.retainedLineages;
       }

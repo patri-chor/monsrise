@@ -30,6 +30,9 @@ export interface OptimizerCycleConfig {
   maxNewPilotBranchesPerIteration: number;
   maxConsecutiveNoImprovementIterations: number;
   dryRun: boolean;
+  parallelBackend?: 'single' | 'worker_threads';
+  workerCount?: number;
+  workerTimeoutMs?: number;
   outputBaseDirectory?: string;
 }
 
@@ -48,6 +51,8 @@ export const DEFAULT_CYCLE_CONFIG: OptimizerCycleConfig = {
   maxNewPilotBranchesPerIteration: 2,
   maxConsecutiveNoImprovementIterations: 2,
   dryRun: false,
+  parallelBackend: 'single',
+  workerTimeoutMs: 30000,
 };
 
 export interface BaselineCase {
@@ -117,6 +122,7 @@ export interface IterationSummary {
   newAcceptedBranches: ExecutableBranch[];
   searchMetrics?: any;
   dPlusSMetrics?: any;
+  parallelMetrics?: any;
 }
 
 export interface OptimizerCycleReport {

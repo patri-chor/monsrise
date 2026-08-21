@@ -171,11 +171,11 @@ export class LineageManager {
   /**
    * 执行 4x8 D+S 局部搜索循环
    */
-  public static executeDPlusSSearch(
+  public static async executeDPlusSSearch(
     dCatalog: DCandidateCatalogRecord[],
     adverseCases: BaselineCase[],
     searchSeed: number
-  ): { dsTrials: DSTrialRecord[]; retainedLineages: LocalLineage[]; discardedDCount: number } {
+  ): Promise<{ dsTrials: DSTrialRecord[]; retainedLineages: LocalLineage[]; discardedDCount: number }> {
     const dsTrials: DSTrialRecord[] = [];
     const retainedLineages: LocalLineage[] = [];
     let discardedDCount = 0;
@@ -191,25 +191,47 @@ export class LineageManager {
       let dHadSignal = false;
       const rng = mulberry32(searchSeed * 7919 + dIndex * 104729);
 
-      // 对每个不利局进行最多 8 个有效 S 搜索
+      // 对每个不利局：使用 D 更改后的快照重新捕获真实 D-specific RoundBoardState
       for (const baseCase of adverseCases) {
         if (dHadSignal) break; // 首次命中局部提升即结束当前 D 的 S 搜索并保留谱系
 
+        const dTargetSnap: any = {
+          formationId: `d_${dRec.dId}`,
+          displayName: `D_${dRec.dId}`,
+          canonicalFingerprint: dRec.dId,
+          team: dRec.modifiedTeam,
+          evol: dRec.modifiedEvol,
+        };
+
+        const resolver = (await import('../../snapshot_resolver')).FormationSnapshotResolver.getInstance();
+        const oppSnap = resolver.resolveFormationSnapshot({ formationId: baseCase.opponentFormationId });
+
+        const dStates = RoundBoardStateFactory.captureStatesFromBaselineMatch({
+          targetSnap: dTargetSnap,
+          opponentSnap: oppSnap,
+          targetSide: baseCase.targetSide,
+          seed: baseCase.seed,
+        });
+
+        const matchingDState = dStates.find(st => st.round === baseCase.round) ?? dStates[0];
+        if (!matchingDState) continue;
+
+        const dBaseRes = SingleRoundEngine.runSingleRound(matchingDState);
         const seenFp = new Set<string>();
-        seenFp.add(baseCase.baseState.stateFingerprint);
+        seenFp.add(matchingDState.stateFingerprint);
 
         for (let sIdx = 1; sIdx <= 8; sIdx++) {
-          const edits = CandidateSpace.sampleCompatibleEdits(baseCase.baseState, rng);
+          const edits = CandidateSpace.sampleCompatibleEdits(matchingDState, rng);
           if (edits.length === 0) continue;
 
-          const candidateState = RoundBoardStateFactory.cloneWithEdits(baseCase.baseState, edits);
+          const candidateState = RoundBoardStateFactory.cloneWithEdits(matchingDState, edits);
           const fp = candidateState.stateFingerprint;
           if (seenFp.has(fp)) continue;
           seenFp.add(fp);
 
           const res = SingleRoundEngine.runSingleRound(candidateState);
           const obj = evaluateObjectiveVector(res, baseCase.targetSide, edits.length);
-          const baseObj = evaluateObjectiveVector(baseCase.baselineResult, baseCase.targetSide, 0);
+          const baseObj = evaluateObjectiveVector(dBaseRes, baseCase.targetSide, 0);
 
           const isImprovement = compareObjective(obj, baseObj) > 0;
 
