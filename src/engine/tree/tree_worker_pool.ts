@@ -2,7 +2,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { Worker } from 'node:worker_threads';
-import type { WorkerTaskPayload, WorkerTaskResult } from './product_worker';
+import type { WorkerTaskPayload, WorkerTaskResult } from './tree_worker';
 
 export interface PoolExecutionMetrics {
   backend: 'single' | 'worker_threads';
@@ -20,7 +20,7 @@ export interface PoolExecutionMetrics {
   timedOutTasksCount: number;
 }
 
-export class ProductWorkerPool {
+export class TreeWorkerPool {
   private workers: Worker[] = [];
   private idleWorkerIndices: number[] = [];
   private taskQueue: Array<{
@@ -47,13 +47,12 @@ export class ProductWorkerPool {
 
   public init(): void {
     if (this.workers.length > 0) return;
-    const workerSrc = path.join(__dirname, 'product_worker.ts');
-    const workerOut = path.join(process.cwd(), 'reports', 'tree-cycle', 'product_worker.cjs');
+    const workerSrc = path.join(process.cwd(), 'src', 'engine', 'tree', 'tree_worker.ts');
+    const workerOut = path.join(process.cwd(), 'reports', 'tree-cycle', 'tree_worker.cjs');
 
     const dir = path.dirname(workerOut);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    // 使用 esbuild 快速将 worker 编译打包为独立 CommonJS 脚本
     const { execSync } = require('node:child_process');
     execSync(`npx esbuild "${workerSrc}" --bundle --outfile="${workerOut}" --platform=node --format=cjs --target=node20`, { stdio: 'ignore' });
 
@@ -98,7 +97,6 @@ export class ProductWorkerPool {
   public async executeTasksDeterministic(tasks: WorkerTaskPayload[]): Promise<WorkerTaskResult[]> {
     const promises = tasks.map(t => this.executeTask(t));
     const results = await Promise.all(promises);
-    // 按 workId 进行严格确定性排序
     return results.sort((a, b) => a.workId.localeCompare(b.workId));
   }
 

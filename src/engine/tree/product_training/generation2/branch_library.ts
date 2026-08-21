@@ -3,8 +3,6 @@ import { cloneEvolFormation, cloneEvolNode, emptyMask, walkEvolNodes, recognizeA
 import type { LossCaseItem } from './loss_case_service';
 import type { LocalCandidate, LocalTrialResult } from './local_search_service';
 import type { ResolvedFormationSnapshot } from '../snapshot_resolver';
-import { PersistentSimPool } from '../../persistent_pool';
-import type { SimTaskMessage } from '../../fine_grained_worker';
 
 export interface ExecutableBranch {
   branchId: string;

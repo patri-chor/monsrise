@@ -1,9 +1,8 @@
-import '../../../../env';
-import { parentPort, isMainThread } from 'node:worker_threads';
-import { CycleSearch } from './search';
-import { LineageManager, type DCandidateCatalogRecord } from './lineage';
-import { CyclePilot } from './pilot';
-import type { BaselineCase, OptimizerCycleConfig } from './types';
+import '../env';
+import { isMainThread, parentPort } from 'node:worker_threads';
+import { TreeSearch } from './tree_search';
+import { TreeDeck } from './tree_deck';
+import { TreeLineage } from './tree_lineage';
 
 export interface WorkerTaskPayload {
   workId: string;
@@ -31,22 +30,14 @@ if (!isMainThread && parentPort) {
       let data: any = null;
 
       if (task.type === 'S_SEARCH') {
-        const { cases, config, searchSeed } = task.payload as {
-          cases: BaselineCase[];
-          config: OptimizerCycleConfig;
-          searchSeed: number;
-        };
-        data = CycleSearch.runLocalSearch(cases, config, searchSeed);
+        const { cases, config, searchSeed, caseIndexOffset } = task.payload;
+        data = TreeSearch.runLocalSearch(cases, config, searchSeed, caseIndexOffset);
       } else if (task.type === 'DS_ATTEMPT') {
-        const { dCatalog, adverseCases, searchSeed } = task.payload as {
-          dCatalog: DCandidateCatalogRecord[];
-          adverseCases: BaselineCase[];
-          searchSeed: number;
-        };
-        data = await LineageManager.executeDPlusSSearch(dCatalog, adverseCases, searchSeed);
+        const { dCatalog, adverseCases, searchSeed } = task.payload;
+        data = await TreeDeck.executeDPlusSSearch(dCatalog, adverseCases, searchSeed);
       } else if (task.type === 'BACKPROP_VALIDATION') {
         const { cand, baseCase, targetSnap, oppSnap, currentTargetEvol, config, iter } = task.payload;
-        data = CyclePilot.validateCandidateAgainstCurrentPilot(
+        data = TreeLineage.validateCandidateAgainstCurrentPilot(
           cand,
           baseCase,
           targetSnap,

@@ -1,25 +1,25 @@
 import * as path from 'node:path';
-import { FormationSnapshotResolver } from '../../snapshot_resolver';
-import type { OptimizerCycleConfig, OptimizerCycleReport, IterationSummary, BaselineCase } from './types';
-import { DEFAULT_CYCLE_CONFIG } from './types';
-import { CycleBenchmark } from './benchmark';
-import { CycleSearch } from './search';
-import { CyclePilot, type CompiledForwardCandidate } from './pilot';
-import { CycleEvidence } from './evidence';
-import { LineageManager, type LocalLineage, type DCandidateCatalogRecord, type DSTrialRecord } from './lineage';
-import { ProductWorkerPool, type PoolExecutionMetrics } from './product_worker_pool';
-import { BranchLibrary, type ExecutableBranch } from '../branch_library';
+import { FormationSnapshotResolver } from './product_training/snapshot_resolver';
+import type { TreeCycleConfig, TreeCycleReport } from './tree_types';
+import { DEFAULT_TREE_CYCLE_CONFIG } from './tree_types';
+import { TreeBenchmark } from './tree_benchmark';
+import { TreeSearch } from './tree_search';
+import { TreeDeck } from './tree_deck';
+import { TreeLineage } from './tree_lineage';
+import { TreeEvidence } from './tree_evidence';
+import { TreeWorkerPool } from './tree_worker_pool';
+import { BranchLibrary, type ExecutableBranch } from './product_training/generation2/branch_library';
 
-export class OptimizerCycleOrchestrator {
+export class TreeCycleOrchestrator {
   public static async runCycle(
-    config: Partial<OptimizerCycleConfig> = {}
-  ): Promise<OptimizerCycleReport> {
-    const fullConfig: OptimizerCycleConfig = { ...DEFAULT_CYCLE_CONFIG, ...config };
+    config: Partial<TreeCycleConfig> = {}
+  ): Promise<TreeCycleReport> {
+    const fullConfig: TreeCycleConfig = { ...DEFAULT_TREE_CYCLE_CONFIG, ...config };
     const runId = `CYCLE_RUN_${Date.now()}`;
-    const outBaseDir = fullConfig.outputBaseDirectory ?? path.join(process.cwd(), 'reports', 'tree-cycle', 'generation2-optimizer-cycle', runId);
-    CycleEvidence.ensureDir(outBaseDir);
+    const outBaseDir = fullConfig.outputBaseDirectory ?? path.join(process.cwd(), 'reports', 'tree-cycle', runId);
+    TreeEvidence.ensureDir(outBaseDir);
 
-    CycleEvidence.writeJson(path.join(outBaseDir, 'config.json'), fullConfig);
+    TreeEvidence.writeJson(path.join(outBaseDir, 'config.json'), fullConfig);
 
     const resolver = FormationSnapshotResolver.getInstance();
     resolver.init();
@@ -48,22 +48,22 @@ export class OptimizerCycleOrchestrator {
         }))
       : fullConfig.opponentFormationIds.map(fid => resolver.resolveFormationSnapshot({ formationId: fid }));
 
-    let workerPool: ProductWorkerPool | null = null;
+    let workerPool: TreeWorkerPool | null = null;
     const isWorkerBackend = fullConfig.parallelBackend === 'worker_threads';
     if (isWorkerBackend) {
-      workerPool = new ProductWorkerPool(fullConfig.workerCount, fullConfig.workerTimeoutMs);
+      workerPool = new TreeWorkerPool(fullConfig.workerCount, fullConfig.workerTimeoutMs);
       workerPool.init();
     }
 
     let currentPilotLibrary: ExecutableBranch[] = [];
-    const iterationSummaries: IterationSummary[] = [];
+    const iterationSummaries: any[] = [];
     let consecutiveNoImprovements = 0;
-    let stopReason: OptimizerCycleReport['stopReason'] = 'MAX_ITERATIONS_REACHED';
+    let stopReason = 'MAX_ITERATIONS_REACHED';
 
     try {
       for (let iter = 1; iter <= fullConfig.maxIterations; iter++) {
         const iterDir = path.join(outBaseDir, `iteration-${String(iter).padStart(3, '0')}`);
-        CycleEvidence.ensureDir(iterDir);
+        TreeEvidence.ensureDir(iterDir);
 
         const sSeed = fullConfig.searchSeeds[(iter - 1) % fullConfig.searchSeeds.length] ?? (125000 + iter);
 
@@ -72,12 +72,12 @@ export class OptimizerCycleOrchestrator {
         const currentTargetSnap = { ...targetSnap, evol: currentTargetEvol };
 
         // 1. 基线 Benchmark
-        const { aggregate: baselineBenchmark } = CycleBenchmark.runPilotBenchmark(currentTargetSnap, oppSnaps, fullConfig);
-        CycleEvidence.writeJson(path.join(iterDir, 'benchmark.json'), baselineBenchmark);
+        const { aggregate: baselineBenchmark } = TreeBenchmark.runPilotBenchmark(currentTargetSnap, oppSnaps, fullConfig);
+        TreeEvidence.writeJson(path.join(iterDir, 'benchmark.json'), baselineBenchmark);
 
         // 2. 挖掘不利局
-        const adverseCases = CycleBenchmark.mineAdverseCasesFromBenchmark(currentTargetSnap, oppSnaps, fullConfig);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'adverse_cases.jsonl'), adverseCases);
+        const adverseCases = TreeBenchmark.mineAdverseCasesFromBenchmark(currentTargetSnap, oppSnaps, fullConfig);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'adverse_cases.jsonl'), adverseCases);
 
         if (adverseCases.length === 0) {
           stopReason = 'NO_ADVERSE_CASES_REMAINING';
@@ -90,7 +90,6 @@ export class OptimizerCycleOrchestrator {
         let searchMetrics: any = null;
 
         if (isWorkerBackend && workerPool) {
-          // 对每个 Adverse Case 分发独立 S 搜索工作单元到 Worker 线程池
           const sTasks = adverseCases.map((c, cIdx) => ({
             workId: `WORK_S_iter${iter}_case${c.caseId}`,
             type: 'S_SEARCH' as const,
@@ -98,6 +97,7 @@ export class OptimizerCycleOrchestrator {
               cases: [c],
               config: fullConfig,
               searchSeed: sSeed,
+              caseIndexOffset: cIdx,
             },
           }));
 
@@ -118,40 +118,38 @@ export class OptimizerCycleOrchestrator {
             cpuTimeSystemMs: sResults.reduce((s, r) => s + r.cpuTimeSystemMs, 0),
           };
         } else {
-          const searchRes = CycleSearch.runLocalSearch(adverseCases, fullConfig, sSeed);
+          const searchRes = TreeSearch.runLocalSearch(adverseCases, fullConfig, sSeed);
           trials = searchRes.trials;
           representatives = searchRes.representatives;
           searchMetrics = searchRes.metrics;
         }
 
-        // 按确定性排序
         trials.sort((a, b) => a.candidateId.localeCompare(b.candidateId));
         representatives.sort((a, b) => a.candidateId.localeCompare(b.candidateId));
 
-        CycleEvidence.writeJsonl(path.join(iterDir, 's_trials.jsonl'), trials);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_trials.jsonl'), trials);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_archive.jsonl'), representatives);
+        TreeEvidence.writeJsonl(path.join(iterDir, 's_trials.jsonl'), trials);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'candidate_trials.jsonl'), trials);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'candidate_archive.jsonl'), representatives);
 
-        const sLineages = LineageManager.buildSLineages(representatives, targetSnap.canonicalFingerprint);
+        const sLineages = TreeLineage.buildSLineages(representatives, targetSnap.canonicalFingerprint);
 
-        // 3B. 判定 D+S 触发条件：L2 baseline Score70 < 0.70 且 S 搜索未产生有效局部提升谱系
+        // 3B. 判定 D+S 触发条件
         const shouldTriggerDS = baselineBenchmark.targetScore70Average < 0.70 && sLineages.length === 0;
-        let dCatalog: DCandidateCatalogRecord[] = [];
-        let dsTrials: DSTrialRecord[] = [];
-        let dsLineages: LocalLineage[] = [];
+        let dCatalog: any[] = [];
+        let dsTrials: any[] = [];
+        let dsLineages: any[] = [];
 
         if (shouldTriggerDS) {
-          dCatalog = LineageManager.generateDCatalog(targetSnap, sSeed);
+          dCatalog = TreeDeck.generateDCatalog(targetSnap, sSeed);
 
           if (isWorkerBackend && workerPool) {
-            // 对每个有效 D 分发独立的 D+S 尝试到 Worker 线程池
             const dsTasks = dCatalog.map((dRec, dIdx) => ({
               workId: `WORK_DS_iter${iter}_d${dRec.dId}`,
               type: 'DS_ATTEMPT' as const,
               payload: {
                 dCatalog: [dRec],
                 adverseCases,
-                searchSeed: sSeed + dIdx * 31,
+                searchSeed: sSeed,
               },
             }));
 
@@ -162,30 +160,28 @@ export class OptimizerCycleOrchestrator {
               dsLineages.push(...res.data.retainedLineages);
             }
           } else {
-            const dsRes = await LineageManager.executeDPlusSSearch(dCatalog, adverseCases, sSeed);
+            const dsRes = await TreeDeck.executeDPlusSSearch(dCatalog, adverseCases, sSeed);
             dsTrials = dsRes.dsTrials;
             dsLineages = dsRes.retainedLineages;
           }
         }
 
-        // 按确定性排序
         dCatalog.sort((a, b) => a.dId.localeCompare(b.dId));
         dsTrials.sort((a, b) => a.dsTrialId.localeCompare(b.dsTrialId));
         dsLineages.sort((a, b) => a.lineageId.localeCompare(b.lineageId));
 
-        CycleEvidence.writeJsonl(path.join(iterDir, 'd_catalog.jsonl'), dCatalog);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'ds_trials.jsonl'), dsTrials);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'd_catalog.jsonl'), dCatalog);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'ds_trials.jsonl'), dsTrials);
 
-        // 合并保留谱系 (S + D+S)
         const combinedLineages = [...sLineages, ...dsLineages];
-        CycleEvidence.writeJsonl(path.join(iterDir, 'local_lineages.jsonl'), combinedLineages);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'local_lineages.jsonl'), combinedLineages);
 
         // 4. 前向编译与验证
-        const forwardCandidates: CompiledForwardCandidate[] = [];
+        const forwardCandidates: any[] = [];
         for (const rep of representatives) {
           const baseCase = adverseCases.find(c => c.caseId === rep.caseId)!;
           const oppSnap = oppSnaps.find(o => o.displayName === baseCase.opponentDisplayName)!;
-          forwardCandidates.push(CyclePilot.compileForwardCandidate(rep, baseCase, oppSnap));
+          forwardCandidates.push(TreeLineage.compileForwardCandidate(rep, baseCase, oppSnap));
         }
 
         const allPairedValidations = [];
@@ -194,7 +190,6 @@ export class OptimizerCycleOrchestrator {
         let acceptedThisIter: ExecutableBranch[] = [];
 
         if (isWorkerBackend && workerPool) {
-          // 对每个候选分支分发独立的整局/L2 回溯验证工作到 Worker 线程池
           const backpropTasks = forwardCandidates.map(cand => {
             const baseCase = adverseCases.find(c => c.caseId === cand.caseId)!;
             const oppSnap = oppSnaps.find(o => o.displayName === baseCase.opponentDisplayName)!;
@@ -230,7 +225,7 @@ export class OptimizerCycleOrchestrator {
             const baseCase = adverseCases.find(c => c.caseId === cand.caseId)!;
             const oppSnap = oppSnaps.find(o => o.displayName === baseCase.opponentDisplayName)!;
 
-            const { decision, pairedValidations, strategyTraces } = CyclePilot.validateCandidateAgainstCurrentPilot(
+            const { decision, pairedValidations, strategyTraces } = TreeLineage.validateCandidateAgainstCurrentPilot(
               cand,
               baseCase,
               targetSnap,
@@ -250,7 +245,6 @@ export class OptimizerCycleOrchestrator {
           }
         }
 
-        // 确定性排序
         allPairedValidations.sort((a, b) => a.candidateId.localeCompare(b.candidateId) || a.seed - b.seed || a.targetSide - b.targetSide);
         allCandidateDecisions.sort((a, b) => a.candidateId.localeCompare(b.candidateId));
 
@@ -258,12 +252,12 @@ export class OptimizerCycleOrchestrator {
           acceptedThisIter = acceptedThisIter.slice(0, fullConfig.maxNewPilotBranchesPerIteration);
         }
 
-        CycleEvidence.writeJsonl(path.join(iterDir, 'strategy_traces.jsonl'), allStrategyTraces);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'paired_validations.jsonl'), allPairedValidations);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'backprop_validations.jsonl'), allPairedValidations);
-        CycleEvidence.writeJsonl(path.join(iterDir, 'pilot_decisions.jsonl'), allCandidateDecisions);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'strategy_traces.jsonl'), allStrategyTraces);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'paired_validations.jsonl'), allPairedValidations);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'backprop_validations.jsonl'), allPairedValidations);
+        TreeEvidence.writeJsonl(path.join(iterDir, 'pilot_decisions.jsonl'), allCandidateDecisions);
 
-        CycleEvidence.writeJson(path.join(iterDir, 'lineage_selection.json'), {
+        TreeEvidence.writeJson(path.join(iterDir, 'lineage_selection.json'), {
           iteration: iter,
           retainedLocalLineagesCount: combinedLineages.length,
           sLineagesCount: sLineages.length,
@@ -277,9 +271,9 @@ export class OptimizerCycleOrchestrator {
         currentPilotLibrary.push(...acceptedThisIter);
 
         const postEvol = BranchLibrary.attachExecutableBranchesToEvol(targetSnap.evol, currentPilotLibrary);
-        const { aggregate: postBenchmark } = CycleBenchmark.runPilotBenchmark({ ...targetSnap, evol: postEvol }, oppSnaps, fullConfig);
+        const { aggregate: postBenchmark } = TreeBenchmark.runPilotBenchmark({ ...targetSnap, evol: postEvol }, oppSnaps, fullConfig);
 
-        const iterSum: IterationSummary = {
+        const iterSum = {
           iterationNumber: iter,
           searchSeed: sSeed,
           initialPilotBranchesCount: initialCount,
@@ -322,7 +316,7 @@ export class OptimizerCycleOrchestrator {
       }
     }
 
-    const report: OptimizerCycleReport = {
+    const report: TreeCycleReport = {
       runId,
       config: fullConfig,
       totalIterationsExecuted: iterationSummaries.length,
@@ -342,9 +336,9 @@ export class OptimizerCycleOrchestrator {
       },
     };
 
-    CycleEvidence.writeJson(path.join(outBaseDir, 'summary.json'), report);
-    CycleEvidence.writeJson(path.join(outBaseDir, 'pilot_library.json'), currentPilotLibrary);
-    CycleEvidence.writeJsonl(path.join(outBaseDir, 'iterations.jsonl'), iterationSummaries);
+    TreeEvidence.writeJson(path.join(outBaseDir, 'summary.json'), report);
+    TreeEvidence.writeJson(path.join(outBaseDir, 'pilot_library.json'), currentPilotLibrary);
+    TreeEvidence.writeJsonl(path.join(outBaseDir, 'iterations.jsonl'), iterationSummaries);
 
     return report;
   }

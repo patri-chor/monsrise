@@ -57,9 +57,11 @@ export class CyclePilot {
       .filter((a: any) => a.side === adverseCase.targetSide)
       .map((a: any) => {
         const edit = rep.edits.find(e => e.type === 'CHANGE_PENDING_PLACEMENT' && e.actionOrder === a.order);
+        const rawX = edit && typeof edit.newX === 'number' ? edit.newX : a.x;
+        const normX = adverseCase.targetSide === 1 ? 10 - rawX : rawX;
         return {
           monsterId: a.monsterId,
-          x: edit && typeof edit.newX === 'number' ? edit.newX : a.x,
+          x: normX,
           y: edit && typeof edit.newY === 'number' ? edit.newY : a.y,
         };
       });
