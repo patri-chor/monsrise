@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import type { DynamicPoolEntry } from './types';
 import { FormationSnapshotResolver } from '../../snapshot_resolver';
 import { walkEvolNodes } from '../../../evol_gene';
+import { loadProductSources } from '../../01_sources';
 
 export class DynamicPoolManager {
   private poolFilePath: string;
@@ -22,21 +23,22 @@ export class DynamicPoolManager {
     const resolver = FormationSnapshotResolver.getInstance();
     resolver.init();
 
-    // 初始化加载所有 T0 阵型作为动态池候选
-    const t0Ids = ['t0:all2rush', 't0:golden_boom', 't0:all2prayer', 't0:gift_jungle'];
+    // 动态从产品源目录中发现所有可用源 (Programmatic Discovery without hard-coded IDs)
+    const sources = loadProductSources();
     const seenBehavior = new Set<string>();
 
-    this.entries = t0Ids.map(fid => {
+    this.entries = sources.executable.map(src => {
+      const fid = `t0:${src.id}`;
       const snap = resolver.resolveFormationSnapshot({ formationId: fid });
       const nodes = walkEvolNodes(snap.evol.root);
-      const bFp = `${fid}_${nodes.length}_${nodes.map(n => n.round + ':' + n.placements.map(p => p.monsterId).join(',')).join(';')}`;
+      const bFp = `${src.id}_${nodes.length}_${nodes.map(n => n.round + ':' + JSON.stringify(n.condition) + ':' + n.placements.map(p => `${p.monsterId}@${p.x},${p.y}`).join(',')).join(';')}`;
 
       const isDup = seenBehavior.has(bFp);
       seenBehavior.add(bFp);
 
       const entry: DynamicPoolEntry = {
         formationId: fid,
-        rootSourceId: fid,
+        rootSourceId: src.id,
         currentSnapshotFingerprint: snap.canonicalFingerprint,
         previousSnapshotFingerprint: null,
         behaviorFingerprint: bFp,

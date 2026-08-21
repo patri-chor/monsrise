@@ -5,12 +5,29 @@ import { evaluateObjectiveVector, dominates, compareObjective } from '../optimiz
 import { CandidateSpace } from '../optimizer/candidate_space';
 import { mulberry32 } from '../../../../play_full_game';
 
+export interface SearchExecutionMetrics {
+  totalProposals: number;
+  totalInvalid: number;
+  totalDuplicate: number;
+  uniqueEvaluated: number;
+  wallTimeMs: number;
+  cpuTimeUserMs: number;
+  cpuTimeSystemMs: number;
+}
+
 export class CycleSearch {
   public static runLocalSearch(
     cases: BaselineCase[],
     config: OptimizerCycleConfig,
     searchSeed: number
-  ): { trials: CandidateTrial[]; representatives: CandidateTrial[] } {
+  ): { trials: CandidateTrial[]; representatives: CandidateTrial[]; metrics: SearchExecutionMetrics } {
+    const searchStartTime = Date.now();
+    const searchStartCpu = process.cpuUsage();
+
+    let totalProposals = 0;
+    let totalInvalid = 0;
+    let totalDuplicate = 0;
+
     const trials: CandidateTrial[] = [];
     const representatives: CandidateTrial[] = [];
 
@@ -29,7 +46,6 @@ export class CycleSearch {
       );
 
       for (let gen = 1; gen <= config.maxGenerations; gen++) {
-        let proposals = 0;
         let uniqueThisGen = 0;
 
         const nonDomParents = caseTrials.filter(t => !t.isDominated);
@@ -39,8 +55,8 @@ export class CycleSearch {
         const remainingCap = Math.max(0, config.uniqueCandidatesPerCase - (seenFp.size - 1));
         const neededUnique = isLastGen ? remainingCap : Math.min(targetPerGen, remainingCap);
 
-        while (uniqueThisGen < neededUnique && proposals < neededUnique * 25) {
-          proposals++;
+        while (uniqueThisGen < neededUnique && caseTrials.length < neededUnique * 25) {
+          totalProposals++;
 
           let edits: RoundBoardEdit[] = [];
           if (gen > 1 && parentPool.length > 0 && rng() < 0.5) {
@@ -50,12 +66,18 @@ export class CycleSearch {
             edits = CandidateSpace.sampleCompatibleEdits(c.baseState, rng);
           }
 
-          if (edits.length === 0) continue;
+          if (edits.length === 0) {
+            totalInvalid++;
+            continue;
+          }
 
           const candidateState = RoundBoardStateFactory.cloneWithEdits(c.baseState, edits);
           const fp = candidateState.stateFingerprint;
 
-          if (seenFp.has(fp)) continue;
+          if (seenFp.has(fp)) {
+            totalDuplicate++;
+            continue;
+          }
 
           // 校验碰撞
           const occupied = new Set<string>();
@@ -68,7 +90,10 @@ export class CycleSearch {
             }
             occupied.add(key);
           }
-          if (collision) continue;
+          if (collision) {
+            totalInvalid++;
+            continue;
+          }
 
           seenFp.add(fp);
           uniqueThisGen++;
@@ -117,6 +142,19 @@ export class CycleSearch {
       }
     }
 
-    return { trials, representatives };
+    const cpuDiff = process.cpuUsage(searchStartCpu);
+    return {
+      trials,
+      representatives,
+      metrics: {
+        totalProposals,
+        totalInvalid,
+        totalDuplicate,
+        uniqueEvaluated: trials.length,
+        wallTimeMs: Date.now() - searchStartTime,
+        cpuTimeUserMs: Math.round(cpuDiff.user / 1000),
+        cpuTimeSystemMs: Math.round(cpuDiff.system / 1000),
+      },
+    };
   }
 }

@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T128-dynamic-t0-l1-l2-pilot-cycle
 

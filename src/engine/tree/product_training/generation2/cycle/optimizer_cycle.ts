@@ -54,7 +54,8 @@ export class OptimizerCycleOrchestrator {
       }
 
       // 3. 局部搜索与代表解
-      const { trials, representatives } = CycleSearch.runLocalSearch(adverseCases, fullConfig, sSeed);
+      const searchRes = CycleSearch.runLocalSearch(adverseCases, fullConfig, sSeed);
+      const { trials, representatives } = searchRes;
       CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_trials.jsonl'), trials);
       CycleEvidence.writeJsonl(path.join(iterDir, 'candidate_archive.jsonl'), representatives);
 
@@ -124,6 +125,7 @@ export class OptimizerCycleOrchestrator {
         neutralPilotBranchesCount: allCandidateDecisions.filter(d => d.decision === 'PILOT_NEUTRAL').length,
         rejectedPilotBranchesCount: allCandidateDecisions.filter(d => d.decision === 'PILOT_REJECTED').length,
         newAcceptedBranches: acceptedThisIter,
+        searchMetrics: searchRes.metrics,
       };
 
       iterationSummaries.push(iterSum);

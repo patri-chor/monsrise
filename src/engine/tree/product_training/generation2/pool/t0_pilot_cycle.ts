@@ -68,6 +68,19 @@ export class DynamicT0PilotCoordinator {
       reason: selectionReason,
     });
 
+    CycleEvidence.writeJson(path.join(outBaseDir, 'selection_diagnostics.json'), {
+      totalPoolEntries: poolBefore.length,
+      activeEntriesCount: poolBefore.filter((e: any) => e.status === 'ACTIVE').length,
+      selectedFormations: pilotEntries.map(e => ({
+        formationId: e.formationId,
+        rootSourceId: e.rootSourceId,
+        currentSnapshotFingerprint: e.currentSnapshotFingerprint,
+        optimizationCycles: e.optimizationCycles,
+        score70Aggregate: e.score70Aggregate,
+      })),
+      selectionReason,
+    });
+
     const formationResults: PilotFormationResult[] = [];
     const pendingReplacements: Array<{ entry: DynamicPoolEntry; newEvol: any; newFp: string; l1: any; l2: any; combinedScore70: number }> = [];
 
@@ -161,7 +174,29 @@ export class DynamicT0PilotCoordinator {
         stopReason: cycleReport.stopReason,
       };
 
+      const performanceMetrics = {
+        formationId: targetEntry.formationId,
+        uniqueCandidatesEvaluated: uniqueEvaluated,
+        iterations: cycleReport.iterations.map((it: any) => ({
+          iteration: it.iterationNumber,
+          adverseCases: it.adverseCasesMined,
+          uniqueEvaluations: it.uniqueCandidatesEvaluated,
+          searchMetrics: it.searchMetrics,
+          acceptedPilots: it.acceptedPilotBranchesCount,
+          rejectedPilots: it.rejectedPilotBranchesCount,
+          neutralPilots: it.neutralPilotBranchesCount,
+          baselineScore70: it.baselineScore70Average,
+          postDecisionScore70: it.postDecisionScore70Average,
+        })),
+        l1Before,
+        l1Candidate,
+        l2Before,
+        l2Candidate,
+        decision,
+      };
+
       CycleEvidence.writeJson(path.join(formDir, 'search_metrics.json'), searchMetrics);
+      CycleEvidence.writeJson(path.join(formDir, 'performance_metrics.json'), performanceMetrics);
       CycleEvidence.writeJson(path.join(formDir, 'decision.json'), decision);
 
       formationResults.push({

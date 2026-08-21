@@ -102,6 +102,7 @@ export interface IterationSummary {
   neutralPilotBranchesCount: number;
   rejectedPilotBranchesCount: number;
   newAcceptedBranches: ExecutableBranch[];
+  searchMetrics?: any;
 }
 
 export interface OptimizerCycleReport {
