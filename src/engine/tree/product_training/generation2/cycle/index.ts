@@ -4,6 +4,7 @@ export * from './benchmark';
 export * from './search';
 export * from './pilot';
 export * from './evidence';
+export * from './lineage';
 export * from './optimizer_cycle';
 
 import { OptimizerCycleOrchestrator } from './optimizer_cycle';

@@ -6,6 +6,7 @@ import { CycleBenchmark } from './benchmark';
 import { CycleSearch } from './search';
 import { CyclePilot, type CompiledForwardCandidate } from './pilot';
 import { CycleEvidence } from './evidence';
+import { LineageManager } from './lineage';
 import { BranchLibrary, type ExecutableBranch } from '../branch_library';
 
 export class OptimizerCycleOrchestrator {
@@ -22,8 +23,29 @@ export class OptimizerCycleOrchestrator {
     const resolver = FormationSnapshotResolver.getInstance();
     resolver.init();
 
-    const targetSnap = resolver.resolveFormationSnapshot({ formationId: fullConfig.targetFormationId });
-    const oppSnaps = fullConfig.opponentFormationIds.map(fid => resolver.resolveFormationSnapshot({ formationId: fid }));
+    const targetSnap = fullConfig.targetSnapshot
+      ? {
+          formationId: fullConfig.targetSnapshot.formationId,
+          displayName: fullConfig.targetSnapshot.displayName,
+          canonicalFingerprint: fullConfig.targetSnapshot.canonicalFingerprint,
+          team: fullConfig.targetSnapshot.team,
+          evol: fullConfig.targetSnapshot.evol,
+          provenance: 'cycle_target_snapshot_input',
+          rootR0SourceId: fullConfig.targetSnapshot.rootSourceId,
+        }
+      : resolver.resolveFormationSnapshot({ formationId: fullConfig.targetFormationId });
+
+    const oppSnaps = fullConfig.opponentSnapshots
+      ? fullConfig.opponentSnapshots.map(s => ({
+          formationId: s.formationId,
+          displayName: s.displayName,
+          canonicalFingerprint: s.canonicalFingerprint,
+          team: s.team,
+          evol: s.evol,
+          provenance: 'cycle_opponent_snapshot_input',
+          rootR0SourceId: s.rootSourceId,
+        }))
+      : fullConfig.opponentFormationIds.map(fid => resolver.resolveFormationSnapshot({ formationId: fid }));
 
     let currentPilotLibrary: ExecutableBranch[] = [];
     const iterationSummaries: IterationSummary[] = [];
@@ -98,6 +120,9 @@ export class OptimizerCycleOrchestrator {
       if (acceptedThisIter.length > fullConfig.maxNewPilotBranchesPerIteration) {
         acceptedThisIter = acceptedThisIter.slice(0, fullConfig.maxNewPilotBranchesPerIteration);
       }
+
+      const localLineages = LineageManager.buildSLineages(representatives, targetSnap.canonicalFingerprint);
+      CycleEvidence.writeJsonl(path.join(iterDir, 'local_lineages.jsonl'), localLineages);
 
       CycleEvidence.writeJsonl(path.join(iterDir, 'strategy_traces.jsonl'), allStrategyTraces);
       CycleEvidence.writeJsonl(path.join(iterDir, 'paired_validations.jsonl'), allPairedValidations);

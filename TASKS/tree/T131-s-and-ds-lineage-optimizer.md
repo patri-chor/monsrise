@@ -1,4 +1,4 @@
-STATUS: OPEN
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T130-dynamic-snapshot-opening-cycle-integration
 

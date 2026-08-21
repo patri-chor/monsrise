@@ -1,10 +1,23 @@
 import type { ExecutableBranch } from '../branch_library';
 import type { RoundBoardEdit } from '../round_board_state_factory';
 import type { SingleRoundResult } from '../single_round_engine';
+import type { TeamSlot } from '../../../../game/GameEngine';
+import type { EvolFormation } from '../../../evol_gene';
+
+export interface CycleSnapshotInput {
+  formationId: string;
+  displayName: string;
+  canonicalFingerprint: string;
+  rootSourceId: string;
+  team: TeamSlot[];
+  evol: EvolFormation;
+}
 
 export interface OptimizerCycleConfig {
   targetFormationId: string;
+  targetSnapshot?: CycleSnapshotInput;
   opponentFormationIds: string[];
+  opponentSnapshots?: CycleSnapshotInput[];
   baselineSeeds: number[];
   validationSeeds: number[];
   searchSeeds: number[];

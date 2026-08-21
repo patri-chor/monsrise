@@ -8,6 +8,7 @@ import { runGeneration2OptimizerCycle } from '../cycle';
 import { CycleEvidence } from '../cycle/evidence';
 import { BranchLibrary } from '../branch_library';
 import { walkEvolNodes } from '../../../evol_gene';
+import { FormationSnapshotResolver } from '../../snapshot_resolver';
 
 export interface PilotFormationResult {
   formationId: string;
@@ -105,9 +106,32 @@ export class DynamicT0PilotCoordinator {
         .map(e => e.formationId);
 
       const cycleOutDir = path.join(formDir, 'cycle');
+      const resolver = FormationSnapshotResolver.getInstance();
+      const targetBaseSnap = resolver.resolveFormationSnapshot({ formationId: targetEntry.formationId });
+
       const cycleReport = await runGeneration2OptimizerCycle({
         targetFormationId: targetEntry.formationId,
+        targetSnapshot: {
+          formationId: targetEntry.formationId,
+          displayName: targetBaseSnap.displayName,
+          canonicalFingerprint: targetEntry.currentSnapshotFingerprint,
+          rootSourceId: targetEntry.rootSourceId,
+          team: targetBaseSnap.team,
+          evol: targetEntry.currentEvol,
+        },
         opponentFormationIds: otherOpponents,
+        opponentSnapshots: otherOpponents.map(fid => {
+          const oppE = poolBefore.find(e => e.formationId === fid)!;
+          const oppBase = resolver.resolveFormationSnapshot({ formationId: fid });
+          return {
+            formationId: fid,
+            displayName: oppBase.displayName,
+            canonicalFingerprint: oppE.currentSnapshotFingerprint,
+            rootSourceId: oppE.rootSourceId,
+            team: oppBase.team,
+            evol: oppE.currentEvol,
+          };
+        }),
         maxIterations: fullConfig.optimizerIterations,
         uniqueCandidatesPerCase: fullConfig.uniqueCandidatesPerCase,
         populationSize: fullConfig.populationSize,
@@ -195,8 +219,33 @@ export class DynamicT0PilotCoordinator {
         decision,
       };
 
+      const lineageSummary = {
+        formationId: targetEntry.formationId,
+        parentSnapshotFingerprint: targetEntry.currentSnapshotFingerprint,
+        cycles: cycleReport.iterations.map((it: any) => ({
+          iteration: it.iterationNumber,
+          adverseCasesCount: it.adverseCasesMined,
+          uniqueTrialsCount: it.uniqueCandidatesEvaluated,
+          acceptedCount: it.acceptedPilotBranchesCount,
+          rejectedCount: it.rejectedPilotBranchesCount,
+          neutralCount: it.neutralPilotBranchesCount,
+        })),
+        finalPilotLibrarySize: cycleReport.pilotLibrary.length,
+        decision,
+      };
+
+      const dynamicPropagation = {
+        formationId: targetEntry.formationId,
+        inputSnapshotFingerprint: targetEntry.currentSnapshotFingerprint,
+        candidateSnapshotFingerprint: decisionAccepted ? pendingReplacements.find(r => r.entry.formationId === targetEntry.formationId)?.newFp : null,
+        propagatedEvolNodesCount: targetEntry.currentEvol.root.children.length,
+        replacementAccepted: decisionAccepted,
+      };
+
       CycleEvidence.writeJson(path.join(formDir, 'search_metrics.json'), searchMetrics);
       CycleEvidence.writeJson(path.join(formDir, 'performance_metrics.json'), performanceMetrics);
+      CycleEvidence.writeJson(path.join(formDir, 'lineage_summary.json'), lineageSummary);
+      CycleEvidence.writeJson(path.join(formDir, 'dynamic_snapshot_propagation.json'), dynamicPropagation);
       CycleEvidence.writeJson(path.join(formDir, 'decision.json'), decision);
 
       formationResults.push({
