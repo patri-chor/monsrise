@@ -11,7 +11,7 @@
 // ============================================================
 
 import { sha256Hex } from './sha256_pure';
-import { DB_MONSTERS } from '../../game/Database';
+import { DB_MONSTERS } from '../game/Database';
 
 export const CALCULATOR_POLICY_SCHEMA_VERSION = 'T049_CALCULATOR_POLICY_V1';
 

@@ -4,10 +4,10 @@
 // 不包含长时间搜索；不导入 arena / hill_climb / sequential_tree_optimization。
 // ============================================================
 
-import { sha256Hex } from '../sha256_pure';
-import type { EvolNode } from '../evol_gene';
-import { walkEvolNodes } from '../evol_gene';
-import type { EvolFormation } from '../evol_gene';
+import { sha256Hex } from './sha256_pure';
+import type { EvolNode } from './evol_gene';
+import { walkEvolNodes } from './evol_gene';
+import type { EvolFormation } from './evol_gene';
 
 // ---- 运算符族 ----
 
@@ -193,7 +193,7 @@ export function getControllablePlacements(
   return result;
 }
 
-import { computeCalculatorPolicyFingerprint } from '../calculator_policy';
+import { computeCalculatorPolicyFingerprint } from './calculator_policy';
 
 /** 计算候选规范指纹（用于去重和无操作检测） */
 export function computeCandidateFingerprint(evol: EvolFormation): string {

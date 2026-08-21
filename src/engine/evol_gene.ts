@@ -24,7 +24,7 @@
 // 分支按特异性（main 非空 + subs 数 + keys 数）降序，第一个命中的优先；主分支兜底。
 // ============================================================
 
-import type { Formation, FormationTeamSlot } from '../../ai/types';
+import type { Formation, FormationTeamSlot } from '../ai/types';
 
 // ---------- 三层识别标签 ----------
 

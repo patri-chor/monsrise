@@ -1,12 +1,11 @@
 import type { TeamSlot } from '../../game/GameEngine';
-import type { EvolFormation } from './evol_gene';
-import { cloneEvolFormation, walkEvolNodes } from './evol_gene';
+import type { EvolFormation } from '../evol_gene';
+import { cloneEvolFormation, walkEvolNodes } from '../evol_gene';
 import { RoundBoardStateFactory } from '../round_board_factory';
 import { SingleRoundEngine } from '../single_round_engine';
-import { evaluateObjectiveVector, compareObjective } from './product_training/generation2/optimizer/objective';
-import { CandidateSpace } from './product_training/generation2/optimizer/candidate_space';
+import { evaluateObjectiveVector, compareObjective, CandidateSpace } from './tree_search';
 import { mulberry32 } from '../play_full_game';
-import { FormationSnapshotResolver } from './product_training/snapshot_resolver';
+import { TreeSnapshot } from '../tree_snapshot';
 
 export interface DCandidateCatalogRecord {
   dId: string;

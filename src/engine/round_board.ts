@@ -1,4 +1,4 @@
-import { sha256Hex } from './tree/sha256_pure';
+import { sha256Hex } from './sha256_pure';
 
 export interface RoundBoardUnit {
   instanceId: string; // stable: side + original deployment round/order (e.g. "p2_r1_o1")

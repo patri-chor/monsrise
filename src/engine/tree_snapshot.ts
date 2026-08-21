@@ -1,6 +1,6 @@
-import { FormationSnapshotResolver } from './product_training/snapshot_resolver';
-import type { ResolvedFormationSnapshot } from './product_training/snapshot_resolver';
-import type { CycleSnapshotInput } from './tree_types';
+import { FormationSnapshotResolver } from './snapshot_resolver';
+import type { ResolvedFormationSnapshot } from './snapshot_resolver';
+import type { CycleSnapshotInput } from './tree/tree_types';
 
 export class TreeSnapshot {
   private static resolver = FormationSnapshotResolver.getInstance();

@@ -1,5 +1,5 @@
 import type { TeamSlot } from '../../game/GameEngine';
-import type { EvolFormation } from './evol_gene';
+import type { EvolFormation } from '../evol_gene';
 
 export interface CycleSnapshotInput {
   formationId: string;

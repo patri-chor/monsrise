@@ -1,4 +1,4 @@
-STATUS: IN_PROGRESS
+STATUS: DONE
 DOMAIN: tree
 SUPERSEDES: T135-flatten-tree-runtime-and-archive-old
 

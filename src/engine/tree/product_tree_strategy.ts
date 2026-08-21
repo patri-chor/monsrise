@@ -17,7 +17,7 @@ import type {
   DeploymentStrategy,
   DeploymentStrategyContext,
 } from '../play_full_game';
-import type { EvolFormation, EvolNode } from './evol_gene';
+import type { EvolFormation, EvolNode } from '../evol_gene';
 import {
   walkEvolNodes,
   matchMask,
@@ -25,7 +25,7 @@ import {
   isEmptyMask,
   maskSpecificity,
   maskToLabel,
-} from './evol_gene';
+} from '../evol_gene';
 
 /** T032 D.1：策略适配器版本（进入 manifest） */
 export const STRATEGY_ADAPTER_VERSION = 'tree-strategy-v1';
@@ -71,7 +71,7 @@ import {
   evaluateAimPlacementWithPolicy,
   type ReadonlyPlacementContext,
   type BoardUnitPosition,
-} from './calculator_policy';
+} from '../calculator_policy';
 
 const SPECIAL_MONSTER_IDS = new Set([106, 107, 114, 116, 117]);
 const AIM_MONSTER_IDS = new Set([113, 118]);

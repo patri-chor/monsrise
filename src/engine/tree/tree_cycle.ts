@@ -1,14 +1,13 @@
 import * as path from 'node:path';
-import { FormationSnapshotResolver } from './product_training/snapshot_resolver';
+import { FormationSnapshotResolver } from '../snapshot_resolver';
 import type { TreeCycleConfig, TreeCycleReport } from './tree_types';
 import { DEFAULT_TREE_CYCLE_CONFIG } from './tree_types';
 import { TreeBenchmark } from './tree_benchmark';
 import { TreeSearch } from './tree_search';
 import { TreeDeck } from './tree_deck';
-import { TreeLineage } from './tree_lineage';
+import { TreeLineage, type ExecutableBranch } from './tree_lineage';
 import { TreeEvidence } from './tree_evidence';
 import { TreeWorkerPool } from './tree_worker_pool';
-import { BranchLibrary, type ExecutableBranch } from './product_training/generation2/branch_library';
 
 export class TreeCycleOrchestrator {
   public static async runCycle(
@@ -68,7 +67,7 @@ export class TreeCycleOrchestrator {
         const sSeed = fullConfig.searchSeeds[(iter - 1) % fullConfig.searchSeeds.length] ?? (125000 + iter);
 
         // A. 当前 Pilot 基线
-        const currentTargetEvol = BranchLibrary.attachExecutableBranchesToEvol(targetSnap.evol, currentPilotLibrary);
+        const currentTargetEvol = TreeLineage.attachExecutableBranchesToEvol(targetSnap.evol, currentPilotLibrary);
         const currentTargetSnap = { ...targetSnap, evol: currentTargetEvol };
 
         // 1. 基线 Benchmark
@@ -270,7 +269,7 @@ export class TreeCycleOrchestrator {
         const initialCount = currentPilotLibrary.length;
         currentPilotLibrary.push(...acceptedThisIter);
 
-        const postEvol = BranchLibrary.attachExecutableBranchesToEvol(targetSnap.evol, currentPilotLibrary);
+        const postEvol = TreeLineage.attachExecutableBranchesToEvol(targetSnap.evol, currentPilotLibrary);
         const { aggregate: postBenchmark } = TreeBenchmark.runPilotBenchmark({ ...targetSnap, evol: postEvol }, oppSnaps, fullConfig);
 
         const iterSum = {

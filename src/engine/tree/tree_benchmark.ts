@@ -1,10 +1,10 @@
-import type { ResolvedFormationSnapshot } from './product_training/snapshot_resolver';
+import type { ResolvedFormationSnapshot } from '../tree_snapshot';
 import type { TreeCycleConfig } from './tree_types';
 import { ProductMatchRunner } from '../product_match_runner';
 import { treeStrategyFor } from './product_tree_strategy';
 import { RoundBoardStateFactory } from '../round_board_factory';
 import { SingleRoundEngine } from '../single_round_engine';
-import { computeProductOutcomeFromMatch, aggregateProductOutcomes } from './product_training/generation2/cycle/outcome';
+import { computeProductOutcomeFromMatch, aggregateProductOutcomes } from './tree_product';
 
 export class TreeBenchmark {
   public static runPilotBenchmark(

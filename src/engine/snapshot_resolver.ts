@@ -16,12 +16,13 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Formation, TeamSlot } from '../../../ai/types';
-import type { EvolFormation } from '../evol_gene';
-import { cloneEvolFormation, formationToEvol, walkEvolNodes } from '../evol_gene';
-import { computeCandidateFingerprint } from './02_candidates';
-import { loadProductSources } from './01_sources';
-import { T037_OUTPUT_DIR } from './04_screen';
+import type { Formation, TeamSlot } from '../ai/types';
+import type { EvolFormation } from './evol_gene';
+import { cloneEvolFormation, formationToEvol, walkEvolNodes } from './evol_gene';
+import { computeCandidateFingerprint } from './candidates';
+import { loadProductSources } from './sources';
+
+export const T037_OUTPUT_DIR = 'reports/tree-experience/t037-product-screen';
 
 export interface ResolveSnapshotQuery {
   formationId: string;

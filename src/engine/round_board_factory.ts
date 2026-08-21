@@ -1,7 +1,7 @@
 import type { RoundBoardState, RoundBoardUnit, RoundDeploymentAction, RoundBoardEdit } from './round_board';
 import { computeRoundBoardStateFingerprint } from './round_board';
 import { treeStrategyFor } from './tree/product_tree_strategy';
-import { ProductGameSession, type ProductDeploymentTrace } from './tree/round_engine/product_round_session';
+import { ProductGameSession, type ProductDeploymentTrace } from './product_round_session';
 
 export class RoundBoardStateFactory {
   public static captureStatesFromBaselineMatch(input: {

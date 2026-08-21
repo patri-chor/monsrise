@@ -1,7 +1,7 @@
 import { playFullGame, type DeploymentStrategy } from './play_full_game';
-import { ProductGameSession, type ProductDeploymentTrace, type ProductRoundObservation } from './tree/round_engine/product_round_session';
+import { ProductGameSession, type ProductDeploymentTrace, type ProductRoundObservation } from './product_round_session';
 import type { TeamSlot } from '../game/GameEngine';
-import { sha256Hex } from './tree/sha256_pure';
+import { sha256Hex } from './sha256_pure';
 
 export interface ObservableSurvivor {
   id: string;

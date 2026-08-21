@@ -8,14 +8,14 @@
 // 3. 提供完全独立、可序列化、防内存泄露的 ProductRoundCheckpoint 机制，支持任意回合前断点恢复。
 // ============================================================
 
-import '../../env';
-import { gameEngine, type PlacedMonster, type TeamSlot } from '../../../game/GameEngine';
-import { DB_MONSTERS, DB_BADGES, type BadgeData } from '../../../game/Database';
-import { battleSystem } from '../../../game/BattleSystem';
-import { vfx } from '../../../game/VfxManager';
-import { registerAllBadges } from '../../../game/BadgeSystem';
-import { buildSnapshot, type BoardSnapshot } from '../../placement/snapshot';
-import { planRoundPlacements } from '../../placement/decide';
+import './env';
+import { gameEngine, type PlacedMonster, type TeamSlot } from '../game/GameEngine';
+import { DB_MONSTERS, DB_BADGES, type BadgeData } from '../game/Database';
+import { battleSystem } from '../game/BattleSystem';
+import { vfx } from '../game/VfxManager';
+import { registerAllBadges } from '../game/BadgeSystem';
+import { buildSnapshot, type BoardSnapshot } from './placement/snapshot';
+import { planRoundPlacements } from './placement/decide';
 import {
   PRODUCT_ZONES,
   EXECUTION_SEMANTICS_VERSION,
@@ -25,8 +25,8 @@ import {
   type ProductDeploymentTrace,
   type ProductRoundObservation,
   mulberry32,
-} from '../../play_full_game';
-import { sha256Hex } from '../sha256_pure';
+} from './play_full_game';
+import { sha256Hex } from './sha256_pure';
 
 const BATTLE_DT = 0.04; // 25 帧/秒
 

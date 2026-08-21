@@ -11,9 +11,9 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Formation } from '../../../ai/types';
-import { formationToEvol, walkEvolNodes } from '../evol_gene';
-import type { EvolFormation } from '../evol_gene';
+import type { Formation } from '../ai/types';
+import { formationToEvol, walkEvolNodes } from './evol_gene';
+import type { EvolFormation } from './evol_gene';
 
 export const SOURCES_PATH = resolve('tests/fixtures/tree/eleven_frozen_sources.json');
 export const GIFT_JUNGLE_ID = 'gift_jungle';
