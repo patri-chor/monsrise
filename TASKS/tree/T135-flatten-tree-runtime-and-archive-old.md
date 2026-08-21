@@ -17,7 +17,8 @@ many old runners, probes, diagnostics and tests obscure the actual runtime
 Target is a small, flat, direct runtime. Do not preserve directory hierarchy merely for historical caution.
 
 ```text
-formal runtime: about 10-14 TypeScript files directly under src/engine/tree/
+formal tree runtime: about 10-14 TypeScript files directly under src/engine/tree/
+shared battle runtime: direct modules under src/engine/
 old reference: src/engine/tree/old/
 unneeded code/tests: delete
 ```
@@ -26,7 +27,9 @@ Git remains recovery history. `old/` is retained only for useful prior cycle log
 
 ## Goal
 
-Consolidate the current product-path dynamic T0 `S -> conditional D+S -> lineage backprop -> L1/L2 pool` system, including actual worker-thread dispatch, into one flat formal runtime under `src/engine/tree/`.
+Consolidate the current product-path dynamic T0 `S -> conditional D+S -> lineage backprop -> L1/L2 pool` system into a flat formal tree runtime under `src/engine/tree/`, while moving generic one-round battle infrastructure up to `src/engine/`.
+
+`RoundBoardState`, its capture/clone/edit factory, and `SingleRoundEngine` are product combat infrastructure, not tree strategy ownership. Tree consumes them through direct `src/engine/` imports.
 
 Complete T134's actual worker-thread execution wiring within this new formal runtime. Do not implement T134 in the old nested generation2 path first.
 
@@ -38,8 +41,7 @@ Create/retain at most 14 direct `src/engine/tree/*.ts` formal runtime modules. E
 tree_cycle.ts                 sole public cycle and CLI-facing orchestrator
 tree_types.ts                 all formal runtime public types/config/report
 tree_snapshot.ts              exact dynamic snapshot/pool-state input/output
-tree_product.ts               product match/run/canonical observation adapter
-tree_board.ts                 RoundBoardState capture/clone/edit/one-round adapter
+tree_product.ts               tree-facing product match/strategy observation adapter
 tree_search.ts                S candidate generation, trial accounting, frontier
 tree_deck.ts                  constrained D catalog and D-specific snapshot rebuild
 tree_lineage.ts               S/D+S lineage, backprop, selection comparator
@@ -52,6 +54,18 @@ product_tree_strategy.ts      existing runtime strategy authority, retain at roo
 ```
 
 A module may merge only adjacent responsibilities if that reduces total formal files. Do not split them further. `tree_cycle.ts` must be the sole production orchestration entrypoint.
+
+Shared product combat modules move to direct `src/engine/` paths:
+
+```text
+round_board.ts                data-only RoundBoardState and legal edit types
+round_board_factory.ts        product-trace capture, clone/edit, fingerprints
+single_round_engine.ts        fresh current-round board construction/settlement
+product_match_runner.ts       generic full-match observable adapter, if it has no
+                              tree-specific strategy policy dependency
+```
+
+These files must not import `src/engine/tree/` except for an injected strategy/interface type. If a strategy-specific helper remains needed, it stays in `tree_product.ts`; generic battle state must remain engine-owned.
 
 Public scripts:
 
@@ -68,7 +82,7 @@ Formal runtime behavior preserved/rebuilt from current validated product path:
 ```text
 - exact dynamic target/opponent snapshots; no resolver-original fallback when input supplied;
 - product-path `playFullGame` and actual strategy trace;
-- cached current-round board state and legal S edits;
+- engine-owned cached current-round board state and legal S edits consumed by tree;
 - Score70 = (W + .70*D) / N;
 - S frontier discovery default 32 unique valid trials/case;
 - preserve behavior-distinct/non-dominated local S lineages;
