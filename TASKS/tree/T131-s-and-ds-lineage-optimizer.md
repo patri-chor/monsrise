@@ -138,14 +138,46 @@ source snapshot fingerprint
 
 Do not stop at the first local improvement and do not collapse all equivalent-score results to one record.
 
-Retain a bounded per-case frontier:
+## 2A. S Frontier Discovery Measurement
+
+Do not assume a fixed useful-S count. The first real dynamic-T0 pilot must measure it before adopting a tight retention cap.
+
+Discovery budget per adverse case:
 
 ```text
-- all non-dominated local improvements;
-- cap default 4 per adverse case;
-- behavior-distinct state/result alternatives retained;
-- deterministic objective ordering only trims beyond cap.
+32 unique valid S board states/case
 ```
+
+During discovery, do not stop at the first improvement and do not apply the old provisional `4 per case` frontier cap. Retain every behavior-distinct local improvement and calculate the full local Pareto frontier.
+
+For every case record:
+
+```text
+proposals
+invalid / duplicate / unique valid S states
+local improvements by class
+behavior-distinct improvement count
+full non-dominated S frontier count
+objective-ranked cumulative gain at 1, 2, 4, 8, 16, 32 unique trials
+frontier members surviving later L2 back-propagation
+```
+
+After the real three-T0 pilot, derive a future normal-case retention cap from observed frontier distribution:
+
+```text
+- retain enough members to cover at least 95% of observed useful/frontier cases;
+- record recommended cap, p50/p90/max frontier count and marginal-gain curve;
+- do not impose a smaller hard-coded cap without this evidence.
+```
+
+For this task's bounded back-propagation, use an explicit high discovery allowance:
+
+```text
+max 8 non-dominated S lineages per adverse case
+max 16 retained lineages per target snapshot before L2 back-propagation
+```
+
+If a case produces more than 8 non-dominated S members, keep all in local evidence and choose the top 8 only for expensive L2 back-propagation by shared objective, diversity of edit/state fingerprint, then stable lineage ID.
 
 Lineage record must include:
 
